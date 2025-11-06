@@ -5,6 +5,7 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
+	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/shared"
@@ -48,6 +49,20 @@ func HumaRequireAuthMiddleware(api huma.API, app core.App) func(ctx huma.Context
 		})).ServeHTTP(w, r)
 	}
 
+}
+
+func HumaOperationSecurityMiddleware() func(ctx huma.Context, next func(huma.Context)) {
+	return func(ctx huma.Context, next func(huma.Context)) {
+		opSec := ctx.Operation().Security
+		if opSec == nil {
+			next(ctx)
+			return
+		}
+		rawCtx := ctx.Context()
+		rawCtx = contextstore.SetContextOperationSecurity(rawCtx, opSec)
+		ctx = huma.WithContext(ctx, rawCtx)
+		next(ctx)
+	}
 }
 
 func HumaCheckPermissionsMiddleware(api huma.API, app core.App, permissions ...string) func(ctx huma.Context, next func(huma.Context)) {

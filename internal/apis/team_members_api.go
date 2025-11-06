@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/workers"
 
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
@@ -209,76 +210,149 @@ func (api *Api) GetActiveTeamMember(ctx context.Context, input *struct{}) (*Team
 }
 
 type UpdateTeamMemberDto struct {
-	Active           bool           `json:"active"`
-	Role             TeamMemberRole `json:"role" enum:"owner,member,guest"`
-	HasBillingAccess bool           `json:"has_billing_access"`
+	Role TeamMemberRole `json:"role" enum:"owner,member,guest"`
 }
 type UpdateTeamsTeamMemberInput struct {
 	TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
 	Body         UpdateTeamMemberDto
 }
 
-// func (api *Api) UpdateTeamMemberBind(humaApi huma.API) {
-// 	teamInfo := api.Middlewares().TeamInfoFromUserAndMemberID
-// 	ownerRole := api.Middlewares().TeamRequiredOwnerMember
-// 	huma.Register(
-// 		humaApi,
-// 		huma.Operation{
-// 			OperationID: "update-team-member",
-// 			Method:      http.MethodPut,
-// 			Path:        "/team-members/{team-member-id}",
-// 			Summary:     "update-team-member",
-// 			Description: "update a team member",
-// 			Tags:        []string{"Team Members"},
-// 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-// 			Security: []map[string][]string{{
-// 				shared.BearerAuthSecurityKey: {},
-// 			}},
-// 			Middlewares: huma.Middlewares{
-// 				teamInfo,
-// 				ownerRole,
-// 			},
-// 		},
-// 		func(ctx context.Context, input *UpdateTeamsTeamMemberInput) (*ApiOutput[*TeamMember], error) {
-// 			teamInfo := contextstore.GetContextTeamInfo(ctx)
-// 			if teamInfo == nil {
-// 				return nil, huma.Error401Unauthorized("no team info")
-// 			}
-// 			memberId, err := uuid.Parse(input.TeamMemberID)
-// 			if err != nil {
-// 				return nil, err
-// 			}
-// 			member, err := api.App().Adapter().TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
-// 				Ids: []uuid.UUID{memberId},
-// 			})
-// 			if err != nil {
-// 				return nil, err
-// 			}
-// 			if member == nil {
-// 				return nil, huma.Error404NotFound("team member not found")
-// 			}
+func (api *Api) UpdateTeamMemberBind(humaApi huma.API) {
+	teamInfo := api.Middlewares().TeamInfoFromUserAndMemberID
+	ownerRole := api.Middlewares().TeamRequiredOwnerMember
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "update-team-member",
+			Method:      http.MethodPut,
+			Path:        "/team-members/{team-member-id}",
+			Summary:     "update-team-member",
+			Description: "update a team member",
+			Tags:        []string{"Team Members"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				teamInfo,
+				ownerRole,
+			},
+		},
+		func(ctx context.Context, input *UpdateTeamsTeamMemberInput) (*struct{}, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("no team info")
+			}
+			memberId, err := uuid.Parse(input.TeamMemberID)
+			if err != nil {
+				return nil, err
+			}
+			// find the member to be updated
+			member, err := api.App().Adapter().TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
+				Ids: []uuid.UUID{memberId},
+			})
+			if err != nil {
+				return nil, err
+			}
+			if member == nil {
+				return nil, huma.Error404NotFound("team member not found")
+			}
+			// check if the member can be deleted
+			//
+			if !member.Active { // already deleted
+				return nil, nil
+			}
+			// update member
+			txErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+				member.Active = false
+				_, err = api.App().Adapter().TeamMember().UpdateTeamMember(ctx, member)
+				if err != nil {
+					return err
+				}
+				err = api.App().JobService().EnqueueRefreshSubscriptionQuantityJob(ctx, &workers.RefreshSubscriptionQuantityJobArgs{
+					TeamID: member.TeamID,
+				})
+				if err != nil {
+					return err
+				}
+				return nil
+			})
+			if txErr != nil {
+				return nil, txErr
+			}
+			return nil, nil
+		},
+	)
+}
 
-// 			member.Active = input.Body.Active
-// 			member.Role = models.TeamMemberRole(input.Body.Role)
-// 			member.HasBillingAccess = input.Body.HasBillingAccess
-// 			updatedMember, err = api.App().Adapter().TeamMember().UpdateTeamMember(ctx, member)
-// 			if err != nil {
-// 				return nil, err
-// 			}
-// 			otherTeamInfo, err := api.App().Team().FindTeamInfoByMemberID(ctx, memberId)
-// 			if err != nil {
-// 				return nil, err
-// 			}
-// 			if otherTeamInfo == nil {
-// 				return nil, huma.Error404NotFound("team not found")
-// 			}
+type RemoveTeamMemberInput struct {
+	TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
+}
 
-// 			teamMember := fromTeamMemberModel(&otherTeamInfo.Member)
-// 			teamMember.Team = fromTeamModel(&otherTeamInfo.Team)
-// 			teamMember.User = fromUserModel(&otherTeamInfo.User)
-// 			return &ApiOutput[*TeamMember]{
-// 				Body: teamMember,
-// 			}, nil
-// 		},
-// 	)
-// }
+func (api *Api) RemoveTeamMemberFromTeamBind(humaApi huma.API) {
+	teamInfo := api.Middlewares().TeamInfoFromUserAndMemberID
+	ownerRole := api.Middlewares().TeamRequiredOwnerMember
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "remove-team-member",
+			Method:      http.MethodDelete,
+			Path:        "/team-members/{team-member-id}",
+			Summary:     "remove-team-member",
+			Description: "remove a team member",
+			Tags:        []string{"Team Members"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				teamInfo,
+				ownerRole,
+			},
+		},
+		func(ctx context.Context, input *UpdateTeamsTeamMemberInput) (*struct{}, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("no team info")
+			}
+			memberId, err := uuid.Parse(input.TeamMemberID)
+			if err != nil {
+				return nil, err
+			}
+			// find the member to be updated
+			member, err := api.App().Adapter().TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
+				Ids: []uuid.UUID{memberId},
+			})
+			if err != nil {
+				return nil, err
+			}
+			if member == nil {
+				return nil, huma.Error404NotFound("team member not found")
+			}
+			// check if the member can be deleted
+			//
+			if !member.Active { // already deleted
+				return nil, nil
+			}
+			// update member
+			txErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+				member.Active = false
+				_, err = api.App().Adapter().TeamMember().UpdateTeamMember(ctx, member)
+				if err != nil {
+					return err
+				}
+				err = api.App().JobService().EnqueueRefreshSubscriptionQuantityJob(ctx, &workers.RefreshSubscriptionQuantityJobArgs{
+					TeamID: member.TeamID,
+				})
+				if err != nil {
+					return err
+				}
+				return nil
+			})
+			if txErr != nil {
+				return nil, txErr
+			}
+			return nil, nil
+		},
+	)
+}

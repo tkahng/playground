@@ -35,7 +35,7 @@ func SetupApi(t testing.TB, ctx context.Context, db database.Dbx) *TestApi {
 	t.Helper()
 	cfg := conf.ZeroEnvConfig()
 	app := core.NewTestBaseApp(cfg, db)
-	router, api := NewHumaApi(t)
+	router, api := NewHumaApi(t, app)
 	appApi := apis.NewAppApi(app, router, api)
 	appApi.RegisterRoutes()
 	testApi := &TestApi{
@@ -47,7 +47,7 @@ func SetupApi(t testing.TB, ctx context.Context, db database.Dbx) *TestApi {
 	}
 	return testApi
 }
-func NewHumaApi(tb testing.TB, configs ...huma.Config) (chi.Router, humatest.TestAPI) {
+func NewHumaApi(tb testing.TB, app core.App, configs ...huma.Config) (chi.Router, humatest.TestAPI) {
 	tb.Helper()
 	for _, config := range configs {
 		if config.OpenAPI == nil {

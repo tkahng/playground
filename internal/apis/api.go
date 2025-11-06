@@ -11,15 +11,16 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/go-chi/httplog/v3"
 	"github.com/go-chi/httprate"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/middleware"
-
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
+	appHttp "github.com/tkahng/playground/internal/tools/http"
 	"github.com/tkahng/playground/ui"
 )
 
@@ -90,17 +91,70 @@ func NewAppApi(app core.App, router chi.Router, api huma.API) *Api {
 	}
 }
 
-func NewRouter(app core.App) *chi.Mux {
-	r := chi.NewMux()
+func AddBaseMiddlewares(app core.App, r chi.Router, mw ...func(http.Handler) http.Handler) {
+	r.Use(chimiddleware.RequestID)
+	r.Use()
+	r.Use(httplog.RequestLogger(app.Logger(), &httplog.Options{
+		Level: slog.LevelInfo,
+
+		// Set log output to Elastic Common Schema (ECS) format.
+		Schema: httplog.SchemaOTEL.Concise(true),
+
+		// RecoverPanics recovers from panics occurring in the underlying HTTP handlers
+		// and middlewares. It returns HTTP 500 unless response status was already set.
+		//
+		// NOTE: Panics are logged as errors automatically, regardless of this setting.
+		RecoverPanics: true,
+	}))
 	r.Use(cors.Handler(cors.Options{
-		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
 		AllowedOrigins: []string{"*"},
-		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowedMethods: []string{"GET", "PUT", "POST", "DELETE", "HEAD", "OPTION"},
+		AllowedHeaders: []string{
+			"User-Agent",
+			"Content-Type",
+			"Accept",
+			"Accept-Encoding",
+			"Accept-Language",
+			"Cache-Control",
+			"Connection",
+			"DNT",
+			"Host",
+			"Origin",
+			"Pragma",
+			"Referer",
+			"X-Client-IP",
+			"X-Forwarded-For",
+			"X-Forwarded",
+			"Forwarded-For",
+			"Forwarded",
+			"CF-Connecting-IP",
+			"Fastly-Client-Ip",
+			"True-Client-Ip",
+			"X-Real-IP",
+			"X-Cluster-Client-IP",
+		},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 	}))
+	r.Use(httprate.LimitByIP(100, 1*time.Minute))
+	r.Use(mw...)
+}
+
+func NewRouter(app core.App) *chi.Mux {
+	r := chi.NewMux()
+	r.Use(chimiddleware.RequestID)
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			rawCtx := r.Context()
+			requestId := chimiddleware.GetReqID(rawCtx)
+			if requestId == "" {
+				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized. user info not found", nil)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	})
 	r.Use(httplog.RequestLogger(app.Logger(), &httplog.Options{
 		// Level defines the verbosity of the request logs:
 		// slog.LevelDebug - log all responses (incl. OPTIONS)
@@ -118,6 +172,16 @@ func NewRouter(app core.App) *chi.Mux {
 		// NOTE: Panics are logged as errors automatically, regardless of this setting.
 		RecoverPanics: true,
 	}))
+	r.Use(cors.Handler(cors.Options{
+		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
+		AllowedOrigins: []string{"*"},
+		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+	}))
+
 	// r.Use(middleware.Logger)
 	// r.Use(middleware.Recoverer)
 	r.Use(httprate.LimitByIP(100, 1*time.Minute))
@@ -193,7 +257,53 @@ type ApiMiddlewares struct {
 	// common middlewares
 	Recoverer HumaMiddlewareFunc
 }
+type ApiMiddlewares2 struct {
+	// customer middlewares
+	SelectCustomerFromUser middleware.HttpMiddelwareFunc
+	SelectCustomerFromTeam middleware.HttpMiddelwareFunc
+	// team info middlewares
+	TeamInfoFromParam           middleware.HttpMiddelwareFunc
+	TeamInfoFromTeamSlug        middleware.HttpMiddelwareFunc
+	TeamInfoFromUserAndMemberID middleware.HttpMiddelwareFunc
+	TeamInfoFromTask            middleware.HttpMiddelwareFunc
+	TeamInfoFromTaskProject     middleware.HttpMiddelwareFunc
+	// check middlewares
+	MemberIdBelongsToUser   middleware.HttpMiddelwareFunc
+	TeamCanDelete           middleware.HttpMiddelwareFunc
+	EmailVerified           middleware.HttpMiddelwareFunc
+	TeamRequiredOwnerMember middleware.HttpMiddelwareFunc
+	TeamRequiredAnyMember   middleware.HttpMiddelwareFunc
+	// auth middlewares
+	Auth        middleware.HttpMiddelwareFunc
+	RequireAuth middleware.HttpMiddelwareFunc
+	// common middlewares
+	Recoverer middleware.HttpMiddelwareFunc
+}
 
+func newApiMiddlewares2(app core.App) *ApiMiddlewares2 {
+	return &ApiMiddlewares2{
+		// customer middlewares
+		SelectCustomerFromUser: middleware.SelectCustomerFromUser(app),
+		SelectCustomerFromTeam: middleware.SelectCustomerFromTeam(app),
+		// team info middlewares
+		TeamInfoFromParam:           middleware.TeamInfoFromParam(app),
+		TeamInfoFromTeamSlug:        middleware.TeamInfoFromTeamSlug(app),
+		TeamInfoFromUserAndMemberID: middleware.TeamInfoFromUserAndMemberID(app),
+		TeamInfoFromTask:            middleware.TeamInfoFromTask(app),
+		TeamInfoFromTaskProject:     middleware.TeamInfoFromTaskProject(app),
+		// check middlewares
+		MemberIdBelongsToUser:   middleware.MemberIdBelongsToUser(app),
+		TeamCanDelete:           middleware.TeamCanDelete(app),
+		EmailVerified:           middleware.HttpEmailVerifiedMiddleware(app),
+		TeamRequiredOwnerMember: middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+		TeamRequiredAnyMember:   middleware.RequireTeamMemberRolesMiddleware(),
+		// auth middlewares
+		Auth:        middleware.HttpAuthMiddleware(app),
+		RequireAuth: middleware.HttpRequireAuthMiddleware(app),
+		// common middlewares
+		Recoverer: middleware.RecovererMiddleware(app),
+	}
+}
 func newApiMiddlewares(api huma.API, app core.App) *ApiMiddlewares {
 	return &ApiMiddlewares{
 		// customer middlewares

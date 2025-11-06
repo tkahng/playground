@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"slices"
 
@@ -11,7 +12,118 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	appHttp "github.com/tkahng/playground/internal/tools/http"
+	"github.com/tkahng/playground/internal/tools/types"
 )
+
+func TeamMemberFromParam(app core.App) HttpMiddelwareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// context
+			rawCtx := r.Context()
+			// get team-member-id
+			key := "team-member-id"
+			teamMemberID := appHttp.GetRequestValueByName(r, key)
+			// if team-member-id is empty then move on
+			if teamMemberID == "" {
+				next.ServeHTTP(w, r)
+				return
+			}
+			// parse team-member-id to uuid
+			parsedTeamMemberID, err := uuid.Parse(teamMemberID)
+			if err != nil {
+				slog.ErrorContext(
+					rawCtx,
+					"error while parsing teamMemberID in TeamMemberFromParam middleware",
+					slog.Any("error", err),
+					slog.String(key, teamMemberID),
+				)
+				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team member id", err)
+				return
+			}
+			// query teamMember from team-member-id.
+			// do not filter by active, we will filter it later
+			teamMember, err := app.Adapter().TeamMember().FindTeamMember(rawCtx, &stores.TeamMemberFilter{
+				Ids: []uuid.UUID{parsedTeamMemberID},
+			})
+			if err != nil {
+				slog.ErrorContext(
+					rawCtx,
+					"error while querying teamMember in TeamMemberFromParam middleware",
+					slog.Any("error", err),
+					slog.String(key, teamMemberID),
+				)
+				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team member")
+				return
+			}
+			// if teamMember id was not nil and valid uuid,
+			// it is reasonable to assume that the teamMember exists,
+			// assuming the uuid was provided within our system.
+			// if the teamMember is not found, it is an error and should terminate here.
+			if teamMember == nil {
+				_ = appHttp.WriteErr(w, r, http.StatusNotFound, "team member not found")
+				return
+			}
+			// add teamMember to context
+			newCtx := contextstore.SetContextTeamMember(rawCtx, teamMember)
+			r = r.WithContext(newCtx)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func TeamFromParam(app core.App) HttpMiddelwareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// context
+			rawCtx := r.Context()
+			// get team-member-id
+			key := "team-id"
+			teamId := appHttp.GetRequestValueByName(r, key)
+			// if team-member-id is empty then move on
+			if teamId == "" {
+				next.ServeHTTP(w, r)
+				return
+			}
+			// parse team-member-id to uuid
+			parsedTeamID, err := uuid.Parse(teamId)
+			if err != nil {
+				slog.ErrorContext(
+					rawCtx,
+					"error while parsing teamID in TeamFromParam middleware",
+					slog.Any("error", err),
+					slog.String(key, teamId),
+				)
+				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team id")
+				return
+			}
+			// query team from team-id.
+			// do not filter by active, we will filter it later
+			team, err := app.Adapter().TeamGroup().FindTeamByID(rawCtx, parsedTeamID)
+			if err != nil {
+				slog.ErrorContext(
+					rawCtx,
+					"error while querying team in TeamFromParam middleware",
+					slog.Any("error", err),
+					slog.String(key, teamId),
+				)
+				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error while querying team in TeamFromParam middleware")
+				return
+			}
+			// if teamMember id was not nil and valid uuid,
+			// it is reasonable to assume that the teamMember exists,
+			// assuming the uuid was provided within our system.
+			// if the teamMember is not found, it is an error and should terminate here.
+			if team == nil {
+				_ = appHttp.WriteErr(w, r, http.StatusNotFound, "team not found", nil)
+				return
+			}
+			// add teamMember to context
+			newCtx := contextstore.SetContextTeam(rawCtx, team)
+			r = r.WithContext(newCtx)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
 
 // MemberIdBelongsToUser middleware ensures that the user is the member with id {team-member-id}
 func MemberIdBelongsToUser(app core.App) HttpMiddelwareFunc {
@@ -64,6 +176,9 @@ func TeamInfoFromUserAndMemberID(app core.App) HttpMiddelwareFunc {
 			}
 			teamMember, err := app.Adapter().TeamMember().FindTeamMember(rawCtx, &stores.TeamMemberFilter{
 				Ids: []uuid.UUID{parsedTeamMemberID},
+				Active: types.OptionalParam[bool]{
+					Value: true, IsSet: true,
+				},
 			})
 			if err != nil {
 				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team member", err)
