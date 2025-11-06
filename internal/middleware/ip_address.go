@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/tools/logger"
 )
 
@@ -52,7 +51,7 @@ var headers = []HeadersInput{
 	},
 }
 
-func IpAddressMiddleware(api huma.API) HttpMiddelwareFunc {
+func IpAddressMiddleware() HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()

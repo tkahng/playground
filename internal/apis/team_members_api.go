@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/workers"
@@ -43,7 +44,7 @@ type FindTeamTeamMemberByIDInput struct {
 }
 
 func (api *Api) bindFindTeamMemberByID(aapi huma.API) {
-	middleware := humamiddleware.TeamInfoFromParam(aapi, api.app)
+	middleware := middleware.TeamInfoFromParam(api.app)
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -57,9 +58,7 @@ func (api *Api) bindFindTeamMemberByID(aapi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				middleware,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(middleware),
 		},
 		func(ctx context.Context, input *FindTeamTeamMemberByIDInput) (*ApiOutput[*TeamMember], error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
