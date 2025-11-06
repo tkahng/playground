@@ -68,7 +68,10 @@
     "go.coverOnSingleTest": true,
     "go.coverShowCounts": true,
     "go.testExplorer.showDynamicSubtestsInEditor": true,
-    "go.testFlags": ["-race"],
+    "go.testFlags": ["-v", "-race"],
+    "go.testEnvVars": {
+      "DEBUG": "false"
+    },
     "testing.followRunningTest": true,
     "testing.showAllMessages": true,
     "[typescript]": {
@@ -144,9 +147,6 @@
     "typescript.referencesCodeLens.showOnAllFunctions": true,
     "typescript.preferences.importModuleSpecifier": "non-relative",
     "javascript.referencesCodeLens.showOnAllFunctions": true,
-    "javascript.referencesCodeLens.enabled": true,
-    "go.testEnvVars": {
-      // "DEBUG": "true"
-    }
+    "javascript.referencesCodeLens.enabled": true
   }
 }
