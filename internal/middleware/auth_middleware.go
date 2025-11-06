@@ -86,6 +86,7 @@ func HttpAuthMiddleware(app core.App) HttpMiddelwareFunc {
 				}
 			}
 			if len(token) == 0 {
+				slog.DebugContext(ctx, "access token not found")
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -95,14 +96,19 @@ func HttpAuthMiddleware(app core.App) HttpMiddelwareFunc {
 				next.ServeHTTP(w, r)
 				return
 			}
-			ctx = contextstore.SetContextUserInfo(ctx, userInfo)
+			if userInfo == nil {
+				slog.DebugContext(ctx, "user info not found")
+				next.ServeHTTP(w, r)
+				return
+			}
 			logger.SetAttrs(
 				ctx,
 				slog.String("user_id", userInfo.User.ID.String()),
 				slog.String("email", userInfo.User.Email),
 				slog.Bool("email_verified", userInfo.User.EmailVerifiedAt != nil),
 			)
-			r = r.WithContext(ctx)
+			newCtx := contextstore.SetContextUserInfo(ctx, userInfo)
+			r = r.WithContext(newCtx)
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -115,6 +121,7 @@ func HttpRequireAuthMiddleware() HttpMiddelwareFunc {
 
 			opSec := contextstore.GetContextOperationSecurity(ctx)
 			if opSec == nil {
+				slog.DebugContext(ctx, "operation security not found")
 				next.ServeHTTP(w, r)
 				return
 			}
@@ -123,17 +130,20 @@ func HttpRequireAuthMiddleware() HttpMiddelwareFunc {
 			for _, opScheme := range opSec {
 				var ok bool
 				if _, ok = opScheme[shared.BearerAuthSecurityKey]; ok {
+					slog.DebugContext(ctx, "authorization required")
 					isAuthorizationRequired = true
 					break
 				}
 			}
 
 			if !isAuthorizationRequired {
+				slog.DebugContext(ctx, "authorization not required.")
 				next.ServeHTTP(w, r)
 				return
 			}
 			// check if already has user userInfo
 			if userInfo := contextstore.GetContextUserInfo(ctx); userInfo != nil {
+				slog.DebugContext(ctx, "user info found")
 				next.ServeHTTP(w, r)
 				return
 			}
