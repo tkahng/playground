@@ -1,8 +1,7 @@
 package apis
 
-import "github.com/danielgtaylor/huma/v2"
-
-func bindUserReactionApi(api huma.API, appApi *Api) {
+func bindUserReactionApi(appApi *Api) {
+	api := appApi.Api()
 	appApi.bindCreateUserReaction(api)
 	appApi.bindUserReactionSse(api)
 	appApi.bindGetLatestUserReactionStats(api)

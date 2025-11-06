@@ -191,23 +191,6 @@ func fromTeamMemberModel(member *models.TeamMember) *TeamMember {
 	}
 }
 
-func (api *Api) GetActiveTeamMember(ctx context.Context, input *struct{}) (*TeamMemberOutput, error) {
-	info := contextstore.GetContextUserInfo(ctx)
-	if info == nil {
-		return nil, huma.Error401Unauthorized("unauthorized")
-	}
-	team, err := api.App().Team().GetActiveTeamMember(ctx, info.User.ID)
-	if err != nil {
-		return nil, err
-	}
-	if team == nil {
-		return nil, huma.Error404NotFound("team not found")
-	}
-	return &TeamMemberOutput{
-		Body: fromTeamMemberModel(team),
-	}, nil
-}
-
 type UpdateTeamMemberDto struct {
 	Role TeamMemberRole `json:"role" enum:"owner,member,guest"`
 }

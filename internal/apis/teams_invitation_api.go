@@ -116,9 +116,6 @@ func (api *Api) DeclineInvitation(
 	return nil, nil
 }
 
-type CancelInvitationDto struct {
-	InvitationID uuid.UUID `json:"invitation_id" required:"true" format:"uuid"`
-}
 type CancelInvitationInput struct {
 	TeamID       string `path:"team-id" required:"true" format:"uuid"`
 	InvitationID string `path:"invitation-id" required:"true" format:"uuid"`

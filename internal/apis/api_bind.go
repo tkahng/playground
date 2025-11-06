@@ -11,25 +11,25 @@ import (
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
-func bindApis(api huma.API, appApi *Api) {
+func bindApis(appApi *Api) {
 	// Misc routes ------------------------------------
-	bindMiscApi(api, appApi)
+	bindMiscApi(appApi)
 	// signup -------------------------------------------------------------
-	bindAuthApi(api, appApi)
+	bindAuthApi(appApi)
 	// ---- Upload File
-	bindMediaApi(api, appApi)
+	bindMediaApi(appApi)
 	// ---- Teams
-	bindTeamsApi(api, appApi)
+	bindTeamsApi(appApi)
 	// stats routes -------------------------------------------------------------------------------------------------
-	bindStatsApi(api, appApi)
+	bindStatsApi(appApi)
 	// ---- task routes -------------------------------------------------------------------------------------------------
-	bindTaskApi(api, appApi)
+	bindTaskApi(appApi)
 	// stripe routes -------------------------------------------------------------------------------------------------
-	bindStripeApi(api, appApi)
+	bindStripeApi(appApi)
 	//  admin routes ----------------------------------------------------------------------------
-	bindAdminApi(api, appApi)
+	bindAdminApi(appApi)
 	// admin stripe products with prices
-	bindUserReactionApi(api, appApi)
+	bindUserReactionApi(appApi)
 }
 func bindMiddlewares(api API) {
 	api.Api().UseMiddleware(humamiddleware.HumaOperationSecurityMiddleware())
@@ -46,7 +46,8 @@ type IndexOutput struct {
 	Body IndexOutputBody `json:"body"`
 }
 
-func bindMiscApi(api huma.API, appApi *Api) {
+func bindMiscApi(appApi *Api) {
+	api := appApi.Api()
 	huma.Get(api, "/", func(ctx context.Context, input *struct {
 		Page types.OmittableNullable[string] `query:"page" required:"false"`
 	}) (*IndexOutput, error) {

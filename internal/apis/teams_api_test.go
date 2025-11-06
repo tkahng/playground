@@ -422,33 +422,3 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 		}
 	})
 }
-
-func TestGetActiveTeamMember_nomember(t *testing.T) {
-
-	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
-		app := testApi.App
-		api := testApi.TestApi
-		user1, err := app.Adapter().User().CreateUser(
-			ctx,
-			&models.User{
-				Email: "user1@example",
-			},
-		)
-		if err != nil {
-			t.Errorf("Error creating user: %v", err)
-			return
-		}
-
-		tokensVerifiedTokens, err := app.Auth().GenerateAuthTokens(ctx, user1.Email)
-		if err != nil {
-			t.Errorf("Error creating auth tokens: %v", err)
-			return
-		}
-		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
-		resp := api.Get("/team-members/active", VerifiedHeader)
-		if resp.Code != 404 {
-			t.Fatalf("Unexpected response: %s", resp.Body.String())
-		}
-	})
-}

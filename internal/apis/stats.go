@@ -19,7 +19,8 @@ type StatsResponse struct {
 	Body *UserStats `json:"body"`
 }
 
-func bindStatsApi(api huma.API, appApi *Api) {
+func bindStatsApi(appApi *Api) {
+	api := appApi.Api()
 	statsGroup := huma.NewGroup(api)
 	huma.Register(
 		statsGroup,

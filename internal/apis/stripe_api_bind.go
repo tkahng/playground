@@ -4,7 +4,8 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 )
 
-func bindStripeApi(api huma.API, a *Api) {
+func bindStripeApi(a *Api) {
+	api := a.Api()
 	stripeGroup := huma.NewGroup(api)
 
 	// stripe webhook

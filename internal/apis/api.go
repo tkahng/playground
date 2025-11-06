@@ -48,7 +48,7 @@ var _ API = (*Api)(nil)
 
 func (api *Api) RegisterRoutes() {
 	bindMiddlewares(api)
-	bindApis(api.Api(), api)
+	bindApis(api)
 }
 
 func (api *Api) Api() huma.API {

@@ -9,7 +9,8 @@ import (
 	"github.com/tkahng/playground/internal/shared"
 )
 
-func bindTaskApi(api huma.API, appApi *Api) {
+func bindTaskApi(appApi *Api) {
+	api := appApi.Api()
 	// checkTaskOwnerMiddleware := middleware.CheckTaskOwnerMiddleware(api, appApi.App())
 	teamFromTask := humamiddleware.HumaChiMiddleware(middleware.TeamInfoFromTask(appApi.App()))
 	teamFromProject := humamiddleware.HumaChiMiddleware(middleware.TeamInfoFromTaskProject(appApi.App()))
