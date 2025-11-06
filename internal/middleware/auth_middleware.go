@@ -51,7 +51,7 @@ func Unwrap(ctx huma.Context) (*http.Request, http.ResponseWriter) {
 	panic("this context does not implement Unwrap")
 }
 
-func HttpEmailVerifiedMiddleware(app core.App) HttpMiddelwareFunc {
+func HttpEmailVerifiedMiddleware() HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
@@ -108,7 +108,7 @@ func HttpAuthMiddleware(app core.App) HttpMiddelwareFunc {
 	}
 }
 
-func HttpRequireAuthMiddleware2(app core.App) HttpMiddelwareFunc {
+func HttpRequireAuthMiddleware() HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -141,41 +141,7 @@ func HttpRequireAuthMiddleware2(app core.App) HttpMiddelwareFunc {
 		})
 	}
 }
-func HttpCheckPermissionsMiddleware2(requiredPermissions ...string) HttpMiddelwareFunc {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if claims := contextstore.GetContextUserInfo(r.Context()); claims != nil {
-				if len(requiredPermissions) == 0 {
-					next.ServeHTTP(w, r)
-					return
-				}
-				for _, p := range claims.Permissions {
-					if slices.Contains(requiredPermissions, p) {
-						next.ServeHTTP(w, r)
-						return
-					}
-				}
-			}
-			_ = appHttp.WriteErr(w, r, http.StatusForbidden, fmt.Sprintf("You do not have the required permissions: %v", requiredPermissions))
-		})
-	}
-}
-
-func HttpRequireAuthMiddleware(app core.App) HttpMiddelwareFunc {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			// check if already has user claims
-			if claims := contextstore.GetContextUserInfo(ctx); claims != nil {
-				next.ServeHTTP(w, r)
-				return
-			}
-			_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "you are not authenticated.")
-		})
-	}
-}
-
-func HttpCheckPermissionsMiddleware(app core.App, requiredPermissions ...string) HttpMiddelwareFunc {
+func HttpCheckPermissionsMiddleware(requiredPermissions ...string) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if claims := contextstore.GetContextUserInfo(r.Context()); claims != nil {

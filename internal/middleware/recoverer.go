@@ -5,11 +5,10 @@ import (
 	"net/http"
 	"runtime/debug"
 
-	"github.com/tkahng/playground/internal/core"
 	apphttp "github.com/tkahng/playground/internal/tools/http"
 )
 
-func RecovererMiddleware(app core.App) func(http.Handler) http.Handler {
+func RecovererMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
