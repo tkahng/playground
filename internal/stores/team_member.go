@@ -25,12 +25,13 @@ type TeamMemberListInput struct {
 type TeamMemberFilter struct {
 	PaginatedInput
 	SortParams
-	Q       string                    `query:"q"`
-	Ids     []uuid.UUID               `query:"ids"`
-	Roles   []models.TeamMemberRole   `query:"roles"`
-	UserIds []uuid.UUID               `query:"user_ids"`
-	TeamIds []uuid.UUID               `query:"team_ids"`
-	Active  types.OptionalParam[bool] `query:"active"`
+	Q                string                    `query:"q"`
+	Ids              []uuid.UUID               `query:"ids"`
+	Roles            []models.TeamMemberRole   `query:"roles"`
+	UserIds          []uuid.UUID               `query:"user_ids"`
+	TeamIds          []uuid.UUID               `query:"team_ids"`
+	Active           types.OptionalParam[bool] `query:"active"`
+	HasBillingAccess types.OptionalParam[bool] `query:"has_billing_access"`
 }
 
 type DbTeamMemberStoreInterface interface {
@@ -178,9 +179,6 @@ func (s *DbTeamMemberStore) filter(filter *TeamMemberFilter) *map[string]any {
 		return nil
 	}
 	where := make(map[string]any)
-	// if filter.Q != "" {
-
-	// }
 	if len(filter.Ids) > 0 {
 		where[models.TeamMemberTable.ID] = map[string]any{
 			"_in": filter.Ids,
@@ -204,6 +202,11 @@ func (s *DbTeamMemberStore) filter(filter *TeamMemberFilter) *map[string]any {
 	if filter.Active.IsSet {
 		where[models.TeamMemberTable.Active] = map[string]any{
 			"_eq": filter.Active.Value,
+		}
+	}
+	if filter.HasBillingAccess.IsSet {
+		where[models.TeamMemberTable.HasBillingAccess] = map[string]any{
+			"_eq": filter.HasBillingAccess.Value,
 		}
 	}
 	return &where
@@ -453,6 +456,9 @@ func (s *DbTeamMemberStore) FindLatestTeamMemberByUserID(ctx context.Context, us
 		&map[string]any{
 			models.TeamMemberTable.UserID: map[string]any{
 				"_eq": userId,
+			},
+			models.TeamMemberTable.Active: map[string]any{
+				"_eq": true,
 			},
 		},
 		&map[string]string{

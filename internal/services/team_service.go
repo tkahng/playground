@@ -9,6 +9,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 type TeamService interface {
@@ -236,12 +237,15 @@ func (t *TeamServiceImpl) SetActiveTeamMember(ctx context.Context, teamId, userI
 	member, err := t.adapter.TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
 		TeamIds: []uuid.UUID{teamId},
 		UserIds: []uuid.UUID{userId},
+		Active: types.OptionalParam[bool]{
+			Value: true, IsSet: true,
+		},
 	})
 	if err != nil {
 		return nil, err
 	}
 	if member == nil {
-		return nil, nil
+		return nil, errors.New("team member not found")
 	}
 	err = t.adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, teamId, userId)
 	// err = t.teamStore.UpdateTeamMemberSelectedAt(ctx, teamId, member.ID)
@@ -280,6 +284,9 @@ func (t *TeamServiceImpl) FindTeamInfo(ctx context.Context, teamId, userId uuid.
 		&stores.TeamMemberFilter{
 			TeamIds: []uuid.UUID{teamId},
 			UserIds: []uuid.UUID{userId},
+			Active: types.OptionalParam[bool]{
+				Value: true, IsSet: true,
+			},
 		})
 	// member, err := t.teamStore.FindTeamMemberByTeamAndUserId(ctx, teamId, userId)
 	if err != nil {
@@ -316,6 +323,9 @@ func (t *TeamServiceImpl) FindTeamInfoBySlug(ctx context.Context, slug string, u
 	member, err := t.adapter.TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
 		TeamIds: []uuid.UUID{team.ID},
 		UserIds: []uuid.UUID{userId},
+		Active: types.OptionalParam[bool]{
+			Value: true, IsSet: true,
+		},
 	})
 	// member, err := t.teamStore.FindTeamMemberByTeamAndUserId(ctx, team.ID, userId)
 	if err != nil {
