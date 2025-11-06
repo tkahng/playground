@@ -68,7 +68,7 @@ type Queries struct {
 
 // Close calls close on the underlying pool.
 func (v *Queries) Close() {
-	slog.Info("close called on Queries. calling close on pool.")
+	slog.Debug("close called on Queries. calling close on pool.")
 	v.db.Close()
 
 }
@@ -127,7 +127,7 @@ func (v *txQueries) BeginTx(ctx context.Context, opts ...func(*pgx.TxOptions)) (
 
 // Close is a no-op. this is here to implement Dbx
 func (v *txQueries) Close() {
-	slog.Info("close called on txQueries, nothing to do.")
+	slog.Debug("close called on txQueries, nothing to do.")
 }
 
 // RunInTxCtx implements Dbx.
