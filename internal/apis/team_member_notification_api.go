@@ -28,8 +28,8 @@ type TeamMemberSseInput struct {
 }
 
 func (api *Api) bindTeamMembersSseEvents(humapi huma.API) {
-	teamInfoFromMemberId := api.Middlewares().TeamInfoFromUserAndMemberID
-	userIsMember := api.Middlewares().MemberIdBelongsToUser
+	teamInfoFromMemberId := api.Middlewares().GetTeamInfoFromUserAndMemberID()
+	userIsMember := api.Middlewares().GetMemberIdBelongsToUser()
 	hanlder := sse.ServeSSE(
 		func(ctx context.Context, f func(any) error, input *TeamMemberSseInput) sse.Client {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
@@ -128,8 +128,8 @@ func fromModelNotification(notification *models.Notification) *Notification {
 	}
 }
 func (api *Api) bindFindTeamMembersNotifications(aapi huma.API) {
-	teamInfoFromMember := api.Middlewares().TeamInfoFromUserAndMemberID
-	userIsMember := api.Middlewares().MemberIdBelongsToUser
+	teamInfoFromMember := api.Middlewares().GetTeamInfoFromUserAndMemberID()
+	userIsMember := api.Middlewares().GetMemberIdBelongsToUser()
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -186,8 +186,8 @@ type ReadTeamMembersNotificationsInput struct {
 }
 
 func (api *Api) bindReadTeamMembersNotifications(aapi huma.API) {
-	teamMemberMiddleware := api.Middlewares().TeamInfoFromUserAndMemberID
-	userIsMember := api.Middlewares().MemberIdBelongsToUser
+	teamMemberMiddleware := api.Middlewares().GetTeamInfoFromUserAndMemberID()
+	userIsMember := api.Middlewares().GetMemberIdBelongsToUser()
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -239,8 +239,8 @@ func (api *Api) bindReadTeamMembersNotifications(aapi huma.API) {
 }
 
 func (api *Api) bindDeleteTeamMembersNotifications(aapi huma.API) {
-	teamMemberMiddleware := api.Middlewares().TeamInfoFromUserAndMemberID
-	userIsMember := api.Middlewares().MemberIdBelongsToUser
+	teamMemberMiddleware := api.Middlewares().GetTeamInfoFromUserAndMemberID()
+	userIsMember := api.Middlewares().GetMemberIdBelongsToUser()
 	huma.Register(
 		aapi,
 		huma.Operation{

@@ -11,33 +11,53 @@ type HumaMiddlewareFunc func(ctx huma.Context, next func(huma.Context))
 
 type ApiMiddlewares struct {
 	// customer middlewares
-	SelectCustomerFromUser HumaMiddlewareFunc
-	SelectCustomerFromTeam HumaMiddlewareFunc
+	selectCustomerFromUser HumaMiddlewareFunc
+	selectCustomerFromTeam HumaMiddlewareFunc
 	// team info middlewares
-	TeamInfoFromParam           HumaMiddlewareFunc
-	TeamInfoFromTeamSlug        HumaMiddlewareFunc
-	TeamInfoFromUserAndMemberID HumaMiddlewareFunc
-	TeamInfoFromTask            HumaMiddlewareFunc
-	TeamInfoFromTaskProject     HumaMiddlewareFunc
+	teamInfoFromParam           HumaMiddlewareFunc
+	teamInfoFromTeamSlug        HumaMiddlewareFunc
+	teamInfoFromUserAndMemberID HumaMiddlewareFunc
+	teamInfoFromTask            HumaMiddlewareFunc
+	teamInfoFromTaskProject     HumaMiddlewareFunc
 	// check middlewares
-	MemberIdBelongsToUser   HumaMiddlewareFunc
-	TeamCanDelete           HumaMiddlewareFunc
-	EmailVerified           HumaMiddlewareFunc
-	TeamRequiredOwnerMember HumaMiddlewareFunc
+	memberIdBelongsToUser   HumaMiddlewareFunc
+	teamCanDelete           HumaMiddlewareFunc
+	emailVerified           HumaMiddlewareFunc
+	teamRequiredOwnerMember HumaMiddlewareFunc
 	TeamRequiredAnyMember   HumaMiddlewareFunc
 	// auth middlewares
-	Auth        HumaMiddlewareFunc
-	RequireAuth HumaMiddlewareFunc
+	auth        HumaMiddlewareFunc
+	requireAuth HumaMiddlewareFunc
 	// common middlewares
-	Recoverer HumaMiddlewareFunc
+	recoverer HumaMiddlewareFunc
+}
+
+func (a *ApiMiddlewares) GetMemberIdBelongsToUser() HumaMiddlewareFunc {
+	return a.memberIdBelongsToUser
+}
+
+func (a *ApiMiddlewares) GetRequireAuth() HumaMiddlewareFunc {
+	return a.requireAuth
+}
+
+func (a *ApiMiddlewares) GetAuth() HumaMiddlewareFunc {
+	return a.auth
+}
+
+func (a *ApiMiddlewares) GetRecoverer() HumaMiddlewareFunc {
+	return a.recoverer
+}
+
+func (a *ApiMiddlewares) GetTeamInfoFromUserAndMemberID() HumaMiddlewareFunc {
+	return a.teamInfoFromUserAndMemberID
 }
 
 func (a *ApiMiddlewares) GetEmailVerified() HumaMiddlewareFunc {
-	return a.EmailVerified
+	return a.emailVerified
 }
 
 func (a *ApiMiddlewares) GetTeamCanDelete() HumaMiddlewareFunc {
-	return a.TeamCanDelete
+	return a.teamCanDelete
 }
 
 func (a *ApiMiddlewares) GetTeamRequiredAnyMember() HumaMiddlewareFunc {
@@ -45,46 +65,46 @@ func (a *ApiMiddlewares) GetTeamRequiredAnyMember() HumaMiddlewareFunc {
 }
 
 func (a *ApiMiddlewares) GetTeamRequiredOwnerMember() HumaMiddlewareFunc {
-	return a.TeamRequiredOwnerMember
+	return a.teamRequiredOwnerMember
 }
 
 func (a *ApiMiddlewares) GetTeamInfoFromTeamSlug() HumaMiddlewareFunc {
-	return a.TeamInfoFromTeamSlug
+	return a.teamInfoFromTeamSlug
 }
 
 func (a *ApiMiddlewares) GetTeamInfoFromParam() HumaMiddlewareFunc {
-	return a.TeamInfoFromParam
+	return a.teamInfoFromParam
 }
 
 func (a *ApiMiddlewares) GetSelectCustomerFromTeam() HumaMiddlewareFunc {
-	return a.SelectCustomerFromTeam
+	return a.selectCustomerFromTeam
 }
 
 func (a *ApiMiddlewares) GetSelectCustomerFromUser() HumaMiddlewareFunc {
-	return a.SelectCustomerFromUser
+	return a.selectCustomerFromUser
 }
 
 func NewApiMiddlewares(app core.App) *ApiMiddlewares {
 	return &ApiMiddlewares{
 		// customer middlewares
-		SelectCustomerFromUser: HumaChiMiddleware(middleware.SelectCustomerFromUser(app)),
-		SelectCustomerFromTeam: HumaChiMiddleware(middleware.SelectCustomerFromTeam(app)),
+		selectCustomerFromUser: HumaChiMiddleware(middleware.SelectCustomerFromUser(app)),
+		selectCustomerFromTeam: HumaChiMiddleware(middleware.SelectCustomerFromTeam(app)),
 		// team info middlewares
-		TeamInfoFromParam:           HumaChiMiddleware(middleware.TeamInfoFromParam(app)),
-		TeamInfoFromTeamSlug:        HumaChiMiddleware(middleware.TeamInfoFromTeamSlug(app)),
-		TeamInfoFromUserAndMemberID: HumaChiMiddleware(middleware.TeamInfoFromUserAndMemberID(app)),
-		TeamInfoFromTask:            HumaChiMiddleware(middleware.TeamInfoFromTask(app)),
-		TeamInfoFromTaskProject:     HumaChiMiddleware(middleware.TeamInfoFromTaskProject(app)),
+		teamInfoFromParam:           HumaChiMiddleware(middleware.TeamInfoFromParam(app)),
+		teamInfoFromTeamSlug:        HumaChiMiddleware(middleware.TeamInfoFromTeamSlug(app)),
+		teamInfoFromUserAndMemberID: HumaChiMiddleware(middleware.TeamInfoFromUserAndMemberID(app)),
+		teamInfoFromTask:            HumaChiMiddleware(middleware.TeamInfoFromTask(app)),
+		teamInfoFromTaskProject:     HumaChiMiddleware(middleware.TeamInfoFromTaskProject(app)),
 		// check middlewares
-		MemberIdBelongsToUser:   HumaChiMiddleware(middleware.MemberIdBelongsToUser(app)),
-		TeamCanDelete:           HumaChiMiddleware(middleware.TeamCanDelete(app)),
-		EmailVerified:           HumaChiMiddleware(middleware.HttpEmailVerifiedMiddleware()),
-		TeamRequiredOwnerMember: HumaChiMiddleware(middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner)),
+		memberIdBelongsToUser:   HumaChiMiddleware(middleware.MemberIdBelongsToUser(app)),
+		teamCanDelete:           HumaChiMiddleware(middleware.TeamCanDelete(app)),
+		emailVerified:           HumaChiMiddleware(middleware.HttpEmailVerifiedMiddleware()),
+		teamRequiredOwnerMember: HumaChiMiddleware(middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner)),
 		TeamRequiredAnyMember:   HumaChiMiddleware(middleware.RequireTeamMemberRolesMiddleware()),
 		// auth middlewares
-		Auth:        HumaChiMiddleware(middleware.HttpAuthMiddleware(app)),
-		RequireAuth: HumaChiMiddleware(middleware.HttpRequireAuthMiddleware()),
+		auth:        HumaChiMiddleware(middleware.HttpAuthMiddleware(app)),
+		requireAuth: HumaChiMiddleware(middleware.HttpRequireAuthMiddleware()),
 		// common middlewares
-		Recoverer: HumaChiMiddleware(middleware.RecovererMiddleware()),
+		recoverer: HumaChiMiddleware(middleware.RecovererMiddleware()),
 	}
 }

@@ -33,9 +33,9 @@ func bindApis(appApi *Api) {
 }
 func bindMiddlewares(api API) {
 	api.Api().UseMiddleware(humamiddleware.HumaOperationSecurityMiddleware())
-	api.Api().UseMiddleware(api.Middlewares().Recoverer)
-	api.Api().UseMiddleware(api.Middlewares().Auth)
-	api.Api().UseMiddleware(api.Middlewares().RequireAuth)
+	api.Api().UseMiddleware(api.Middlewares().GetRecoverer())
+	api.Api().UseMiddleware(api.Middlewares().GetAuth())
+	api.Api().UseMiddleware(api.Middlewares().GetRequireAuth())
 }
 
 type IndexOutputBody struct {

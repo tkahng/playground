@@ -200,8 +200,8 @@ type UpdateTeamsTeamMemberInput struct {
 }
 
 func (api *Api) UpdateTeamMemberBind(humaApi huma.API) {
-	teamInfo := api.Middlewares().TeamInfoFromUserAndMemberID
-	ownerRole := api.Middlewares().TeamRequiredOwnerMember
+	teamInfo := api.Middlewares().GetTeamInfoFromUserAndMemberID()
+	ownerRole := api.Middlewares().GetTeamRequiredOwnerMember()
 	huma.Register(
 		humaApi,
 		huma.Operation{
@@ -272,8 +272,8 @@ type RemoveTeamMemberInput struct {
 }
 
 func (api *Api) RemoveTeamMemberFromTeamBind(humaApi huma.API) {
-	teamInfo := api.Middlewares().TeamInfoFromUserAndMemberID
-	ownerRole := api.Middlewares().TeamRequiredOwnerMember
+	teamInfo := api.Middlewares().GetTeamInfoFromUserAndMemberID()
+	ownerRole := api.Middlewares().GetTeamRequiredOwnerMember()
 	huma.Register(
 		humaApi,
 		huma.Operation{
