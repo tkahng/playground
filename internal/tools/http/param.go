@@ -3,9 +3,12 @@ package http
 import (
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/tkahng/playground/internal/tools/http/queryparam"
 )
+
+type UrlGetFunc func(r *http.Request, name string) string
 
 func GetParam(r *http.Request, name string) string {
 	v := r.PathValue(name)
@@ -23,11 +26,15 @@ func GetQuery(r *http.Request, name string) string {
 	return queryparam.Get(r.URL.RawQuery, name)
 }
 
-type UrlGetFunc func(r *http.Request, name string) string
-
 var urlGetFuncs = []UrlGetFunc{
-	GetParam,
-	GetQuery,
+	func(r *http.Request, name string) string {
+		name = strings.ReplaceAll(name, "_", "-")
+		return GetParam(r, name)
+	},
+	func(r *http.Request, name string) string {
+		name = strings.ReplaceAll(name, "-", "_")
+		return GetQuery(r, name)
+	},
 }
 
 func GetRequestValueByName(r *http.Request, name string) string {
