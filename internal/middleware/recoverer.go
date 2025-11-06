@@ -20,7 +20,8 @@ func RecovererMiddleware(app core.App) func(http.Handler) http.Handler {
 						panic(rvr)
 					}
 
-					slog.Error(
+					slog.ErrorContext(
+						r.Context(),
 						"recovered from panic",
 						slog.Any("panic", rvr),
 						slog.Any("stack", string(debug.Stack())),
