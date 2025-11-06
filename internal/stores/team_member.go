@@ -277,11 +277,13 @@ func (s *DbTeamMemberStore) sortQuery(qs squirrel.SelectBuilder, filter Sortable
 	}
 
 	sortBy, sortOrder := filter.Sort()
-	if sortBy == "" || sortOrder == "" {
+	if sortBy == "" {
 		return qs
 	}
-
-	if sortBy != "" && slices.Contains(repository.TeamMemberBuilder.FieldNames(), sortBy) {
+	if sortOrder == "" {
+		sortOrder = "ASC"
+	}
+	if slices.Contains(repository.TeamMemberBuilder.FieldNames(), sortBy) {
 		qs = qs.OrderBy(sortBy + " " + strings.ToUpper(sortOrder))
 	} else if sortBy == "team.name" {
 		qs = qs.OrderBy("org.teams.name " + strings.ToUpper(sortOrder))

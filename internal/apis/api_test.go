@@ -262,14 +262,12 @@ func (scenario *ApiScenario) test(t testing.TB) {
 		for _, item := range scenario.ExpectedContent {
 			if !strings.Contains(normalizedBody, item) {
 				t.Fatalf("Cannot find %v in response body \n%v", item, normalizedBody)
-				break
 			}
 		}
 
 		for _, item := range scenario.NotExpectedContent {
 			if strings.Contains(normalizedBody, item) {
 				t.Fatalf("Didn't expect %v in response body \n%v", item, normalizedBody)
-				break
 			}
 		}
 	}
