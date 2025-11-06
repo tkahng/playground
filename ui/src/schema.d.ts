@@ -3819,7 +3819,7 @@ export interface operations {
                 q?: string;
                 ids?: string[] | null;
                 user_id?: string[] | null;
-                team_id?: string[] | null;
+                team_ids?: string[] | null;
                 status?: ("trialing" | "active" | "canceled" | "incomplete" | "incomplete_expired" | "past_due" | "unpaid" | "paused")[] | null;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";

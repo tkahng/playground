@@ -16,7 +16,7 @@ type StripeSubscriptionListFilter struct {
 	Q       string                     `query:"q,omitempty" required:"false"`
 	Ids     []string                   `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	UserIDs []string                   `query:"user_id,omitempty" required:"false" format:"uuid"`
-	TeamIDs []string                   `query:"team_id,omitempty" required:"false" format:"uuid"`
+	TeamIDs []string                   `query:"team_ids,omitempty" required:"false" format:"uuid"`
 	Status  []StripeSubscriptionStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"`
 }
 type StripeSubscriptionListParams struct {
