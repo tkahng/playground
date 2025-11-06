@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/types"
 )
@@ -31,6 +32,7 @@ func bindApis(api huma.API, appApi *Api) {
 	bindUserReactionApi(api, appApi)
 }
 func bindMiddlewares(api API) {
+	api.Api().UseMiddleware(humamiddleware.HumaOperationSecurityMiddleware())
 	api.Api().UseMiddleware(api.Middlewares().Recoverer)
 	api.Api().UseMiddleware(api.Middlewares().Auth)
 	api.Api().UseMiddleware(api.Middlewares().RequireAuth)
