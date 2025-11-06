@@ -413,6 +413,97 @@ func TeamInfoFromTeamSlug(app core.App) HttpMiddelwareFunc {
 	}
 }
 
+// TeamInfoFromContext creates a [models.TeamInfoModel] from values found in the context and adds it to the context.
+//
+//   - it calls [contextstore.GetContextUserInfo] for the user
+//   - it calls [contextstore.GetContextTeam] for the team
+//   - if the team is found, it queries the team member using the team.id and user.id.
+//   - if the team not found, it calls [contextstore.GetContextTeamMember] for the team member, and queries the user's team member using the teamMember.TeamID and user.ID.
+func TeamInfoFromContext(app core.App) HttpMiddelwareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			rawCtx := r.Context()
+			// get the user. if not found, return an error
+			userInfo := contextstore.GetContextUserInfo(rawCtx)
+			if userInfo == nil {
+				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "you are not logged in")
+				return
+			}
+
+			// get the team.
+			team := contextstore.GetContextTeam(rawCtx)
+			// if found, get the team member from the team.id and user.id
+			if team != nil {
+				teamMember, err := app.Adapter().TeamMember().FindTeamMember(rawCtx, &stores.TeamMemberFilter{
+					TeamIds: []uuid.UUID{team.ID},
+					UserIds: []uuid.UUID{userInfo.User.ID},
+					Active: types.OptionalParam[bool]{
+						Value: true, IsSet: true,
+					},
+				})
+				if err != nil {
+					slog.ErrorContext(
+						rawCtx,
+						"TeamInfoFromContext: error getting team member",
+						slog.Any("error", err),
+						slog.String("team_id", team.ID.String()),
+						slog.String("user_id", userInfo.User.ID.String()),
+					)
+					_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team info", err)
+					return
+				}
+				// if not found, user is not a member of this team.
+				// but this is not a security check, therefore we just move on without setting the team info.
+				// the next middleware will check the team info and return an error
+				if teamMember == nil {
+					next.ServeHTTP(w, r)
+					return
+				}
+				teamMember.User = &userInfo.User
+				teamMember.Team = team
+				teamInfo := &models.TeamInfoModel{
+					Team:   *team,
+					User:   userInfo.User,
+					Member: *teamMember,
+				}
+				ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
+				r = r.WithContext(ctxx)
+				next.ServeHTTP(w, r)
+				return
+			}
+			// if team is not found in context, check for team member in context
+			ctxTeamMember := contextstore.GetContextTeamMember(rawCtx)
+			// if not found, move on.
+			if ctxTeamMember == nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+			// if found, get the team info using its member.team_id and user.id
+			teamInfo, err := app.Team().FindTeamInfo(rawCtx, ctxTeamMember.TeamID, userInfo.User.ID)
+			if err != nil {
+				slog.ErrorContext(
+					rawCtx,
+					"TeamInfoFromContext: error getting team info",
+					slog.Any("error", err),
+					slog.String("team_id", ctxTeamMember.TeamID.String()),
+					slog.String("user_id", userInfo.User.ID.String()),
+				)
+				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team info", err)
+				return
+			}
+			// if not found, user is not a member of this team of the member found in context. but this is not a security check, therefore we just move on.
+			if teamInfo == nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+			// if found, add the team info to the context
+			ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
+			r = r.WithContext(ctxx)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // TeamInfoFromParam captures the {team-id} path param, and along with the user info, queries the teamInfo.
 // If the user has membership in the team of the task project, that teamInfo is added to the context, otherwise it returns an error
 func TeamInfoFromParam(app core.App) HttpMiddelwareFunc {
