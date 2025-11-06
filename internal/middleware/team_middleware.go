@@ -22,7 +22,7 @@ func TeamMemberFromParam(app core.App) HttpMiddelwareFunc {
 			rawCtx := r.Context()
 			// get team-member-id
 			key := "team-member-id"
-			teamMemberID := appHttp.GetRequestValueByName(r, key)
+			teamMemberID := appHttp.GetParam(r, key)
 			// if team-member-id is empty then move on
 			if teamMemberID == "" {
 				next.ServeHTTP(w, r)
@@ -58,9 +58,14 @@ func TeamMemberFromParam(app core.App) HttpMiddelwareFunc {
 			// if teamMember id was not nil and valid uuid,
 			// it is reasonable to assume that the teamMember exists,
 			// assuming the uuid was provided within our system.
-			// if the teamMember is not found, it is an error and should terminate here.
+			// but this is not a security check, so we log it and move on
 			if teamMember == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusNotFound, "team member not found")
+				slog.WarnContext(
+					rawCtx,
+					"no teamMember with given team-member-id found in TeamMemberFromParam middleware",
+					slog.String(key, teamMemberID),
+				)
+				next.ServeHTTP(w, r)
 				return
 			}
 			// add teamMember to context
@@ -76,15 +81,15 @@ func TeamFromParam(app core.App) HttpMiddelwareFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// context
 			rawCtx := r.Context()
-			// get team-member-id
+			// get team-id
 			key := "team-id"
-			teamId := appHttp.GetRequestValueByName(r, key)
-			// if team-member-id is empty then move on
+			teamId := appHttp.GetParam(r, key)
+			// if team-id is empty then move on
 			if teamId == "" {
 				next.ServeHTTP(w, r)
 				return
 			}
-			// parse team-member-id to uuid
+			// parse team-id to uuid
 			parsedTeamID, err := uuid.Parse(teamId)
 			if err != nil {
 				slog.ErrorContext(
@@ -106,18 +111,23 @@ func TeamFromParam(app core.App) HttpMiddelwareFunc {
 					slog.Any("error", err),
 					slog.String(key, teamId),
 				)
-				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error while querying team in TeamFromParam middleware")
+				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error while querying team")
 				return
 			}
-			// if teamMember id was not nil and valid uuid,
-			// it is reasonable to assume that the teamMember exists,
+			// if team id was not nil and valid uuid,
+			// it is reasonable to assume that the team exists,
 			// assuming the uuid was provided within our system.
-			// if the teamMember is not found, it is an error and should terminate here.
+			// however this is not a security check, so we will log it and move on.
 			if team == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusNotFound, "team not found", nil)
+				slog.WarnContext(
+					rawCtx,
+					"no team with given team-id found",
+					slog.String(key, teamId),
+				)
+				next.ServeHTTP(w, r)
 				return
 			}
-			// add teamMember to context
+			// add team to context
 			newCtx := contextstore.SetContextTeam(rawCtx, team)
 			r = r.WithContext(newCtx)
 			next.ServeHTTP(w, r)
