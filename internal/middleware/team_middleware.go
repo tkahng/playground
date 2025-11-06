@@ -37,7 +37,7 @@ func TeamMemberFromParam(app core.App) HttpMiddelwareFunc {
 					slog.Any("error", err),
 					slog.String(key, teamMemberID),
 				)
-				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team member id", err)
+				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team member id. invalid UUID format", err)
 				return
 			}
 			// query teamMember from team-member-id.
@@ -98,7 +98,7 @@ func TeamFromParam(app core.App) HttpMiddelwareFunc {
 					slog.Any("error", err),
 					slog.String(key, teamId),
 				)
-				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team id")
+				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team id. invalid UUID format")
 				return
 			}
 			// query team from team-id.
