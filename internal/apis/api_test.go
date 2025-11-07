@@ -225,6 +225,7 @@ func (scenario *ApiScenario) normalizedName() string {
 func (scenario *ApiScenario) test(t testing.TB) {
 	t.Helper()
 	testApi := scenario.TestAppFactory(t)
+	scenario.Store = store.New[string, any](nil)
 	if scenario.BeforeTestFunc != nil {
 		scenario.BeforeTestFunc(t, testApi.App, scenario)
 	}

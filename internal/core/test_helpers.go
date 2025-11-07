@@ -71,10 +71,16 @@ type TeamOptionFunc func(opt *CreateTeamOptions)
 
 type CreateTeamOptions struct {
 	teamName string
+	active   bool
 	role     models.TeamMemberRole
 	billing  bool
 }
 
+func TeamWithActive(active bool) TeamOptionFunc {
+	return func(opt *CreateTeamOptions) {
+		opt.active = active
+	}
+}
 func TeamWithName(name string) TeamOptionFunc {
 	return func(opt *CreateTeamOptions) {
 		opt.teamName = name
@@ -84,6 +90,11 @@ func TeamWithName(name string) TeamOptionFunc {
 func TeamWithRole(role models.TeamMemberRole) TeamOptionFunc {
 	return func(opt *CreateTeamOptions) {
 		opt.role = role
+		if role == models.TeamMemberRoleOwner {
+			opt.billing = true
+		} else {
+			opt.billing = false
+		}
 	}
 }
 
@@ -99,6 +110,7 @@ func CreateTeamAndMemberWithOptions(t testing.TB, app App, user *models.User, op
 		teamName: user.Email,
 		role:     models.TeamMemberRoleOwner,
 		billing:  true,
+		active:   true,
 	}
 	for _, optFunc := range optFunc {
 		optFunc(option)

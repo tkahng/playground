@@ -7,8 +7,10 @@ import (
 	"html"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/playground/internal/apis"
@@ -244,7 +246,6 @@ func TestApi_AcceptInvitation(t *testing.T) {
 			tt.TestAppFactory = func(t testing.TB) *TestApi {
 				return testApi
 			}
-			tt.Store = store.New[string, any](nil)
 			tt.Test(t)
 		})
 	}
@@ -367,7 +368,6 @@ func TestApi_CancelInvitation(t *testing.T) {
 			tt.TestAppFactory = func(t testing.TB) *TestApi {
 				return testApi
 			}
-			tt.Store = store.New[string, any](nil)
 			tt.Test(t)
 		})
 	}
@@ -545,16 +545,33 @@ func TestApi_FindUserInvitations(t *testing.T) {
 			tt.TestAppFactory = func(t testing.TB) *TestApi {
 				return testApi
 			}
-			tt.Store = store.New[string, any](nil)
 			tt.Test(t)
 		})
 	}
 }
 
+func randomEmail() string {
+	return fmt.Sprintf("%s@example.com", strings.ReplaceAll(uuid.NewString(), "-", ""))
+}
+
 func CreateTeamAndOwner(t testing.TB, app *core.BaseApp) *models.TeamInfoModel {
-	ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+	ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
 	teamInfo := core.CreateTeamAndMemberWithOptions(t, app, &ownerUserInfo.User)
 	return teamInfo
+}
+func CreateTeamMember(t testing.TB, app *core.BaseApp, team *models.Team, optFunc ...core.TeamOptionFunc) *models.TeamInfoModel {
+	ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+	opts := []core.TeamOptionFunc{
+		core.TeamWithBilling(false),
+		core.TeamWithRole(models.TeamMemberRoleMember),
+	}
+	opts = append(opts, optFunc...)
+	teamInfo := core.CreateTeamMemberWithOptions(t, app, team.ID, ownerUserInfo.User.ID, opts...)
+	return &models.TeamInfoModel{
+		Team:   *team,
+		User:   ownerUserInfo.User,
+		Member: *teamInfo,
+	}
 }
 func CreateTeamSubscription(t testing.TB, app *core.BaseApp, teamInfo *models.TeamInfoModel) *models.StripeSubscription {
 	teamCustomer, err := app.Payment().FindCustomerByTeamId(t.Context(), teamInfo.Team.ID)
