@@ -21,6 +21,7 @@ import (
 //   - it calls [contextstore.GetContextTeam] for the team
 //   - if the team is found, it queries the team member using the team.id and user.id.
 //   - if the team not found, it calls [contextstore.GetContextTeamMember] for the team member, and queries the user's team member using the teamMember.TeamID and user.ID.
+//   - if the team member is not found, it moves on without setting the team info
 func TeamInfoFromContext(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

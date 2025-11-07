@@ -17,6 +17,7 @@ func bindTeamsApi(appApi *Api) {
 			middleware.TeamFromParam(app),
 			middleware.TeamFromParamSlug(app),
 			middleware.TeamMemberFromParam(app),
+			middleware.TeamInfoFromContext(app),
 		)...,
 	)
 	// get team members
