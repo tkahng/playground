@@ -295,6 +295,31 @@ func TestApi_UpdateTeamMember(t *testing.T) {
 				assert.Equal(t, models.TeamMemberRoleGuest, updatedMember.Role)
 			},
 		},
+		{
+			Name:           "fail: dont have roles to update",
+			Method:         http.MethodPut,
+			URL:            "/team-members/{team-member-id}",
+			ExpectedStatus: http.StatusForbidden,
+			ExpectedContent: []string{
+				"You do not have the required team member roles: [owner]",
+			},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				team1 := CreateTeamAndOwner(t, app)
+				team1Member1 := CreateTeamMember(t, app, &team1.Team, core.TeamWithRole(models.TeamMemberRoleMember))
+				team1Member2 := CreateTeamMember(t, app, &team1.Team, core.TeamWithRole(models.TeamMemberRoleMember))
+				assert.Equal(t, models.TeamMemberRoleMember, team1Member1.Member.Role)
+				assert.Equal(t, models.TeamMemberRoleMember, team1Member2.Member.Role)
+				scenario.Store.Set("team1", team1)
+				scenario.Store.Set("team1Member1", team1Member1)
+				scenario.URL = fmt.Sprintf("/team-members/%s", team1Member1.Member.ID.String())
+				body := apis.UpdateTeamMemberDto{
+					Role: apis.TeamMemberRoleGuest,
+				}
+				scenario.Body = JsonToReader(t, body)
+				header := core.CreateTokenHeader(t, app, team1Member2.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+		},
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
