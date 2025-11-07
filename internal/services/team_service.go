@@ -207,8 +207,13 @@ func (t *TeamServiceImpl) CreateTeamWithOwner(ctx context.Context, name string, 
 
 // AddMember implements TeamService.
 func (t *TeamServiceImpl) AddMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
-	// member, err := t.teamStore.CreateTeamMember(ctx, teamId, userId, role, hasBillingAccess)
-	member, err := t.adapter.TeamMember().CreateTeamMember(ctx, teamId, userId, role, hasBillingAccess)
+	member, err := t.adapter.TeamMember().CreateTeamMember2(ctx, &models.TeamMember{
+		TeamID:           teamId,
+		UserID:           types.Pointer(userId),
+		Role:             role,
+		HasBillingAccess: hasBillingAccess,
+		Active:           true,
+	})
 	if err != nil {
 		return nil, err
 	}
