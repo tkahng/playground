@@ -16,9 +16,9 @@ import (
 	"github.com/go-chi/httplog/v3"
 	"github.com/go-chi/httprate"
 	"github.com/tkahng/playground/internal/core"
+	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/shared"
-	appHttp "github.com/tkahng/playground/internal/tools/http"
 	"github.com/tkahng/playground/ui"
 )
 
@@ -90,8 +90,8 @@ func NewAppApi(app core.App, router chi.Router, api huma.API) *Api {
 }
 
 func AddBaseMiddlewares(app core.App, r chi.Router, mw ...func(http.Handler) http.Handler) {
+	r.Use(middleware.SetContextAttrs)
 	r.Use(chimiddleware.RequestID)
-	r.Use()
 	r.Use(httplog.RequestLogger(app.Logger(), &httplog.Options{
 		Level: slog.LevelInfo,
 
@@ -140,49 +140,8 @@ func AddBaseMiddlewares(app core.App, r chi.Router, mw ...func(http.Handler) htt
 
 func NewRouter(app core.App) *chi.Mux {
 	r := chi.NewMux()
-	r.Use(chimiddleware.RequestID)
-	r.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			rawCtx := r.Context()
-			requestId := chimiddleware.GetReqID(rawCtx)
-			if requestId == "" {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized. user info not found", nil)
-				return
-			}
 
-			next.ServeHTTP(w, r)
-		})
-	})
-	r.Use(httplog.RequestLogger(app.Logger(), &httplog.Options{
-		// Level defines the verbosity of the request logs:
-		// slog.LevelDebug - log all responses (incl. OPTIONS)
-		// slog.LevelInfo  - log responses (excl. OPTIONS)
-		// slog.LevelWarn  - log 4xx and 5xx responses only (except for 429)
-		// slog.LevelError - log 5xx responses only
-		Level: slog.LevelInfo,
-
-		// Set log output to Elastic Common Schema (ECS) format.
-		Schema: httplog.SchemaOTEL.Concise(true),
-
-		// RecoverPanics recovers from panics occurring in the underlying HTTP handlers
-		// and middlewares. It returns HTTP 500 unless response status was already set.
-		//
-		// NOTE: Panics are logged as errors automatically, regardless of this setting.
-		RecoverPanics: true,
-	}))
-	r.Use(cors.Handler(cors.Options{
-		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
-		AllowedOrigins: []string{"*"},
-		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-	}))
-
-	// r.Use(middleware.Logger)
-	// r.Use(middleware.Recoverer)
-	r.Use(httprate.LimitByIP(100, 1*time.Minute))
+	AddBaseMiddlewares(app, r)
 	// Handle all other routes by serving index.html (for React Router)
 	r.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
 		p := filepath.Clean(r.URL.Path)

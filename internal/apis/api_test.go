@@ -70,6 +70,7 @@ func NewHumaApi(tb testing.TB, app core.App, configs ...huma.Config) (chi.Router
 		})
 	}
 	r := chi.NewMux()
+	apis.AddBaseMiddlewares(app, r)
 	return r, humatest.Wrap(tb, humachi.New(r, configs[0]))
 }
 
@@ -176,6 +177,7 @@ type ApiScenario struct {
 func (scenario *ApiScenario) Test(t *testing.T) {
 	t.Helper()
 	t.Run(scenario.normalizedName(), func(t *testing.T) {
+		t.Helper()
 		scenario.test(t)
 	})
 }

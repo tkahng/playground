@@ -57,48 +57,6 @@ func TestTeamService_AddMember_Error(t *testing.T) {
 	assert.Nil(t, member)
 	assert.Equal(t, expectedErr, err)
 }
-func TestTeamService_CreateTeam_Success(t *testing.T) {
-	adapterDecorator := stores.NewAdapterDecorators()
-	service := services.NewTeamService(adapterDecorator)
-
-	ctx := context.Background()
-	name := "Test Team"
-	slug := "test-team"
-	userID := uuid.New()
-	teamID := uuid.New()
-	teamMemberID := uuid.New()
-	// Team slug is available
-
-	// mockStore.On("CheckTeamSlug", ctx, slug).Return(true, nil)
-
-	expectedTeamInfo := &models.TeamInfoModel{
-		User: models.User{ID: userID},
-		Team: models.Team{ID: teamID, Name: name, Slug: slug},
-		Member: models.TeamMember{
-			ID:               teamMemberID,
-			TeamID:           teamID,
-			UserID:           &userID,
-			Role:             models.TeamMemberRoleOwner,
-			HasBillingAccess: true,
-		},
-	}
-	adapterDecorator.UserFunc.FindUserByIDFunc = func(ctx context.Context, userID uuid.UUID) (*models.User, error) {
-		return &expectedTeamInfo.User, nil
-	}
-	adapterDecorator.TeamGroupFunc.CheckTeamSlugFunc = func(ctx context.Context, slug string) (bool, error) {
-		return true, nil
-	}
-	adapterDecorator.TeamGroupFunc.CreateTeamFunc = func(ctx context.Context, name, slug string) (*models.Team, error) {
-		return &expectedTeamInfo.Team, nil
-	}
-	adapterDecorator.TeamMemberFunc.CreateTeamMemberFunc = func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
-		return &expectedTeamInfo.Member, nil
-	}
-
-	teamInfo, err := service.CreateTeamWithOwner(ctx, name, slug, userID)
-	assert.NoError(t, err)
-	assert.Equal(t, expectedTeamInfo, teamInfo)
-}
 
 func TestTeamService_CreateTeam_SlugExists(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()

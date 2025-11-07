@@ -15,6 +15,7 @@ type TeamMemberStoreDecorator struct {
 	CountTeamMembersByUserIDFunc                func(ctx context.Context, userId uuid.UUID) (int64, error)
 	CreateTeamFromUserFunc                      func(ctx context.Context, user *models.User) (*models.TeamMember, error)
 	CreateTeamMemberFunc                        func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
+	CreateTeamMember2Func                       func(ctx context.Context, model *models.TeamMember) (*models.TeamMember, error)
 	DeleteTeamMemberFunc                        func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
 	FindLatestTeamMemberByUserIDFunc            func(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	FindTeamMemberFunc                          func(ctx context.Context, filter *TeamMemberFilter) (*models.TeamMember, error)
@@ -29,16 +30,16 @@ type TeamMemberStoreDecorator struct {
 	VerifyAndUpdateTeamSubscriptionQuantityFunc func(ctx context.Context, adapter StorageAdapterInterface, teamId uuid.UUID) (int64, error)
 }
 
-// VerifyAndUpdateTeamSubscriptionQuantity implements DbTeamMemberStoreInterface.
-// func (t *TeamMemberStoreDecorator) VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, adapter StorageAdapterInterface, teamId uuid.UUID) (int64, error) {
-// 	if t.VerifyAndUpdateTeamSubscriptionQuantityFunc != nil {
-// 		return t.VerifyAndUpdateTeamSubscriptionQuantityFunc(ctx, adapter, teamId)
-// 	}
-// 	if t.Delegate == nil {
-// 		return 0, ErrDelegateNil
-// 	}
-// 	return t.Delegate.VerifyAndUpdateTeamSubscriptionQuantity(ctx, adapter, teamId)
-// }
+// CreateTeamMember2 implements DbTeamMemberStoreInterface.
+func (t *TeamMemberStoreDecorator) CreateTeamMember2(ctx context.Context, model *models.TeamMember) (*models.TeamMember, error) {
+	if t.CreateTeamMember2Func != nil {
+		return t.CreateTeamMember2Func(ctx, model)
+	}
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.CreateTeamMember2(ctx, model)
+}
 
 func NewTeamMemberStoreDecorator(db database.Dbx) *TeamMemberStoreDecorator {
 	delegate := NewDbTeamMemberStore(db)

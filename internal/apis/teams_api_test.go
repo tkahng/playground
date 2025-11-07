@@ -17,6 +17,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/internal/tools/utils"
 )
 
@@ -395,13 +396,13 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 			t.Errorf("Error creating user: %v", err)
 			return
 		}
-		member2, err := app.Adapter().TeamMember().CreateTeamMember(
-			ctx,
-			member1.Team.ID,
-			user2.ID,
-			models.TeamMemberRoleMember,
-			false,
-		)
+		member2, err := app.Adapter().TeamMember().CreateTeamMember2(ctx, &models.TeamMember{
+			TeamID:           member1.Team.ID,
+			UserID:           types.Pointer(user2.ID),
+			Role:             models.TeamMemberRoleMember,
+			HasBillingAccess: false,
+			Active:           true,
+		})
 		if member2 == nil {
 			t.Errorf("Error creating user: %v", err)
 			return

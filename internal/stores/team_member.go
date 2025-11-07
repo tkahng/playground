@@ -41,6 +41,7 @@ type DbTeamMemberStoreInterface interface {
 	CountTeamMembers(ctx context.Context, filter *TeamMemberFilter) (int64, error)
 	CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error)
 	CreateTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
+	CreateTeamMember2(ctx context.Context, model *models.TeamMember) (*models.TeamMember, error)
 	DeleteTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
 	FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	FindTeamMember(ctx context.Context, member *TeamMemberFilter) (*models.TeamMember, error)
@@ -505,7 +506,13 @@ func (s *DbTeamMemberStore) FindTeamMembersByUserID(ctx context.Context, userId 
 
 	return teamMembers, nil
 }
-
+func (s *DbTeamMemberStore) CreateTeamMember2(ctx context.Context, model *models.TeamMember) (*models.TeamMember, error) {
+	return repository.TeamMember.PostOne(
+		ctx,
+		s.db,
+		model,
+	)
+}
 func (s *DbTeamMemberStore) CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
 	teamMember := &models.TeamMember{
 		TeamID:           teamId,

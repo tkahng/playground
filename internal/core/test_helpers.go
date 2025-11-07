@@ -124,7 +124,13 @@ func CreateTeamAndMemberWithOptions(t testing.TB, app App, user *models.User, op
 	if err != nil {
 		t.Fatalf("Error creating team: %v", err)
 	}
-	member, err := app.Adapter().TeamMember().CreateTeamMember(ctx, team.ID, user.ID, option.role, option.billing)
+	member, err := app.Adapter().TeamMember().CreateTeamMember2(ctx, &models.TeamMember{
+		TeamID:           team.ID,
+		UserID:           types.Pointer(user.ID),
+		Role:             option.role,
+		HasBillingAccess: option.billing,
+		Active:           option.active,
+	})
 	if err != nil {
 		t.Fatalf("Error creating team member: %v", err)
 	}
@@ -195,11 +201,18 @@ func CreateTeamMemberWithOptions(t testing.TB, app App, teamID uuid.UUID, userId
 	option := &CreateTeamOptions{
 		role:    models.TeamMemberRoleOwner,
 		billing: true,
+		active:  true,
 	}
 	for _, optFunc := range optFunc {
 		optFunc(option)
 	}
-	member, err := app.Adapter().TeamMember().CreateTeamMember(ctx, teamID, userId, option.role, option.billing)
+	member, err := app.Adapter().TeamMember().CreateTeamMember2(ctx, &models.TeamMember{
+		TeamID:           teamID,
+		UserID:           types.Pointer(userId),
+		Role:             option.role,
+		HasBillingAccess: option.billing,
+		Active:           option.active,
+	})
 	if err != nil {
 		t.Fatalf("Error creating team member: %v", err)
 	}
