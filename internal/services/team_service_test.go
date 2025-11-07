@@ -12,52 +12,6 @@ import (
 	"github.com/tkahng/playground/internal/stores"
 )
 
-func TestTeamService_AddMember_Success(t *testing.T) {
-	adapterDecorator := stores.NewAdapterDecorators()
-	service := services.NewTeamService(adapterDecorator)
-
-	ctx := context.Background()
-	teamID := uuid.New()
-	userID := uuid.New()
-	role := models.TeamMemberRoleMember
-
-	expectedMember := &models.TeamMember{
-		ID:               uuid.New(),
-		TeamID:           teamID,
-		UserID:           &userID,
-		Role:             role,
-		HasBillingAccess: true,
-	}
-	adapterDecorator.TeamMemberFunc.CreateTeamMemberFunc = func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
-		return expectedMember, nil
-	}
-	// mockStore.On("CreateTeamMember", ctx, teamID, userID, role, true).Return(expectedMember, nil)
-
-	member, err := service.AddMember(ctx, teamID, userID, role, true)
-	assert.NoError(t, err)
-	assert.Equal(t, expectedMember, member)
-}
-
-func TestTeamService_AddMember_Error(t *testing.T) {
-	adapterDecorator := stores.NewAdapterDecorators()
-	service := services.NewTeamService(adapterDecorator)
-
-	ctx := context.Background()
-	teamID := uuid.New()
-	userID := uuid.New()
-	role := models.TeamMemberRoleMember
-
-	expectedErr := errors.New("failed to create member")
-	adapterDecorator.TeamMemberFunc.CreateTeamMemberFunc = func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
-		return nil, expectedErr
-	}
-	// mockStore.On("CreateTeamMember", ctx, teamID, userID, role, true).Return(nil, expectedErr)
-
-	member, err := service.AddMember(ctx, teamID, userID, role, true)
-	assert.Nil(t, member)
-	assert.Equal(t, expectedErr, err)
-}
-
 func TestTeamService_CreateTeam_SlugExists(t *testing.T) {
 	adapterDecorator := stores.NewAdapterDecorators()
 	service := services.NewTeamService(adapterDecorator)
