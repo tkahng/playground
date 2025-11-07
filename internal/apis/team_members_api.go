@@ -10,14 +10,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
-	"github.com/tkahng/playground/internal/middleware"
-	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/workers"
 
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 type TeamMember struct {
@@ -44,7 +43,6 @@ type FindTeamTeamMemberByIDInput struct {
 }
 
 func (api *Api) bindFindTeamMemberByID(aapi huma.API) {
-	middleware := middleware.TeamInfoFromTeamIDParam(api.app)
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -58,27 +56,35 @@ func (api *Api) bindFindTeamMemberByID(aapi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: humamiddleware.HumaChiMiddlewares(middleware),
+			Middlewares: huma.Middlewares{
+				api.Middlewares().GetRequireTeamInfo(),
+			},
 		},
 		func(ctx context.Context, input *FindTeamTeamMemberByIDInput) (*ApiOutput[*TeamMember], error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
 			if teamInfo == nil {
-				return nil, huma.Error401Unauthorized("no team info")
+				return nil, huma.Error404NotFound("team not found")
 			}
-			memberId, err := uuid.Parse(input.TeamMemberID)
-			if err != nil {
-				return nil, err
+
+			member := contextstore.GetContextTeamMember(ctx)
+			if member == nil {
+				return nil, huma.Error404NotFound("team member not found")
 			}
-			otherTeamInfo, err := api.App().Team().FindTeamInfoByMemberID(
-				ctx,
-				memberId,
-			)
-			if err != nil {
-				return nil, err
+			if member.TeamID != teamInfo.Team.ID {
+				return nil, huma.Error422UnprocessableEntity("team member's team_id does not match team_id in path")
 			}
-			teamMember := fromTeamMemberModel(&otherTeamInfo.Member)
-			teamMember.Team = fromTeamModel(&otherTeamInfo.Team)
-			teamMember.User = fromUserModel(&otherTeamInfo.User)
+			member.Team = &teamInfo.Team
+			if member.UserID != nil {
+				user, err := api.App().Adapter().User().FindUserByID(ctx, *member.UserID)
+				if err != nil {
+					return nil, err
+				}
+				if user != nil {
+					member.User = user
+				}
+			}
+
+			teamMember := fromTeamMemberModel(member)
 			return &ApiOutput[*TeamMember]{
 				Body: teamMember,
 			}, nil
@@ -89,8 +95,9 @@ func (api *Api) bindFindTeamMemberByID(aapi huma.API) {
 type FindTeamTeamMembersInput struct {
 	PaginatedInput
 	SortParams
-	Q      string `query:"q,omitempty" required:"false"`
-	TeamID string `path:"team-id" required:"true" format:"uuid"`
+	Q      string                    `query:"q,omitempty" required:"false"`
+	TeamID string                    `path:"team-id" required:"true" format:"uuid"`
+	Active types.OptionalParam[bool] `query:"active,omitempty" required:"false"`
 }
 
 func (api *Api) bindFindTeamTeamMembers(humaApi huma.API) {
@@ -107,6 +114,9 @@ func (api *Api) bindFindTeamTeamMembers(humaApi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Middlewares: huma.Middlewares{
+				api.Middlewares().GetRequireTeamInfo(),
+			},
 		},
 		func(ctx context.Context, input *FindTeamTeamMembersInput) (*ApiPaginatedOutput[*TeamMember], error) {
 			team := contextstore.GetContextTeam(ctx)
@@ -114,13 +124,10 @@ func (api *Api) bindFindTeamTeamMembers(humaApi huma.API) {
 				return nil, huma.Error404NotFound("team not found")
 			}
 			teamID := team.ID
-			info := contextstore.GetContextUserInfo(ctx)
-			if info == nil {
-				return nil, huma.Error401Unauthorized("unauthorized")
-			}
 			filter := &stores.TeamMemberFilter{}
 			filter.Page = input.Page
 			filter.PerPage = input.PerPage
+			filter.Active = input.Active
 			filter.SortBy = input.SortBy
 			filter.SortOrder = input.SortOrder
 			filter.TeamIds = []uuid.UUID{teamID}
@@ -199,8 +206,6 @@ type UpdateTeamsTeamMemberInput struct {
 }
 
 func (api *Api) UpdateTeamMemberBind(humaApi huma.API) {
-	teamInfo := api.Middlewares().GetTeamInfoFromUserAndMemberID()
-	ownerRole := api.Middlewares().GetTeamRequiredOwnerMember()
 	huma.Register(
 		humaApi,
 		huma.Operation{
@@ -215,8 +220,8 @@ func (api *Api) UpdateTeamMemberBind(humaApi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				teamInfo,
-				ownerRole,
+				api.Middlewares().GetRequireTeamInfo(),
+				api.Middlewares().GetTeamRequiredOwnerMember(),
 			},
 		},
 		func(ctx context.Context, input *UpdateTeamsTeamMemberInput) (*struct{}, error) {
@@ -285,7 +290,7 @@ func (api *Api) RemoveTeamMemberFromTeamBind(humaApi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				api.Middlewares().GetTeamInfoFromUserAndMemberID(),
+				api.Middlewares().GetRequireTeamInfo(),
 				api.Middlewares().GetTeamRequiredOwnerMember(),
 			},
 		},

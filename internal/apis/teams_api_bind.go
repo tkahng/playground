@@ -43,27 +43,7 @@ func bindTeamsApi(appApi *Api) {
 	appApi.bindUpdateTeam(teamsGroup)
 
 	// delete team
-	huma.Register(
-		teamsGroup,
-		huma.Operation{
-			OperationID: "delete-team",
-			Method:      http.MethodDelete,
-			Path:        "/teams/{team-id}",
-			Summary:     "delete-team",
-			Description: "delete a team by ID",
-			Tags:        []string{"Teams"},
-			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: huma.Middlewares{
-				appApi.Middlewares().GetTeamInfoFromTeamIDParam(),
-				appApi.Middlewares().GetTeamRequiredOwnerMember(),
-				appApi.Middlewares().GetTeamCanDelete(),
-			},
-		},
-		appApi.DeleteTeam,
-	)
+	appApi.bindDeleteTeam(teamsGroup)
 
 	// team invitations -----------------------------------------------------------------------------------------------------------
 
@@ -104,7 +84,7 @@ func bindTeamsApi(appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				appApi.Middlewares().GetTeamInfoFromTeamIDParam(),
+				appApi.Middlewares().GetRequireTeamInfo(),
 				appApi.Middlewares().GetTeamRequiredOwnerMember(),
 			},
 		},
@@ -127,7 +107,7 @@ func bindTeamsApi(appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				appApi.Middlewares().GetTeamInfoFromTeamIDParam(),
+				appApi.Middlewares().GetRequireTeamInfo(),
 			},
 		},
 		appApi.FindInvitations,
@@ -210,24 +190,7 @@ func bindTeamsApi(appApi *Api) {
 		appApi.GetUserTeamInvitations,
 	)
 
-	// find user team invitation by token
-	huma.Register(
-		teamsGroup,
-		huma.Operation{
-			OperationID: "find-user-team-invitation-by-token",
-			Method:      http.MethodGet,
-			Path:        "/team-invitations/token/{token}",
-			Summary:     "find-user-team-invitation-by-token",
-			Description: "find user team invitation by token",
-			Tags:        []string{"Team Invitations"},
-			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security:    []map[string][]string{{
-				// shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: huma.Middlewares{},
-		},
-		appApi.GetInvitationByToken,
-	)
+	appApi.BindGetInvitationByToken(teamsGroup)
 	appApi.bindTeamMembersSseEvents(teamsGroup)
 
 	appApi.bindFindTeamMembersNotifications(teamsGroup)

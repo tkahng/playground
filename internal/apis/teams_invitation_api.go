@@ -2,6 +2,7 @@ package apis
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -21,10 +22,7 @@ type InviteTeamMemberInput struct {
 	Body   InviteTeamMemberDto `json:"body" required:"true"`
 }
 
-func (api *Api) CreateInvitation(
-	ctx context.Context,
-	input *InviteTeamMemberInput,
-) (*struct{}, error) {
+func (api *Api) CreateInvitation(ctx context.Context, input *InviteTeamMemberInput) (*struct{}, error) {
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
@@ -55,10 +53,7 @@ type CheckValidInvitationInput struct {
 	Body CheckValidInvitationDto
 }
 
-func (api *Api) CheckValidInvitation(
-	ctx context.Context,
-	input *CheckValidInvitationInput,
-) (*struct{}, error) {
+func (api *Api) CheckValidInvitation(ctx context.Context, input *CheckValidInvitationInput) (*struct{}, error) {
 	// userInfo := contextstore.GetContextUserInfo(ctx)
 	// if userInfo == nil {
 	// 	return nil, huma.Error401Unauthorized("Unauthorized. No user info")
@@ -77,10 +72,7 @@ func (api *Api) CheckValidInvitation(
 	return nil, nil
 }
 
-func (api *Api) AcceptInvitation(
-	ctx context.Context,
-	input *CheckValidInvitationInput,
-) (*struct{}, error) {
+func (api *Api) AcceptInvitation(ctx context.Context, input *CheckValidInvitationInput) (*struct{}, error) {
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
@@ -97,10 +89,7 @@ func (api *Api) AcceptInvitation(
 	return nil, nil
 }
 
-func (api *Api) DeclineInvitation(
-	ctx context.Context,
-	input *CheckValidInvitationInput,
-) (*struct{}, error) {
+func (api *Api) DeclineInvitation(ctx context.Context, input *CheckValidInvitationInput) (*struct{}, error) {
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
@@ -121,10 +110,7 @@ type CancelInvitationInput struct {
 	InvitationID string `path:"invitation-id" required:"true" format:"uuid"`
 }
 
-func (api *Api) CencelInvitation(
-	ctx context.Context,
-	input *CancelInvitationInput,
-) (*struct{}, error) {
+func (api *Api) CencelInvitation(ctx context.Context, input *CancelInvitationInput) (*struct{}, error) {
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
@@ -202,10 +188,7 @@ func fromTeamInvitationModel(team *models.TeamInvitation) *TeamInvitation {
 		InviterMember:   fromTeamMemberModel(team.InviterMember),
 	}
 }
-func (api *Api) FindInvitations(
-	ctx context.Context,
-	input *FindInvitationsInput,
-) (*ApiPaginatedOutput[*TeamInvitation], error) {
+func (api *Api) FindInvitations(ctx context.Context, input *FindInvitationsInput) (*ApiPaginatedOutput[*TeamInvitation], error) {
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
@@ -288,10 +271,7 @@ type FindUserTeamInvitationsInput struct {
 	SortParams
 }
 
-func (api *Api) GetUserTeamInvitations(
-	ctx context.Context,
-	input *FindUserTeamInvitationsInput,
-) (*ApiPaginatedOutput[*TeamInvitation], error) {
+func (api *Api) GetUserTeamInvitations(ctx context.Context, input *FindUserTeamInvitationsInput) (*ApiPaginatedOutput[*TeamInvitation], error) {
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized. No user info")
@@ -335,55 +315,54 @@ type GetInvitationByTokenInput struct {
 	Token string `path:"token" required:"true"`
 }
 
-func (api *Api) GetInvitationByToken(
-	ctx context.Context,
-	input *GetInvitationByTokenInput,
-) (*ApiOutput[*TeamInvitation], error) {
-	// userInfo := contextstore.GetContextUserInfo(ctx)
-	// if userInfo == nil {
-	// 	return nil, huma.Error401Unauthorized("Unauthorized. no user info")
-	// }
-	invitation, err := api.App().TeamInvitation().GetInvitation(ctx, input.Token)
-	if err != nil {
-		return nil, err
-	}
-	if invitation == nil {
-		return nil, huma.Error404NotFound("invitation not found")
-	}
-	// if invitation.Email != userInfo.User.Email {
-	// 	return nil, huma.Error401Unauthorized("unauthorized. email not match")
-	// }
-	team, err := api.App().Adapter().TeamGroup().FindTeamByID(ctx, invitation.TeamID)
-	if err != nil {
-		return nil, err
-	}
-	invitation.Team = team
-	member, err := api.App().Adapter().TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
-		Ids: []uuid.UUID{invitation.InviterMemberID},
-	})
-	if err != nil {
-		return nil, err
-	}
-	invitation.InviterMember = member
-	if member != nil {
-		if member.UserID != nil {
-			user, err := api.App().Adapter().User().FindUserByID(ctx, *member.UserID)
+func (api *Api) BindGetInvitationByToken(aapi huma.API) {
+	huma.Register(
+		aapi,
+		huma.Operation{
+			OperationID: "find-user-team-invitation-by-token",
+			Method:      http.MethodGet,
+			Path:        "/team-invitations/token/{token}",
+			Summary:     "find-user-team-invitation-by-token",
+			Description: "find user team invitation by token",
+			Tags:        []string{"Team Invitations"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security:    []map[string][]string{{
+				// shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{},
+		},
+		func(ctx context.Context, input *GetInvitationByTokenInput) (*ApiOutput[*TeamInvitation], error) {
+			invitation, err := api.App().TeamInvitation().GetInvitation(ctx, input.Token)
 			if err != nil {
 				return nil, err
 			}
-			invitation.InviterMember.User = user
-		}
-	}
-	return &ApiOutput[*TeamInvitation]{
-		Body: fromTeamInvitationModel(invitation),
-	}, nil
+			if invitation == nil {
+				return nil, huma.Error404NotFound("invitation not found")
+			}
+			team, err := api.App().Adapter().TeamGroup().FindTeamByID(ctx, invitation.TeamID)
+			if err != nil {
+				return nil, err
+			}
+			invitation.Team = team
+			member, err := api.App().Adapter().TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
+				Ids: []uuid.UUID{invitation.InviterMemberID},
+			})
+			if err != nil {
+				return nil, err
+			}
+			invitation.InviterMember = member
+			if member != nil {
+				if member.UserID != nil {
+					user, err := api.App().Adapter().User().FindUserByID(ctx, *member.UserID)
+					if err != nil {
+						return nil, err
+					}
+					invitation.InviterMember.User = user
+				}
+			}
+			return &ApiOutput[*TeamInvitation]{
+				Body: fromTeamInvitationModel(invitation),
+			}, nil
+		},
+	)
 }
-
-// func (
-// 	api *Api,
-// ) TeamNotificationSse(
-// 	ctx context.Context,
-// 	input *TeamNotificationSseInput,
-// ) (*ApiOutput[*TeamNotification], error) {
-// 	return nil, nil
-// }
