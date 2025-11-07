@@ -1,45 +1,43 @@
-package shared
+package http
 
 import (
 	"net/http"
-
-	appHttp "github.com/tkahng/playground/internal/tools/http"
 )
 
 var (
-	ErrUserInfoNotFound = &appHttp.ErrorModel{
+	ErrUserInfoNotFound = &ErrorModel{
 		Status: http.StatusUnauthorized,
 		Detail: "you are not signed in",
 	}
-	ErrUserNotFound = &appHttp.ErrorModel{
+	ErrUserNotFound = &ErrorModel{
 		Status: http.StatusNotFound,
 		Detail: "user not found",
 	}
-	ErrUserExists = &appHttp.ErrorModel{
+	ErrUserExists = &ErrorModel{
 		Status: 409,
 		Detail: "user already exists",
 	}
-	ErrInvalidToken = &appHttp.ErrorModel{
+	ErrInvalidToken = &ErrorModel{
 		Status: 401,
 		Detail: "invalid token",
 	}
-	ErrTokenExpired = &appHttp.ErrorModel{
+	ErrTokenExpired = &ErrorModel{
 		Status: 401,
 		Detail: "token expired",
 	}
-	ErrTokenNotFound = &appHttp.ErrorModel{
+	ErrTokenNotFound = &ErrorModel{
 		Status: http.StatusNotFound,
 		Detail: "token not found",
 	}
-	ErrPasswordIncorrect = &appHttp.ErrorModel{
+	ErrPasswordIncorrect = &ErrorModel{
 		Status: 401,
 		Detail: "password is incorrect",
 	}
-	ErrAccountNotFound = &appHttp.ErrorModel{
+	ErrAccountNotFound = &ErrorModel{
 		Status: http.StatusNotFound,
 		Detail: "account not found",
 	}
-	ErrAccountProviderConflict = &appHttp.ErrorModel{
+	ErrAccountProviderConflict = &ErrorModel{
 		Status: 409,
 		Detail: "account provider conflict",
 	}
