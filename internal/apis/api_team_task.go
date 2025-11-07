@@ -301,19 +301,14 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	outputTask := fromModelTask(task)
-	if outputTask != nil {
-		if outputTask.AssigneeID != nil {
-			teamMemberId := *outputTask.AssigneeID
-			taskTeamInfo, err := api.app.Team().FindTeamInfoByMemberID(ctx, teamMemberId)
-			if err != nil {
-				return nil, err
-			}
-			outputTask.Assignee = fromTeamMemberModel(&taskTeamInfo.Member)
-			outputTask.Assignee.User = fromUserModel(&taskTeamInfo.User)
-			outputTask.Assignee.Team = fromTeamModel(&taskTeamInfo.Team)
-		}
+	team, err := api.app.Adapter().TeamGroup().FindTeamByID(ctx, task.TeamID)
+	if err != nil {
+		return nil, err
 	}
+	if team == nil {
+		return nil, huma.Error404NotFound("team not found")
+	}
+	outputTask := fromModelTask(task)
 	return &TaskResponse{
 		Body: outputTask,
 	}, nil
