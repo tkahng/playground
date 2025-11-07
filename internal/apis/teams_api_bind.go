@@ -200,4 +200,8 @@ func bindTeamsApi(appApi *Api) {
 	appApi.bindDeleteTeamMembersNotifications(teamsGroup)
 
 	appApi.bindFindTeamMemberByID(teamsGroup)
+
+	appApi.UpdateTeamMemberBind(teamsGroup)
+
+	appApi.DeactivateTeamMemberFromBind(teamsGroup)
 }

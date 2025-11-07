@@ -269,12 +269,12 @@ type DeactivateTeamMemberInput struct {
 	TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
 }
 
-func (api *Api) DeactivateTeamMemberFromTeamBind(humaApi huma.API) {
+func (api *Api) DeactivateTeamMemberFromBind(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
 			OperationID: "deactivate-team-member",
-			Method:      http.MethodDelete,
+			Method:      http.MethodPost,
 			Path:        "/team-members/{team-member-id}/deactivate",
 			Summary:     "deactivate-team-member",
 			Description: "deactivate a team member",
