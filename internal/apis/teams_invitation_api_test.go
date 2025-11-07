@@ -3,6 +3,7 @@ package apis_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"net/http"
@@ -19,6 +20,7 @@ import (
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/notification"
+	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/store"
 	"github.com/tkahng/playground/internal/tools/utils"
@@ -237,6 +239,65 @@ func TestApi_AcceptInvitation(t *testing.T) {
 				}
 				paymentClient := core.ExtractTestPaymentClient(t, app)
 				assert.Len(t, paymentClient.SubscriptionItems, 0)
+			},
+		},
+		{
+			Name:           "fail: unknown error. roll back everything",
+			Method:         http.MethodPost,
+			URL:            "/team-invitations/accept",
+			ExpectedStatus: http.StatusInternalServerError,
+			ExpectedContent: []string{
+				"unknown error",
+			},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				ctx := t.Context()
+
+				core.CreateProductsAndPrices(t, app)
+				// init team
+				teamInfo := CreateTeamAndOwner(t, app)
+				// send invitation and get token
+				err := app.TeamInvitation().CreateInvitation(
+					ctx,
+					teamInfo.Team.ID,
+					teamInfo.User.ID,
+					inviteeEmail,
+					models.TeamMemberRoleMember,
+					true,
+				)
+				assert.NoError(t, err)
+				if err := app.JobManager().PollOnce(ctx); err != nil {
+					t.Fatal(err)
+				}
+				token := ExtractFistMessageTokenFromMailer(t, app)
+
+				// create invitee user
+				otherUserInfo := core.CreateUserWithOptions(t, app, core.UserWithEmail(inviteeEmail), core.UserWithVerifiedNow())
+				body := apis.CheckValidInvitationDto{
+					Token: token,
+				}
+				scenario.Body = JsonToReader(t, body)
+				header := core.CreateTokenHeader(t, app, otherUserInfo.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+				decorator, ok := app.Adapter().TeamInvitation().(*stores.TeamInvitationStoreDecorator)
+				assert.True(t, ok)
+				decorator.UpdateInvitationFunc = func(ctx context.Context, invitation *models.TeamInvitation) error {
+					return errors.New("unknown error")
+				}
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				ctx := t.Context()
+				for range 5 {
+					err := app.JobManager().PollOnce(ctx)
+					assert.NoError(t, err)
+				}
+				paymentClient := core.ExtractTestPaymentClient(t, app)
+				assert.Len(t, paymentClient.SubscriptionItems, 0)
+				memberCount := repository.MustCountAllCtx(t, ctx, repository.TeamMember, app.Db(), nil)
+				assert.Equal(t, int64(1), memberCount)
+				invitation := repository.MustFindOneCtx(t, ctx, repository.TeamInvitation, app.Db(), nil)
+				assert.NotNil(t, invitation)
+				assert.Equal(t, models.TeamInvitationStatusPending, invitation.Status)
+				assert.Equal(t, inviteeEmail, invitation.Email)
 			},
 		},
 	}

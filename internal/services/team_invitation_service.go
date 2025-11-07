@@ -135,28 +135,27 @@ func (i *InvitationService) CheckValidInvitation(
 
 // AcceptInvitation implements TeamInvitationService.
 func (i *InvitationService) AcceptInvitation(
-	ctx context.Context,
+	ctx2 context.Context,
 	userId uuid.UUID,
 	invitationToken string,
 ) error {
-	teamMember := &models.TeamMember{}
-	err := i.adapter.TeamInvitation().AcceptInvitation(ctx, i.adapter, userId, invitationToken, teamMember)
-	if err != nil {
-		return err
-	}
-	err = i.jobService.EnqueueRefreshSubscriptionQuantityJob(ctx, &workers.RefreshSubscriptionQuantityJobArgs{
-		TeamID: teamMember.TeamID,
+	return i.adapter.RunInTxCtx(ctx2, func(txCtx context.Context) error {
+		teamMember := &models.TeamMember{}
+		err := i.adapter.TeamInvitation().AcceptInvitation(txCtx, i.adapter, userId, invitationToken, teamMember)
+		if err != nil {
+			return err
+		}
+		err = i.jobService.EnqueueRefreshSubscriptionQuantityJob(txCtx, &workers.RefreshSubscriptionQuantityJobArgs{
+			TeamID: teamMember.TeamID,
+		})
+		if err != nil {
+			return err
+		}
+		return i.jobService.EnqueueTeamMemberAddedJob(txCtx, &workers.NewMemberNotificationJobArgs{
+			TeamMemberID: teamMember.ID,
+		})
 	})
-	if err != nil {
-		return err
-	}
-	err = i.jobService.EnqueueTeamMemberAddedJob(ctx, &workers.NewMemberNotificationJobArgs{
-		TeamMemberID: teamMember.ID,
-	})
-	if err != nil {
-		return err
-	}
-	return nil
+
 }
 
 // CreateInvitation implements TeamInvitationService.
