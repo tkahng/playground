@@ -15,6 +15,20 @@ import (
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
+func RequireTeamInfo() HttpMiddelwareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			rawCtx := r.Context()
+			teamInfo := contextstore.GetContextTeamInfo(rawCtx)
+			if teamInfo == nil {
+				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "team info not found")
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // TeamInfoFromContext creates a [models.TeamInfoModel] from values found in the context and adds it to the context.
 //
 //   - it calls [contextstore.GetContextUserInfo] for the user
@@ -571,7 +585,7 @@ func RequireTeamMemberRolesMiddleware(roles ...models.TeamMemberRole) HttpMiddel
 					w,
 					r,
 					http.StatusForbidden,
-					fmt.Sprintf("You do not have the required team member roles: %v", roles),
+					"You do not have the required team info",
 				)
 			}
 		})

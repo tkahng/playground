@@ -14,6 +14,8 @@ type ApiMiddlewares struct {
 	selectCustomerFromUser HumaMiddlewareFunc
 	selectCustomerFromTeam HumaMiddlewareFunc
 	// team info middlewares
+	requireTeamInfo             HumaMiddlewareFunc
+	teamInfoFromContext         HumaMiddlewareFunc
 	teamInfoFromTeamIDParam     HumaMiddlewareFunc
 	teamInfoFromTeamSlug        HumaMiddlewareFunc
 	teamInfoFromUserAndMemberID HumaMiddlewareFunc
@@ -30,6 +32,14 @@ type ApiMiddlewares struct {
 	requireAuth HumaMiddlewareFunc
 	// common middlewares
 	recoverer HumaMiddlewareFunc
+}
+
+func (a *ApiMiddlewares) GetRequireTeamInfo() HumaMiddlewareFunc {
+	return a.requireTeamInfo
+}
+
+func (a *ApiMiddlewares) GetTeamInfoFromContext() HumaMiddlewareFunc {
+	return a.teamInfoFromContext
 }
 
 func (a *ApiMiddlewares) GetMemberIdBelongsToUser() HumaMiddlewareFunc {
@@ -90,6 +100,8 @@ func NewApiMiddlewares(app core.App) *ApiMiddlewares {
 		selectCustomerFromUser: HumaChiMiddleware(middleware.SelectCustomerFromUser(app)),
 		selectCustomerFromTeam: HumaChiMiddleware(middleware.SelectCustomerFromTeam(app)),
 		// team info middlewares
+		requireTeamInfo:             HumaChiMiddleware(middleware.RequireTeamInfo()),
+		teamInfoFromContext:         HumaChiMiddleware(middleware.TeamInfoFromContext(app)),
 		teamInfoFromTeamIDParam:     HumaChiMiddleware(middleware.TeamInfoFromTeamIDParam(app)),
 		teamInfoFromTeamSlug:        HumaChiMiddleware(middleware.TeamInfoFromTeamSlug(app)),
 		teamInfoFromUserAndMemberID: HumaChiMiddleware(middleware.TeamInfoFromUserAndMemberID(app)),
