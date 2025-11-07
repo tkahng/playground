@@ -39,12 +39,12 @@ export function AssigneeComboBox({
   const { data, isLoading, error } = useQuery({
     queryKey: ["team-members", teamMember?.team_id],
     queryFn: async () => {
-      return await getTeamTeamMembers(
-        user!.tokens.access_token,
-        teamMember!.team_id,
-        0,
-        50
-      );
+      return await getTeamTeamMembers({
+        token: user!.tokens.access_token,
+        teamId: teamMember!.team_id,
+        page: 0,
+        perPage: 50,
+      });
     },
     enabled: !!teamMember?.team_id && !!user?.tokens.access_token && props.open,
   });

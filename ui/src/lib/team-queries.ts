@@ -1,32 +1,6 @@
 import { client } from "@/lib/client";
 import { components } from "@/schema";
 
-export const getTeamMembers = async (
-  accessToken: string,
-  teamId: string,
-  page?: number,
-  perPage?: number
-) => {
-  const { data, error } = await client.GET("/api/teams/{team-id}/members", {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-    params: {
-      path: {
-        "team-id": teamId,
-      },
-      query: {
-        page,
-        per_page: perPage,
-      },
-    },
-  });
-  if (error) {
-    throw error;
-  }
-  return data;
-};
-
 export const createTeam = async (
   accessToken: string,
   args: components["schemas"]["CreateTeamInput"]
@@ -77,13 +51,21 @@ export const getTeamBySlug = async (token: string, slug: string) => {
   return data;
 };
 
-export const getTeamTeamMembers = async (
-  token: string,
-  teamId: string,
-  page: number,
-  perPage: number,
-  search?: string
-) => {
+export const getTeamTeamMembers = async ({
+  token,
+  teamId,
+  page = 0,
+  perPage = 10,
+  search,
+  active = true,
+}: {
+  token: string;
+  teamId: string;
+  page?: number;
+  perPage?: number;
+  search?: string;
+  active?: boolean;
+}) => {
   const { data, error } = await client.GET("/api/teams/{team-id}/members", {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -96,6 +78,7 @@ export const getTeamTeamMembers = async (
         page,
         per_page: perPage,
         q: search,
+        active,
       },
     },
   });

@@ -7587,6 +7587,7 @@ export interface operations {
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
                 q?: string;
+                active?: boolean;
             };
             header?: never;
             path: {
