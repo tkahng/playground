@@ -4,22 +4,20 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/tkahng/playground/internal/middleware"
-	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/shared"
 )
 
 func bindTeamsApi(appApi *Api) {
-	app := appApi.App()
+	// var app core.App
 	teamsGroup := huma.NewGroup(appApi.Api())
-	teamsGroup.UseMiddleware(
-		humamiddleware.HumaChiMiddlewares(
-			middleware.TeamFromParam(app),
-			middleware.TeamFromParamSlug(app),
-			middleware.TeamMemberFromParam(app),
-			middleware.TeamInfoFromContext(app),
-		)...,
-	)
+	// teamsGroup.UseMiddleware(
+	// 	humamiddleware.HumaChiMiddlewares(
+	// 		middleware.TeamFromParam(app),
+	// 		middleware.TeamFromParamSlug(app),
+	// 		middleware.TeamMemberFromParam(app),
+	// 		middleware.TeamInfoFromContext(app),
+	// 	)...,
+	// )
 	// get team members
 	//  /api/team-members
 
