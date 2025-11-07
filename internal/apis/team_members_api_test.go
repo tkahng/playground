@@ -320,6 +320,31 @@ func TestApi_UpdateTeamMember(t *testing.T) {
 				scenario.Headers = append(scenario.Headers, header)
 			},
 		},
+		{
+			Name:           "fail: does not belong to same team as member",
+			Method:         http.MethodPut,
+			URL:            "/team-members/{team-member-id}",
+			ExpectedStatus: http.StatusUnauthorized,
+			ExpectedContent: []string{
+				"team info not found. you are not a member of the team related to this request",
+			},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				team1 := CreateTeamAndOwner(t, app)
+				team1Member1 := CreateTeamMember(t, app, &team1.Team, core.TeamWithRole(models.TeamMemberRoleMember))
+				team2 := CreateTeamAndOwner(t, app)
+				assert.Equal(t, models.TeamMemberRoleMember, team1Member1.Member.Role)
+				assert.Equal(t, models.TeamMemberRoleOwner, team2.Member.Role)
+				scenario.Store.Set("team1", team1)
+				scenario.Store.Set("team1Member1", team1Member1)
+				scenario.URL = fmt.Sprintf("/team-members/%s", team1Member1.Member.ID.String())
+				body := apis.UpdateTeamMemberDto{
+					Role: apis.TeamMemberRoleGuest,
+				}
+				scenario.Body = JsonToReader(t, body)
+				header := core.CreateTokenHeader(t, app, team2.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+		},
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
