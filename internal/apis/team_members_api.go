@@ -251,44 +251,33 @@ func (api *Api) UpdateTeamMemberBind(humaApi huma.API) {
 			// check if the member can be deleted
 			//
 			if !member.Active { // already deleted
-				return nil, nil
+				return nil, huma.Error400BadRequest("cannot update inactive user.")
 			}
 			// update member
-			txErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
-				member.Active = false
-				_, err = api.App().Adapter().TeamMember().UpdateTeamMember(ctx, member)
-				if err != nil {
-					return err
-				}
-				err = api.App().JobService().EnqueueRefreshSubscriptionQuantityJob(ctx, &workers.RefreshSubscriptionQuantityJobArgs{
-					TeamID: member.TeamID,
-				})
-				if err != nil {
-					return err
-				}
-				return nil
-			})
-			if txErr != nil {
-				return nil, txErr
+			member.Role = models.TeamMemberRole(input.Body.Role)
+			_, err = api.App().Adapter().TeamMember().UpdateTeamMember(ctx, member)
+			if err != nil {
+				return nil, err
 			}
+
 			return nil, nil
 		},
 	)
 }
 
-type RemoveTeamMemberInput struct {
+type DeactivateTeamMemberInput struct {
 	TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
 }
 
-func (api *Api) RemoveTeamMemberFromTeamBind(humaApi huma.API) {
+func (api *Api) DeactivateTeamMemberFromTeamBind(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
-			OperationID: "remove-team-member",
+			OperationID: "deactivate-team-member",
 			Method:      http.MethodDelete,
-			Path:        "/team-members/{team-member-id}",
-			Summary:     "remove-team-member",
-			Description: "remove a team member",
+			Path:        "/team-members/{team-member-id}/deactivate",
+			Summary:     "deactivate-team-member",
+			Description: "deactivate a team member",
 			Tags:        []string{"Team Members"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security: []map[string][]string{{
@@ -318,19 +307,18 @@ func (api *Api) RemoveTeamMemberFromTeamBind(humaApi huma.API) {
 			if member == nil {
 				return nil, huma.Error404NotFound("team member not found")
 			}
-			// check if the member can be deleted
-			//
-			if !member.Active { // already deleted
+			// check if the member can be deactivated
+			if !member.Active { // already deactivated
 				return nil, nil
 			}
 			// update member
 			txErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
 				member.Active = false
-				_, err = api.App().Adapter().TeamMember().UpdateTeamMember(ctx, member)
+				_, err = api.App().Adapter().TeamMember().UpdateTeamMember(txCtx, member)
 				if err != nil {
 					return err
 				}
-				err = api.App().JobService().EnqueueRefreshSubscriptionQuantityJob(ctx, &workers.RefreshSubscriptionQuantityJobArgs{
+				err = api.App().JobService().EnqueueRefreshSubscriptionQuantityJob(txCtx, &workers.RefreshSubscriptionQuantityJobArgs{
 					TeamID: member.TeamID,
 				})
 				if err != nil {

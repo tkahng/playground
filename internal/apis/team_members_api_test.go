@@ -2,6 +2,7 @@ package apis_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -10,10 +11,13 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/notification"
 	"github.com/tkahng/playground/internal/test"
 )
 
@@ -259,4 +263,98 @@ func TestApi_FindTeamTeamMembers(t *testing.T) {
 			tt.Test(t)
 		}
 	})
+}
+
+func TestApi_UpdateTeamMember(t *testing.T) {
+	inviteeEmail := "VY7o1@example.com"
+	tests := []ApiScenario{
+		{
+			Name:           "success: accept invitation",
+			Method:         http.MethodPost,
+			URL:            "/team-invitations/accept",
+			ExpectedStatus: http.StatusNoContent,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				ctx := t.Context()
+				core.CreateProductsAndPrices(t, app)
+				// init team
+				teamInfo := CreateTeamAndOwner(t, app)
+				sub := CreateTeamSubscription(t, app, teamInfo)
+				scenario.Store.Set("teamInfo", teamInfo)
+				scenario.Store.Set("subscription", sub)
+				// send invitation and get token
+				err := app.TeamInvitation().CreateInvitation(
+					ctx,
+					teamInfo.Team.ID,
+					teamInfo.User.ID,
+					inviteeEmail,
+					models.TeamMemberRoleMember,
+					true,
+				)
+				assert.NoError(t, err)
+				if err := app.JobManager().PollOnce(ctx); err != nil {
+					t.Fatal(err)
+				}
+				token := ExtractFistMessageTokenFromMailer(t, app)
+
+				// create invitee user
+				inviteeUserInfo := core.CreateUserWithOptions(t, app, core.UserWithEmail(inviteeEmail), core.UserWithVerifiedNow())
+				body := apis.CheckValidInvitationDto{
+					Token: token,
+				}
+				scenario.Body = JsonToReader(t, body)
+				header := core.CreateTokenHeader(t, app, inviteeUserInfo.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				ctx := t.Context()
+				for range 5 {
+					err := app.JobManager().PollOnce(ctx)
+					assert.NoError(t, err)
+				}
+				paymentClient := core.ExtractTestPaymentClient(t, app)
+				sub := scenario.Store.Get("subscription").(*models.StripeSubscription)
+				item := paymentClient.GetUpdateSubscriptionInput(func(si *stripe.SubscriptionItem) bool {
+					if si.ID == sub.ItemID {
+						return true
+					}
+					return false
+				})
+				count := repository.MustCountAllCtx(t, ctx, repository.TeamMember, app.Db(), nil)
+				assert.NotNil(t, item)
+				assert.Equal(t, count, item.Quantity)
+				assert.Equal(t, sub.PriceID, item.Price.ID)
+				// notifications
+				teamInfo := scenario.Store.Get("teamInfo").(*models.TeamInfoModel)
+				notifications := repository.MustFindWithOptionsCtx(t, ctx, repository.Notification, app.Db())
+				assert.Len(t, notifications, 1)
+				noti := notifications[0]
+
+				payloadString := noti.Payload
+				var payload notification.NotificationPayload[notification.NewTeamMemberNotificationData]
+				err := json.Unmarshal(payloadString, &payload)
+
+				assert.NoError(t, err)
+				assert.Equal(t, teamInfo.Team.ID, payload.Data.TeamID)
+				assert.Equal(t, &teamInfo.Member.ID, noti.TeamMemberID)
+
+				member := repository.MustFindOneCtx(t, ctx, repository.TeamMember, app.Db(), &map[string]any{
+					"user": map[string]any{
+						"email": map[string]any{
+							"_eq": inviteeEmail,
+						},
+					},
+				})
+				assert.Equal(t, member.ID, payload.Data.TeamMemberID)
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *TestApi {
+				return testApi
+			}
+			tt.Test(t)
+		})
+	}
 }
