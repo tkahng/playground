@@ -14,7 +14,7 @@ func bindTaskApi(appApi *Api) {
 	// checkTaskOwnerMiddleware := middleware.CheckTaskOwnerMiddleware(api, appApi.App())
 	teamFromTask := humamiddleware.HumaChiMiddleware(middleware.TeamInfoFromTask(appApi.App()))
 	teamFromProject := humamiddleware.HumaChiMiddleware(middleware.TeamInfoFromTaskProject(appApi.App()))
-	teamFromPath := humamiddleware.HumaChiMiddleware(middleware.TeamInfoFromParam(appApi.App()))
+	teamFromPath := humamiddleware.HumaChiMiddleware(middleware.TeamInfoFromTeamIDParam(appApi.App()))
 
 	taskGroup := huma.NewGroup(api)
 	// taskGroup.UseMiddleware(checkTaskOwnerMiddleware)

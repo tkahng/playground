@@ -504,9 +504,9 @@ func TeamInfoFromContext(app core.App) HttpMiddelwareFunc {
 	}
 }
 
-// TeamInfoFromParam captures the {team-id} path param, and along with the user info, queries the teamInfo.
+// TeamInfoFromTeamIDParam captures the {team-id} path param, and along with the user info, queries the teamInfo.
 // If the user has membership in the team of the task project, that teamInfo is added to the context, otherwise it returns an error
-func TeamInfoFromParam(app core.App) HttpMiddelwareFunc {
+func TeamInfoFromTeamIDParam(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()

@@ -44,7 +44,7 @@ type FindTeamTeamMemberByIDInput struct {
 }
 
 func (api *Api) bindFindTeamMemberByID(aapi huma.API) {
-	middleware := middleware.TeamInfoFromParam(api.app)
+	middleware := middleware.TeamInfoFromTeamIDParam(api.app)
 	huma.Register(
 		aapi,
 		huma.Operation{

@@ -199,7 +199,7 @@ func (a *Api) bindGetTeamStripeSubscriptions(stripeGroup huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				a.Middlewares().GetTeamInfoFromParam(),
+				a.Middlewares().GetTeamInfoFromTeamIDParam(),
 				a.Middlewares().GetSelectCustomerFromTeam(),
 			},
 		},

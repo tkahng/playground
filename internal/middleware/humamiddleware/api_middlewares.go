@@ -14,7 +14,7 @@ type ApiMiddlewares struct {
 	selectCustomerFromUser HumaMiddlewareFunc
 	selectCustomerFromTeam HumaMiddlewareFunc
 	// team info middlewares
-	teamInfoFromParam           HumaMiddlewareFunc
+	teamInfoFromTeamIDParam     HumaMiddlewareFunc
 	teamInfoFromTeamSlug        HumaMiddlewareFunc
 	teamInfoFromUserAndMemberID HumaMiddlewareFunc
 	teamInfoFromTask            HumaMiddlewareFunc
@@ -72,8 +72,8 @@ func (a *ApiMiddlewares) GetTeamInfoFromTeamSlug() HumaMiddlewareFunc {
 	return a.teamInfoFromTeamSlug
 }
 
-func (a *ApiMiddlewares) GetTeamInfoFromParam() HumaMiddlewareFunc {
-	return a.teamInfoFromParam
+func (a *ApiMiddlewares) GetTeamInfoFromTeamIDParam() HumaMiddlewareFunc {
+	return a.teamInfoFromTeamIDParam
 }
 
 func (a *ApiMiddlewares) GetSelectCustomerFromTeam() HumaMiddlewareFunc {
@@ -90,7 +90,7 @@ func NewApiMiddlewares(app core.App) *ApiMiddlewares {
 		selectCustomerFromUser: HumaChiMiddleware(middleware.SelectCustomerFromUser(app)),
 		selectCustomerFromTeam: HumaChiMiddleware(middleware.SelectCustomerFromTeam(app)),
 		// team info middlewares
-		teamInfoFromParam:           HumaChiMiddleware(middleware.TeamInfoFromParam(app)),
+		teamInfoFromTeamIDParam:     HumaChiMiddleware(middleware.TeamInfoFromTeamIDParam(app)),
 		teamInfoFromTeamSlug:        HumaChiMiddleware(middleware.TeamInfoFromTeamSlug(app)),
 		teamInfoFromUserAndMemberID: HumaChiMiddleware(middleware.TeamInfoFromUserAndMemberID(app)),
 		teamInfoFromTask:            HumaChiMiddleware(middleware.TeamInfoFromTask(app)),

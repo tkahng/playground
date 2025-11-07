@@ -41,7 +41,7 @@ func (a *Api) bindCreateTeamCheckoutSession(stripeGroup huma.API) {
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
 			Middlewares: huma.Middlewares{
-				a.Middlewares().GetTeamInfoFromParam(),
+				a.Middlewares().GetTeamInfoFromTeamIDParam(),
 				a.Middlewares().GetSelectCustomerFromTeam(),
 			},
 		},
@@ -161,7 +161,7 @@ func (a *Api) bindStripeTeamBillingPortal(stripeGroup huma.API) {
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
 			Middlewares: huma.Middlewares{
-				a.Middlewares().GetTeamInfoFromParam(),
+				a.Middlewares().GetTeamInfoFromTeamIDParam(),
 				a.Middlewares().GetSelectCustomerFromTeam(),
 			},
 		},

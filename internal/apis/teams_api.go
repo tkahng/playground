@@ -364,7 +364,7 @@ func (api *Api) bindUpdateTeam(humaApi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				api.Middlewares().GetTeamInfoFromParam(),
+				api.Middlewares().GetTeamInfoFromTeamIDParam(),
 				api.Middlewares().GetTeamRequiredOwnerMember(),
 			},
 		},
@@ -443,7 +443,7 @@ func (api *Api) bindGetTeam(humaApi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				api.Middlewares().GetTeamInfoFromParam(),
+				api.Middlewares().GetTeamInfoFromTeamIDParam(),
 				api.Middlewares().GetTeamRequiredAnyMember(),
 			},
 		},
