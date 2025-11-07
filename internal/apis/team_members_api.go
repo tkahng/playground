@@ -95,6 +95,7 @@ func (api *Api) bindFindTeamMemberByID(aapi huma.API) {
 type FindTeamTeamMembersInput struct {
 	PaginatedInput
 	SortParams
+	Roles  []TeamMemberRole          `query:"roles,omitempty" required:"false" minimum:"1" maximum:"100" enum:"owner,member,guest"`
 	Q      string                    `query:"q,omitempty" required:"false"`
 	TeamID string                    `path:"team-id" required:"true" format:"uuid"`
 	Active types.OptionalParam[bool] `query:"active,omitempty" required:"false"`
@@ -132,6 +133,9 @@ func (api *Api) bindFindTeamTeamMembers(humaApi huma.API) {
 			filter.SortOrder = input.SortOrder
 			filter.TeamIds = []uuid.UUID{teamID}
 			filter.Q = input.Q
+			filter.Roles = mapper.Map(input.Roles, func(role TeamMemberRole) models.TeamMemberRole {
+				return models.TeamMemberRole(role)
+			})
 			members, err := api.App().Adapter().TeamMember().FindTeamMembers(ctx, filter)
 			if err != nil {
 				return nil, err
@@ -142,6 +146,7 @@ func (api *Api) bindFindTeamTeamMembers(humaApi huma.API) {
 					if member == nil {
 						continue
 					}
+					member.Team = team
 					if member.UserID == nil {
 						continue
 					}

@@ -289,7 +289,7 @@ func (s *DbTeamMemberStore) sortQuery(qs squirrel.SelectBuilder, filter Sortable
 	} else if sortBy == "team.name" {
 		qs = qs.OrderBy("org.teams.name " + strings.ToUpper(sortOrder))
 	} else if sortBy == "user.email" {
-		qs = qs.OrderBy("users.email " + strings.ToUpper(sortOrder))
+		qs = qs.OrderBy("auth.users.email " + strings.ToUpper(sortOrder))
 	} else {
 		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.TeamMemberBuilder.FieldNames())
 	}

@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/test"
 )
 
@@ -109,4 +112,151 @@ func TestApi_FindTeamMemberByID(t *testing.T) {
 		}
 	})
 
+}
+func TestApi_FindTeamTeamMembers(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := SetupApi(t, ctx, db)
+		team1 := CreateTeamAndOwner(t, testApi.App)
+		team1Member1 := CreateTeamMember(t, testApi.App, &team1.Team)
+		team1Member2 := CreateTeamMember(t, testApi.App, &team1.Team, core.TeamWithActive(false))
+		team1Member3 := CreateTeamMember(t, testApi.App, &team1.Team, core.TeamWithRole(models.TeamMemberRoleGuest))
+		// testMailer := ExtractTestMailer(t, testApi.App)
+		tests := []ApiScenario{
+			{
+				Name:           "success: team1 owner find everyone",
+				Method:         http.MethodGet,
+				URL:            "/teams/{team-id}/members",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+					scenario.Headers = []string{tokenHeader}
+					scenario.URL = fmt.Sprintf("/teams/%s/members", team1.Team.ID.String())
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
+					allTeamMemberIds := []uuid.UUID{team1.Member.ID, team1Member1.Member.ID, team1Member2.Member.ID, team1Member3.Member.ID}
+					test.TestSliceEveryFunc(t, "something", result.Data, func(member *apis.TeamMember) bool {
+						teamMatch := member.TeamID == team1.Team.ID
+						isFound := slices.Contains(allTeamMemberIds, member.ID)
+						return teamMatch && isFound
+					})
+				},
+			},
+			{
+				Name:           "success: team1 owner find active",
+				Method:         http.MethodGet,
+				URL:            "/teams/{team-id}/members",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+					scenario.Headers = []string{tokenHeader}
+					scenario.URL = fmt.Sprintf("/teams/%s/members?active=true", team1.Team.ID.String())
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
+					allTeamMemberIds := []uuid.UUID{team1.Member.ID, team1Member1.Member.ID, team1Member3.Member.ID}
+					test.TestSliceEveryFunc(t, "something", result.Data, func(member *apis.TeamMember) bool {
+						teamMatch := member.TeamID == team1.Team.ID
+						isFound := slices.Contains(allTeamMemberIds, member.ID)
+						return teamMatch && isFound
+					})
+				},
+			},
+			{
+				Name:           "success: team1 owner find active guest, member",
+				Method:         http.MethodGet,
+				URL:            "/teams/{team-id}/members",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+					scenario.Headers = []string{tokenHeader}
+					scenario.URL = fmt.Sprintf("/teams/%s/members?active=true&roles=guest,member", team1.Team.ID.String())
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
+					allTeamMemberIds := []uuid.UUID{team1Member3.Member.ID, team1Member1.Member.ID}
+					test.TestSliceEveryFunc(t, "something", result.Data, func(member *apis.TeamMember) bool {
+						teamMatch := member.TeamID == team1.Team.ID
+						isFound := slices.Contains(allTeamMemberIds, member.ID)
+						return teamMatch && isFound
+					})
+				},
+			},
+			{
+				Name:           "success: team1member1 find everyone",
+				Method:         http.MethodGet,
+				URL:            "/teams/{team-id}/members",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1Member1.User.Email)
+					scenario.Headers = []string{tokenHeader}
+					scenario.URL = fmt.Sprintf("/teams/%s/members", team1Member1.Team.ID.String())
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
+					allTeamMemberIds := []uuid.UUID{team1.Member.ID, team1Member1.Member.ID, team1Member2.Member.ID, team1Member3.Member.ID}
+					test.TestSliceEveryFunc(t, "something", result.Data, func(member *apis.TeamMember) bool {
+						teamMatch := member.TeamID == team1.Team.ID
+						isFound := slices.Contains(allTeamMemberIds, member.ID)
+						return teamMatch && isFound
+					})
+				},
+			},
+			{
+				Name:           "success: guest team1member3 find everyone",
+				Method:         http.MethodGet,
+				URL:            "/teams/{team-id}/members",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1Member3.User.Email)
+					scenario.Headers = []string{tokenHeader}
+					scenario.URL = fmt.Sprintf("/teams/%s/members", team1Member3.Team.ID.String())
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
+					allTeamMemberIds := []uuid.UUID{team1.Member.ID, team1Member1.Member.ID, team1Member2.Member.ID, team1Member3.Member.ID}
+					test.TestSliceEveryFunc(t, "something", result.Data, func(member *apis.TeamMember) bool {
+						teamMatch := member.TeamID == team1.Team.ID
+						isFound := slices.Contains(allTeamMemberIds, member.ID)
+						return teamMatch && isFound
+					})
+				},
+			},
+			{
+				Name:           "failure: inactive team1member2 find everyone",
+				Method:         http.MethodGet,
+				URL:            "/teams/{team-id}/members",
+				ExpectedStatus: http.StatusUnauthorized,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				ExpectedContent: []string{
+					"team info not found",
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1Member2.User.Email)
+					scenario.Headers = []string{tokenHeader}
+					scenario.URL = fmt.Sprintf("/teams/%s/members", team1Member2.Team.ID.String())
+				},
+			},
+		}
+		for _, tt := range tests {
+			tt.Test(t)
+		}
+	})
 }

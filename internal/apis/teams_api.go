@@ -26,6 +26,10 @@ type TeamInfo struct {
 // enum:"owner,member,guest"
 type TeamMemberRole string
 
+func (role TeamMemberRole) String() string {
+	return string(role)
+}
+
 const (
 	TeamMemberRoleOwner  TeamMemberRole = "owner"
 	TeamMemberRoleMember TeamMemberRole = "member"

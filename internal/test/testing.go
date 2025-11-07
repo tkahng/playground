@@ -67,7 +67,7 @@ func TestSliceItemsOrderByFunc[T any](t *testing.T, got []T, fn func(first T, se
 	}
 }
 
-func TestSliceEveryFunc[T any](t *testing.T, msg string, items []T, predicate func(item T) bool) {
+func TestSliceEveryFunc[T any](t testing.TB, msg string, items []T, predicate func(item T) bool) {
 	t.Helper()
 	for idx, item := range items {
 		if predicate(item) {
