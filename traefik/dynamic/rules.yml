@@ -6,6 +6,8 @@ http:
       entryPoints:
         - web
       priority: 100 # Add this
+      middlewares:
+        - cloudflarewarp
 
     frontend:
       rule: "PathPrefix(`/`)"
@@ -13,6 +15,12 @@ http:
       entryPoints:
         - web
       priority: 1 # Add this
+
+  middlewares:
+    cloudflarewarp:
+      plugin:
+        cloudflarewarp:
+          disableDefault: false
 
   services:
     backend:
