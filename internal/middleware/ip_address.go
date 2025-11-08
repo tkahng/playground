@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/tools/logger"
 )
 
@@ -74,7 +75,8 @@ func IpAddressMiddleware() HttpMiddelwareFunc {
 				return
 			}
 			logger.SetAttrs(ctx, slog.String("ip", ip))
-			next.ServeHTTP(w, r)
+
+			next.ServeHTTP(w, r.WithContext(contextstore.SetContextIPAddress(ctx, ip)))
 		})
 	}
 }
