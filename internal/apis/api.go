@@ -92,6 +92,7 @@ func NewAppApi(app core.App, router chi.Router, api huma.API) *Api {
 func AddBaseMiddlewares(app core.App, r chi.Router, mw ...func(http.Handler) http.Handler) {
 	r.Use(middleware.SetContextAttrs)
 	r.Use(chimiddleware.RequestID)
+	r.Use(middleware.SetRequestIDAttrs)
 	r.Use(httplog.RequestLogger(app.Logger(), &httplog.Options{
 		Level: slog.LevelInfo,
 
