@@ -51,7 +51,7 @@ func Unwrap(ctx huma.Context) (*http.Request, http.ResponseWriter) {
 	panic("this context does not implement Unwrap")
 }
 
-func HttpEmailVerifiedMiddleware() HttpMiddelwareFunc {
+func EmailVerifiedMiddleware() HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
@@ -69,7 +69,7 @@ func HttpEmailVerifiedMiddleware() HttpMiddelwareFunc {
 	}
 }
 
-func HttpAuthMiddleware(app core.App) HttpMiddelwareFunc {
+func AuthMiddleware(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -114,7 +114,7 @@ func HttpAuthMiddleware(app core.App) HttpMiddelwareFunc {
 	}
 }
 
-func HttpRequireAuthMiddleware() HttpMiddelwareFunc {
+func RequireAuthMiddleware() HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -151,7 +151,7 @@ func HttpRequireAuthMiddleware() HttpMiddelwareFunc {
 		})
 	}
 }
-func HttpCheckPermissionsMiddleware(requiredPermissions ...string) HttpMiddelwareFunc {
+func CheckPermissionsMiddleware(requiredPermissions ...string) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if claims := contextstore.GetContextUserInfo(r.Context()); claims != nil {

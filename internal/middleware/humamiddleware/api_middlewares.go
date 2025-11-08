@@ -110,12 +110,12 @@ func NewApiMiddlewares(app core.App) *ApiMiddlewares {
 		// check middlewares
 		memberIdBelongsToUser:   HumaChiMiddleware(middleware.MemberIdBelongsToUser(app)),
 		teamCanDelete:           HumaChiMiddleware(middleware.TeamCanDelete(app)),
-		emailVerified:           HumaChiMiddleware(middleware.HttpEmailVerifiedMiddleware()),
+		emailVerified:           HumaChiMiddleware(middleware.EmailVerifiedMiddleware()),
 		teamRequiredOwnerMember: HumaChiMiddleware(middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner)),
 		TeamRequiredAnyMember:   HumaChiMiddleware(middleware.RequireTeamMemberRolesMiddleware()),
 		// auth middlewares
-		auth:        HumaChiMiddleware(middleware.HttpAuthMiddleware(app)),
-		requireAuth: HumaChiMiddleware(middleware.HttpRequireAuthMiddleware()),
+		auth:        HumaChiMiddleware(middleware.AuthMiddleware(app)),
+		requireAuth: HumaChiMiddleware(middleware.RequireAuthMiddleware()),
 		// common middlewares
 		recoverer: HumaChiMiddleware(middleware.RecovererMiddleware()),
 	}

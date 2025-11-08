@@ -37,8 +37,8 @@ func bindMiddlewares(api API) {
 	api.Api().UseMiddleware(
 		humamiddleware.HumaChiMiddlewares(
 			middleware.RecovererMiddleware(),
-			middleware.HttpAuthMiddleware(api.App()),
-			middleware.HttpRequireAuthMiddleware(),
+			middleware.AuthMiddleware(api.App()),
+			middleware.RequireAuthMiddleware(),
 		)...,
 	)
 }
