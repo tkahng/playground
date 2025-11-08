@@ -70,7 +70,7 @@
     "go.testExplorer.showDynamicSubtestsInEditor": true,
     "go.testFlags": ["-v", "-race"],
     "go.testEnvVars": {
-      "DEBUG": "true"
+      "DEBUG": "false"
     },
     "testing.followRunningTest": true,
     "testing.showAllMessages": true,
