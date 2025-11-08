@@ -146,6 +146,16 @@
     "typescript.referencesCodeLens.showOnAllFunctions": true,
     "typescript.preferences.importModuleSpecifier": "non-relative",
     "javascript.referencesCodeLens.showOnAllFunctions": true,
-    "javascript.referencesCodeLens.enabled": true
+    "javascript.referencesCodeLens.enabled": true,
+    "files.watcherExclude": {
+      "**/.git/objects/**": true,
+      "**/.git/subtree-cache/**": true,
+      "**/.hg/store/**": true,
+      "**/.git/**": true,
+      "**/node_modules/**": true,
+      "**/.vscode/**": true,
+      "**/dist/**": true,
+      "**/tmp/**": true
+    }
   }
 }
