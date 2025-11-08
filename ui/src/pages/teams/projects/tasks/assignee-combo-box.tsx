@@ -37,13 +37,22 @@ export function AssigneeComboBox({
   const [value, setValue] = React.useState<string | null>(defaultValue || null);
   const [members, setMembers] = React.useState<TeamMember[]>([]);
   const { data, isLoading, error } = useQuery({
-    queryKey: ["team-members", teamMember?.team_id],
+    queryKey: [
+      {
+        key: "team-team-members",
+        team_id: teamMember?.team_id,
+        page: 0,
+        per_page: 20,
+        active: true,
+      },
+    ],
     queryFn: async () => {
       return await getTeamTeamMembers({
         token: user!.tokens.access_token,
         teamId: teamMember!.team_id,
         page: 0,
-        perPage: 50,
+        perPage: 20,
+        active: true,
       });
     },
     enabled: !!teamMember?.team_id && !!user?.tokens.access_token && props.open,

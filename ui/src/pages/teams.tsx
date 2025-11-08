@@ -3,8 +3,10 @@ import { CreateTeamDisabledTooltip } from "@/components/create-team-disabled-too
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useUserTeams } from "@/hooks/use-user-teams";
+import { GetError } from "@/lib/get-error";
+import { getUserTeams } from "@/lib/team-queries";
 import { Team } from "@/schema.types";
+import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { NavLink, useSearchParams } from "react-router";
 import { toast } from "sonner";
@@ -26,12 +28,37 @@ export default function TeamSelect() {
       per_page: String(newState.pageSize),
     });
   };
-  const { data, isLoading, isError, error } = useUserTeams();
+  const { data, isLoading, isError, error } = useQuery({
+    queryKey: [
+      {
+        key: "get-user-teams",
+        user_id: user?.user.id,
+        page: pageIndex,
+        per_page: pageSize,
+      },
+    ],
+    queryFn: async () => {
+      if (!user?.tokens.access_token) {
+        throw new Error("Missing access token");
+      }
+      const { data, meta } = await getUserTeams({
+        token: user.tokens.access_token,
+        page: pageIndex,
+        perPage: pageSize,
+      });
+      console.log({ data, meta });
+      return { data: data, meta };
+    },
+  });
 
   if (isLoading) {
     return <div>Loading...</div>;
   }
   if (isError) {
+    const err = GetError(error);
+    if (err) {
+      return <div>Error: {err.detail}</div>;
+    }
     return <div>Error: {error?.message}</div>;
   }
 

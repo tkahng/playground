@@ -76,6 +76,7 @@ export default function TaskEdit() {
     data: task,
     isLoading: isTaskLoading,
     error: taskError,
+    isError: isTaskError,
   } = useTaskQuery(taskId);
   const { user } = useAuthProvider();
   const { teamMember, team } = useTeam();
@@ -88,14 +89,24 @@ export default function TaskEdit() {
     data: members,
     isLoading: isMembersLoading,
     error: membersError,
+    isError: isMembersError,
   } = useQuery({
-    queryKey: ["team-members", teamMember?.team_id],
+    queryKey: [
+      {
+        key: "team-team-members",
+        team_id: team?.id,
+        page: 0,
+        per_page: 20,
+        active: true,
+      },
+    ],
     queryFn: async () => {
       return await getTeamTeamMembers({
         token: user!.tokens.access_token,
         teamId: teamMember!.team_id,
         page: 0,
-        perPage: 50,
+        perPage: 20,
+        active: true,
       });
     },
     enabled: !!teamMember?.team_id && !!user?.tokens.access_token,
@@ -166,8 +177,12 @@ export default function TaskEdit() {
   if (isTaskLoading || isMembersLoading) {
     return <div>Loading...</div>;
   }
-  if (taskError || membersError) {
-    const err = GetError(taskError || membersError);
+  if (isTaskError) {
+    const err = GetError(taskError);
+    return <div>Error: {err?.detail}</div>;
+  }
+  if (isMembersError) {
+    const err = GetError(membersError);
     return <div>Error: {err?.detail}</div>;
   }
   return (

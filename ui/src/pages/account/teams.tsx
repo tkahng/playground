@@ -6,7 +6,6 @@ import { accountSidebarLinks } from "@/components/links";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { useUserTeams } from "@/hooks/use-user-teams";
 import { GetError } from "@/lib/get-error";
 import { getUserTeams } from "@/lib/team-queries";
 import { Team } from "@/schema.types";
@@ -34,27 +33,30 @@ export default function AccountTeamsPage() {
   const { user } = useAuthProvider();
   const isUserVerified = !!user?.user?.email_verified_at;
   const { data, error, isError, isLoading } = useQuery({
-    queryKey: ["get-user-teams", user?.user.id],
+    queryKey: [
+      {
+        key: "get-user-teams",
+        user_id: user?.user.id,
+        page: pageIndex,
+        per_page: pageSize,
+      },
+    ],
     queryFn: async () => {
       if (!user) {
         throw new Error("User not found");
       }
 
       // const stats = await getStats(user.tokens.access_token);
-      const teams = await getUserTeams(user.tokens.access_token);
-      return {
-        // ...stats,
-        teams: teams.data,
-      };
+      const teams = await getUserTeams({
+        token: user.tokens.access_token,
+        page: pageIndex,
+        perPage: pageSize,
+      });
+      console.log({ teams });
+      return teams;
     },
   });
 
-  const {
-    data: teams,
-    isLoading: teamsIsLoading,
-    isError: teamsIsError,
-    error: teamsError,
-  } = useUserTeams();
   const { setTeam } = useTeam();
   const handleSelectTeam = (team: Team) => {
     toast.success(`Selected team: ${team.name}`);
@@ -66,18 +68,13 @@ export default function AccountTeamsPage() {
     return <div>Loading...</div>;
   }
   if (isError) {
-    return <div>Error: {error?.message}</div>;
+    const err = GetError(error);
+    return <div>Error: {err?.detail}</div>;
   }
   if (!data) {
     return <div>No data</div>;
   }
-  if (teamsIsLoading) {
-    return <div>Loading...</div>;
-  }
-  if (teamsIsError) {
-    const err = GetError(teamsError);
-    return <div>Error: {err?.detail}</div>;
-  }
+
   return (
     <div className="flex">
       <DashboardSidebar links={accountSidebarLinks} />
@@ -112,20 +109,20 @@ export default function AccountTeamsPage() {
                 accessorKey: "role",
                 header: "Member Role",
                 cell: ({ row }) => {
-                  const members = row.original.members;
-                  if (!members || members.length === 0) {
+                  const members = row.original.member;
+                  if (!members) {
                     return <span className="text-gray-500">No members</span>;
                   }
                   return (
                     <span className="text-gray-500">
-                      {members[0]?.role || "Member"}
+                      {members?.role || "Member"}
                     </span>
                   );
                 },
               },
             ]}
-            data={teams?.data || []}
-            rowCount={teams?.meta.total || 0}
+            data={data?.data || []}
+            rowCount={data?.meta.total || 0}
             paginationState={{ pageIndex, pageSize }}
             onPaginationChange={onPaginationChange}
             paginationEnabled

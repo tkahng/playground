@@ -29,7 +29,15 @@ export default function TeamMembersSettingPage() {
     }
   };
   const { data, isPending, isError, error } = useQuery({
-    queryKey: ["team-members"],
+    queryKey: [
+      {
+        key: "team-team-members",
+        team_id: team?.id,
+        page: pageIndex,
+        per_page: pageSize,
+        active: true,
+      },
+    ],
     queryFn: async () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
