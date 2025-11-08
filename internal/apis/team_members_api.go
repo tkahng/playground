@@ -269,7 +269,7 @@ type DeactivateTeamMemberInput struct {
 	TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
 }
 
-func (api *Api) DeactivateTeamMemberFromBind(humaApi huma.API) {
+func (api *Api) DeactivateTeamMemberBind(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
@@ -288,7 +288,7 @@ func (api *Api) DeactivateTeamMemberFromBind(humaApi huma.API) {
 				api.Middlewares().GetTeamRequiredOwnerMember(),
 			},
 		},
-		func(ctx context.Context, input *UpdateTeamsTeamMemberInput) (*struct{}, error) {
+		func(ctx context.Context, input *DeactivateTeamMemberInput) (*struct{}, error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
 			if teamInfo == nil {
 				return nil, huma.Error401Unauthorized("no team info")

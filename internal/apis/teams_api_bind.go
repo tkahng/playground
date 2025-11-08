@@ -203,5 +203,5 @@ func bindTeamsApi(appApi *Api) {
 
 	appApi.UpdateTeamMemberBind(teamsGroup)
 
-	appApi.DeactivateTeamMemberFromBind(teamsGroup)
+	appApi.DeactivateTeamMemberBind(teamsGroup)
 }

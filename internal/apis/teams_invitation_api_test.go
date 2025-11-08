@@ -634,16 +634,20 @@ func CreateTeamMember(t testing.TB, app *core.BaseApp, team *models.Team, optFun
 		Member: *teamInfo,
 	}
 }
-func CreateTeamSubscription(t testing.TB, app *core.BaseApp, teamInfo *models.TeamInfoModel) *models.StripeSubscription {
+func CreateTeamSubscription(t testing.TB, app *core.BaseApp, teamInfo *models.TeamInfoModel, optFunc ...core.SubscriptionOptionFunc) *models.StripeSubscription {
+	funcs := []core.SubscriptionOptionFunc{
+		core.SubscriptionWithID("sub_1"),
+		core.SubscriptionWithItemID("item_1"),
+		core.SubscriptionWithPriceID("price_pro_month_usd_5000"),
+	}
+	funcs = append(funcs, optFunc...)
 	teamCustomer, err := app.Payment().FindCustomerByTeamId(t.Context(), teamInfo.Team.ID)
 	assert.NoError(t, err)
 	sub := core.CreateStripeSubscriptionWithOptions(
 		t,
 		app,
 		teamCustomer.ID,
-		core.SubscriptionWithID("sub_1"),
-		core.SubscriptionWithItemID("item_1"),
-		core.SubscriptionWithPriceID("price_pro_month_usd_5000"),
+		funcs...,
 	)
 	return sub
 }
