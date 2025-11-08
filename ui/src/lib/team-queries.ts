@@ -120,6 +120,58 @@ export const updateTeam = async (
   return data;
 };
 
+export const updateTeamMember = async ({
+  memberId,
+  token,
+  role,
+}: {
+  token: string;
+  memberId: string;
+  role: components["schemas"]["TeamMember"]["role"];
+}) => {
+  const { data, error } = await client.PUT(
+    "/api/team-members/{team-member-id}",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: { "team-member-id": memberId },
+      },
+      body: {
+        role,
+      },
+    }
+  );
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
+export const deleteMember = async ({
+  memberId,
+  token,
+}: {
+  token: string;
+  memberId: string;
+}) => {
+  const { data, error } = await client.POST(
+    "/api/team-members/{team-member-id}/deactivate",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: { "team-member-id": memberId },
+      },
+    }
+  );
+  if (error) {
+    throw new Error(error.detail);
+  }
+  return data;
+};
+
 export const inviteTeamMember = async (
   token: string,
   teamId: string,
