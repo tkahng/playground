@@ -277,7 +277,9 @@ export const getTeamMemberNotifications = async (
   token: string,
   teamMemberId: string,
   page = 0,
-  perPage = 10
+  perPage = 10,
+  sortBy = "created_at",
+  sortOrder: "asc" | "desc" | undefined = "desc"
 ) => {
   const { data, error } = await client.GET(
     "/api/team-members/{team-member-id}/notifications",
@@ -292,8 +294,8 @@ export const getTeamMemberNotifications = async (
         query: {
           page,
           per_page: perPage,
-          sort_by: "created_at",
-          sort_order: "desc",
+          sort_by: sortBy,
+          sort_order: sortOrder,
         },
       },
     }

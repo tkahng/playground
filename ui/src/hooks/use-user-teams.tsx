@@ -5,7 +5,7 @@ import { useAuthProvider } from "./use-auth-provider";
 export const useUserTeams = () => {
   const { user } = useAuthProvider();
   const { data, isLoading, error, isError } = useQuery({
-    queryKey: ["user-teams-list"],
+    queryKey: ["user-teams-list", user?.user.id],
     queryFn: async () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
@@ -14,7 +14,7 @@ export const useUserTeams = () => {
 
       return { data: data || [], meta };
     },
-    enabled: !!user?.tokens.access_token,
+    enabled: false,
   });
   if (!user?.tokens.access_token) {
     return {

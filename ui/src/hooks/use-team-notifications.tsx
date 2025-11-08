@@ -12,7 +12,7 @@ export function useTeamNotifications() {
     error,
     isError,
   } = useQuery({
-    queryKey: ["team-notifications"],
+    queryKey: ["team-member-notifications", teamMember?.id, 0, 10],
     queryFn: async () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");

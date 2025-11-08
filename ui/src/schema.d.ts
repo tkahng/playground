@@ -2680,17 +2680,20 @@ export interface components {
             /** Format: date-time */
             created_at: string;
             has_billing_access: boolean;
+            /** Format: uuid */
             id: string;
             /** Format: date-time */
             last_selected_at: string;
             /** @enum {string} */
             role: "owner" | "member" | "guest";
             team?: components["schemas"]["Team"];
+            /** Format: uuid */
             team_id: string;
             /** Format: date-time */
             updated_at: string;
             user?: components["schemas"]["ApiUser"];
-            user_id: string;
+            /** Format: uuid */
+            user_id: string | null;
         };
         TeamWithMember: {
             /**
