@@ -1,6 +1,5 @@
 import { paths } from "@/schema";
 import createFetchClient from "openapi-fetch";
-import createClient from "openapi-react-query";
 
 export const client = createFetchClient<paths>({
   baseUrl: "/",
@@ -15,5 +14,3 @@ export const client = createFetchClient<paths>({
     },
   },
 });
-
-export const $api = createClient(client);
