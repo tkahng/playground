@@ -9,7 +9,7 @@ import {
 import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
 import { Trash } from "lucide-react";
 
-export function MemberDeleteButton({
+export function MemberDeleteDialog({
   memberId,
   onDelete,
 }: {

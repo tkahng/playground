@@ -4,7 +4,7 @@ import { teamSettingLinks } from "@/components/links";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
 import { deleteMember, getTeamTeamMembers } from "@/lib/team-queries";
-import { MemberDeleteButton } from "@/pages/teams/settings/member-delete-dialog";
+import { MemberDeleteDialog } from "@/pages/teams/settings/member-delete-dialog";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { useSearchParams } from "react-router";
@@ -124,7 +124,7 @@ export default function TeamMembersSettingPage() {
               cell: ({ row }) => {
                 return (
                   <div className="flex flex-row gap-2 justify-end">
-                    <MemberDeleteButton
+                    <MemberDeleteDialog
                       memberId={row.original.id}
                       onDelete={onDelete}
                     />
