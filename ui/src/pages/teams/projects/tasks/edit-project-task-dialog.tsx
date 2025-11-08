@@ -24,11 +24,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { PopoverContentNoPortal } from "@/components/ui/popover-noportal";
 import {
   Select,
@@ -304,11 +300,10 @@ export function EditProjectTaskDialog({
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent
+                      <PopoverContentNoPortal
                         aria-modal={true}
                         className={cn("z-50 w-[200px] p-0")}
                         style={{ pointerEvents: "auto" }}
-                        portal={false}
                       >
                         <Command>
                           <CommandInput
@@ -361,7 +356,7 @@ export function EditProjectTaskDialog({
                             </CommandGroup>
                           </CommandList>
                         </Command>
-                      </PopoverContent>
+                      </PopoverContentNoPortal>
                     </Popover>
                     <FormDescription>
                       This is the language that will be used in the dashboard.
