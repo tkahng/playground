@@ -70,13 +70,13 @@ export default function TeamSelect() {
             accessorKey: "role",
             header: "Member Role",
             cell: ({ row }) => {
-              const members = row.original.members;
-              if (!members || members.length === 0) {
+              const members = row.original.member;
+              if (!members) {
                 return <span className="text-gray-500">No members</span>;
               }
               return (
                 <span className="text-gray-500">
-                  {members[0].role || "Member"}
+                  {members.role || "Member"}
                 </span>
               );
             },

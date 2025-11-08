@@ -86,7 +86,7 @@ export default function AccountSettingsPage() {
       const err = GetError(error);
       if (err) {
         if (err.errors?.length) {
-          toast.error(`${err.errors[0].message || err.errors[0].value}`);
+          toast.error(`${err.errors[0]?.message || err.errors[0]?.value}`);
         } else if (err.title) toast.error(`${err.detail || err.title}`);
       } else {
         toast.error(`Failed to reset password: ${error.message}`);
@@ -115,7 +115,7 @@ export default function AccountSettingsPage() {
       const err = GetError(error);
       if (err) {
         if (err.errors?.length) {
-          toast.error(`${err.errors[0].message || err.errors[0].value}`);
+          toast.error(`${err.errors[0]?.message || err.errors[0]?.value}`);
         } else if (err.title) toast.error(`${err.detail || err.title}`);
       } else {
         toast.error(`Failed to reset password: ${error.message}`);
@@ -149,7 +149,7 @@ export default function AccountSettingsPage() {
       const err = GetError(error);
       if (err) {
         if (err.errors?.length) {
-          toast.error(`${err.errors[0].message || err.errors[0].value}`);
+          toast.error(`${err.errors[0]?.message || err.errors[0]?.value}`);
         } else if (err.title) toast.error(`${err.detail || err.title}`);
       } else {
         toast.error(`Failed to send verification email: ${error.message}`);

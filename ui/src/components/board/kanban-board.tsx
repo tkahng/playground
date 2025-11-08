@@ -253,7 +253,7 @@ export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
       setCards((cars) => {
         const activeIndex = cars.findIndex((car) => car.id === activeId);
         const overIndex = cars.findIndex((car) => car.id === overId);
-        const activeCar = cars[activeIndex];
+        const activeCar = cars[activeIndex]!;
         const overCar = cars[overIndex];
         if (activeCar && overCar && activeCar.columnId !== overCar.columnId) {
           activeCar.columnId = overCar.columnId;

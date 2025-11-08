@@ -1,7 +1,8 @@
 import { paths } from "@/schema";
-import createClient from "openapi-fetch";
+import createFetchClient from "openapi-fetch";
+import createClient from "openapi-react-query";
 
-export const client = createClient<paths>({
+export const client = createFetchClient<paths>({
   baseUrl: "/",
   querySerializer: {
     array: {
@@ -14,3 +15,5 @@ export const client = createClient<paths>({
     },
   },
 });
+
+export const $api = createClient(client);

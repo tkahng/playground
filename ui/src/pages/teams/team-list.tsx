@@ -69,7 +69,7 @@ export default function TeamListPage() {
               }
               return (
                 <span className="text-gray-500">
-                  {members[0].role || "Member"}
+                  {members[0]?.role || "Member"}
                 </span>
               );
             },

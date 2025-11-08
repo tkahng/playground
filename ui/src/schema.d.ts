@@ -1227,6 +1227,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/team-members/{team-member-id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * update-team-member
+         * @description update a team member
+         */
+        put: operations["update-team-member"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/team-members/{team-member-id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * deactivate-team-member
+         * @description deactivate a team member
+         */
+        post: operations["deactivate-team-member"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/team-members/{team-member-id}/notifications": {
         parameters: {
             query?: never;
@@ -1655,6 +1695,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/Admin-user-permissions-createRequest.json
              */
             readonly $schema?: string;
             /** Format: uuid */
@@ -1664,6 +1705,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponseApiUser.json
              */
             readonly $schema?: string;
             data: components["schemas"]["ApiUser"][] | null;
@@ -1673,6 +1715,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponseJob.json
              */
             readonly $schema?: string;
             data: components["schemas"]["Job"][] | null;
@@ -1682,6 +1725,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponseMedia.json
              */
             readonly $schema?: string;
             data: components["schemas"]["Media"][] | null;
@@ -1691,6 +1735,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponseNotification.json
              */
             readonly $schema?: string;
             data: components["schemas"]["Notification"][] | null;
@@ -1700,6 +1745,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponsePermission.json
              */
             readonly $schema?: string;
             data: components["schemas"]["Permission"][] | null;
@@ -1709,6 +1755,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponsePermissionSource.json
              */
             readonly $schema?: string;
             data: components["schemas"]["PermissionSource"][] | null;
@@ -1718,6 +1765,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponseRole.json
              */
             readonly $schema?: string;
             data: components["schemas"]["Role"][] | null;
@@ -1727,6 +1775,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponseStripeProduct.json
              */
             readonly $schema?: string;
             data: components["schemas"]["StripeProduct"][] | null;
@@ -1736,6 +1785,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponseStripeSubscription.json
              */
             readonly $schema?: string;
             data: components["schemas"]["StripeSubscription"][] | null;
@@ -1745,6 +1795,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponseTask.json
              */
             readonly $schema?: string;
             data: components["schemas"]["Task"][] | null;
@@ -1754,6 +1805,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponseTaskProject.json
              */
             readonly $schema?: string;
             data: components["schemas"]["TaskProject"][] | null;
@@ -1763,6 +1815,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponseTeamInvitation.json
              */
             readonly $schema?: string;
             data: components["schemas"]["TeamInvitation"][] | null;
@@ -1772,6 +1825,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponseTeamMember.json
              */
             readonly $schema?: string;
             data: components["schemas"]["TeamMember"][] | null;
@@ -1781,6 +1835,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponseTeamWithMember.json
              */
             readonly $schema?: string;
             data: components["schemas"]["TeamWithMember"][] | null;
@@ -1790,6 +1845,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponseUserAccountOutput.json
              */
             readonly $schema?: string;
             data: components["schemas"]["UserAccountOutput"][] | null;
@@ -1799,6 +1855,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiUser.json
              */
             readonly $schema?: string;
             accounts?: components["schemas"]["UserAccountOutput"][] | null;
@@ -1819,6 +1876,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiUserInfoTokens.json
              */
             readonly $schema?: string;
             permissions: string[] | null;
@@ -1836,6 +1894,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/Check-password-resetRequest.json
              */
             readonly $schema?: string;
             token: string;
@@ -1844,6 +1903,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/Check-team-slugRequest.json
              */
             readonly $schema?: string;
             slug: string;
@@ -1852,6 +1912,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/Check-team-slugResponse.json
              */
             readonly $schema?: string;
             exists: boolean;
@@ -1860,6 +1921,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/CheckValidInvitationDto.json
              */
             readonly $schema?: string;
             token: string;
@@ -1868,6 +1930,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ConfirmPasswordResetInput.json
              */
             readonly $schema?: string;
             confirm_password: string;
@@ -1889,6 +1952,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/CreateTaskProjectWithoutTeamWithTasks.json
              */
             readonly $schema?: string;
             description?: string;
@@ -1906,6 +1970,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/CreateTeamInput.json
              */
             readonly $schema?: string;
             name: string;
@@ -1915,6 +1980,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/EmailVerificationPostInput.json
              */
             readonly $schema?: string;
             token: string;
@@ -1931,28 +1997,38 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ErrorModel.json
              */
             readonly $schema?: string;
-            /** @description A human-readable explanation specific to this occurrence of the problem. */
+            /**
+             * @description A human-readable explanation specific to this occurrence of the problem.
+             * @example Property foo is required but is missing.
+             */
             detail?: string;
             /** @description Optional list of individual error details */
             errors?: components["schemas"]["ErrorDetail"][] | null;
             /**
              * Format: uri
              * @description A URI reference that identifies the specific occurrence of the problem.
+             * @example https://example.com/error-log/abc123
              */
             instance?: string;
             /**
              * Format: int64
              * @description HTTP status code
+             * @example 400
              */
             status?: number;
-            /** @description A short, human-readable summary of the problem type. This value should not change between occurrences of the error. */
+            /**
+             * @description A short, human-readable summary of the problem type. This value should not change between occurrences of the error.
+             * @example Bad Request
+             */
             title?: string;
             /**
              * Format: uri
              * @description A URI reference to human-readable documentation for the error.
              * @default about:blank
+             * @example https://example.com/errors/example
              */
             type: string;
         };
@@ -1960,6 +2036,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/IndexOutputBody.json
              */
             readonly $schema?: string;
             access: string;
@@ -1968,6 +2045,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/InviteTeamMemberDto.json
              */
             readonly $schema?: string;
             email: string;
@@ -1978,6 +2056,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/Job.json
              */
             readonly $schema?: string;
             /** Format: int64 */
@@ -2002,6 +2081,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/JobUpdateDto.json
              */
             readonly $schema?: string;
             /** Format: int64 */
@@ -2093,6 +2173,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/OAuth2AuthorizationUrlOutputBody.json
              */
             readonly $schema?: string;
             url: string;
@@ -2101,6 +2182,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/OtpInput.json
              */
             readonly $schema?: string;
             token: string;
@@ -2111,6 +2193,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/PasswordResetInput.json
              */
             readonly $schema?: string;
             new_password: string;
@@ -2120,6 +2203,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/Permission.json
              */
             readonly $schema?: string;
             /** Format: date-time */
@@ -2134,6 +2218,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/PermissionCreateInput.json
              */
             readonly $schema?: string;
             description?: string;
@@ -2143,6 +2228,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/PermissionIdsInput.json
              */
             readonly $schema?: string;
             /** Format: uuid */
@@ -2172,6 +2258,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/RefreshTokenInput.json
              */
             readonly $schema?: string;
             refresh_token: string;
@@ -2180,14 +2267,17 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/RequestPasswordResetInput.json
              */
             readonly $schema?: string;
+            /** @example tkahng+01@gmail.com */
             email: string;
         };
         Role: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/Role.json
              */
             readonly $schema?: string;
             /** Format: date-time */
@@ -2204,6 +2294,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/RoleCreateInput.json
              */
             readonly $schema?: string;
             description?: string;
@@ -2213,6 +2304,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/RoleIdsInput.json
              */
             readonly $schema?: string;
             /** Format: uuid */
@@ -2222,16 +2314,22 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/SigninDto.json
              */
             readonly $schema?: string;
-            /** Format: email */
+            /**
+             * Format: email
+             * @example admin@k2dv.io
+             */
             email: string;
+            /** @example Password123! */
             password: string;
         };
         SignoutDto: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/SignoutDto.json
              */
             readonly $schema?: string;
             refresh_token: string;
@@ -2240,11 +2338,16 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/SignupInput.json
              */
             readonly $schema?: string;
-            /** Format: email */
+            /**
+             * Format: email
+             * @example tkahng+01@gmail.com
+             */
             email: string;
             name: string | null;
+            /** @example Password123! */
             password: string;
         };
         StripeCustomer: {
@@ -2273,6 +2376,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/StripePaymentPayload.json
              */
             readonly $schema?: string;
             price_id: string;
@@ -2307,6 +2411,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/StripeProduct.json
              */
             readonly $schema?: string;
             active: boolean;
@@ -2329,6 +2434,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/StripeSubscription.json
              */
             readonly $schema?: string;
             /** Format: date-time */
@@ -2369,6 +2475,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/StripeUrlOutputBody.json
              */
             readonly $schema?: string;
             url: string;
@@ -2377,6 +2484,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/Task.json
              */
             readonly $schema?: string;
             assignee?: components["schemas"]["TeamMember"];
@@ -2422,6 +2530,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/TaskFields.json
              */
             readonly $schema?: string;
             assignee_id: string | null;
@@ -2450,6 +2559,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/TaskPositionStatusDTO.json
              */
             readonly $schema?: string;
             /** Format: int64 */
@@ -2461,6 +2571,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/TaskProject.json
              */
             readonly $schema?: string;
             assignee_id: string | null;
@@ -2490,8 +2601,10 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/TaskProjectCreateWithAiDto.json
              */
             readonly $schema?: string;
+            /** @example Help me plan a 6 day vacation to Paris */
             input: string;
         };
         TaskStats: {
@@ -2508,6 +2621,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/Team.json
              */
             readonly $schema?: string;
             /** Format: date-time */
@@ -2524,6 +2638,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/TeamInfo.json
              */
             readonly $schema?: string;
             member: components["schemas"]["TeamMember"];
@@ -2534,6 +2649,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/TeamInvitation.json
              */
             readonly $schema?: string;
             /** Format: date-time */
@@ -2557,6 +2673,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/TeamMember.json
              */
             readonly $schema?: string;
             active: boolean;
@@ -2579,6 +2696,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/TeamWithMember.json
              */
             readonly $schema?: string;
             /** Format: date-time */
@@ -2594,15 +2712,20 @@ export interface components {
         };
         TokenDto: {
             access_token: string;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @example 3600
+             */
             expires_in: number;
             refresh_token: string;
+            /** @example Bearer */
             token_type: string;
         };
         UpdateMeInput: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/UpdateMeInput.json
              */
             readonly $schema?: string;
             image: string | null;
@@ -2612,6 +2735,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/UpdateTaskDto.json
              */
             readonly $schema?: string;
             assignee_id: string | null;
@@ -2630,6 +2754,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/UpdateTaskProjectBaseDTO.json
              */
             readonly $schema?: string;
             description?: string;
@@ -2645,15 +2770,27 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/UpdateTeamDto.json
              */
             readonly $schema?: string;
             name: string;
             slug: string;
         };
+        UpdateTeamMemberDto: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/UpdateTeamMemberDto.json
+             */
+            readonly $schema?: string;
+            /** @enum {string} */
+            role: "owner" | "member" | "guest";
+        };
         UpdateUserPasswordInput: {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/UpdateUserPasswordInput.json
              */
             readonly $schema?: string;
             password: string;
@@ -2675,6 +2812,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/UserCreateInput.json
              */
             readonly $schema?: string;
             /** Format: email */
@@ -2690,6 +2828,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/UserMutationInput.json
              */
             readonly $schema?: string;
             /** Format: email */
@@ -2715,6 +2854,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/UserReactionDto.json
              */
             readonly $schema?: string;
             type: string;
@@ -2723,6 +2863,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/UserReactionStats.json
              */
             readonly $schema?: string;
             last_created?: components["schemas"]["UserReaction"];
@@ -2734,6 +2875,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/UserStats.json
              */
             readonly $schema?: string;
             task_stats: components["schemas"]["TaskStats"];
@@ -2742,6 +2884,7 @@ export interface components {
             /**
              * Format: uri
              * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/UserWithAccounts.json
              */
             readonly $schema?: string;
             accounts: components["schemas"]["UserAccountOutput"][] | null;
@@ -6816,6 +6959,104 @@ export interface operations {
             };
         };
     };
+    "update-team-member": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-member-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateTeamMemberDto"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "deactivate-team-member": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-member-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "find-team-members-notifications": {
         parameters: {
             query?: {
@@ -7586,6 +7827,7 @@ export interface operations {
                 per_page?: number;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
+                roles?: ("owner" | "member" | "guest")[] | null;
                 q?: string;
                 active?: boolean;
             };

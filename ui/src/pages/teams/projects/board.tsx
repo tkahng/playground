@@ -219,7 +219,7 @@ export function MyKanbanBoard({
   // If there's another card below, return that card's id, otherwise return the column's id.
   function getOverId(column: Column, cardIndex: number): string {
     if (cardIndex < column.items.length - 1) {
-      return column.items[cardIndex + 1].id;
+      return column.items[cardIndex + 1]!.id;
     }
 
     return column.id;
@@ -248,7 +248,7 @@ export function MyKanbanBoard({
     const { columnIndex, cardIndex } = findCardPosition(cardId);
     if (columnIndex === -1 || cardIndex === -1) return;
 
-    const card = columns[columnIndex].items[cardIndex];
+    const card = columns[columnIndex]?.items[cardIndex];
 
     let newColumnIndex = columnIndex;
     let newCardIndex = cardIndex;
@@ -262,7 +262,7 @@ export function MyKanbanBoard({
       case "ArrowDown": {
         newCardIndex = Math.min(
           cardIndex + 1,
-          columns[columnIndex].items.length - 1
+          columns[columnIndex]!.items.length - 1
         );
 
         break;
@@ -272,7 +272,7 @@ export function MyKanbanBoard({
         // Keep same cardIndex if possible, or if out of range, insert at end
         newCardIndex = Math.min(
           newCardIndex,
-          columns[newColumnIndex].items.length
+          columns[newColumnIndex]!.items.length
         );
 
         break;
@@ -281,7 +281,7 @@ export function MyKanbanBoard({
         newColumnIndex = Math.min(columnIndex + 1, columns.length - 1);
         newCardIndex = Math.min(
           newCardIndex,
-          columns[newColumnIndex].items.length
+          columns[newColumnIndex]!.items.length
         );
 
         break;
@@ -290,13 +290,13 @@ export function MyKanbanBoard({
 
     // Perform state update in flushSync to ensure immediate state update.
     flushSync(() => {
-      handleMoveCardToColumn(columns[newColumnIndex].id, newCardIndex, card);
+      handleMoveCardToColumn(columns[newColumnIndex]!.id, newCardIndex, card!);
     });
 
     // Find the card's new position and announce it.
     const { columnIndex: updatedColumnIndex, cardIndex: updatedCardIndex } =
       findCardPosition(cardId);
-    const overId = getOverId(columns[updatedColumnIndex], updatedCardIndex);
+    const overId = getOverId(columns[updatedColumnIndex]!, updatedCardIndex);
 
     onDragOver(cardId, overId);
   }
@@ -316,7 +316,7 @@ export function MyKanbanBoard({
       const { columnIndex, cardIndex } = findCardPosition(cardId);
       originalCardPositionReference.current =
         columnIndex !== -1 && cardIndex !== -1
-          ? { columnId: columns[columnIndex].id, cardIndex }
+          ? { columnId: columns[columnIndex]!.id, cardIndex }
           : null;
     } else if (activeCardId === cardId) {
       // Card is already active.
@@ -329,7 +329,7 @@ export function MyKanbanBoard({
 
         const { columnIndex, cardIndex } = findCardPosition(cardId);
         if (columnIndex !== -1 && cardIndex !== -1) {
-          const overId = getOverId(columns[columnIndex], cardIndex);
+          const overId = getOverId(columns[columnIndex]!, cardIndex);
           onDragEnd(cardId, overId);
         } else {
           // If we somehow can't find the card, just call onDragEnd with cardId.
@@ -351,12 +351,12 @@ export function MyKanbanBoard({
           // Revert card only if it moved.
           if (
             currentColumnIndex !== -1 &&
-            (columnId !== columns[currentColumnIndex].id ||
+            (columnId !== columns[currentColumnIndex]?.id ||
               cardIndex !== currentCardIndex)
           ) {
-            const card = columns[currentColumnIndex].items[currentCardIndex];
+            const card = columns[currentColumnIndex]?.items[currentCardIndex];
             flushSync(() => {
-              handleMoveCardToColumn(columnId, cardIndex, card);
+              handleMoveCardToColumn(columnId, cardIndex, card!);
             });
           }
         }
