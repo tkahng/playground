@@ -2,7 +2,6 @@ package apis_test
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -17,7 +16,6 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/notification"
 	"github.com/tkahng/playground/internal/test"
 )
 
@@ -361,7 +359,6 @@ func TestApi_UpdateTeamMember(t *testing.T) {
 }
 
 func TestApi_DeactivateTeamMember(t *testing.T) {
-	inviteeEmail := "VY7o1@example.com"
 	tests := []ApiScenario{
 		{
 			Name:           "success: owner deactivates team member",
@@ -389,38 +386,85 @@ func TestApi_DeactivateTeamMember(t *testing.T) {
 				}
 				paymentClient := core.ExtractTestPaymentClient(t, app)
 				sub := scenario.Store.Get("subscription").(*models.StripeSubscription)
+				team1Member1 := scenario.Store.Get("team1Member1").(*models.TeamInfoModel)
 				item := paymentClient.GetUpdateSubscriptionInput(func(si *stripe.SubscriptionItem) bool {
 					if si.ID == sub.ItemID {
 						return true
 					}
 					return false
 				})
-				count := repository.MustCountAllCtx(t, ctx, repository.TeamMember, app.Db(), nil)
 				assert.NotNil(t, item)
-				assert.Equal(t, count, item.Quantity)
 				assert.Equal(t, sub.PriceID, item.Price.ID)
-				// notifications
-				teamInfo := scenario.Store.Get("teamInfo").(*models.TeamInfoModel)
-				notifications := repository.MustFindWithOptionsCtx(t, ctx, repository.Notification, app.Db())
-				assert.Len(t, notifications, 1)
-				noti := notifications[0]
-
-				payloadString := noti.Payload
-				var payload notification.NotificationPayload[notification.NewTeamMemberNotificationData]
-				err := json.Unmarshal(payloadString, &payload)
-
-				assert.NoError(t, err)
-				assert.Equal(t, teamInfo.Team.ID, payload.Data.TeamID)
-				assert.Equal(t, &teamInfo.Member.ID, noti.TeamMemberID)
-
-				member := repository.MustFindOneCtx(t, ctx, repository.TeamMember, app.Db(), &map[string]any{
-					"user": map[string]any{
-						"email": map[string]any{
-							"_eq": inviteeEmail,
-						},
+				count := repository.MustCountAllCtx(t, ctx, repository.TeamMember, app.Db(), &map[string]any{
+					"team_id": map[string]any{
+						"_eq": team1Member1.Team.ID,
+					},
+					"active": map[string]any{
+						"_eq": true,
 					},
 				})
-				assert.Equal(t, member.ID, payload.Data.TeamMemberID)
+				assert.Equal(t, count, item.Quantity)
+				member := repository.MustFindOneCtx(t, ctx, repository.TeamMember, app.Db(), &map[string]any{
+					"id": map[string]any{
+						"_eq": team1Member1.Member.ID,
+					},
+				})
+				assert.Equal(t, false, member.Active)
+				assert.Equal(t, team1Member1.Member.ID, member.ID)
+
+			},
+		},
+		{
+			Name:           "success: owner deactivates deactivated team member. no-op",
+			Method:         http.MethodPost,
+			URL:            "/team-members/{team-member-id}/deactivate",
+			ExpectedStatus: http.StatusNoContent,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				core.CreateProductsAndPrices(t, app)
+				team1Owner1 := CreateTeamAndOwner(t, app)
+				team1Member1 := CreateTeamMember(t, app, &team1Owner1.Team, core.TeamWithActive(false))
+				sub := CreateTeamSubscription(t, app, team1Owner1, core.SubscriptionWithQuantity(1))
+				assert.Equal(t, int64(1), sub.Quantity)
+				scenario.Store.Set("team1Owner1", team1Owner1)
+				scenario.Store.Set("team1Member1", team1Member1)
+				scenario.Store.Set("subscription", sub)
+				scenario.URL = fmt.Sprintf("/team-members/%s/deactivate", team1Member1.Member.ID.String())
+				header := core.CreateTokenHeader(t, app, team1Owner1.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				ctx := t.Context()
+				for range 5 {
+					err := app.JobManager().PollOnce(ctx)
+					assert.NoError(t, err)
+				}
+				paymentClient := core.ExtractTestPaymentClient(t, app)
+				sub := scenario.Store.Get("subscription").(*models.StripeSubscription)
+				team1Member1 := scenario.Store.Get("team1Member1").(*models.TeamInfoModel)
+				item := paymentClient.GetUpdateSubscriptionInput(func(si *stripe.SubscriptionItem) bool {
+					if si.ID == sub.ItemID {
+						return true
+					}
+					return false
+				})
+				assert.Nil(t, item)
+				count := repository.MustCountAllCtx(t, ctx, repository.TeamMember, app.Db(), &map[string]any{
+					"team_id": map[string]any{
+						"_eq": team1Member1.Team.ID,
+					},
+					"active": map[string]any{
+						"_eq": true,
+					},
+				})
+				assert.Equal(t, count, int64(1))
+				member := repository.MustFindOneCtx(t, ctx, repository.TeamMember, app.Db(), &map[string]any{
+					"id": map[string]any{
+						"_eq": team1Member1.Member.ID,
+					},
+				})
+				assert.Equal(t, false, member.Active)
+				assert.Equal(t, team1Member1.Member.ID, member.ID)
+
 			},
 		},
 	}
