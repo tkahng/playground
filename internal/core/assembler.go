@@ -140,7 +140,7 @@ func (a *Assembler) setIntegrationServices(app *BaseApp) {
 
 	client := app.paymentClient
 	app.payment = services.NewPaymentService(client, adapter)
-	app.teamInvitation = services.NewInvitationService(adapter, *cfg, jobService)
+	app.teamInvitation = services.NewInvitationService(adapter, *cfg, jobService, app.payment)
 
 	app.auth = auth.NewAuthService(cfg, logger, adapter, hashService, jwtService, tokenService, jobService)
 
