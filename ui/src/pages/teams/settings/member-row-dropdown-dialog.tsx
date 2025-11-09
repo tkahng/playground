@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { GetError } from "@/lib/get-error";
 import { deleteMember, updateTeamMember } from "@/lib/team-queries";
 import { TeamMember, TeamMemberRole } from "@/schema.types";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -113,8 +114,10 @@ export function MemberRowDropdownMenuDialog({
       toast.success("Member deleted successfully");
     },
     onError: (error) => {
-      console.error(error);
-      toast.error("Failed to delete member");
+      const err = GetError(error);
+      toast.error("Failed to delete member", {
+        description: err?.detail,
+      });
     },
   });
   const onDeleteSubmit = () => {

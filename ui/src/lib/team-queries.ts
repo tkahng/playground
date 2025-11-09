@@ -144,7 +144,7 @@ export const updateTeamMember = async ({
     }
   );
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };
@@ -155,8 +155,8 @@ export const deleteMember = async ({
   token: string;
   memberId: string;
 }) => {
-  const { data, error } = await client.POST(
-    "/api/team-members/{team-member-id}/deactivate",
+  const { data, error } = await client.DELETE(
+    "/api/team-members/{team-member-id}",
     {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -167,7 +167,7 @@ export const deleteMember = async ({
     }
   );
   if (error) {
-    throw new Error(error.detail);
+    throw error;
   }
   return data;
 };

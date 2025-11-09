@@ -1241,27 +1241,11 @@ export interface paths {
          */
         put: operations["update-team-member"];
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/team-members/{team-member-id}/deactivate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
         /**
-         * deactivate-team-member
-         * @description deactivate a team member
+         * delete-team-member
+         * @description delete a team member
          */
-        post: operations["deactivate-team-member"];
-        delete?: never;
+        delete: operations["delete-team-member"];
         options?: never;
         head?: never;
         patch?: never;
@@ -7013,7 +6997,7 @@ export interface operations {
             };
         };
     };
-    "deactivate-team-member": {
+    "delete-team-member": {
         parameters: {
             query?: never;
             header?: never;
