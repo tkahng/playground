@@ -273,11 +273,11 @@ func (api *Api) DeactivateTeamMemberBind(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
-			OperationID: "deactivate-team-member",
-			Method:      http.MethodPost,
-			Path:        "/team-members/{team-member-id}/deactivate",
-			Summary:     "deactivate-team-member",
-			Description: "deactivate a team member",
+			OperationID: "delete-team-member",
+			Method:      http.MethodDelete,
+			Path:        "/team-members/{team-member-id}",
+			Summary:     "delete-team-member",
+			Description: "delete a team member",
 			Tags:        []string{"Team Members"},
 			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
 			Security: []map[string][]string{{
@@ -300,6 +300,9 @@ func (api *Api) DeactivateTeamMemberBind(humaApi huma.API) {
 			// find the member to be updated
 			member, err := api.App().Adapter().TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
 				Ids: []uuid.UUID{memberId},
+				Active: types.OptionalParam[bool]{
+					Value: true, IsSet: true,
+				},
 			})
 			if err != nil {
 				return nil, err
@@ -307,13 +310,10 @@ func (api *Api) DeactivateTeamMemberBind(humaApi huma.API) {
 			if member == nil {
 				return nil, huma.Error404NotFound("team member not found")
 			}
-			// check if the member can be deactivated
-			if !member.Active { // already deactivated
-				return nil, nil
-			}
 			// update member
 			txErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
 				member.Active = false
+				member.UserID = nil
 				_, err = api.App().Adapter().TeamMember().UpdateTeamMember(txCtx, member)
 				if err != nil {
 					return err

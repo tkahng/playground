@@ -362,8 +362,8 @@ func TestApi_DeactivateTeamMember(t *testing.T) {
 	tests := []ApiScenario{
 		{
 			Name:           "success: owner deactivates team member",
-			Method:         http.MethodPost,
-			URL:            "/team-members/{team-member-id}/deactivate",
+			Method:         http.MethodDelete,
+			URL:            "/team-members/{team-member-id}",
 			ExpectedStatus: http.StatusNoContent,
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 				core.CreateProductsAndPrices(t, app)
@@ -374,7 +374,7 @@ func TestApi_DeactivateTeamMember(t *testing.T) {
 				scenario.Store.Set("team1Owner1", team1Owner1)
 				scenario.Store.Set("team1Member1", team1Member1)
 				scenario.Store.Set("subscription", sub)
-				scenario.URL = fmt.Sprintf("/team-members/%s/deactivate", team1Member1.Member.ID.String())
+				scenario.URL = fmt.Sprintf("/team-members/%s", team1Member1.Member.ID.String())
 				header := core.CreateTokenHeader(t, app, team1Owner1.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
@@ -411,60 +411,52 @@ func TestApi_DeactivateTeamMember(t *testing.T) {
 				})
 				assert.Equal(t, false, member.Active)
 				assert.Equal(t, team1Member1.Member.ID, member.ID)
+				assert.Nil(t, member.UserID)
 
 			},
 		},
 		{
-			Name:           "success: owner deactivates deactivated team member. no-op",
-			Method:         http.MethodPost,
-			URL:            "/team-members/{team-member-id}/deactivate",
-			ExpectedStatus: http.StatusNoContent,
+			Name:           "fail: owner deactivates deactivated team member",
+			Method:         http.MethodDelete,
+			URL:            "/team-members/{team-member-id}",
+			ExpectedStatus: http.StatusNotFound,
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 				core.CreateProductsAndPrices(t, app)
 				team1Owner1 := CreateTeamAndOwner(t, app)
 				team1Member1 := CreateTeamMember(t, app, &team1Owner1.Team, core.TeamWithActive(false))
 				sub := CreateTeamSubscription(t, app, team1Owner1, core.SubscriptionWithQuantity(1))
 				assert.Equal(t, int64(1), sub.Quantity)
-				scenario.Store.Set("team1Owner1", team1Owner1)
-				scenario.Store.Set("team1Member1", team1Member1)
-				scenario.Store.Set("subscription", sub)
-				scenario.URL = fmt.Sprintf("/team-members/%s/deactivate", team1Member1.Member.ID.String())
+				scenario.URL = fmt.Sprintf("/team-members/%s", team1Member1.Member.ID.String())
 				header := core.CreateTokenHeader(t, app, team1Owner1.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
-				ctx := t.Context()
-				for range 5 {
-					err := app.JobManager().PollOnce(ctx)
-					assert.NoError(t, err)
-				}
-				paymentClient := core.ExtractTestPaymentClient(t, app)
-				sub := scenario.Store.Get("subscription").(*models.StripeSubscription)
-				team1Member1 := scenario.Store.Get("team1Member1").(*models.TeamInfoModel)
-				item := paymentClient.GetUpdateSubscriptionInput(func(si *stripe.SubscriptionItem) bool {
-					if si.ID == sub.ItemID {
-						return true
-					}
-					return false
-				})
-				assert.Nil(t, item)
-				count := repository.MustCountAllCtx(t, ctx, repository.TeamMember, app.Db(), &map[string]any{
-					"team_id": map[string]any{
-						"_eq": team1Member1.Team.ID,
-					},
-					"active": map[string]any{
-						"_eq": true,
-					},
-				})
-				assert.Equal(t, count, int64(1))
-				member := repository.MustFindOneCtx(t, ctx, repository.TeamMember, app.Db(), &map[string]any{
-					"id": map[string]any{
-						"_eq": team1Member1.Member.ID,
-					},
-				})
-				assert.Equal(t, false, member.Active)
-				assert.Equal(t, team1Member1.Member.ID, member.ID)
-
+			ExpectedContent: []string{
+				"team member not found",
+			},
+		},
+		{
+			Name:           "fail: non-owner deactivates team member",
+			Method:         http.MethodDelete,
+			URL:            "/team-members/{team-member-id}",
+			ExpectedStatus: http.StatusForbidden,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				core.CreateProductsAndPrices(t, app)
+				team1Owner1 := CreateTeamAndOwner(t, app)
+				team1Member1 := CreateTeamMember(t, app, &team1Owner1.Team)
+				team1Member2 := CreateTeamMember(t, app, &team1Owner1.Team)
+				sub := CreateTeamSubscription(t, app, team1Owner1, core.SubscriptionWithQuantity(3))
+				assert.Equal(t, int64(3), sub.Quantity)
+				scenario.Store.Set("team1Owner1", team1Owner1)
+				scenario.Store.Set("team1Member1", team1Member1)
+				scenario.Store.Set("team1Member2", team1Member2)
+				scenario.Store.Set("subscription", sub)
+				scenario.URL = fmt.Sprintf("/team-members/%s", team1Member1.Member.ID.String())
+				header := core.CreateTokenHeader(t, app, team1Member2.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			ExpectedContent: []string{
+				"You do not have the required team member roles:",
+				"[owner]",
 			},
 		},
 	}
