@@ -332,3 +332,52 @@ func (api *Api) DeactivateTeamMemberBind(humaApi huma.API) {
 		},
 	)
 }
+
+type LeaveTeamInput struct {
+	TeamID string `path:"team-id" required:"true" format:"uuid"`
+}
+
+func (api *Api) LeaveTeam(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "leave-team",
+			Method:      http.MethodDelete,
+			Path:        "/team/{team-id}/leave",
+			Summary:     "leave-team",
+			Description: "leave a team",
+			Tags:        []string{"Team"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
+		},
+		func(ctx context.Context, input *LeaveTeamInput) (*struct{}, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("no team info")
+			}
+			// update member
+			txErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+				teamInfo.Member.Active = false
+				teamInfo.Member.UserID = nil
+				_, err := api.App().Adapter().TeamMember().UpdateTeamMember(txCtx, &teamInfo.Member)
+				if err != nil {
+					return err
+				}
+				err = api.App().Payment().VerifyAndUpdateTeamSubscriptionQuantity(txCtx, teamInfo.Member.TeamID)
+				if err != nil {
+					return err
+				}
+				return nil
+			})
+			if txErr != nil {
+				return nil, txErr
+			}
+			return nil, nil
+		},
+	)
+}
