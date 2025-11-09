@@ -10,6 +10,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/workers"
 
@@ -56,9 +58,9 @@ func (api *Api) bindFindTeamMemberByID(aapi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				api.Middlewares().GetRequireTeamInfo(),
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		func(ctx context.Context, input *FindTeamTeamMemberByIDInput) (*ApiOutput[*TeamMember], error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
@@ -115,9 +117,9 @@ func (api *Api) bindFindTeamTeamMembers(humaApi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Middlewares: huma.Middlewares{
-				api.Middlewares().GetRequireTeamInfo(),
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		func(ctx context.Context, input *FindTeamTeamMembersInput) (*ApiPaginatedOutput[*TeamMember], error) {
 			team := contextstore.GetContextTeam(ctx)
@@ -224,10 +226,10 @@ func (api *Api) UpdateTeamMemberBind(humaApi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				api.Middlewares().GetRequireTeamInfo(),
-				api.Middlewares().GetTeamRequiredOwnerMember(),
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+			),
 		},
 		func(ctx context.Context, input *UpdateTeamsTeamMemberInput) (*struct{}, error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
@@ -283,10 +285,10 @@ func (api *Api) DeactivateTeamMemberBind(humaApi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				api.Middlewares().GetRequireTeamInfo(),
-				api.Middlewares().GetTeamRequiredOwnerMember(),
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+			),
 		},
 		func(ctx context.Context, input *DeactivateTeamMemberInput) (*struct{}, error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)

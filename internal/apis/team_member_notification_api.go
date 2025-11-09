@@ -10,6 +10,8 @@ import (
 	humasse "github.com/danielgtaylor/huma/v2/sse"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/notification"
 	"github.com/tkahng/playground/internal/shared"
@@ -25,6 +27,11 @@ func TeamChannel(teamMemberId string) string {
 type TeamMemberSseInput struct {
 	TeamMemberID string `path:"team-member-id"`
 	AccessToken  string `query:"access_token"`
+}
+
+type PlaygroundSecurityExtensions struct {
+	TeamMemberID uuid.UUID `json:"team_member_id"`
+	AccessToken  string    `json:"access_token"`
 }
 
 func (api *Api) bindTeamMembersSseEvents(humapi huma.API) {
@@ -57,10 +64,11 @@ func (api *Api) bindTeamMembersSseEvents(humapi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				api.Middlewares().GetRequireTeamInfo(),
-				api.Middlewares().GetMemberIdBelongsToUser(),
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.MemberIdBelongsToUser(),
+			),
+
 			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
 		},
 		map[string]any{
@@ -139,10 +147,10 @@ func (api *Api) bindFindTeamMembersNotifications(aapi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				api.Middlewares().GetRequireTeamInfo(),
-				api.Middlewares().GetMemberIdBelongsToUser(),
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.MemberIdBelongsToUser(),
+			),
 		},
 		func(ctx context.Context, input *TeamMembersNotificationsInput) (*ApiPaginatedOutput[*Notification], error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
@@ -195,10 +203,10 @@ func (api *Api) bindReadTeamMembersNotifications(aapi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				api.Middlewares().GetRequireTeamInfo(),
-				api.Middlewares().GetMemberIdBelongsToUser(),
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.MemberIdBelongsToUser(),
+			),
 		},
 		func(ctx context.Context, input *ReadTeamMembersNotificationsInput) (*struct{}, error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
@@ -246,10 +254,10 @@ func (api *Api) bindDeleteTeamMembersNotifications(aapi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				api.Middlewares().GetRequireTeamInfo(),
-				api.Middlewares().GetMemberIdBelongsToUser(),
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.MemberIdBelongsToUser(),
+			),
 		},
 		func(ctx context.Context, input *ReadTeamMembersNotificationsInput) (*struct{}, error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)

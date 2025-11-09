@@ -15,6 +15,7 @@ import (
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
+// RequireTeamInfo checks if the request has team info
 func RequireTeamInfo() HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -29,9 +30,41 @@ func RequireTeamInfo() HttpMiddelwareFunc {
 	}
 }
 
+// RequireTeamMemberRolesMiddleware checks if the member has the required team member roles
+func RequireTeamMemberRolesMiddleware(roles ...models.TeamMemberRole) HttpMiddelwareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			rawCtx := r.Context()
+			if info := contextstore.GetContextTeamInfo(rawCtx); info != nil {
+				if len(roles) == 0 {
+					next.ServeHTTP(w, r)
+					return
+				}
+				if slices.Contains(roles, info.Member.Role) {
+					next.ServeHTTP(w, r)
+					return
+				}
+				_ = appHttp.WriteErr(
+					w,
+					r,
+					http.StatusForbidden,
+					fmt.Sprintf("You do not have the required team member roles: %v", roles),
+				)
+			} else {
+				_ = appHttp.WriteErr(
+					w,
+					r,
+					http.StatusForbidden,
+					"You do not have the required team info",
+				)
+			}
+		})
+	}
+}
+
 // TeamInfoFromContext creates a [models.TeamInfoModel] from values found in the context and adds it to the context.
 //
-//   - it calls [contextstore.GetContextUserInfo] for the user
+//   - it calls [contextstore.GetContextUserInfo] for the user. if the user is not found, it moves on.
 //   - it calls [contextstore.GetContextTeam] for the team
 //   - if the team is found, it queries the team member using the team.id and user.id.
 //   - if the team not found, it calls [contextstore.GetContextTeamMember] for the team member, and queries the user's team member using the teamMember.TeamID and user.ID.
@@ -40,10 +73,10 @@ func TeamInfoFromContext(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
-			// get the user. if not found, return an error
+			// get the user. if not found, move on. could be public route.
 			userInfo := contextstore.GetContextUserInfo(rawCtx)
 			if userInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "you are not logged in")
+				next.ServeHTTP(w, r)
 				return
 			}
 
@@ -292,7 +325,7 @@ func TeamFromParamSlug(app core.App) HttpMiddelwareFunc {
 }
 
 // MemberIdBelongsToUser middleware ensures that the user is the member with id {team-member-id}
-func MemberIdBelongsToUser(app core.App) HttpMiddelwareFunc {
+func MemberIdBelongsToUser() HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
@@ -315,57 +348,6 @@ func MemberIdBelongsToUser(app core.App) HttpMiddelwareFunc {
 				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware", nil)
 				return
 			}
-			next.ServeHTTP(w, r)
-		})
-	}
-}
-
-// TeamInfoFromUserAndMemberID finds the team info from the userId and teamId of the member of {team-member-id}
-func TeamInfoFromUserAndMemberID(app core.App) HttpMiddelwareFunc {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			rawCtx := r.Context()
-			userInfo := contextstore.GetContextUserInfo(rawCtx)
-			if userInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware", nil)
-				return
-			}
-			teamMemberID := appHttp.GetParam(r, "team-member-id")
-			if teamMemberID == "" {
-				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "team slug is required", nil)
-				return
-			}
-			parsedTeamMemberID, err := uuid.Parse(teamMemberID)
-			if err != nil {
-				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team member id", err)
-				return
-			}
-			teamMember, err := app.Adapter().TeamMember().FindTeamMember(rawCtx, &stores.TeamMemberFilter{
-				Ids: []uuid.UUID{parsedTeamMemberID},
-				Active: types.OptionalParam[bool]{
-					Value: true, IsSet: true,
-				},
-			})
-			if err != nil {
-				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team member", err)
-				return
-			}
-			if teamMember == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusNotFound, "team member not found", nil)
-				return
-			}
-			teamInfo, err := app.Team().FindTeamInfo(rawCtx, teamMember.TeamID, userInfo.User.ID)
-			if err != nil {
-				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team info", err)
-				return
-			}
-			if teamInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusNotFound, "team info not found", nil)
-				return
-			}
-
-			ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
-			r = r.WithContext(ctxx)
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -490,39 +472,6 @@ func TeamInfoFromTaskProject(app core.App) HttpMiddelwareFunc {
 	}
 }
 
-// TeamInfoFromTeamSlug captures the {team-slug} path param, and along with the user info, queries the teamInfo.
-// If the user has membership in the team of {team-slug}, that teamInfo is added to the context, otherwise it returns an error
-func TeamInfoFromTeamSlug(app core.App) HttpMiddelwareFunc {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			rawCtx := r.Context()
-			userInfo := contextstore.GetContextUserInfo(rawCtx)
-			if userInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware", nil)
-				return
-			}
-			teamSlug := appHttp.GetParam(r, "team-slug")
-			if teamSlug == "" {
-				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "team slug is required", nil)
-				return
-			}
-			teamInfo, err := app.Team().FindTeamInfoBySlug(rawCtx, teamSlug, userInfo.User.ID)
-			if err != nil {
-				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team info", err)
-				return
-			}
-			if teamInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusNotFound, "team not found", nil)
-				return
-			}
-
-			ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
-			r = r.WithContext(ctxx)
-			next.ServeHTTP(w, r)
-		})
-	}
-}
-
 // TeamInfoFromTeamIDParam captures the {team-id} path param, and along with the user info, queries the teamInfo.
 // If the user has membership in the team of the task project, that teamInfo is added to the context, otherwise it returns an error
 func TeamInfoFromTeamIDParam(app core.App) HttpMiddelwareFunc {
@@ -556,38 +505,6 @@ func TeamInfoFromTeamIDParam(app core.App) HttpMiddelwareFunc {
 			ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
 			r = r.WithContext(ctxx)
 			next.ServeHTTP(w, r)
-		})
-	}
-}
-
-// RequireTeamMemberRolesMiddleware checks if the member has the required team member roles
-func RequireTeamMemberRolesMiddleware(roles ...models.TeamMemberRole) HttpMiddelwareFunc {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			rawCtx := r.Context()
-			if info := contextstore.GetContextTeamInfo(rawCtx); info != nil {
-				if len(roles) == 0 {
-					next.ServeHTTP(w, r)
-					return
-				}
-				if slices.Contains(roles, info.Member.Role) {
-					next.ServeHTTP(w, r)
-					return
-				}
-				_ = appHttp.WriteErr(
-					w,
-					r,
-					http.StatusForbidden,
-					fmt.Sprintf("You do not have the required team member roles: %v", roles),
-				)
-			} else {
-				_ = appHttp.WriteErr(
-					w,
-					r,
-					http.StatusForbidden,
-					"You do not have the required team info",
-				)
-			}
 		})
 	}
 }

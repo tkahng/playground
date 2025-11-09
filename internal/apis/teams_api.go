@@ -10,6 +10,8 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
@@ -94,9 +96,9 @@ func (api *Api) bindCreateTeam(humaApi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				api.Middlewares().GetEmailVerified(),
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.EmailVerifiedMiddleware(),
+			),
 		},
 		func(ctx context.Context, input *struct {
 			Body CreateTeamInput `json:"body" required:"true"`
@@ -310,9 +312,9 @@ func (api *Api) bindFindTeamInfoBySlug(humaApi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				api.Middlewares().GetRequireTeamInfo(),
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		func(ctx context.Context, input *struct {
 			Slug string `path:"team-slug" required:"true"`
@@ -346,10 +348,10 @@ func (api *Api) bindUpdateTeam(humaApi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				api.Middlewares().GetTeamInfoFromTeamIDParam(),
-				api.Middlewares().GetTeamRequiredOwnerMember(),
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+			),
 		},
 		api.UpdateTeam,
 	)
@@ -402,11 +404,11 @@ func (api *Api) bindDeleteTeam(humaApi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				api.Middlewares().GetRequireTeamInfo(),
-				api.Middlewares().GetTeamRequiredOwnerMember(),
-				api.Middlewares().GetTeamCanDelete(),
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+				middleware.TeamCanDelete(api.App()),
+			),
 		},
 		func(ctx context.Context, input *struct {
 			TeamID string `path:"team-id" required:"true"`

@@ -6,6 +6,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
+	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 )
 
@@ -61,10 +62,10 @@ func bindTeamsApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				appApi.Middlewares().GetTeamInfoFromTeamIDParam(),
-				appApi.Middlewares().GetTeamRequiredOwnerMember(),
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+			),
 		},
 		appApi.CreateInvitation,
 	)
@@ -83,10 +84,10 @@ func bindTeamsApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				appApi.Middlewares().GetRequireTeamInfo(),
-				appApi.Middlewares().GetTeamRequiredOwnerMember(),
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+			),
 		},
 		appApi.CencelInvitation,
 	)
@@ -106,9 +107,9 @@ func bindTeamsApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				appApi.Middlewares().GetRequireTeamInfo(),
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.FindInvitations,
 	)
