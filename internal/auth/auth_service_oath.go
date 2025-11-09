@@ -74,12 +74,10 @@ func (a *AuthServiceImpl) OAuth2Url(ctx context.Context, providerInput models.Pr
 		Token:      security.GenerateTokenKey(),
 	}
 	if provider.Pkce() {
-		info.CodeVerifier = security.RandomString(43)
-		info.CodeChallenge = security.S256Challenge(info.CodeVerifier)
-		info.CodeChallengeMethod = "S256"
+		info.CodeVerifier = oauth2.GenerateVerifier()
+		s256challengeOpt := oauth2.S256ChallengeOption(info.CodeVerifier)
 		urlOpts = append(urlOpts,
-			oauth2.SetAuthURLParam("code_challenge", info.CodeChallenge),
-			oauth2.SetAuthURLParam("code_challenge_method", info.CodeChallengeMethod),
+			s256challengeOpt,
 		)
 	}
 	state, err := a.CreateAndPersistStateToken(ctx, info)
@@ -229,13 +227,11 @@ type ProviderStateClaims struct {
 }
 
 type ProviderStatePayload struct {
-	Token               string            `json:"token"`
-	Type                models.TokenTypes `json:"type"`
-	Provider            models.Providers  `json:"provider"`
-	CodeVerifier        string            `json:"code_verifier,omitempty"`
-	CodeChallenge       string            `json:"code_challenge,omitempty"`
-	CodeChallengeMethod string            `json:"code_challenge_method,omitempty"`
-	RedirectTo          string            `json:"redirect_to,omitempty"`
+	Token        string            `json:"token"`
+	Type         models.TokenTypes `json:"type"`
+	Provider     models.Providers  `json:"provider"`
+	CodeVerifier string            `json:"code_verifier,omitempty"`
+	RedirectTo   string            `json:"redirect_to,omitempty"`
 }
 
 // CreateAndPersistStateToken implements AuthActions.
