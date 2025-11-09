@@ -25,12 +25,13 @@ type TeamMemberListInput struct {
 type TeamMemberFilter struct {
 	PaginatedInput
 	SortParams
-	Q       string                    `query:"q"`
-	Ids     []uuid.UUID               `query:"ids"`
-	Roles   []models.TeamMemberRole   `query:"roles"`
-	UserIds []uuid.UUID               `query:"user_ids"`
-	TeamIds []uuid.UUID               `query:"team_ids"`
-	Active  types.OptionalParam[bool] `query:"active"`
+	Q                string                    `query:"q"`
+	Ids              []uuid.UUID               `query:"ids"`
+	Roles            []models.TeamMemberRole   `query:"roles"`
+	UserIds          []uuid.UUID               `query:"user_ids"`
+	TeamIds          []uuid.UUID               `query:"team_ids"`
+	Active           types.OptionalParam[bool] `query:"active"`
+	HasBillingAccess types.OptionalParam[bool] `query:"has_billing_access"`
 }
 
 type DbTeamMemberStoreInterface interface {
@@ -40,6 +41,7 @@ type DbTeamMemberStoreInterface interface {
 	CountTeamMembers(ctx context.Context, filter *TeamMemberFilter) (int64, error)
 	CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error)
 	CreateTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
+	CreateTeamMember2(ctx context.Context, model *models.TeamMember) (*models.TeamMember, error)
 	DeleteTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
 	FindLatestTeamMemberByUserID(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
 	FindTeamMember(ctx context.Context, member *TeamMemberFilter) (*models.TeamMember, error)
@@ -178,9 +180,6 @@ func (s *DbTeamMemberStore) filter(filter *TeamMemberFilter) *map[string]any {
 		return nil
 	}
 	where := make(map[string]any)
-	// if filter.Q != "" {
-
-	// }
 	if len(filter.Ids) > 0 {
 		where[models.TeamMemberTable.ID] = map[string]any{
 			"_in": filter.Ids,
@@ -204,6 +203,11 @@ func (s *DbTeamMemberStore) filter(filter *TeamMemberFilter) *map[string]any {
 	if filter.Active.IsSet {
 		where[models.TeamMemberTable.Active] = map[string]any{
 			"_eq": filter.Active.Value,
+		}
+	}
+	if filter.HasBillingAccess.IsSet {
+		where[models.TeamMemberTable.HasBillingAccess] = map[string]any{
+			"_eq": filter.HasBillingAccess.Value,
 		}
 	}
 	return &where
@@ -274,16 +278,18 @@ func (s *DbTeamMemberStore) sortQuery(qs squirrel.SelectBuilder, filter Sortable
 	}
 
 	sortBy, sortOrder := filter.Sort()
-	if sortBy == "" || sortOrder == "" {
+	if sortBy == "" {
 		return qs
 	}
-
-	if sortBy != "" && slices.Contains(repository.TeamMemberBuilder.FieldNames(), sortBy) {
+	if sortOrder == "" {
+		sortOrder = "ASC"
+	}
+	if slices.Contains(repository.TeamMemberBuilder.FieldNames(), sortBy) {
 		qs = qs.OrderBy(sortBy + " " + strings.ToUpper(sortOrder))
 	} else if sortBy == "team.name" {
 		qs = qs.OrderBy("org.teams.name " + strings.ToUpper(sortOrder))
 	} else if sortBy == "user.email" {
-		qs = qs.OrderBy("users.email " + strings.ToUpper(sortOrder))
+		qs = qs.OrderBy("auth.users.email " + strings.ToUpper(sortOrder))
 	} else {
 		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.TeamMemberBuilder.FieldNames())
 	}
@@ -454,6 +460,9 @@ func (s *DbTeamMemberStore) FindLatestTeamMemberByUserID(ctx context.Context, us
 			models.TeamMemberTable.UserID: map[string]any{
 				"_eq": userId,
 			},
+			models.TeamMemberTable.Active: map[string]any{
+				"_eq": true,
+			},
 		},
 		&map[string]string{
 			models.TeamMemberTable.LastSelectedAt: "DESC",
@@ -497,7 +506,13 @@ func (s *DbTeamMemberStore) FindTeamMembersByUserID(ctx context.Context, userId 
 
 	return teamMembers, nil
 }
-
+func (s *DbTeamMemberStore) CreateTeamMember2(ctx context.Context, model *models.TeamMember) (*models.TeamMember, error) {
+	return repository.TeamMember.PostOne(
+		ctx,
+		s.db,
+		model,
+	)
+}
 func (s *DbTeamMemberStore) CreateTeamMember(ctx context.Context, teamId, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
 	teamMember := &models.TeamMember{
 		TeamID:           teamId,

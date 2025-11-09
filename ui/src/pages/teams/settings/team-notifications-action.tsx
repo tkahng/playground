@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { teamQueries } from "@/lib/api";
+import { readTeamMemberNotification } from "@/lib/team-queries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Ellipsis, Pencil } from "lucide-react";
 import { useState } from "react";
@@ -26,7 +26,7 @@ export function TeamNotificationActionDropdown({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const mutation = useMutation({
     mutationFn: (notificationId: string) => {
-      return teamQueries.readTeamMemberNotification(
+      return readTeamMemberNotification(
         user!.tokens?.access_token,
         teamMember!.id,
         notificationId

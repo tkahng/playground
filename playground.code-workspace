@@ -68,7 +68,10 @@
     "go.coverOnSingleTest": true,
     "go.coverShowCounts": true,
     "go.testExplorer.showDynamicSubtestsInEditor": true,
-    "go.testFlags": ["-race"],
+    "go.testFlags": ["-v", "-race"],
+    "go.testEnvVars": {
+      "DEBUG": "false"
+    },
     "testing.followRunningTest": true,
     "testing.showAllMessages": true,
     "[typescript]": {
@@ -140,6 +143,19 @@
       }
     },
     "editor.stickyScroll.defaultModel": "indentationModel",
-    "workbench.settings.showAISearchToggle": false
+    "typescript.referencesCodeLens.showOnAllFunctions": true,
+    "typescript.preferences.importModuleSpecifier": "non-relative",
+    "javascript.referencesCodeLens.showOnAllFunctions": true,
+    "javascript.referencesCodeLens.enabled": true,
+    "files.watcherExclude": {
+      "**/.git/objects/**": true,
+      "**/.git/subtree-cache/**": true,
+      "**/.hg/store/**": true,
+      "**/.git/**": true,
+      "**/node_modules/**": true,
+      "**/.vscode/**": true,
+      "**/dist/**": true,
+      "**/tmp/**": true
+    }
   }
 }

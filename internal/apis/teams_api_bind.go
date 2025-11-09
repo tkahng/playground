@@ -4,11 +4,23 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
+	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 )
 
-func bindTeamsApi(api huma.API, appApi *Api) {
-	teamsGroup := huma.NewGroup(api)
+func bindTeamsApi(appApi *Api) {
+	app := appApi.App()
+	teamsGroup := huma.NewGroup(appApi.Api())
+	teamsGroup.UseMiddleware(
+		humamiddleware.HumaChiMiddlewares(
+			middleware.TeamFromParam(app),
+			middleware.TeamFromParamSlug(app),
+			middleware.TeamMemberFromParam(app),
+			middleware.TeamInfoFromContext(app),
+		)...,
+	)
 	// get team members
 	//  /api/team-members
 
@@ -32,27 +44,7 @@ func bindTeamsApi(api huma.API, appApi *Api) {
 	appApi.bindUpdateTeam(teamsGroup)
 
 	// delete team
-	huma.Register(
-		teamsGroup,
-		huma.Operation{
-			OperationID: "delete-team",
-			Method:      http.MethodDelete,
-			Path:        "/teams/{team-id}",
-			Summary:     "delete-team",
-			Description: "delete a team by ID",
-			Tags:        []string{"Teams"},
-			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: huma.Middlewares{
-				appApi.middlewares.TeamInfoFromParam,
-				appApi.middlewares.TeamRequiredOwnerMember,
-				appApi.middlewares.TeamCanDelete,
-			},
-		},
-		appApi.DeleteTeam,
-	)
+	appApi.bindDeleteTeam(teamsGroup)
 
 	// team invitations -----------------------------------------------------------------------------------------------------------
 
@@ -70,10 +62,10 @@ func bindTeamsApi(api huma.API, appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				appApi.middlewares.TeamInfoFromParam,
-				appApi.middlewares.TeamRequiredOwnerMember,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+			),
 		},
 		appApi.CreateInvitation,
 	)
@@ -92,10 +84,10 @@ func bindTeamsApi(api huma.API, appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				appApi.middlewares.TeamInfoFromParam,
-				appApi.middlewares.TeamRequiredOwnerMember,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+			),
 		},
 		appApi.CencelInvitation,
 	)
@@ -115,9 +107,9 @@ func bindTeamsApi(api huma.API, appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				appApi.middlewares.TeamInfoFromParam,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.FindInvitations,
 	)
@@ -199,24 +191,7 @@ func bindTeamsApi(api huma.API, appApi *Api) {
 		appApi.GetUserTeamInvitations,
 	)
 
-	// find user team invitation by token
-	huma.Register(
-		teamsGroup,
-		huma.Operation{
-			OperationID: "find-user-team-invitation-by-token",
-			Method:      http.MethodGet,
-			Path:        "/team-invitations/token/{token}",
-			Summary:     "find-user-team-invitation-by-token",
-			Description: "find user team invitation by token",
-			Tags:        []string{"Team Invitations"},
-			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security:    []map[string][]string{{
-				// shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: huma.Middlewares{},
-		},
-		appApi.GetInvitationByToken,
-	)
+	appApi.BindGetInvitationByToken(teamsGroup)
 	appApi.bindTeamMembersSseEvents(teamsGroup)
 
 	appApi.bindFindTeamMembersNotifications(teamsGroup)
@@ -226,4 +201,8 @@ func bindTeamsApi(api huma.API, appApi *Api) {
 	appApi.bindDeleteTeamMembersNotifications(teamsGroup)
 
 	appApi.bindFindTeamMemberByID(teamsGroup)
+
+	appApi.UpdateTeamMemberBind(teamsGroup)
+
+	appApi.DeactivateTeamMemberBind(teamsGroup)
 }

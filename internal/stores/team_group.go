@@ -24,6 +24,8 @@ type TeamFilter struct {
 }
 
 type DbTeamGroupStoreInterface interface {
+	// CheckTeamSlug checks if a team with the given slug exists
+	// and returns true if it doesn't
 	CheckTeamSlug(ctx context.Context, slug string) (bool, error)
 	CountTeams(ctx context.Context, params *TeamFilter) (int64, error)
 	CreateTeam(ctx context.Context, name string, slug string) (*models.Team, error)
@@ -296,6 +298,8 @@ func (s *DbTeamGroupStore) CountTeams(ctx context.Context, params *TeamFilter) (
 	// return count[0].Count, nil
 }
 
+// CheckTeamSlug checks if a team with the given slug exists
+// and returns true if it doesn't
 func (s *DbTeamGroupStore) CheckTeamSlug(ctx context.Context, slug string) (bool, error) {
 	team, err := repository.Team.GetOne(
 		ctx,

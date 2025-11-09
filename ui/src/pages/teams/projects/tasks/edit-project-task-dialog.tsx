@@ -24,11 +24,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { PopoverContentNoPortal } from "@/components/ui/popover-noportal";
 import {
   Select,
@@ -40,7 +36,8 @@ import {
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useDialog } from "@/hooks/use-dialog";
 import { useTeam } from "@/hooks/use-team";
-import { getTeamTeamMembers, updateTask } from "@/lib/api";
+import { updateTask } from "@/lib/api";
+import { getTeamTeamMembers } from "@/lib/team-queries";
 import { cn } from "@/lib/utils";
 import { Task } from "@/schema.types";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -78,14 +75,23 @@ export function EditProjectTaskDialog({
   const { user } = useAuthProvider();
   const { team, teamMember } = useTeam();
   const { data: members } = useQuery({
-    queryKey: ["team-members", teamMember?.team_id],
+    queryKey: [
+      {
+        key: "team-team-members",
+        team_id: team?.id,
+        page: 0,
+        per_page: 20,
+        active: true,
+      },
+    ],
     queryFn: async () => {
-      return await getTeamTeamMembers(
-        user!.tokens.access_token,
-        teamMember!.team_id,
-        0,
-        50
-      );
+      return await getTeamTeamMembers({
+        token: user!.tokens.access_token,
+        teamId: teamMember!.team_id,
+        page: 0,
+        perPage: 20,
+        active: true,
+      });
     },
     enabled: !!teamMember?.team_id && !!user?.tokens.access_token,
   });
@@ -294,11 +300,10 @@ export function EditProjectTaskDialog({
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent
+                      <PopoverContentNoPortal
                         aria-modal={true}
                         className={cn("z-50 w-[200px] p-0")}
                         style={{ pointerEvents: "auto" }}
-                        portal={false}
                       >
                         <Command>
                           <CommandInput
@@ -351,7 +356,7 @@ export function EditProjectTaskDialog({
                             </CommandGroup>
                           </CommandList>
                         </Command>
-                      </PopoverContent>
+                      </PopoverContentNoPortal>
                     </Popover>
                     <FormDescription>
                       This is the language that will be used in the dashboard.

@@ -13,8 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { deleteUser, updateTeam } from "@/lib/api";
+import { deleteUser } from "@/lib/api";
 import { GetError } from "@/lib/get-error";
+import { updateTeam } from "@/lib/team-queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
@@ -68,9 +69,7 @@ export default function TeamSettingsPage() {
     onError: (error) => {
       const err = GetError(error);
       if (err) {
-        if (err.errors?.length) {
-          toast.error(`${err.errors[0].message || err.errors[0].value}`);
-        } else if (err.title) toast.error(`${err.detail || err.title}`);
+        toast.error(`${err.detail || err.title}`);
       } else {
         toast.error(`Failed to reset password: ${error.message}`);
       }

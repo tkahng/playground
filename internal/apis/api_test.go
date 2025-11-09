@@ -35,7 +35,7 @@ func SetupApi(t testing.TB, ctx context.Context, db database.Dbx) *TestApi {
 	t.Helper()
 	cfg := conf.ZeroEnvConfig()
 	app := core.NewTestBaseApp(cfg, db)
-	router, api := NewHumaApi(t)
+	router, api := NewHumaApi(t, app)
 	appApi := apis.NewAppApi(app, router, api)
 	appApi.RegisterRoutes()
 	testApi := &TestApi{
@@ -47,7 +47,7 @@ func SetupApi(t testing.TB, ctx context.Context, db database.Dbx) *TestApi {
 	}
 	return testApi
 }
-func NewHumaApi(tb testing.TB, configs ...huma.Config) (chi.Router, humatest.TestAPI) {
+func NewHumaApi(tb testing.TB, app core.App, configs ...huma.Config) (chi.Router, humatest.TestAPI) {
 	tb.Helper()
 	for _, config := range configs {
 		if config.OpenAPI == nil {
@@ -70,6 +70,7 @@ func NewHumaApi(tb testing.TB, configs ...huma.Config) (chi.Router, humatest.Tes
 		})
 	}
 	r := chi.NewMux()
+	apis.AddBaseMiddlewares(app, r)
 	return r, humatest.Wrap(tb, humachi.New(r, configs[0]))
 }
 
@@ -176,6 +177,7 @@ type ApiScenario struct {
 func (scenario *ApiScenario) Test(t *testing.T) {
 	t.Helper()
 	t.Run(scenario.normalizedName(), func(t *testing.T) {
+		t.Helper()
 		scenario.test(t)
 	})
 }
@@ -225,6 +227,7 @@ func (scenario *ApiScenario) normalizedName() string {
 func (scenario *ApiScenario) test(t testing.TB) {
 	t.Helper()
 	testApi := scenario.TestAppFactory(t)
+	scenario.Store = store.New[string, any](nil)
 	if scenario.BeforeTestFunc != nil {
 		scenario.BeforeTestFunc(t, testApi.App, scenario)
 	}
@@ -262,14 +265,12 @@ func (scenario *ApiScenario) test(t testing.TB) {
 		for _, item := range scenario.ExpectedContent {
 			if !strings.Contains(normalizedBody, item) {
 				t.Fatalf("Cannot find %v in response body \n%v", item, normalizedBody)
-				break
 			}
 		}
 
 		for _, item := range scenario.NotExpectedContent {
 			if strings.Contains(normalizedBody, item) {
 				t.Fatalf("Didn't expect %v in response body \n%v", item, normalizedBody)
-				break
 			}
 		}
 	}

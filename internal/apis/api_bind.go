@@ -6,34 +6,41 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
-func bindApis(api huma.API, appApi *Api) {
+func bindApis(appApi *Api) {
 	// Misc routes ------------------------------------
-	bindMiscApi(api, appApi)
+	bindMiscApi(appApi)
 	// signup -------------------------------------------------------------
-	bindAuthApi(api, appApi)
+	bindAuthApi(appApi)
 	// ---- Upload File
-	bindMediaApi(api, appApi)
+	bindMediaApi(appApi)
 	// ---- Teams
-	bindTeamsApi(api, appApi)
+	bindTeamsApi(appApi)
 	// stats routes -------------------------------------------------------------------------------------------------
-	bindStatsApi(api, appApi)
+	bindStatsApi(appApi)
 	// ---- task routes -------------------------------------------------------------------------------------------------
-	bindTaskApi(api, appApi)
+	bindTaskApi(appApi)
 	// stripe routes -------------------------------------------------------------------------------------------------
-	bindStripeApi(api, appApi)
+	bindStripeApi(appApi)
 	//  admin routes ----------------------------------------------------------------------------
-	bindAdminApi(api, appApi)
+	bindAdminApi(appApi)
 	// admin stripe products with prices
-	bindUserReactionApi(api, appApi)
+	bindUserReactionApi(appApi)
 }
 func bindMiddlewares(api API) {
-	api.Api().UseMiddleware(api.Middlewares().Recoverer)
-	api.Api().UseMiddleware(api.Middlewares().Auth)
-	api.Api().UseMiddleware(api.Middlewares().RequireAuth)
+	api.Api().UseMiddleware(humamiddleware.HumaOperationSecurityMiddleware())
+	api.Api().UseMiddleware(
+		humamiddleware.HumaChiMiddlewares(
+			middleware.RecovererMiddleware(),
+			middleware.AuthMiddleware(api.App()),
+			middleware.RequireAuthMiddleware(),
+		)...,
+	)
 }
 
 type IndexOutputBody struct {
@@ -44,7 +51,8 @@ type IndexOutput struct {
 	Body IndexOutputBody `json:"body"`
 }
 
-func bindMiscApi(api huma.API, appApi *Api) {
+func bindMiscApi(appApi *Api) {
+	api := appApi.Api()
 	huma.Get(api, "/", func(ctx context.Context, input *struct {
 		Page types.OmittableNullable[string] `query:"page" required:"false"`
 	}) (*IndexOutput, error) {

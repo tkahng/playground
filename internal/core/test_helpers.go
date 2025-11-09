@@ -71,10 +71,16 @@ type TeamOptionFunc func(opt *CreateTeamOptions)
 
 type CreateTeamOptions struct {
 	teamName string
+	active   bool
 	role     models.TeamMemberRole
 	billing  bool
 }
 
+func TeamWithActive(active bool) TeamOptionFunc {
+	return func(opt *CreateTeamOptions) {
+		opt.active = active
+	}
+}
 func TeamWithName(name string) TeamOptionFunc {
 	return func(opt *CreateTeamOptions) {
 		opt.teamName = name
@@ -84,6 +90,11 @@ func TeamWithName(name string) TeamOptionFunc {
 func TeamWithRole(role models.TeamMemberRole) TeamOptionFunc {
 	return func(opt *CreateTeamOptions) {
 		opt.role = role
+		if role == models.TeamMemberRoleOwner {
+			opt.billing = true
+		} else {
+			opt.billing = false
+		}
 	}
 }
 
@@ -99,6 +110,7 @@ func CreateTeamAndMemberWithOptions(t testing.TB, app App, user *models.User, op
 		teamName: user.Email,
 		role:     models.TeamMemberRoleOwner,
 		billing:  true,
+		active:   true,
 	}
 	for _, optFunc := range optFunc {
 		optFunc(option)
@@ -112,7 +124,13 @@ func CreateTeamAndMemberWithOptions(t testing.TB, app App, user *models.User, op
 	if err != nil {
 		t.Fatalf("Error creating team: %v", err)
 	}
-	member, err := app.Adapter().TeamMember().CreateTeamMember(ctx, team.ID, user.ID, option.role, option.billing)
+	member, err := app.Adapter().TeamMember().CreateTeamMember2(ctx, &models.TeamMember{
+		TeamID:           team.ID,
+		UserID:           types.Pointer(user.ID),
+		Role:             option.role,
+		HasBillingAccess: option.billing,
+		Active:           option.active,
+	})
 	if err != nil {
 		t.Fatalf("Error creating team member: %v", err)
 	}
@@ -183,11 +201,18 @@ func CreateTeamMemberWithOptions(t testing.TB, app App, teamID uuid.UUID, userId
 	option := &CreateTeamOptions{
 		role:    models.TeamMemberRoleOwner,
 		billing: true,
+		active:  true,
 	}
 	for _, optFunc := range optFunc {
 		optFunc(option)
 	}
-	member, err := app.Adapter().TeamMember().CreateTeamMember(ctx, teamID, userId, option.role, option.billing)
+	member, err := app.Adapter().TeamMember().CreateTeamMember2(ctx, &models.TeamMember{
+		TeamID:           teamID,
+		UserID:           types.Pointer(userId),
+		Role:             option.role,
+		HasBillingAccess: option.billing,
+		Active:           option.active,
+	})
 	if err != nil {
 		t.Fatalf("Error creating team member: %v", err)
 	}

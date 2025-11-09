@@ -14,6 +14,9 @@ services:
       # Entry point configuration
       - "--providers.file.directory=/etc/traefik/dynamic"
       - "--providers.file.watch=true" # Add this
+      - "--entrypoints.web.forwardedHeaders.insecure=true"
+      - "--experimental.plugins.cloudflarewarp.modulename=github.com/BetterCorp/cloudflarewarp"
+      - "--experimental.plugins.cloudflarewarp.version=v1.3.3"
     ports:
       - "4000:4000"
       - "8081:8080"

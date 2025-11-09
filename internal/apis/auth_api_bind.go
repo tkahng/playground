@@ -6,7 +6,8 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 )
 
-func bindAuthApi(api huma.API, appApi *Api) {
+func bindAuthApi(appApi *Api) {
+	api := appApi.Api()
 
 	// signup -------------------------------------------------------------
 	appApi.bindSingup(api)

@@ -17,6 +17,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/internal/tools/utils"
 )
 
@@ -395,13 +396,13 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 			t.Errorf("Error creating user: %v", err)
 			return
 		}
-		member2, err := app.Adapter().TeamMember().CreateTeamMember(
-			ctx,
-			member1.Team.ID,
-			user2.ID,
-			models.TeamMemberRoleMember,
-			false,
-		)
+		member2, err := app.Adapter().TeamMember().CreateTeamMember2(ctx, &models.TeamMember{
+			TeamID:           member1.Team.ID,
+			UserID:           types.Pointer(user2.ID),
+			Role:             models.TeamMemberRoleMember,
+			HasBillingAccess: false,
+			Active:           true,
+		})
 		if member2 == nil {
 			t.Errorf("Error creating user: %v", err)
 			return
@@ -418,36 +419,6 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 			t.Fatalf("Unexpected response: %s", resp.Body.String())
 		}
 		if !strings.Contains(resp.Body.String(), "You do not have the required team member role") {
-			t.Fatalf("Unexpected response: %s", resp.Body.String())
-		}
-	})
-}
-
-func TestGetActiveTeamMember_nomember(t *testing.T) {
-
-	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
-		app := testApi.App
-		api := testApi.TestApi
-		user1, err := app.Adapter().User().CreateUser(
-			ctx,
-			&models.User{
-				Email: "user1@example",
-			},
-		)
-		if err != nil {
-			t.Errorf("Error creating user: %v", err)
-			return
-		}
-
-		tokensVerifiedTokens, err := app.Auth().GenerateAuthTokens(ctx, user1.Email)
-		if err != nil {
-			t.Errorf("Error creating auth tokens: %v", err)
-			return
-		}
-		VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
-		resp := api.Get("/team-members/active", VerifiedHeader)
-		if resp.Code != 404 {
 			t.Fatalf("Unexpected response: %s", resp.Body.String())
 		}
 	})

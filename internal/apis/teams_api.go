@@ -2,6 +2,7 @@ package apis
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -9,6 +10,8 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
@@ -24,6 +27,10 @@ type TeamInfo struct {
 // TeamMemberRole
 // enum:"owner,member,guest"
 type TeamMemberRole string
+
+func (role TeamMemberRole) String() string {
+	return string(role)
+}
 
 const (
 	TeamMemberRoleOwner  TeamMemberRole = "owner"
@@ -89,64 +96,67 @@ func (api *Api) bindCreateTeam(humaApi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				api.middlewares.EmailVerified,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.EmailVerifiedMiddleware(),
+			),
 		},
-		api.CreateTeam,
+		func(ctx context.Context, input *struct {
+			Body CreateTeamInput `json:"body" required:"true"`
+		}) (*TeamWithMemberOutput, error) {
+			if ok, err := api.App().Adapter().TeamGroup().CheckTeamSlug(ctx, input.Body.Slug); !ok {
+				if err != nil {
+					slog.ErrorContext(
+						ctx,
+						"error ocurred while checking slug",
+					)
+					return nil, fmt.Errorf("error ocurred while checking slug")
+				}
+				return nil, huma.Error400BadRequest("slug already exists")
+			}
+			info := contextstore.GetContextUserInfo(ctx)
+			if info == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			user := &info.User
+			var teamInfo *models.TeamInfoModel
+			runInTxErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+				teamInfoTx, err := api.App().Team().CreateTeamWithOwner(
+					txCtx,
+					input.Body.Name,
+					input.Body.Slug,
+					user.ID,
+				)
+				if err != nil {
+					return err
+				}
+				if teamInfoTx == nil {
+					return huma.Error500InternalServerError("team not found")
+				}
+				team := &teamInfoTx.Team
+
+				_, err = api.App().Payment().CreateTeamCustomer(
+					txCtx,
+					team,
+					user,
+				)
+				if err != nil {
+					return err
+				}
+
+				teamInfo = teamInfoTx
+				return nil
+			})
+			if runInTxErr != nil {
+				return nil, runInTxErr
+			}
+			return &TeamWithMemberOutput{
+				Body: &TeamWithMember{
+					Team:   *fromTeamModel(&teamInfo.Team),
+					Member: fromTeamMemberModel(&teamInfo.Member),
+				},
+			}, nil
+		},
 	)
-}
-func (api *Api) CreateTeam(
-	ctx context.Context,
-	input *struct {
-		Body CreateTeamInput `json:"body" required:"true"`
-	},
-) (
-	*TeamWithMemberOutput,
-	error,
-) {
-	info := contextstore.GetContextUserInfo(ctx)
-	if info == nil {
-		return nil, huma.Error401Unauthorized("unauthorized")
-	}
-	user := &info.User
-	var teamInfo *models.TeamInfoModel
-	runInTxErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
-		teamInfoTx, err := api.App().Team().CreateTeamWithOwner(
-			txCtx,
-			input.Body.Name,
-			input.Body.Slug,
-			user.ID,
-		)
-		if err != nil {
-			return err
-		}
-		if teamInfoTx == nil {
-			return huma.Error500InternalServerError("team not found")
-		}
-		team := &teamInfoTx.Team
-
-		_, err = api.App().Payment().CreateTeamCustomer(
-			txCtx,
-			team,
-			user,
-		)
-		if err != nil {
-			return err
-		}
-
-		teamInfo = teamInfoTx
-		return nil
-	})
-	if runInTxErr != nil {
-		return nil, runInTxErr
-	}
-	return &TeamWithMemberOutput{
-		Body: &TeamWithMember{
-			Team:   *fromTeamModel(&teamInfo.Team),
-			Member: fromTeamMemberModel(&teamInfo.Member),
-		},
-	}, nil
 }
 
 func (api *Api) bindCheckTeamSlug(
@@ -302,51 +312,26 @@ func (api *Api) bindFindTeamInfoBySlug(humaApi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				api.middlewares.TeamInfoFromTeamSlug,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
-		api.FindTeamInfoBySlug,
+		func(ctx context.Context, input *struct {
+			Slug string `path:"team-slug" required:"true"`
+		}) (*TeamInfoOutput, error) {
+			info := contextstore.GetContextTeamInfo(ctx)
+			if info == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			return &TeamInfoOutput{
+				Body: &TeamInfo{
+					Team:   *fromTeamModel(&info.Team),
+					Member: *fromTeamMemberModel(&info.Member),
+					User:   *fromUserModel(&info.User),
+				},
+			}, nil
+		},
 	)
-}
-func (api *Api) FindTeamInfoBySlug(
-	ctx context.Context,
-	input *struct {
-		Slug string `path:"team-slug" required:"true"`
-	},
-) (
-	*TeamInfoOutput,
-	error,
-) {
-	info := contextstore.GetContextTeamInfo(ctx)
-	if info == nil {
-		return nil, huma.Error401Unauthorized("unauthorized")
-	}
-	return &TeamInfoOutput{
-		Body: &TeamInfo{
-			Team:   *fromTeamModel(&info.Team),
-			Member: *fromTeamMemberModel(&info.Member),
-			User:   *fromUserModel(&info.User),
-		},
-	}, nil
-}
-
-func (api *Api) FindTeamMemberBySlug(
-	ctx context.Context,
-	input *struct {
-		Slug string `path:"team-slug" required:"true"`
-	},
-) (
-	*TeamMemberOutput,
-	error,
-) {
-	info := contextstore.GetContextTeamInfo(ctx)
-	if info == nil {
-		return nil, huma.Error401Unauthorized("unauthorized")
-	}
-	return &TeamMemberOutput{
-		Body: fromTeamMemberModel(&info.Member),
-	}, nil
 }
 
 func (api *Api) bindUpdateTeam(humaApi huma.API) {
@@ -363,10 +348,10 @@ func (api *Api) bindUpdateTeam(humaApi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				api.middlewares.TeamInfoFromParam,
-				api.middlewares.TeamRequiredOwnerMember,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+			),
 		},
 		api.UpdateTeam,
 	)
@@ -405,27 +390,41 @@ func (api *Api) UpdateTeam(
 	}, nil
 }
 
-func (api *Api) DeleteTeam(
-	ctx context.Context,
-	input *struct {
-		TeamID string `path:"team-id" required:"true"`
-	},
-) (
-	*TeamOutput,
-	error,
-) {
-	info := contextstore.GetContextTeamInfo(ctx)
-	if info == nil {
-		return nil, huma.Error401Unauthorized("unauthorized")
-	}
-	slog.InfoContext(ctx, "Deleting team", slog.String("team_id", info.Team.ID.String()), slog.String("user_id", info.User.ID.String()))
-	err := api.App().Team().DeleteTeam(ctx, info.Team.ID, info.User.ID)
-	if err != nil {
-		slog.ErrorContext(ctx, "error deleting team", "teamId", info.Team.ID.String(), "userId", info.User.ID.String(), "error", err)
-		return nil, err
-	}
-	slog.InfoContext(ctx, "Team deleted successfully", slog.String("team_id", info.Team.ID.String()), slog.String("user_id", info.User.ID.String()))
-	return nil, nil
+func (api *Api) bindDeleteTeam(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "delete-team",
+			Method:      http.MethodDelete,
+			Path:        "/teams/{team-id}",
+			Summary:     "delete-team",
+			Description: "delete a team by ID",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+				middleware.TeamCanDelete(api.App()),
+			),
+		},
+		func(ctx context.Context, input *struct {
+			TeamID string `path:"team-id" required:"true"`
+		}) (*TeamOutput, error) {
+			info := contextstore.GetContextTeamInfo(ctx)
+			if info == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			err := api.App().Team().DeleteTeam(ctx, info.Team.ID, info.User.ID)
+			if err != nil {
+				slog.ErrorContext(ctx, "error deleting team", "teamId", info.Team.ID.String(), "userId", info.User.ID.String(), "error", err)
+				return nil, err
+			}
+			return nil, nil
+		},
+	)
 }
 
 func (api *Api) bindGetTeam(humaApi huma.API) {
@@ -442,85 +441,18 @@ func (api *Api) bindGetTeam(humaApi huma.API) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				api.middlewares.TeamInfoFromParam,
-				api.middlewares.TeamRequiredAnyMember,
-			},
+			Middlewares: huma.Middlewares{},
 		},
-		api.GetTeam,
+		func(ctx context.Context, input *struct {
+			TeamID string `path:"team-id" required:"true"`
+		}) (*TeamOutput, error) {
+			team := contextstore.GetContextTeam(ctx)
+			if team == nil {
+				return nil, huma.Error404NotFound("team not found")
+			}
+			return &TeamOutput{
+				Body: fromTeamModel(team),
+			}, nil
+		},
 	)
-}
-
-func (api *Api) GetTeam(
-	ctx context.Context,
-	input *struct {
-		TeamID string `path:"team-id" required:"true"`
-	},
-) (
-	*TeamOutput,
-	error,
-) {
-	info := contextstore.GetContextUserInfo(ctx)
-	if info == nil {
-		return nil, huma.Error401Unauthorized("unauthorized")
-	}
-	uid, err := uuid.Parse(input.TeamID)
-	if err != nil {
-		return nil, huma.Error400BadRequest("invalid team ID")
-	}
-	team, err := api.App().Adapter().TeamGroup().FindTeamByID(ctx, uid)
-	if err != nil {
-		return nil, err
-	}
-	if team == nil {
-		return nil, huma.Error404NotFound("team not found")
-	}
-	return &TeamOutput{
-		Body: fromTeamModel(team),
-	}, nil
-}
-
-type SetCurrentTeamInput struct {
-	TeamID string `json:"team_id" required:"true"`
-}
-
-func (api *Api) SetCurrentTeam(
-	ctx context.Context,
-	input *struct {
-		Body SetCurrentTeamInput `json:"body" required:"true"`
-	},
-) (
-	*struct {
-		Body struct {
-			Success bool `json:"success"`
-		}
-	},
-	error,
-) {
-	info := contextstore.GetContextUserInfo(ctx)
-	if info == nil {
-		return nil, huma.Error401Unauthorized("unauthorized")
-	}
-	passedTeamID, err := uuid.Parse(input.Body.TeamID)
-	if err != nil {
-		return nil, huma.Error400BadRequest("invalid team ID")
-	}
-	teamMember, err := api.App().Team().SetActiveTeamMember(ctx, info.User.ID, passedTeamID)
-	if err != nil {
-		return nil, err
-	}
-	if teamMember == nil {
-		return nil, huma.Error404NotFound("team not found")
-	}
-	return &struct {
-		Body struct {
-			Success bool `json:"success"`
-		}
-	}{
-		Body: struct {
-			Success bool `json:"success"`
-		}{
-			Success: true,
-		},
-	}, nil
 }

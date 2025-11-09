@@ -72,7 +72,7 @@ export default function ResetPasswordRequestPage() {
       formSchema.parse({ email });
     } catch (error) {
       if (error instanceof z.ZodError) {
-        setValidationError(error.errors[0].message);
+        setValidationError(error.message);
         return;
       }
     }

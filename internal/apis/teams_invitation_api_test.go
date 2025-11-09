@@ -3,12 +3,15 @@ package apis_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/playground/internal/apis"
@@ -17,6 +20,7 @@ import (
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/notification"
+	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/store"
 	"github.com/tkahng/playground/internal/tools/utils"
@@ -237,6 +241,65 @@ func TestApi_AcceptInvitation(t *testing.T) {
 				assert.Len(t, paymentClient.SubscriptionItems, 0)
 			},
 		},
+		{
+			Name:           "fail: unknown error. roll back everything",
+			Method:         http.MethodPost,
+			URL:            "/team-invitations/accept",
+			ExpectedStatus: http.StatusInternalServerError,
+			ExpectedContent: []string{
+				"unknown error",
+			},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				ctx := t.Context()
+
+				core.CreateProductsAndPrices(t, app)
+				// init team
+				teamInfo := CreateTeamAndOwner(t, app)
+				// send invitation and get token
+				err := app.TeamInvitation().CreateInvitation(
+					ctx,
+					teamInfo.Team.ID,
+					teamInfo.User.ID,
+					inviteeEmail,
+					models.TeamMemberRoleMember,
+					true,
+				)
+				assert.NoError(t, err)
+				if err := app.JobManager().PollOnce(ctx); err != nil {
+					t.Fatal(err)
+				}
+				token := ExtractFistMessageTokenFromMailer(t, app)
+
+				// create invitee user
+				otherUserInfo := core.CreateUserWithOptions(t, app, core.UserWithEmail(inviteeEmail), core.UserWithVerifiedNow())
+				body := apis.CheckValidInvitationDto{
+					Token: token,
+				}
+				scenario.Body = JsonToReader(t, body)
+				header := core.CreateTokenHeader(t, app, otherUserInfo.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+				decorator, ok := app.Adapter().TeamInvitation().(*stores.TeamInvitationStoreDecorator)
+				assert.True(t, ok)
+				decorator.UpdateInvitationFunc = func(ctx context.Context, invitation *models.TeamInvitation) error {
+					return errors.New("unknown error")
+				}
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				ctx := t.Context()
+				for range 5 {
+					err := app.JobManager().PollOnce(ctx)
+					assert.NoError(t, err)
+				}
+				paymentClient := core.ExtractTestPaymentClient(t, app)
+				assert.Len(t, paymentClient.SubscriptionItems, 0)
+				memberCount := repository.MustCountAllCtx(t, ctx, repository.TeamMember, app.Db(), nil)
+				assert.Equal(t, int64(1), memberCount)
+				invitation := repository.MustFindOneCtx(t, ctx, repository.TeamInvitation, app.Db(), nil)
+				assert.NotNil(t, invitation)
+				assert.Equal(t, models.TeamInvitationStatusPending, invitation.Status)
+				assert.Equal(t, inviteeEmail, invitation.Email)
+			},
+		},
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
@@ -244,7 +307,6 @@ func TestApi_AcceptInvitation(t *testing.T) {
 			tt.TestAppFactory = func(t testing.TB) *TestApi {
 				return testApi
 			}
-			tt.Store = store.New[string, any](nil)
 			tt.Test(t)
 		})
 	}
@@ -367,7 +429,6 @@ func TestApi_CancelInvitation(t *testing.T) {
 			tt.TestAppFactory = func(t testing.TB) *TestApi {
 				return testApi
 			}
-			tt.Store = store.New[string, any](nil)
 			tt.Test(t)
 		})
 	}
@@ -545,27 +606,48 @@ func TestApi_FindUserInvitations(t *testing.T) {
 			tt.TestAppFactory = func(t testing.TB) *TestApi {
 				return testApi
 			}
-			tt.Store = store.New[string, any](nil)
 			tt.Test(t)
 		})
 	}
 }
 
+func randomEmail() string {
+	return fmt.Sprintf("%s@example.com", strings.ReplaceAll(uuid.NewString(), "-", ""))
+}
+
 func CreateTeamAndOwner(t testing.TB, app *core.BaseApp) *models.TeamInfoModel {
-	ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+	ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
 	teamInfo := core.CreateTeamAndMemberWithOptions(t, app, &ownerUserInfo.User)
 	return teamInfo
 }
-func CreateTeamSubscription(t testing.TB, app *core.BaseApp, teamInfo *models.TeamInfoModel) *models.StripeSubscription {
+func CreateTeamMember(t testing.TB, app *core.BaseApp, team *models.Team, optFunc ...core.TeamOptionFunc) *models.TeamInfoModel {
+	ownerUserInfo := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+	opts := []core.TeamOptionFunc{
+		core.TeamWithBilling(false),
+		core.TeamWithRole(models.TeamMemberRoleMember),
+	}
+	opts = append(opts, optFunc...)
+	teamInfo := core.CreateTeamMemberWithOptions(t, app, team.ID, ownerUserInfo.User.ID, opts...)
+	return &models.TeamInfoModel{
+		Team:   *team,
+		User:   ownerUserInfo.User,
+		Member: *teamInfo,
+	}
+}
+func CreateTeamSubscription(t testing.TB, app *core.BaseApp, teamInfo *models.TeamInfoModel, optFunc ...core.SubscriptionOptionFunc) *models.StripeSubscription {
+	funcs := []core.SubscriptionOptionFunc{
+		core.SubscriptionWithID("sub_1"),
+		core.SubscriptionWithItemID("item_1"),
+		core.SubscriptionWithPriceID("price_pro_month_usd_5000"),
+	}
+	funcs = append(funcs, optFunc...)
 	teamCustomer, err := app.Payment().FindCustomerByTeamId(t.Context(), teamInfo.Team.ID)
 	assert.NoError(t, err)
 	sub := core.CreateStripeSubscriptionWithOptions(
 		t,
 		app,
 		teamCustomer.ID,
-		core.SubscriptionWithID("sub_1"),
-		core.SubscriptionWithItemID("item_1"),
-		core.SubscriptionWithPriceID("price_pro_month_usd_5000"),
+		funcs...,
 	)
 	return sub
 }

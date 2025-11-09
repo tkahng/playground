@@ -8,12 +8,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { GetError, isErrorModel } from "@/lib/get-error";
 import {
   acceptInvitation,
   declineInvitation,
   getTeamInvitationByToken,
-} from "@/lib/api";
-import { GetError } from "@/lib/get-error";
+} from "@/lib/team-queries";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowRight, Check, Home } from "lucide-react";
 import { useState } from "react";
@@ -101,10 +101,16 @@ export default function UserTeamInvitationRedirectPage() {
   }
 
   if (error) {
-    const err = GetError(error);
+    if (isErrorModel(error)) {
+      return (
+        <div>
+          <p>Error: {error.detail}</p>
+        </div>
+      );
+    }
     return (
       <div>
-        <p>Error: {err?.detail}</p>
+        <p>Error: {error?.message}</p>
       </div>
     );
   }

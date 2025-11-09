@@ -10,6 +10,7 @@ import (
 	humasse "github.com/danielgtaylor/huma/v2/sse"
 	"github.com/go-chi/httprate"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
@@ -27,7 +28,7 @@ type UserReactionInput struct {
 }
 
 func (api *Api) bindCreateUserReaction(aapi huma.API) {
-	ipMiddleware := humamiddleware.IpAddressMiddleware(aapi)
+	ipMiddleware := humamiddleware.HumaChiMiddleware(middleware.IpAddressMiddleware())
 	rateLimitByIp := humamiddleware.HumaChiMiddleware(httprate.LimitByIP(1, 1*time.Second))
 	huma.Register(
 		aapi,

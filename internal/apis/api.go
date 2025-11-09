@@ -11,20 +11,19 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/go-chi/chi/v5"
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/go-chi/httplog/v3"
 	"github.com/go-chi/httprate"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/middleware"
-
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
-	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/ui"
 )
 
 type API interface {
-	Middlewares() *ApiMiddlewares
+	Middlewares() *humamiddleware.ApiMiddlewares
 	Api() huma.API
 	RegisterRoutes()
 	Router() chi.Router
@@ -35,11 +34,11 @@ type Api struct {
 	app         core.App
 	api         huma.API
 	router      chi.Router
-	middlewares *ApiMiddlewares
+	middlewares *humamiddleware.ApiMiddlewares
 }
 
 // Middlewares implements AppApi.
-func (api *Api) Middlewares() *ApiMiddlewares {
+func (api *Api) Middlewares() *humamiddleware.ApiMiddlewares {
 	return api.middlewares
 }
 
@@ -47,7 +46,7 @@ var _ API = (*Api)(nil)
 
 func (api *Api) RegisterRoutes() {
 	bindMiddlewares(api)
-	bindApis(api.Api(), api)
+	bindApis(api)
 }
 
 func (api *Api) Api() huma.API {
@@ -78,7 +77,7 @@ func NewAppApiWithRouter(app core.App) *Api {
 		app:         app,
 		api:         api,
 		router:      router,
-		middlewares: newApiMiddlewares(api, app),
+		middlewares: humamiddleware.NewApiMiddlewares(app),
 	}
 }
 func NewAppApi(app core.App, router chi.Router, api huma.API) *Api {
@@ -86,27 +85,15 @@ func NewAppApi(app core.App, router chi.Router, api huma.API) *Api {
 		app:         app,
 		api:         api,
 		router:      router,
-		middlewares: newApiMiddlewares(api, app),
+		middlewares: humamiddleware.NewApiMiddlewares(app),
 	}
 }
 
-func NewRouter(app core.App) *chi.Mux {
-	r := chi.NewMux()
-	r.Use(cors.Handler(cors.Options{
-		// AllowedOrigins:   []string{"https://foo.com"}, // Use this to allow specific origin hosts
-		AllowedOrigins: []string{"*"},
-		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-	}))
+func AddBaseMiddlewares(app core.App, r chi.Router, mw ...func(http.Handler) http.Handler) {
+	r.Use(middleware.InitContextAttrsMiddleware)
+	r.Use(chimiddleware.RequestID)
+	r.Use(middleware.SetRequestIDAttrsMiddleware)
 	r.Use(httplog.RequestLogger(app.Logger(), &httplog.Options{
-		// Level defines the verbosity of the request logs:
-		// slog.LevelDebug - log all responses (incl. OPTIONS)
-		// slog.LevelInfo  - log responses (excl. OPTIONS)
-		// slog.LevelWarn  - log 4xx and 5xx responses only (except for 429)
-		// slog.LevelError - log 5xx responses only
 		Level: slog.LevelInfo,
 
 		// Set log output to Elastic Common Schema (ECS) format.
@@ -118,9 +105,44 @@ func NewRouter(app core.App) *chi.Mux {
 		// NOTE: Panics are logged as errors automatically, regardless of this setting.
 		RecoverPanics: true,
 	}))
-	// r.Use(middleware.Logger)
-	// r.Use(middleware.Recoverer)
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "PUT", "POST", "DELETE", "HEAD", "OPTION"},
+		AllowedHeaders: []string{
+			"User-Agent",
+			"Content-Type",
+			"Accept",
+			"Accept-Encoding",
+			"Accept-Language",
+			"Cache-Control",
+			"Connection",
+			"DNT",
+			"Host",
+			"Origin",
+			"Pragma",
+			"Referer",
+			"X-Client-IP",
+			"X-Forwarded-For",
+			"X-Forwarded",
+			"Forwarded-For",
+			"Forwarded",
+			"CF-Connecting-IP",
+			"Fastly-Client-Ip",
+			"True-Client-Ip",
+			"X-Real-IP",
+			"X-Cluster-Client-IP",
+		},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+	}))
 	r.Use(httprate.LimitByIP(100, 1*time.Minute))
+	r.Use(mw...)
+}
+
+func NewRouter(app core.App) *chi.Mux {
+	r := chi.NewMux()
+
+	AddBaseMiddlewares(app, r)
 	// Handle all other routes by serving index.html (for React Router)
 	r.HandleFunc("/*", func(w http.ResponseWriter, r *http.Request) {
 		p := filepath.Clean(r.URL.Path)
@@ -167,42 +189,4 @@ func newApiGroup(r chi.Router) huma.API {
 
 	grp := huma.NewGroup(api, "/api")
 	return grp
-}
-
-type HumaMiddlewareFunc func(ctx huma.Context, next func(huma.Context))
-
-type ApiMiddlewares struct {
-	SelectCustomerFromUser   HumaMiddlewareFunc
-	SelectCustomerFromTeam   HumaMiddlewareFunc
-	TeamInfoFromParam        HumaMiddlewareFunc
-	TeamInfoFromTask         HumaMiddlewareFunc
-	TeamInfoFromTaskProject  HumaMiddlewareFunc
-	TeamInfoFromTeamMemberID HumaMiddlewareFunc
-	TeamInfoFromTeamSlug     HumaMiddlewareFunc
-	TeamCanDelete            HumaMiddlewareFunc
-	EmailVerified            HumaMiddlewareFunc
-	TeamRequiredOwnerMember  HumaMiddlewareFunc
-	TeamRequiredAnyMember    HumaMiddlewareFunc
-	Auth                     HumaMiddlewareFunc
-	RequireAuth              HumaMiddlewareFunc
-	Recoverer                HumaMiddlewareFunc
-}
-
-func newApiMiddlewares(api huma.API, app core.App) *ApiMiddlewares {
-	return &ApiMiddlewares{
-		SelectCustomerFromUser:   humamiddleware.SelectCustomerFromUser(api, app),
-		SelectCustomerFromTeam:   humamiddleware.SelectCustomerFromTeam(api, app),
-		TeamInfoFromParam:        humamiddleware.TeamInfoFromParam(api, app),
-		TeamInfoFromTask:         humamiddleware.TeamInfoFromTask(api, app),
-		TeamInfoFromTaskProject:  humamiddleware.TeamInfoFromTaskProject(api, app),
-		TeamInfoFromTeamMemberID: humamiddleware.TeamInfoFromTeamMemberID(api, app),
-		TeamInfoFromTeamSlug:     humamiddleware.TeamInfoFromTeamSlug(api, app),
-		TeamCanDelete:            humamiddleware.TeamCanDelete(api, app),
-		EmailVerified:            humamiddleware.HumaEmailVerifiedMiddleware(api, app),
-		TeamRequiredOwnerMember:  humamiddleware.RequireTeamMemberRolesMiddleware(api, models.TeamMemberRoleOwner),
-		TeamRequiredAnyMember:    humamiddleware.RequireTeamMemberRolesMiddleware(api),
-		Auth:                     humamiddleware.HumaAuthMiddleware(api, app),
-		RequireAuth:              humamiddleware.HumaRequireAuthMiddleware(api, app),
-		Recoverer:                humamiddleware.HumaChiMiddleware(middleware.RecovererMiddleware(app)),
-	}
 }

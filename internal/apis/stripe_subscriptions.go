@@ -154,7 +154,7 @@ func (a *Api) bindGetStripeSubscriptions(api huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				a.middlewares.SelectCustomerFromUser,
+				a.Middlewares().GetSelectCustomerFromUser(),
 			},
 		},
 		a.GetStripeSubscriptions,
@@ -199,8 +199,8 @@ func (a *Api) bindGetTeamStripeSubscriptions(stripeGroup huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: huma.Middlewares{
-				a.middlewares.TeamInfoFromParam,
-				a.middlewares.SelectCustomerFromTeam,
+				a.Middlewares().GetTeamInfoFromTeamIDParam(),
+				a.Middlewares().GetSelectCustomerFromTeam(),
 			},
 		},
 		a.GetTeamStripeSubscriptions,

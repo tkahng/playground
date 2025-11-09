@@ -7,6 +7,8 @@ import (
 	"slices"
 	"testing"
 	"time"
+
+	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 type RandomSelector[T any] interface {
@@ -65,7 +67,7 @@ func TestSliceItemsOrderByFunc[T any](t *testing.T, got []T, fn func(first T, se
 	}
 }
 
-func TestSliceEveryFunc[T any](t *testing.T, msg string, items []T, predicate func(item T) bool) {
+func TestSliceEveryFunc[T any](t testing.TB, msg string, items []T, predicate func(item T) bool) {
 	t.Helper()
 	for idx, item := range items {
 		if predicate(item) {
@@ -151,4 +153,13 @@ func CompareFields(a, b any, fieldNames ...string) (bool, string) {
 	}
 
 	return true, ""
+}
+
+func MustUnMarshal[T any](t testing.TB, data []byte) T {
+	t.Helper()
+	res, err := utils.UnmarshalJSON[T](data)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return res
 }
