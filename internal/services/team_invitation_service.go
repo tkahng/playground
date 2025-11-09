@@ -34,9 +34,24 @@ type TeamInvitationService interface {
 var _ TeamInvitationService = (*InvitationService)(nil)
 
 type InvitationService struct {
-	adapter    stores.StorageAdapterInterface
-	settings   conf.EnvConfig
-	jobService JobService
+	adapter        stores.StorageAdapterInterface
+	settings       conf.EnvConfig
+	jobService     JobService
+	paymentService PaymentService
+}
+
+func NewInvitationService(
+	adapter stores.StorageAdapterInterface,
+	settings conf.EnvConfig,
+	jobService JobService,
+	paymentService PaymentService,
+) TeamInvitationService {
+	return &InvitationService{
+		settings:       settings,
+		adapter:        adapter,
+		jobService:     jobService,
+		paymentService: paymentService,
+	}
 }
 
 // GetInvitation implements TeamInvitationService.
@@ -55,17 +70,6 @@ func (i *InvitationService) GetInvitation(ctx context.Context, invitationToken s
 
 }
 
-func NewInvitationService(
-	adapter stores.StorageAdapterInterface,
-	settings conf.EnvConfig,
-	jobService JobService,
-) TeamInvitationService {
-	return &InvitationService{
-		settings:   settings,
-		adapter:    adapter,
-		jobService: jobService,
-	}
-}
 func (i *InvitationService) CancelInvitation(
 	ctx context.Context,
 	teamId uuid.UUID,
@@ -145,9 +149,7 @@ func (i *InvitationService) AcceptInvitation(
 		if err != nil {
 			return err
 		}
-		err = i.jobService.EnqueueRefreshSubscriptionQuantityJob(txCtx, &workers.RefreshSubscriptionQuantityJobArgs{
-			TeamID: teamMember.TeamID,
-		})
+		err = i.paymentService.VerifyAndUpdateTeamSubscriptionQuantity(txCtx, teamMember.TeamID)
 		if err != nil {
 			return err
 		}
