@@ -26,30 +26,26 @@ func (a *Api) bindOAuth2CallbackPost(api huma.API) {
 			Tags:        []string{"Auth", "OAuth2"},
 			Errors:      []int{http.StatusNotFound},
 		},
-		a.OAuth2CallbackPost,
+		func(ctx context.Context, input *OAuth2CallbackInput) (*AuthenticatedInfoResponse, error) {
+			dto, err := OAuth2Callback(ctx, a, input)
+			if err != nil {
+				return nil, err
+			}
+			redirectUrl := dto.RedirectTo
+			uri, err := url.Parse(redirectUrl)
+			if err != nil {
+				return nil, err
+			}
+			q := uri.Query()
+			q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
+			uri.RawQuery = q.Encode()
+			fmt.Println(uri.String())
+
+			return &AuthenticatedInfoResponse{
+				Body: dto.ApiUserInfoTokens,
+			}, nil
+		},
 	)
-}
-
-// TODO: redirect to /auth/callback with refresh token
-func (api *Api) OAuth2CallbackPost(ctx context.Context, input *OAuth2CallbackInput) (*AuthenticatedInfoResponse, error) {
-
-	dto, err := OAuth2Callback(ctx, api, input)
-	if err != nil {
-		return nil, err
-	}
-	redirectUrl := dto.RedirectTo
-	uri, err := url.Parse(redirectUrl)
-	if err != nil {
-		return nil, err
-	}
-	q := uri.Query()
-	q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
-	uri.RawQuery = q.Encode()
-	fmt.Println(uri.String())
-
-	return &AuthenticatedInfoResponse{
-		Body: dto.ApiUserInfoTokens,
-	}, nil
 }
 
 type OAuth2CallbackInput struct {
@@ -75,31 +71,29 @@ func (a *Api) bindOath2CallbackGet(api huma.API) {
 			Tags:        []string{"Auth", "OAuth2"},
 			Errors:      []int{http.StatusNotFound},
 		},
-		a.OAuth2CallbackGet,
+		func(ctx context.Context, input *OAuth2CallbackInput) (*OAuth2CallbackGetResponse, error) {
+			dto, err := OAuth2Callback(ctx, a, input)
+			if err != nil {
+				return nil, err
+			}
+			redirectUrl := dto.RedirectTo
+			uri, err := url.Parse(redirectUrl)
+			if err != nil {
+				return nil, err
+			}
+			q := uri.Query()
+			q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
+			uri.RawQuery = q.Encode()
+			fmt.Println(uri.String())
+
+			return &OAuth2CallbackGetResponse{
+				Status: http.StatusTemporaryRedirect,
+				Url:    uri.String(),
+				// RefreshToken: dto.Tokens.RefreshToken,
+			}, nil
+
+		},
 	)
-}
-func (api *Api) OAuth2CallbackGet(ctx context.Context, input *OAuth2CallbackInput) (*OAuth2CallbackGetResponse, error) {
-
-	dto, err := OAuth2Callback(ctx, api, input)
-	if err != nil {
-		return nil, err
-	}
-	redirectUrl := dto.RedirectTo
-	uri, err := url.Parse(redirectUrl)
-	if err != nil {
-		return nil, err
-	}
-	q := uri.Query()
-	q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
-	uri.RawQuery = q.Encode()
-	fmt.Println(uri.String())
-
-	return &OAuth2CallbackGetResponse{
-		Status: http.StatusTemporaryRedirect,
-		Url:    uri.String(),
-		// RefreshToken: dto.Tokens.RefreshToken,
-	}, nil
-
 }
 
 func ToApiUserInfoTokens(userInfo *models.UserInfoTokens) *ApiUserInfoTokens {

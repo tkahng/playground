@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/playground/internal/apis"
@@ -61,6 +62,61 @@ func TestOAuth2Signin_Success(t *testing.T) {
 		})
 	})
 }
+func TestOAuth2Signin_Success_Existing_Provider(t *testing.T) {
+	t.Run("success: existing provider. updated tokens", func(t *testing.T) {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			app := core.NewTestBaseApp(conf.ZeroEnvConfig(), db)
+			existingUser := core.CreateUserWithOptions(
+				t,
+				app,
+				core.UserWithProvider(models.ProvidersGoogle),
+				core.UserWithVerified(time.Now()),
+				core.UserWithProviderType(models.ProviderTypeOAuth),
+				core.UserWithProviderAccountId("provider_account_id"),
+			)
+			param := &auth.OAuth2SigninInput{
+				Email:             existingUser.User.Email,
+				EmailVerifiedAt:   types.Pointer(time.Now()),
+				Provider:          models.ProvidersGoogle,
+				ProviderAccountID: "provider_account_id",
+				AccessToken:       types.Pointer(uuid.NewString()),
+				RefreshToken:      types.Pointer(uuid.NewString()),
+				RedirectTo:        "",
+				Expiry:            time.Now(),
+			}
+			got, gotErr := apis.OAuth2Signin(ctx, app, param)
+			if gotErr != nil {
+				t.Errorf("AuthServiceImpl.OAuth2Signin() error = %v", gotErr)
+			}
+			if got == nil {
+				t.Errorf("AuthServiceImpl.OAuth2Signin() got = %v", got)
+			}
+			user := repository.MustFindOneCtx(t, ctx, repository.User, db, nil)
+			if user == nil {
+				t.Errorf("AuthServiceImpl.OAuth2Signin() user = %v", user)
+			}
+			if user.EmailVerifiedAt == nil {
+				t.Errorf("AuthServiceImpl.OAuth2Signin() user.EmailVerifiedAt = %v", user.EmailVerifiedAt)
+			}
+			account := repository.MustFindOneCtx(t, ctx, repository.UserAccount, db, nil)
+			if account == nil {
+				t.Errorf("AuthServiceImpl.OAuth2Signin() account = %v", account)
+			}
+			if account.AccessToken == nil {
+				t.Errorf("AuthServiceImpl.OAuth2Signin() account.AccessToken = %v", account.AccessToken)
+			}
+			if *account.AccessToken != *param.AccessToken {
+				t.Errorf("AuthServiceImpl.OAuth2Signin() account.AccessToken = %v, want %v", *account.AccessToken, *param.AccessToken)
+			}
+			if account.RefreshToken == nil {
+				t.Errorf("AuthServiceImpl.OAuth2Signin() account.RefreshToken = %v", account.RefreshToken)
+			}
+			if *account.RefreshToken != *param.RefreshToken {
+				t.Errorf("AuthServiceImpl.OAuth2Signin() account.RefreshToken = %v, want %v", *account.RefreshToken, *param.RefreshToken)
+			}
+		})
+	})
+}
 func TestOAuth2Signin_Fail_Existing_Provider(t *testing.T) {
 	t.Run("fail: existing provider", func(t *testing.T) {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
@@ -71,6 +127,7 @@ func TestOAuth2Signin_Fail_Existing_Provider(t *testing.T) {
 				core.UserWithProvider(models.ProvidersGoogle),
 				core.UserWithVerified(time.Now()),
 				core.UserWithProviderType(models.ProviderTypeOAuth),
+				core.UserWithProviderAccountId("provider_account_id_1"),
 			)
 			param := &auth.OAuth2SigninInput{
 				Email:             existingUser.User.Email,

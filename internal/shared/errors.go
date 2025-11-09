@@ -41,6 +41,6 @@ var (
 	}
 	ErrAccountProviderConflict = &appHttp.ErrorModel{
 		Status: 409,
-		Detail: "account provider conflict",
+		Detail: "there is already an account with this provider",
 	}
 )
