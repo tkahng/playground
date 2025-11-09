@@ -3,18 +3,16 @@ import { DataTable } from "@/components/data-table";
 import { teamSettingLinks } from "@/components/links";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { deleteMember, getTeamTeamMembers } from "@/lib/team-queries";
-import { MemberDeleteDialog } from "@/pages/teams/settings/member-delete-dialog";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getTeamTeamMembers } from "@/lib/team-queries";
+import { MemberRowDropdownMenuDialog } from "@/pages/teams/settings/member-row-dropdown-dialog";
+import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { useSearchParams } from "react-router";
-import { toast } from "sonner";
 import { InviteTeamMemberDialog } from "./invite-team-member-dialog";
 
 export default function TeamMembersSettingPage() {
   const { user } = useAuthProvider();
   const { team } = useTeam();
-  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
@@ -56,30 +54,7 @@ export default function TeamMembersSettingPage() {
       });
     },
   });
-  const mutation = useMutation({
-    mutationFn: async (memberId: string) => {
-      if (!user?.tokens.access_token) {
-        throw new Error("Missing access token");
-      }
-      await deleteMember({
-        memberId: memberId,
-        token: user.tokens.access_token,
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: [{ key: "team-team-members" }],
-      });
-      toast.success("Member deleted successfully");
-    },
-    onError: (error) => {
-      console.error(error);
-      toast.error("Failed to delete member");
-    },
-  });
-  const onDelete = (memberId: string) => {
-    mutation.mutate(memberId);
-  };
+
   if (isPending) {
     return <div>Loading...</div>;
   }
@@ -124,10 +99,7 @@ export default function TeamMembersSettingPage() {
               cell: ({ row }) => {
                 return (
                   <div className="flex flex-row gap-2 justify-end">
-                    <MemberDeleteDialog
-                      memberId={row.original.id}
-                      onDelete={onDelete}
-                    />
+                    <MemberRowDropdownMenuDialog member={row.original} />
                   </div>
                 );
               },
