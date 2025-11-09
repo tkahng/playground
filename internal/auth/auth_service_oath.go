@@ -114,8 +114,25 @@ func (a *AuthServiceImpl) OAuth2Signin(ctx context.Context, params *OAuth2Signin
 		if userAccountErr != nil {
 			return nil, userAccountErr
 		}
+		// if there is another oauth account of the same provider
 		if existingUserAccount != nil {
-			return nil, shared.ErrAccountProviderConflict
+			// but if the provider account id is different then its another account trying to login
+			if existingUserAccount.ProviderAccountID != params.ProviderAccountID {
+				return nil, shared.ErrAccountProviderConflict
+			}
+			// if user has another oauth account of the same provider, update it
+			existingUserAccount.AccessToken = params.AccessToken
+			existingUserAccount.RefreshToken = params.RefreshToken
+
+			err := a.adapter.UserAccount().UpdateUserAccount(ctx, existingUserAccount)
+			if err != nil {
+				return nil, err
+			}
+			tokens, err := a.GenerateAuthTokens(ctx, existingUser.Email)
+			if err != nil {
+				return nil, err
+			}
+			return tokens, nil
 		}
 		// check if user is unverified with credentials account
 		if existingUser.EmailVerifiedAt == nil {

@@ -238,6 +238,11 @@ func UserWithProviderType(providerType models.ProviderTypes) UserOptionFunc {
 		opt.account.Type = providerType
 	}
 }
+func UserWithProviderAccountId(providerId string) UserOptionFunc {
+	return func(opt *CreateUserOption) {
+		opt.account.ProviderAccountID = providerId
+	}
+}
 
 func UserWithProvider(provider models.Providers) UserOptionFunc {
 	return func(opt *CreateUserOption) {
