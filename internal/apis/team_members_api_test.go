@@ -2,6 +2,7 @@ package apis_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -361,6 +362,62 @@ func TestApi_UpdateTeamMember(t *testing.T) {
 func TestApi_DeactivateTeamMember(t *testing.T) {
 	tests := []ApiScenario{
 		{
+			Name:           "fail: unknown error from payment client. rollback everything.",
+			Method:         http.MethodDelete,
+			URL:            "/team-members/{team-member-id}",
+			ExpectedStatus: http.StatusInternalServerError,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				core.CreateProductsAndPrices(t, app)
+				team1Owner1 := CreateTeamAndOwner(t, app)
+				team1Member1 := CreateTeamMember(t, app, &team1Owner1.Team)
+				sub := CreateTeamSubscription(t, app, team1Owner1, core.SubscriptionWithQuantity(2))
+				assert.Equal(t, int64(2), sub.Quantity)
+				scenario.Store.Set("team1Owner1", team1Owner1)
+				scenario.Store.Set("team1Member1", team1Member1)
+				scenario.Store.Set("subscription", sub)
+				scenario.URL = fmt.Sprintf("/team-members/%s", team1Member1.Member.ID.String())
+				header := core.CreateTokenHeader(t, app, team1Owner1.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+				paymentClient := core.ExtractTestPaymentClient(t, app)
+				paymentClient.UpdateItemQuantityFunc = func(itemId, priceId string, count int64) (*stripe.SubscriptionItem, error) {
+					return nil, errors.New("unknown error")
+				}
+			},
+			ExpectedContent: []string{
+				"unknown error",
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				ctx := t.Context()
+				paymentClient := core.ExtractTestPaymentClient(t, app)
+				sub := scenario.Store.Get("subscription").(*models.StripeSubscription)
+				team1Member1 := scenario.Store.Get("team1Member1").(*models.TeamInfoModel)
+				item := paymentClient.GetUpdateSubscriptionInput(func(si *stripe.SubscriptionItem) bool {
+					if si.ID == sub.ItemID {
+						return true
+					}
+					return false
+				})
+				assert.Nil(t, item)
+				count := repository.MustCountAllCtx(t, ctx, repository.TeamMember, app.Db(), &map[string]any{
+					"team_id": map[string]any{
+						"_eq": team1Member1.Team.ID,
+					},
+					"active": map[string]any{
+						"_eq": true,
+					},
+				})
+				assert.Equal(t, int64(2), count)
+				member := repository.MustFindOneCtx(t, ctx, repository.TeamMember, app.Db(), &map[string]any{
+					"id": map[string]any{
+						"_eq": team1Member1.Member.ID,
+					},
+				})
+				assert.Equal(t, true, member.Active)
+				assert.NotNil(t, member.UserID)
+
+			},
+		},
+		{
 			Name:           "success: owner deactivates team member",
 			Method:         http.MethodDelete,
 			URL:            "/team-members/{team-member-id}",
@@ -380,10 +437,6 @@ func TestApi_DeactivateTeamMember(t *testing.T) {
 			},
 			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
 				ctx := t.Context()
-				for range 5 {
-					err := app.JobManager().PollOnce(ctx)
-					assert.NoError(t, err)
-				}
 				paymentClient := core.ExtractTestPaymentClient(t, app)
 				sub := scenario.Store.Get("subscription").(*models.StripeSubscription)
 				team1Member1 := scenario.Store.Get("team1Member1").(*models.TeamInfoModel)

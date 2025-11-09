@@ -13,7 +13,6 @@ import (
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/workers"
 
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
@@ -320,9 +319,7 @@ func (api *Api) DeactivateTeamMemberBind(humaApi huma.API) {
 				if err != nil {
 					return err
 				}
-				err = api.App().JobService().EnqueueRefreshSubscriptionQuantityJob(txCtx, &workers.RefreshSubscriptionQuantityJobArgs{
-					TeamID: member.TeamID,
-				})
+				err = api.App().Payment().VerifyAndUpdateTeamSubscriptionQuantity(txCtx, member.TeamID)
 				if err != nil {
 					return err
 				}
