@@ -238,6 +238,65 @@ func (api *Api) TeamTaskProjectCreateBind(humaApi huma.API) {
 		},
 	)
 }
+func (api *Api) TeamTaskProjectCreateWithAiBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "task-project-create-with-ai",
+			Method:      http.MethodPost,
+			Path:        "/teams/{team-id}/task-projects/ai",
+			Summary:     "Task project create with ai",
+			Description: "Create a new task project with ai",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
+		},
+		func(ctx context.Context, input *TaskProjectCreateWithAiInput) (*struct {
+			Body *TaskProject
+		}, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("no team info")
+			}
+
+			aiService := googleai2.NewAiService(ctx, api.App().Config().AiConfig)
+			taskProjectPlan, err := aiService.GenerateProjectPlan(ctx, input.Body.Input)
+			if err != nil {
+				return nil, err
+			}
+			args := stores.CreateTaskProjectWithTasksDTO{
+				CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
+					Name:        taskProjectPlan.Project.Name,
+					Description: &taskProjectPlan.Project.Description,
+					Status:      models.TaskProjectStatusTodo,
+					TeamID:      teamInfo.Member.TeamID,
+					MemberID:    teamInfo.Member.ID,
+				},
+				Tasks: mapper.Map(taskProjectPlan.Tasks, func(task googleai2.Task) stores.CreateTaskProjectTaskDTO {
+					return stores.CreateTaskProjectTaskDTO{
+						Name:        task.Name,
+						Description: &task.Description,
+						Status:      models.TaskStatusTodo,
+					}
+				}),
+			}
+			taskProject, err := api.App().Adapter().Task().CreateTaskProjectWithTasks(ctx, &args)
+			if err != nil {
+				return nil, err
+			}
+			return &struct {
+				Body *TaskProject
+			}{
+				Body: FromModelProject(taskProject),
+			}, nil
+		},
+	)
+}
 
 type TaskProjectCreateWithAiDto struct {
 	Input string `json:"input" example:"Help me plan a 6 day vacation to Paris"`
@@ -245,46 +304,6 @@ type TaskProjectCreateWithAiDto struct {
 type TaskProjectCreateWithAiInput struct {
 	TeamID string                     `json:"team_id" path:"team-id" required:"true" format:"uuid"`
 	Body   TaskProjectCreateWithAiDto `json:"body"`
-}
-
-func (api *Api) TeamTaskProjectCreateWithAi(ctx context.Context, input *TaskProjectCreateWithAiInput) (*struct {
-	Body *TaskProject
-}, error) {
-	teamInfo := contextstore.GetContextTeamInfo(ctx)
-	if teamInfo == nil {
-		return nil, huma.Error401Unauthorized("no team info")
-	}
-
-	aiService := googleai2.NewAiService(ctx, api.App().Config().AiConfig)
-	taskProjectPlan, err := aiService.GenerateProjectPlan(ctx, input.Body.Input)
-	if err != nil {
-		return nil, err
-	}
-	args := stores.CreateTaskProjectWithTasksDTO{
-		CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
-			Name:        taskProjectPlan.Project.Name,
-			Description: &taskProjectPlan.Project.Description,
-			Status:      models.TaskProjectStatusTodo,
-			TeamID:      teamInfo.Member.TeamID,
-			MemberID:    teamInfo.Member.ID,
-		},
-		Tasks: mapper.Map(taskProjectPlan.Tasks, func(task googleai2.Task) stores.CreateTaskProjectTaskDTO {
-			return stores.CreateTaskProjectTaskDTO{
-				Name:        task.Name,
-				Description: &task.Description,
-				Status:      models.TaskStatusTodo,
-			}
-		}),
-	}
-	taskProject, err := api.App().Adapter().Task().CreateTaskProjectWithTasks(ctx, &args)
-	if err != nil {
-		return nil, err
-	}
-	return &struct {
-		Body *TaskProject
-	}{
-		Body: FromModelProject(taskProject),
-	}, nil
 }
 
 type TaskProjectResponse struct {

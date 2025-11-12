@@ -105,25 +105,7 @@ func bindTaskApi(appApi *Api) {
 	// task project create
 	appApi.TeamTaskProjectCreateBind(taskProjectGroup)
 	// task project create with ai
-	huma.Register(
-		taskProjectGroup,
-		huma.Operation{
-			OperationID: "task-project-create-with-ai",
-			Method:      http.MethodPost,
-			Path:        "/teams/{team-id}/task-projects/ai",
-			Summary:     "Task project create with ai",
-			Description: "Create a new task project with ai",
-			Tags:        []string{"Task"},
-			Errors:      []int{http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: humamiddleware.HumaChiMiddlewares(
-				middleware.RequireTeamInfo(),
-			),
-		},
-		appApi.TeamTaskProjectCreateWithAi,
-	)
+	appApi.TeamTaskProjectCreateWithAiBind(taskProjectGroup)
 	// task project update
 	huma.Register(
 		taskProjectGroup,
