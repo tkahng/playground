@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/apis"
@@ -99,6 +100,10 @@ func TestApi_TeamTaskUpdate(t *testing.T) {
 					Name:        "updated",
 					Description: types.Pointer("UpdateTaskDto"),
 					Status:      models.TaskStatusInProgress,
+					StartAt:     types.Pointer(time.Now()),
+					EndAt:       types.Pointer(time.Now()),
+					AssigneeID:  &team1.Member.ID,
+					ReporterID:  &team1.Member.ID,
 				}
 				scenario.Store.Set("input", input)
 				scenario.Body = JsonToReader(t, input)
@@ -112,6 +117,10 @@ func TestApi_TeamTaskUpdate(t *testing.T) {
 				assert.Equal(t, input.Name, result.Name)
 				assert.Equal(t, input.Description, result.Description)
 				assert.Equal(t, input.Status, result.Status)
+				assert.Equal(t, input.StartAt.UTC(), result.StartAt.UTC())
+				assert.Equal(t, input.EndAt.UTC(), result.EndAt.UTC())
+				assert.Equal(t, input.AssigneeID, result.AssigneeID)
+				assert.Equal(t, input.ReporterID, result.ReporterID)
 			},
 		},
 	}
