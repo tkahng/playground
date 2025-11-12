@@ -428,7 +428,7 @@ func CreateProjectAndTasks(t testing.TB, app App, owner *models.TeamMember, fns 
 	projectTaskOptions := &projectTaskOption{
 		project: &models.TaskProject{
 			TeamID:            owner.TeamID,
-			Name:              "Project 1",
+			Name:              fmt.Sprintf("Project %s", uuid.NewString()),
 			Description:       types.Pointer("description"),
 			Status:            models.TaskProjectStatusTodo,
 			CreatedByMemberID: &owner.ID,

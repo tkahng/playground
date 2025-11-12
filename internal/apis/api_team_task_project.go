@@ -98,10 +98,9 @@ type TaskProjectListResponse struct {
 type TeamTaskProjectsListParams struct {
 	TeamID string `path:"team-id" required:"true" format:"uuid"`
 	PaginatedInput
-	Q        string                     `query:"q,omitempty" required:"false"`
-	Status   []models.TaskProjectStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
-	Ids      []string                   `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	Statuses []models.TaskProjectStatus `query:"task_status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
+	Q      string                     `query:"q,omitempty" required:"false"`
+	Status []models.TaskProjectStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
+	Ids    []string                   `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	SortParams
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"tasks,subtasks"`
 }
@@ -119,7 +118,7 @@ func (api *Api) TeamTaskProjectList(ctx context.Context, input *TeamTaskProjects
 	newInput.PerPage = input.PerPage
 	newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
 	newInput.Q = input.Q
-	newInput.Statuses = input.Statuses
+	newInput.Status = input.Status
 	newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
 	taskProject, err := api.App().Adapter().Task().ListTaskProjects(ctx, newInput)
 	if err != nil {

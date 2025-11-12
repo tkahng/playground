@@ -73,23 +73,23 @@ var GetTeamIdFuncs []GetTeamIdFunc = []GetTeamIdFunc{
 		return uuid.Nil, false
 	},
 	func(ctx context.Context) (uuid.UUID, bool) {
-		teamInfo := contextstore.GetContextTeamMember(ctx)
-		if teamInfo != nil {
-			return teamInfo.TeamID, true
+		teamMember := contextstore.GetContextTeamMember(ctx)
+		if teamMember != nil {
+			return teamMember.TeamID, true
 		}
 		return uuid.Nil, false
 	},
 	func(ctx context.Context) (uuid.UUID, bool) {
-		val := contextstore.GetContextTask(ctx)
-		if val != nil {
-			return val.TeamID, true
+		task := contextstore.GetContextTask(ctx)
+		if task != nil {
+			return task.TeamID, true
 		}
 		return uuid.Nil, false
 	},
 	func(ctx context.Context) (uuid.UUID, bool) {
-		val := contextstore.GetContextTaskProject(ctx)
-		if val != nil {
-			return val.TeamID, true
+		project := contextstore.GetContextTaskProject(ctx)
+		if project != nil {
+			return project.TeamID, true
 		}
 		return uuid.Nil, false
 	},

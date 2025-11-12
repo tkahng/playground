@@ -129,6 +129,13 @@ func bindTaskApi(appApi *Api) {
 
 	// task project routes -------------------------------------------------------------------------------------------------
 	taskProjectGroup := huma.NewGroup(api)
+	taskProjectGroup.UseMiddleware(
+		humamiddleware.HumaChiMiddlewares(
+			middleware.TeamFromParam(app),
+			middleware.TaskProjectFromParam(app),
+			middleware.TeamInfoFromContext(app),
+		)...,
+	)
 	// task project list
 	huma.Register(
 		taskProjectGroup,
