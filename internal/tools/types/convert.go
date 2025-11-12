@@ -373,10 +373,10 @@ func asBytes(buf []byte, rv reflect.Value) (b []byte, ok bool) {
 // are supported.
 //
 // NOTE(kardianos): This is an experimental interface. See https://golang.org/issue/30870
-type decimal interface {
-	decimalDecompose
-	decimalCompose
-}
+// type decimal interface {
+// 	decimalDecompose
+// 	decimalCompose
+// }
 
 type decimalDecompose interface {
 	// Decompose returns the internal decimal state in parts.

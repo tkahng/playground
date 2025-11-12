@@ -10,9 +10,12 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/core"
+	"github.com/tkahng/playground/internal/shared"
 	appHttp "github.com/tkahng/playground/internal/tools/http"
-	"github.com/tkahng/playground/internal/tools/http/queryparam"
+	"github.com/tkahng/playground/internal/tools/logger"
 )
+
+type OperationSecurity = []map[string][]string
 
 func TokenFromHeader(r *http.Request, w http.ResponseWriter) string {
 	bearer := r.Header.Get("Authorization")
@@ -22,7 +25,7 @@ func TokenFromHeader(r *http.Request, w http.ResponseWriter) string {
 	return ""
 }
 func TokenFromQuery(r *http.Request, w http.ResponseWriter) string {
-	return queryparam.Get(r.URL.RawQuery, "access_token")
+	return appHttp.GetQuery(r, "access_token")
 }
 
 var HttpTokenFuncs = []func(r *http.Request, w http.ResponseWriter) string{
@@ -48,7 +51,7 @@ func Unwrap(ctx huma.Context) (*http.Request, http.ResponseWriter) {
 	panic("this context does not implement Unwrap")
 }
 
-func HttpEmailVerifiedMiddleware(app core.App) HttpMiddelwareFunc {
+func EmailVerifiedMiddleware() HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
@@ -65,7 +68,8 @@ func HttpEmailVerifiedMiddleware(app core.App) HttpMiddelwareFunc {
 		})
 	}
 }
-func HttpAuthMiddleware(app core.App) HttpMiddelwareFunc {
+
+func AuthMiddleware(app core.App) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -82,39 +86,72 @@ func HttpAuthMiddleware(app core.App) HttpMiddelwareFunc {
 				}
 			}
 			if len(token) == 0 {
+				slog.DebugContext(ctx, "access token not found")
 				next.ServeHTTP(w, r)
 				return
 			}
-			user, err := app.Auth().HandleAccessToken(ctx, token)
+			userInfo, err := app.Auth().VerifyAccessToken(ctx, token)
 			if err != nil {
 				slog.ErrorContext(ctx, "failed to handle access token", slog.Any("error", err))
 				next.ServeHTTP(w, r)
 				return
 			}
-			ctx = contextstore.SetContextUserInfo(ctx, user)
-			r = r.WithContext(ctx)
+			if userInfo == nil {
+				slog.DebugContext(ctx, "user info not found")
+				next.ServeHTTP(w, r)
+				return
+			}
+			logger.SetAttrs(
+				ctx,
+				slog.String("user_id", userInfo.User.ID.String()),
+				slog.String("email", userInfo.User.Email),
+				slog.Bool("email_verified", userInfo.User.EmailVerifiedAt != nil),
+			)
+			newCtx := contextstore.SetContextUserInfo(ctx, userInfo)
+			r = r.WithContext(newCtx)
 			next.ServeHTTP(w, r)
 		})
 	}
 }
 
-func HttpRequireAuthMiddleware(app core.App) HttpMiddelwareFunc {
+func RequireAuthMiddleware() HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			// check if already has user claims
-			if claims := contextstore.GetContextUserInfo(ctx); claims != nil {
-				slog.InfoContext(ctx, "user already authenticated")
+
+			opSec := contextstore.GetContextOperationSecurity(ctx)
+			if opSec == nil {
+				slog.DebugContext(ctx, "operation security not found")
 				next.ServeHTTP(w, r)
 				return
 			}
-			slog.InfoContext(ctx, "user not authenticated")
-			_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "you are not authenticated.", nil)
+			isAuthorizationRequired := false
+
+			for _, opScheme := range opSec {
+				var ok bool
+				if _, ok = opScheme[shared.BearerAuthSecurityKey]; ok {
+					slog.DebugContext(ctx, "authorization required")
+					isAuthorizationRequired = true
+					break
+				}
+			}
+
+			if !isAuthorizationRequired {
+				slog.DebugContext(ctx, "authorization not required.")
+				next.ServeHTTP(w, r)
+				return
+			}
+			// check if already has user userInfo
+			if userInfo := contextstore.GetContextUserInfo(ctx); userInfo != nil {
+				slog.DebugContext(ctx, "user info found")
+				next.ServeHTTP(w, r)
+				return
+			}
+			_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "you are not authenticated.")
 		})
 	}
 }
-
-func HttpCheckPermissionsMiddleware(app core.App, requiredPermissions ...string) HttpMiddelwareFunc {
+func CheckPermissionsMiddleware(requiredPermissions ...string) HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if claims := contextstore.GetContextUserInfo(r.Context()); claims != nil {

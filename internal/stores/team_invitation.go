@@ -24,6 +24,7 @@ type TeamInvitationFilter struct {
 }
 
 type DbTeamInvitationStoreInterface interface { // size=16 (0x10)
+	DeleteInvitation(ctx context.Context, invitationId uuid.UUID) error
 	CreateInvitation(ctx context.Context, invitation *models.TeamInvitation) error
 	FindInvitationByID(ctx context.Context, invitationId uuid.UUID) (*models.TeamInvitation, error)
 	FindInvitationByToken(ctx context.Context, token string) (*models.TeamInvitation, error)
@@ -43,6 +44,20 @@ type DbTeamInvitationStoreInterface interface { // size=16 (0x10)
 
 type DbTeamInvitationStore struct {
 	db database.Dbx
+}
+
+// DeleteInvitation implements DbTeamInvitationStoreInterface.
+func (s *DbTeamInvitationStore) DeleteInvitation(ctx context.Context, invitationId uuid.UUID) error {
+	_, err := repository.TeamInvitation.Delete(
+		ctx,
+		s.db,
+		&map[string]any{
+			models.TeamInvitationTable.ID: map[string]any{
+				"_eq": invitationId,
+			},
+		},
+	)
+	return err
 }
 
 var _ DbTeamInvitationStoreInterface = (*DbTeamInvitationStore)(nil)
@@ -260,15 +275,20 @@ func (i *DbTeamInvitationStore) AcceptInvitation(
 	if invite.Status != models.TeamInvitationStatusPending {
 		return fmt.Errorf("invitation is not pending")
 	}
-	invite.Status = models.TeamInvitationStatusAccepted
-	teamMember, err := adapter.TeamMember().CreateTeamMember(ctx, invite.TeamID, user.ID, invite.Role, false)
+	teamMember, err := adapter.TeamMember().CreateTeamMember2(ctx, &models.TeamMember{
+		TeamID:           invite.TeamID,
+		UserID:           types.Pointer(user.ID),
+		Role:             invite.Role,
+		HasBillingAccess: false,
+		Active:           true,
+	})
 	if err != nil {
 		return err
 	}
 	if teamMember == nil {
 		return fmt.Errorf("team member not created")
 	}
-	err = adapter.TeamInvitation().UpdateInvitation(ctx, invite)
+	err = adapter.TeamInvitation().DeleteInvitation(ctx, invite.ID)
 	if err != nil {
 		return err
 	}

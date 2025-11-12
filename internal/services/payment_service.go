@@ -19,21 +19,6 @@ import (
 	"github.com/tkahng/playground/internal/tools/utils"
 )
 
-type PaymentClient interface {
-	Config() *conf.StripeConfig
-	CreateBillingPortalSession(customerId string, configurationId string) (*stripe.BillingPortalSession, error)
-	CreateCheckoutSession(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error)
-	CreateCustomer(email string, name *string) (*stripe.Customer, error)
-	CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error)
-	FindAllPrices() ([]*stripe.Price, error)
-	FindAllProducts() ([]*stripe.Product, error)
-	FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error)
-	FindOrCreateCustomer(email string, name *string) (*stripe.Customer, error)
-	FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error)
-	UpdateCustomer(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error)
-	UpdateItemQuantity(itemId string, priceId string, count int64) (*stripe.SubscriptionItem, error)
-}
-
 type PaymentService interface {
 	Client() PaymentClient
 
@@ -50,8 +35,8 @@ type PaymentService interface {
 	CreateUserCustomer(ctx context.Context, user *models.User) (*models.StripeCustomer, error)
 	CreateTeamCustomer(ctx context.Context, team *models.Team, user *models.User) (*models.StripeCustomer, error)
 
-	FindCustomerByUser(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error)
-	FindCustomerByTeam(ctx context.Context, teamId uuid.UUID) (*models.StripeCustomer, error)
+	FindCustomerByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error)
+	FindCustomerByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeCustomer, error)
 
 	CreateBillingPortalSession(ctx context.Context, stripeCustomerId string) (string, error)
 	CreateCheckoutSession(ctx context.Context, stripeCustomerId string, priceId string) (string, error)
@@ -64,19 +49,28 @@ type PaymentService interface {
 
 	VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, teamId uuid.UUID) error
 
-	SyncCustomerData(ctx context.Context, customerID string)
 	TeamCanAddMembers(ctx context.Context, teamId uuid.UUID) (bool, error)
+}
+
+type PaymentClient interface {
+	Config() *conf.StripeConfig
+	CreateBillingPortalSession(customerId string, configurationId string, retunrUrl string) (*stripe.BillingPortalSession, error)
+	CreateCheckoutSession(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error)
+	CreateCustomer(email string, name *string, metadata *map[string]string) (*stripe.Customer, error)
+	CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error)
+	FindAllPrices() ([]*stripe.Price, error)
+	FindAllProducts() ([]*stripe.Product, error)
+	FindCheckoutSessionByStripeId(stripeId string) (*stripe.CheckoutSession, error)
+	FindOrCreateCustomer(email string, name *string) (*stripe.Customer, error)
+	FindSubscriptionByStripeId(stripeId string) (*stripe.Subscription, error)
+	UpdateCustomer(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error)
+	UpdateItemQuantity(itemId string, priceId string, count int64) (*stripe.SubscriptionItem, error)
 }
 
 type StripeService struct {
 	logger  *slog.Logger
 	client  PaymentClient
 	adapter stores.StorageAdapterInterface
-}
-
-// SyncCustomerData implements PaymentService.
-func (srv *StripeService) SyncCustomerData(ctx context.Context, customerID string) {
-	panic("unimplemented")
 }
 
 // Adapter implements PaymentService.
@@ -96,39 +90,7 @@ func NewPaymentService(
 		adapter: adapter,
 	}
 }
-func (s *StripeService) LoadPricesWithProductByPriceIds(ctx context.Context, priceIds ...string) ([]*models.StripePrice, error) {
-	if len(priceIds) == 0 {
-		return nil, nil
-	}
-	prices, err := s.adapter.Price().LoadPricesByIds(ctx, priceIds...)
-	if err != nil {
-		return nil, err
-	}
-	productIds := mapper.Map(prices, func(price *models.StripePrice) string {
-		if price == nil || price.ProductID == "" {
-			return ""
-		}
-		return price.ProductID
-	})
-	products, err := s.adapter.Product().LoadProductsByIds(ctx, productIds...)
-	if err != nil {
-		return nil, err
-	}
-	for i, price := range prices {
-		if price == nil {
-			continue
-		}
-		product := products[i]
-		if product == nil {
-			continue
-		}
-		if product.ID != price.ProductID {
-			continue
-		}
-		price.Product = product
-	}
-	return prices, nil
-}
+
 func (s *StripeService) UpsertSubscriptionFromStripe(ctx context.Context, sub *stripe.Subscription) error {
 	if sub == nil {
 		return nil
@@ -168,7 +130,17 @@ func (s *StripeService) UpsertSubscriptionFromStripe(ctx context.Context, sub *s
 
 // CreateTeamCustomer implements PaymentService.
 func (srv *StripeService) CreateTeamCustomer(ctx context.Context, team *models.Team, user *models.User) (*models.StripeCustomer, error) {
-	customer, err := srv.client.CreateCustomer(user.Email, &team.Name)
+	existingCustomer, err := srv.FindCustomerByTeamId(ctx, team.ID)
+	if err != nil {
+		return nil, err
+	}
+	if existingCustomer != nil {
+		return nil, errors.New("customer already exists in db for team")
+	}
+	customer, err := srv.client.CreateCustomer(user.Email, &team.Name, &map[string]string{
+		"team_id":       team.ID.String(),
+		"customer_type": string(models.StripeCustomerTypeTeam),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +159,17 @@ func (srv *StripeService) CreateTeamCustomer(ctx context.Context, team *models.T
 
 // CreateUserCustomer implements PaymentService.
 func (srv *StripeService) CreateUserCustomer(ctx context.Context, user *models.User) (*models.StripeCustomer, error) {
-	customer, err := srv.client.CreateCustomer(user.Email, user.Name)
+	existingCustomer, err := srv.FindCustomerByUserId(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+	if existingCustomer != nil {
+		return nil, errors.New("customer already exists in db for user")
+	}
+	customer, err := srv.client.CreateCustomer(user.Email, user.Name, &map[string]string{
+		"user_id":       user.ID.String(),
+		"customer_type": string(models.StripeCustomerTypeUser),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -204,8 +186,8 @@ func (srv *StripeService) CreateUserCustomer(ctx context.Context, user *models.U
 	return srv.adapter.Customer().CreateCustomer(ctx, stripeCustomer)
 }
 
-// FindCustomerByTeam implements PaymentService.
-func (srv *StripeService) FindCustomerByTeam(ctx context.Context, teamId uuid.UUID) (*models.StripeCustomer, error) {
+// FindCustomerByTeamId implements PaymentService.
+func (srv *StripeService) FindCustomerByTeamId(ctx context.Context, teamId uuid.UUID) (*models.StripeCustomer, error) {
 	return srv.adapter.Customer().FindCustomer(
 		ctx,
 		&stores.StripeCustomerFilter{
@@ -214,8 +196,8 @@ func (srv *StripeService) FindCustomerByTeam(ctx context.Context, teamId uuid.UU
 	)
 }
 
-// FindCustomerByUser implements PaymentService.
-func (srv *StripeService) FindCustomerByUser(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error) {
+// FindCustomerByUserId implements PaymentService.
+func (srv *StripeService) FindCustomerByUserId(ctx context.Context, userId uuid.UUID) (*models.StripeCustomer, error) {
 	return srv.adapter.Customer().FindCustomer(
 		ctx,
 		&stores.StripeCustomerFilter{
@@ -532,7 +514,7 @@ func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, stripe
 	if team == nil {
 		return "", errors.New("team not found")
 	}
-
+	returnUrl := srv.client.Config().StripeAppUrl + `/teams/` + team.Slug + `/settings/billing`
 	sub, err := srv.adapter.Subscription().FindActiveSubscriptionByCustomerId(ctx, stripeCustomerId)
 	if err != nil {
 		return "", err
@@ -580,7 +562,7 @@ func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, stripe
 	if err != nil {
 		return "", err
 	}
-	url, err := srv.client.CreateBillingPortalSession(stripeCustomerId, config)
+	url, err := srv.client.CreateBillingPortalSession(stripeCustomerId, config, returnUrl)
 	if err != nil {
 		log.Println(err)
 		return "", errors.New("failed to create checkout session")

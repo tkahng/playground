@@ -1,7 +1,7 @@
 import { paths } from "@/schema";
-import createClient from "openapi-fetch";
+import createFetchClient from "openapi-fetch";
 
-export const client = createClient<paths>({
+export const client = createFetchClient<paths>({
   baseUrl: "/",
   querySerializer: {
     array: {

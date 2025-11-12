@@ -13,26 +13,43 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { AuthContext } from "@/context/auth-context";
+import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { SigninInput } from "@/schema.types";
 import { Label } from "@radix-ui/react-label";
 import { Lock } from "lucide-react";
-import { useContext, useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 export default function SigninPage() {
   const [input, setInput] = useState<SigninInput>({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
+  // let navigateTo: string = "/account/dashboard";
   const { search } = useLocation();
+  const navigate = useNavigate();
+  const { login } = useAuthProvider();
+
   const params = new URLSearchParams(search);
   const token = params.get("token");
-  // const redirectTo = params.get("redirect_to");
+  const redirectTo = params.get("redirect_to");
   const email = params.get("email");
-  const navigate = useNavigate(); // Get navigation function
-  const { login } = useContext(AuthContext);
 
-  const navigateTo = email && token ? `/team-invitation` : "/";
+  let navigateTo: string;
+  const searchParams: URLSearchParams = new URLSearchParams();
+  if (email?.length && token?.length) {
+    navigateTo = `/team-invitation`;
+    searchParams.set("token", token);
+    searchParams.set("email", email);
+  } else if (redirectTo?.length) {
+    const newUrl = new URL(decodeURIComponent(redirectTo), "http://localhost");
+    console.log("newUrl", newUrl);
+    navigateTo = newUrl.pathname;
+    for (const [key, value] of newUrl.searchParams) {
+      searchParams.set(key, value);
+    }
+  } else {
+    navigateTo = "/account/dashboard";
+  }
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
@@ -42,7 +59,7 @@ export default function SigninPage() {
       setLoading(false);
       navigate({
         pathname: navigateTo,
-        search: search,
+        search: searchParams.toString(),
       });
     } catch (error) {
       if (error instanceof Error) {

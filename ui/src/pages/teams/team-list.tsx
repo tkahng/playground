@@ -1,13 +1,16 @@
 import { CreateTeamDialog } from "@/components/create-team-dialog";
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
-import { useUserTeams } from "@/hooks/use-user-teams";
+import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { getUserTeams } from "@/lib/team-queries";
 import { Team } from "@/schema.types";
+import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { NavLink, useSearchParams } from "react-router";
 import { toast } from "sonner";
 
 export default function TeamListPage() {
+  const { user } = useAuthProvider();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
@@ -22,7 +25,30 @@ export default function TeamListPage() {
       per_page: String(newState.pageSize),
     });
   };
-  const { data, isLoading, isError, error } = useUserTeams();
+  const { data, error, isError, isLoading } = useQuery({
+    queryKey: [
+      {
+        key: "get-user-teams",
+        user_id: user?.user.id,
+        page: pageIndex,
+        per_page: pageSize,
+      },
+    ],
+    queryFn: async () => {
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      // const stats = await getStats(user.tokens.access_token);
+      const teams = await getUserTeams({
+        token: user.tokens.access_token,
+        page: pageIndex,
+        perPage: pageSize,
+      });
+      console.log({ teams });
+      return teams;
+    },
+  });
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -69,7 +95,7 @@ export default function TeamListPage() {
               }
               return (
                 <span className="text-gray-500">
-                  {members[0].role || "Member"}
+                  {members[0]?.role || "Member"}
                 </span>
               );
             },

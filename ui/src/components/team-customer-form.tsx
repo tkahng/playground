@@ -4,7 +4,6 @@ import { useTeam } from "@/hooks/use-team";
 import {
   createTeamBillingPortalSession,
   getProductsWithPrices,
-  getUserSubscriptions,
 } from "@/lib/api";
 import { SubscriptionWithPrice } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
@@ -29,14 +28,10 @@ export default function TeamCustomerForm({ subscription }: Props) {
     isError: isErrorProducts,
     error: errorProducts,
   } = useQuery({
-    queryKey: ["stripe-products-with-prices"],
+    queryKey: ["team-stripe-products-with-prices"],
     queryFn: async () => {
-      let userSubs = null;
-      if (user) {
-        userSubs = await getUserSubscriptions(user.tokens.access_token);
-      }
       const products = await getProductsWithPrices();
-      return { products, userSubs };
+      return { products };
     },
   });
   // const { pathname: currentPath } = useLocation();
@@ -77,44 +72,54 @@ export default function TeamCustomerForm({ subscription }: Props) {
   }
   return (
     <div>
-      <PricingMini
-        user={user?.user}
-        products={products?.products.data || []}
-        subscription={products?.userSubs}
-      />
-      <Card
-        title="Your Plan"
-        description={
-          subscription
-            ? `You are currently on the ${subscription?.price?.product?.name} plan.`
-            : "You are not currently subscribed to any plan."
-        }
-        footer={
-          subscription && (
-            <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
-              <p className="pb-4 sm:pb-0">
-                Manage your subscription on Stripe.
-              </p>
-              <Button
-                // variant="slim"
-                onClick={handleStripePortalRequest}
-                // loading={isSubmitting}
-                disabled={isSubmitting || teamMember?.role !== "owner"}
-              >
-                Open customer portal
-              </Button>
-            </div>
-          )
-        }
-      >
-        <div className="mt-8 mb-4 text-xl font-semibold">
-          {subscription ? (
-            `${subscriptionPrice}/${subscription?.price?.interval}`
-          ) : (
-            <Link to="/pricing">Choose your plan</Link>
-          )}
-        </div>
-      </Card>
+      {!subscription && (
+        <PricingMini
+          user={user?.user}
+          products={products?.products.data || []}
+          subscription={null}
+        />
+      )}
+      {subscription && (
+        <Card
+          title="Your Plan"
+          description={
+            subscription
+              ? `You are currently on the ${subscription?.price?.product?.name} plan.`
+              : "You are not currently subscribed to any plan."
+          }
+          footer={
+            subscription && (
+              <div className="flex flex-col items-start justify-between sm:flex-row sm:items-center">
+                <p className="pb-4 sm:pb-0">
+                  Manage your subscription on Stripe.
+                </p>
+                <Button
+                  // variant="slim"
+                  onClick={handleStripePortalRequest}
+                  // loading={isSubmitting}
+                  disabled={isSubmitting || teamMember?.role !== "owner"}
+                >
+                  Open customer portal
+                </Button>
+              </div>
+            )
+          }
+        >
+          <div className="mt-8 mb-4 text-xl font-semibold">
+            {subscription ? (
+              `$${
+                ((subscription.price?.unit_amount || 0) *
+                  subscription.quantity) /
+                100
+              }: ${subscriptionPrice} x ${subscription.quantity} users / ${
+                subscription?.price?.interval
+              }`
+            ) : (
+              <Link to="/pricing">Choose your plan</Link>
+            )}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

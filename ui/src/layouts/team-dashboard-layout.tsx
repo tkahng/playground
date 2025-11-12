@@ -5,8 +5,8 @@ import { RouteMap } from "@/components/route-map";
 import { TeamHeader } from "@/components/team-header";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { getTeamBySlug } from "@/lib/api";
-import { GetError } from "@/lib/get-error";
+import { isErrorModel } from "@/lib/get-error";
+import { getTeamBySlug } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { Navigate, Outlet, useLocation, useParams } from "react-router";
@@ -18,7 +18,7 @@ export default function TeamDashboardLayout() {
   const { setTeam, team, teamMember } = useTeam();
   const { pathname } = useLocation();
   const { isLoading, error, refetch } = useQuery({
-    queryKey: ["team-by-slug-layout"],
+    queryKey: ["team-by-slug-layout", teamSlug] as const,
     queryFn: async () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
@@ -59,14 +59,15 @@ export default function TeamDashboardLayout() {
   const isNotUserTeam = teamMember?.user_id !== user?.user.id;
 
   if (error) {
-    const err = GetError(error);
-    toast.error("Error loading team: " + err?.detail, {
-      description: "Please try again",
-      action: {
-        label: "Undo",
-        onClick: () => console.log("Undo"),
-      },
-    });
+    if (isErrorModel(error)) {
+      toast.error("Error loading team: " + error?.detail, {
+        description: "Please try again",
+        action: {
+          label: "Undo",
+          onClick: () => console.log("Undo"),
+        },
+      });
+    }
     return (
       <Navigate
         to={{

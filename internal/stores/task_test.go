@@ -10,67 +10,20 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/stores/testutils"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/types"
 )
-
-func CreateUser(adapter stores.StorageAdapterInterface, ctx context.Context, email string) *models.User {
-	user, err := adapter.User().CreateUser(ctx, &models.User{
-		Email: email,
-	})
-	if err != nil {
-		panic(err)
-	}
-	return user
-}
-
-func CreateTeam(adapter stores.StorageAdapterInterface, ctx context.Context, slug string) *models.Team {
-	team, err := adapter.TeamGroup().CreateTeam(ctx, slug, slug)
-	if err != nil {
-		panic(err)
-	}
-	return team
-}
-
-func CreateTeamMember(adapter stores.StorageAdapterInterface, ctx context.Context, team *models.Team, user *models.User, role models.TeamMemberRole, billingAccess bool) *models.TeamMember {
-	member, err := adapter.TeamMember().CreateTeamMember(ctx, team.ID, user.ID, role, billingAccess)
-	if err != nil {
-		panic(err)
-	}
-	return member
-}
-
-func CreateTeamProject(adapter stores.StorageAdapterInterface, ctx context.Context, member *models.TeamMember, name string, description string) *models.TaskProject {
-	taskProject, err := adapter.Task().CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
-		Name:        name,
-		Status:      models.TaskProjectStatusDone,
-		TeamID:      member.TeamID,
-		MemberID:    member.ID,
-		Description: &description,
-	})
-	if err != nil {
-		panic(err)
-	}
-	return taskProject
-}
-
-func CreateTask(adapter stores.StorageAdapterInterface, ctx context.Context, task *models.Task) *models.Task {
-	task, err := adapter.Task().CreateTask(ctx, task)
-	if err != nil {
-		panic(err)
-	}
-	return task
-}
 
 func TestSearchUserTasks(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
-		user := CreateUser(adapter, ctx, "tkahng@gmail.com")
-		team := CreateTeam(adapter, ctx, "TestTeam")
-		member := CreateTeamMember(adapter, ctx, team, user, models.TeamMemberRoleOwner, true)
-		project := CreateTeamProject(adapter, ctx, member, "Test Project", "Test Project")
+		user := testutils.CreateUser(adapter, ctx, "tkahng@gmail.com")
+		team := testutils.CreateTeam(adapter, ctx, "TestTeam")
+		member := testutils.CreateTeamMember(adapter, ctx, team, user, models.TeamMemberRoleOwner, true)
+		project := testutils.CreateTeamProject(adapter, ctx, member, "Test Project", "Test Project")
 		task1 := &models.Task{
 			ProjectID:         project.ID,
 			Name:              "One",
@@ -88,8 +41,8 @@ func TestSearchUserTasks(t *testing.T) {
 			Description:       types.Pointer("Dos"),
 		}
 
-		CreateTask(adapter, ctx, task1)
-		CreateTask(adapter, ctx, task2)
+		testutils.CreateTask(adapter, ctx, task1)
+		testutils.CreateTask(adapter, ctx, task2)
 
 		t.Run("search one", func(t *testing.T) {
 			tasks, err := adapter.Task().ListTasks(ctx, &stores.TaskFilter{

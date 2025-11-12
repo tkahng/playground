@@ -23,16 +23,16 @@ func TestApi_AdminPermissionsList(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		repository.CreateRolesAndPermissions(t, ctx, db, shared.KnownRoleNamesPermissionsMap)
 		testApi := SetupApi(t, ctx, db)
-		adminUser := CreateUserWithOptions(
+		adminUser := core.CreateUserWithOptions(
 			t,
 			testApi.App,
-			UserWithEmail("admin@k2dv.io"),
-			UserWithRoles(shared.PermissionNameAdmin),
-			UserWithProvider(models.ProvidersCredentials),
-			UserWithProviderType(models.ProviderTypeCredentials),
+			core.UserWithEmail("admin@k2dv.io"),
+			core.UserWithRoles(shared.PermissionNameAdmin),
+			core.UserWithProvider(models.ProvidersCredentials),
+			core.UserWithProviderType(models.ProviderTypeCredentials),
 		)
 
-		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
+		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
 		tests := []ApiScenario{
 			{
 				Name:           "admin permission list get by basic role id reversed",

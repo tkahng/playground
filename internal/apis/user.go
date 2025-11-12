@@ -21,7 +21,7 @@ type ApiUser struct {
 	Permissions     []*Permission        `json:"permissions,omitempty" required:"false"`
 }
 
-func FromUserModel(user *models.User) *ApiUser {
+func fromUserModel(user *models.User) *ApiUser {
 	if user == nil {
 		return nil
 	}
@@ -33,8 +33,8 @@ func FromUserModel(user *models.User) *ApiUser {
 		Image:           user.Image,
 		CreatedAt:       user.CreatedAt,
 		UpdatedAt:       user.UpdatedAt,
-		Accounts:        mapper.Map(user.Accounts, FromModelUserAccountOutput),
-		Roles:           mapper.Map(user.Roles, FromModelRole),
-		Permissions:     mapper.Map(user.Permissions, FromModelPermission),
+		Accounts:        mapper.Map(user.Accounts, fromModelUserAccountOutput),
+		Roles:           mapper.Map(user.Roles, fromModelRole),
+		Permissions:     mapper.Map(user.Permissions, fromModelPermission),
 	}
 }

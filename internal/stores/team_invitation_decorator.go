@@ -19,6 +19,18 @@ type TeamInvitationStoreDecorator struct {
 	UpdateInvitationFunc      func(ctx context.Context, invitation *models.TeamInvitation) error
 	CountTeamInvitationsFunc  func(ctx context.Context, filter *TeamInvitationFilter) (int64, error)
 	AcceptInvitationFunc      func(ctx context.Context, adapter StorageAdapterInterface, userId uuid.UUID, invitationToken string, out *models.TeamMember) error
+	DeleteInvitationFunc      func(ctx context.Context, invitationId uuid.UUID) error
+}
+
+// DeleteInvitation implements DbTeamInvitationStoreInterface.
+func (t *TeamInvitationStoreDecorator) DeleteInvitation(ctx context.Context, invitationId uuid.UUID) error {
+	if t.DeleteInvitationFunc != nil {
+		return t.DeleteInvitationFunc(ctx, invitationId)
+	}
+	if t.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return t.Delegate.DeleteInvitation(ctx, invitationId)
 }
 
 // AcceptInvitation implements DbTeamInvitationStoreInterface.

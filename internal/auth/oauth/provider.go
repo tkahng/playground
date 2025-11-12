@@ -9,6 +9,7 @@ import (
 	"github.com/tkahng/playground/internal/conf"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/github"
+	"golang.org/x/oauth2/google"
 )
 
 type ProviderConfig interface {
@@ -57,8 +58,8 @@ func OAuth2ConfigFromEnv(cfg conf.EnvConfig) {
 						"https://www.googleapis.com/auth/userinfo.profile",
 						"https://www.googleapis.com/auth/userinfo.email",
 					},
-					AuthURL:     "https://accounts.google.com/o/oauth2/v2/auth",
-					TokenURL:    "https://oauth2.googleapis.com/token",
+					AuthURL:     google.Endpoint.AuthURL,  //"https://accounts.google.com/o/oauth2/v2/auth"
+					TokenURL:    google.Endpoint.TokenURL, // "https://oauth2.googleapis.com/token",
 					UserInfoURL: "https://www.googleapis.com/oauth2/v3/userinfo",
 					RedirectURL: cfg.AppUrl + cfg.AuthCallback,
 				}}
@@ -106,7 +107,7 @@ func (p *BaseProvider) FetchTokenOptions(verifier string) []oauth2.AuthCodeOptio
 	}
 
 	if p.Pkce() {
-		opts = append(opts, oauth2.SetAuthURLParam("code_verifier", verifier))
+		opts = append(opts, oauth2.VerifierOption(verifier))
 	}
 	return opts
 }

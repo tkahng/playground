@@ -2,10 +2,12 @@ package middleware
 
 import (
 	"log/slog"
+	"net"
 	"net/http"
+	"strings"
 
-	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/tools/logger"
 )
 
 type HeadersInput struct {
@@ -50,7 +52,7 @@ var headers = []HeadersInput{
 	},
 }
 
-func IpAddressMiddleware(api huma.API) HttpMiddelwareFunc {
+func IpAddressMiddleware() HttpMiddelwareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -58,19 +60,23 @@ func IpAddressMiddleware(api huma.API) HttpMiddelwareFunc {
 			for idx, header := range headers {
 				index := idx
 				ipHeader := r.Header.Get(header.Header)
-				if len(ipHeader) > 0 {
-					slog.InfoContext(ctx, "found ip", slog.Int("index", index), slog.String("ip", ip))
+				if header.Split {
+					ipBefore, _, _ := strings.Cut(ipHeader, ",")
+					ipHeader = ipBefore
+				}
+				if ipHeader != "" && net.ParseIP(ipHeader) != nil {
+					slog.DebugContext(ctx, "found ip", slog.Int("index", index), slog.String("ip", ipHeader))
 					ip = ipHeader
 					break
 				}
 			}
-			if len(ip) == 0 {
+			if ip == "" {
 				next.ServeHTTP(w, r)
 				return
 			}
-			ctxx := contextstore.SetContextIPAddress(ctx, ip)
-			r = r.WithContext(ctxx)
-			next.ServeHTTP(w, r)
+			logger.SetAttrs(ctx, slog.String("ip", ip))
+
+			next.ServeHTTP(w, r.WithContext(contextstore.SetContextIPAddress(ctx, ip)))
 		})
 	}
 }

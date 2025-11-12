@@ -41,7 +41,10 @@ const formSchema = z.object({
 });
 export default function RoleEdit() {
   const navigate = useNavigate();
-  const { tab, onClick } = useTabs("general");
+  const { tab, onClick } = useTabs<string>("general", [
+    "general",
+    "permissions",
+  ]);
   const queryClient = useQueryClient();
   const { user } = useAuthProvider();
   const { roleId } = useParams<{ roleId: string }>();

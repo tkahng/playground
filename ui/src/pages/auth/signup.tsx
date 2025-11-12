@@ -30,17 +30,29 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { signUp } = useAuthProvider();
+
   const { search } = useLocation();
   const params = new URLSearchParams(search);
   const token = params.get("token");
   const redirectTo = params.get("redirect_to");
   const email = params.get("email");
-  const navigateTo =
-    email && token
-      ? `/team-invitation`
-      : redirectTo
-      ? redirectTo
-      : "/account/dashboard";
+
+  let navigateTo: string;
+  const searchParams: URLSearchParams = new URLSearchParams();
+  if (email?.length && token?.length) {
+    navigateTo = `/team-invitation`;
+    searchParams.set("token", token);
+    searchParams.set("email", email);
+  } else if (redirectTo?.length) {
+    const newUrl = new URL(decodeURIComponent(redirectTo), "http://localhost");
+    console.log("newUrl", newUrl);
+    navigateTo = newUrl.pathname;
+    for (const [key, value] of newUrl.searchParams) {
+      searchParams.set(key, value);
+    }
+  } else {
+    navigateTo = "/account/dashboard";
+  }
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
@@ -52,7 +64,10 @@ export default function SignupPage() {
         name: input.name,
       });
       setLoading(false);
-      navigate({ pathname: navigateTo, search: search });
+      navigate({
+        pathname: navigateTo,
+        search: searchParams.toString(),
+      });
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message, {

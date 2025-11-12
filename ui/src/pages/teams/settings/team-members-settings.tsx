@@ -3,12 +3,12 @@ import { DataTable } from "@/components/data-table";
 import { teamSettingLinks } from "@/components/links";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { getTeamMembers } from "@/lib/team-queries";
+import { getTeamTeamMembers } from "@/lib/team-queries";
+import { MemberRowDropdownMenuDialog } from "@/pages/teams/settings/member-row-dropdown-dialog";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { useSearchParams } from "react-router";
 import { InviteTeamMemberDialog } from "./invite-team-member-dialog";
-import { TeamMemberActionDropdown } from "./team-member-action-dropdown";
 
 export default function TeamMembersSettingPage() {
   const { user } = useAuthProvider();
@@ -29,7 +29,15 @@ export default function TeamMembersSettingPage() {
     }
   };
   const { data, isPending, isError, error } = useQuery({
-    queryKey: ["team-members"],
+    queryKey: [
+      {
+        key: "team-team-members",
+        team_id: team?.id,
+        page: pageIndex,
+        per_page: pageSize,
+        active: true,
+      },
+    ],
     queryFn: async () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
@@ -37,9 +45,16 @@ export default function TeamMembersSettingPage() {
       if (!team?.id) {
         throw new Error("Current team member team ID is required");
       }
-      return getTeamMembers(user.tokens.access_token, team.id);
+      return getTeamTeamMembers({
+        token: user.tokens.access_token,
+        teamId: team.id,
+        page: pageIndex,
+        perPage: pageSize,
+        active: true,
+      });
     },
   });
+
   if (isPending) {
     return <div>Loading...</div>;
   }
@@ -84,7 +99,7 @@ export default function TeamMembersSettingPage() {
               cell: ({ row }) => {
                 return (
                   <div className="flex flex-row gap-2 justify-end">
-                    <TeamMemberActionDropdown memberId={row.original.id} />
+                    <MemberRowDropdownMenuDialog member={row.original} />
                   </div>
                 );
               },

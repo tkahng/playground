@@ -2,9 +2,11 @@ package apis
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/shared"
 )
 
 type StripePaymentPayload struct {
@@ -26,6 +28,26 @@ type StripeUrlOutput struct {
 	} `json:"body"`
 }
 
+func (a *Api) bindCreateTeamCheckoutSession(stripeGroup huma.API) {
+	huma.Register(
+		stripeGroup,
+		huma.Operation{
+			OperationID: "create-team-checkout-session",
+			Method:      http.MethodPost,
+			Path:        "/teams/{team-id}/subscriptions/checkout-session",
+			Summary:     "create checkout session",
+			Description: "user create checkout session",
+			Tags:        []string{"Subscriptions", "Checkout Session"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+			Middlewares: huma.Middlewares{
+				a.Middlewares().GetTeamInfoFromTeamIDParam(),
+				a.Middlewares().GetSelectCustomerFromTeam(),
+			},
+		},
+		a.CreateTeamCheckoutSession,
+	)
+}
 func (api *Api) CreateTeamCheckoutSession(ctx context.Context, input *StripeTeamPaymentInput) (*StripeUrlOutput, error) {
 	customer := contextstore.GetContextCurrentCustomer(ctx)
 	if customer == nil {
@@ -46,6 +68,25 @@ func (api *Api) CreateTeamCheckoutSession(ctx context.Context, input *StripeTeam
 		},
 	}, nil
 
+}
+func (a *Api) bindCreateUserCheckoutSession(stripeGroup huma.API) {
+	huma.Register(
+		stripeGroup,
+		huma.Operation{
+			OperationID: "create-checkout-session",
+			Method:      http.MethodPost,
+			Path:        "/subscriptions/checkout-session",
+			Summary:     "create checkout session",
+			Description: "user create checkout session",
+			Tags:        []string{"Subscriptions", "Checkout Session"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+			Middlewares: huma.Middlewares{
+				a.Middlewares().GetSelectCustomerFromUser(),
+			},
+		},
+		a.CreateUserCheckoutSession,
+	)
 }
 
 func (api *Api) CreateUserCheckoutSession(ctx context.Context, input *StripeUserPaymentInput) (*StripeUrlOutput, error) {
@@ -69,7 +110,25 @@ func (api *Api) CreateUserCheckoutSession(ctx context.Context, input *StripeUser
 	}, nil
 
 }
-
+func (a *Api) bindStripeBillingPortal(stripeGroup huma.API) {
+	huma.Register(
+		stripeGroup,
+		huma.Operation{
+			OperationID: "stripe-billing-portal",
+			Method:      http.MethodPost,
+			Path:        "/subscriptions/billing-portals",
+			Summary:     "create user billing-portal",
+			Description: "billing-portals",
+			Tags:        []string{"Subscriptions", "Billing Portal"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+			Middlewares: huma.Middlewares{
+				a.Middlewares().GetSelectCustomerFromUser(),
+			},
+		},
+		a.StripeBillingPortal,
+	)
+}
 func (api *Api) StripeBillingPortal(ctx context.Context, input *struct{}) (*StripeUrlOutput, error) {
 	customer := contextstore.GetContextCurrentCustomer(ctx)
 	if customer == nil {
@@ -87,6 +146,27 @@ func (api *Api) StripeBillingPortal(ctx context.Context, input *struct{}) (*Stri
 		},
 	}, nil
 
+}
+
+func (a *Api) bindStripeTeamBillingPortal(stripeGroup huma.API) {
+	huma.Register(
+		stripeGroup,
+		huma.Operation{
+			OperationID: "stripe-billing-portal-team",
+			Method:      http.MethodPost,
+			Path:        "/teams/{team-id}/subscriptions/billing-portals",
+			Summary:     "create team billing-portal",
+			Description: "billing-portals",
+			Tags:        []string{"Subscriptions", "Billing Portal", "Team"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+			Middlewares: huma.Middlewares{
+				a.Middlewares().GetTeamInfoFromTeamIDParam(),
+				a.Middlewares().GetSelectCustomerFromTeam(),
+			},
+		},
+		a.StripeTeamBillingPortal,
+	)
 }
 func (api *Api) StripeTeamBillingPortal(ctx context.Context, input *struct {
 	TeamID string `path:"team-id" required:"true"`
@@ -107,6 +187,25 @@ func (api *Api) StripeTeamBillingPortal(ctx context.Context, input *struct {
 		},
 	}, nil
 
+}
+
+func (a *Api) bindStripeCheckoutSessionGet(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "get-checkout-session",
+			Method:      http.MethodGet,
+			Path:        "/subscriptions/checkout-session/{checkoutSessionId}",
+			Summary:     "get checkout session",
+			Description: "get checkout session",
+			Tags:        []string{"Subscriptions", "Checkout Session"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		a.StripeCheckoutSessionGet,
+	)
 }
 
 type CheckoutSessionOutput struct {
@@ -150,6 +249,6 @@ func (api *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheck
 
 	}
 	return &CheckoutSessionOutput{
-		Body: *FromModelSubscription(cs),
+		Body: *fromModelSubscription(cs),
 	}, nil
 }

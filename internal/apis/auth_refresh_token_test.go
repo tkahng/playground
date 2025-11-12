@@ -20,7 +20,7 @@ func TestApi_RefreshToken(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 
-		userInfo := CreateUserWithOptions(t, testApi.App, UserWithPassword("Password123!"))
+		userInfo := core.CreateUserWithOptions(t, testApi.App, core.UserWithPassword("Password123!"))
 
 		tests := []ApiScenario{
 			{
@@ -32,7 +32,7 @@ func TestApi_RefreshToken(t *testing.T) {
 					return testApi
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-					tokens, err := app.Auth().CreateAuthTokensFromEmail(ctx, userInfo.User.Email)
+					tokens, err := app.Auth().GenerateAuthTokens(ctx, userInfo.User.Email)
 					if err != nil {
 						t.Errorf("Error creating auth tokens: %v", err)
 					}

@@ -1,13 +1,19 @@
 import { useSearchParams } from "react-router";
 
-export const useTabs = (defaultValue: string) => {
+export function useTabs<T extends string = string>(
+  defaultValue: T,
+  allowed: readonly T[]
+) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const tab = searchParams.get("tab") ?? defaultValue;
+  const value = searchParams.get("tab");
 
-  const onClick = (value: string) => {
+  // validate query param
+  const tab = allowed.includes(value as T) ? (value as T) : defaultValue;
+
+  const onClick = (next: T) => {
     setSearchParams(
       (prev) => {
-        prev.set("tab", value);
+        prev.set("tab", next);
         return prev;
       },
       {
@@ -15,5 +21,6 @@ export const useTabs = (defaultValue: string) => {
       }
     );
   };
+
   return { tab, onClick };
-};
+}

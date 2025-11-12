@@ -15,7 +15,7 @@ func panicHanlder(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestRecovererMiddleware(t *testing.T) {
-	mw := RecovererMiddleware(nil)
+	mw := RecovererMiddleware()
 
 	h1 := mw(http.HandlerFunc(panicHanlder))
 	req := httptest.NewRequest(http.MethodGet, "/upper?word=abc", nil)

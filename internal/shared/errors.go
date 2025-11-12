@@ -1,46 +1,46 @@
 package shared
 
-type AppError struct {
-	status  int
-	Message string   `json:"message"`
-	Details []string `json:"details,omitempty"`
-}
+import (
+	"net/http"
 
-func (e *AppError) Error() string {
-	return e.Message
-}
-
-func (e *AppError) GetStatus() int {
-	return e.status
-}
+	appHttp "github.com/tkahng/playground/internal/tools/http"
+)
 
 var (
-	ErrUserNotFound = &AppError{
-		status:  404,
-		Message: "user not found",
+	ErrUserInfoNotFound = &appHttp.ErrorModel{
+		Status: http.StatusUnauthorized,
+		Detail: "you are not signed in",
 	}
-	ErrUserExists = &AppError{
-		status:  409,
-		Message: "user already exists",
+	ErrUserNotFound = &appHttp.ErrorModel{
+		Status: http.StatusNotFound,
+		Detail: "user not found",
 	}
-	ErrInvalidToken = &AppError{
-		status:  401,
-		Message: "invalid token",
+	ErrUserExists = &appHttp.ErrorModel{
+		Status: 409,
+		Detail: "user already exists",
 	}
-	ErrTokenExpired = &AppError{
-		status:  401,
-		Message: "token expired",
+	ErrInvalidToken = &appHttp.ErrorModel{
+		Status: 401,
+		Detail: "invalid token",
 	}
-	ErrTokenNotFound = &AppError{
-		status:  404,
-		Message: "token not found",
+	ErrTokenExpired = &appHttp.ErrorModel{
+		Status: 401,
+		Detail: "token expired",
 	}
-	ErrPasswordIncorrect = &AppError{
-		status:  401,
-		Message: "password is incorrect",
+	ErrTokenNotFound = &appHttp.ErrorModel{
+		Status: http.StatusNotFound,
+		Detail: "token not found",
 	}
-	ErrAccountNotFound = &AppError{
-		status:  404,
-		Message: "account not found",
+	ErrPasswordIncorrect = &appHttp.ErrorModel{
+		Status: 401,
+		Detail: "password is incorrect",
+	}
+	ErrAccountNotFound = &appHttp.ErrorModel{
+		Status: http.StatusNotFound,
+		Detail: "account not found",
+	}
+	ErrAccountProviderConflict = &appHttp.ErrorModel{
+		Status: 409,
+		Detail: "there is already an account with this provider",
 	}
 )

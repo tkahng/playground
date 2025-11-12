@@ -12,7 +12,8 @@
         "name": "Pro",
         "description": "Pro product description",
         "metadata": {
-          "index": 1
+          "index": 1,
+          "customer_type": "team"
         }
       }
     },
@@ -29,6 +30,10 @@
         "recurring": {
           "interval": "month",
           "interval_count": 1
+        },
+        "metadata": {
+          "index": 1,
+          "customer_type": "team"
         }
       }
     },
@@ -45,6 +50,10 @@
         "recurring": {
           "interval": "year",
           "interval_count": 1
+        },
+        "metadata": {
+          "index": 2,
+          "customer_type": "team"
         }
       }
     },
@@ -57,7 +66,8 @@
         "name": "Advanced",
         "description": "Advanced product description",
         "metadata": {
-          "index": 2
+          "index": 2,
+          "customer_type": "team"
         }
       }
     },
@@ -74,6 +84,10 @@
         "recurring": {
           "interval": "month",
           "interval_count": 1
+        },
+        "metadata": {
+          "index": 3,
+          "customer_type": "team"
         }
       }
     },
@@ -90,6 +104,10 @@
         "recurring": {
           "interval": "year",
           "interval_count": 1
+        },
+        "metadata": {
+          "index": 4,
+          "customer_type": "team"
         }
       }
     }

@@ -54,7 +54,11 @@ const updatePasswordSchema = z.object({
 
 export default function UserEdit() {
   // const navigate = useNavigate();
-  const { tab, onClick } = useTabs("profile");
+  const { tab, onClick } = useTabs<string>("profile", [
+    "profile",
+    "permissions",
+    "roles",
+  ]);
   const queryClient = useQueryClient();
   const { user } = useAuthProvider();
   const { userId } = useParams<{ userId: string }>();

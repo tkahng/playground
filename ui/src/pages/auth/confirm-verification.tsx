@@ -1,12 +1,12 @@
+import { Button } from "@/components/ui/button";
+import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { confirmVerification } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router";
-// /payment/success?sessionId
 export default function ConfirmVerification() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
-  const type = searchParams.get("type");
-  const redirect = searchParams.get("redirect_to");
+  const { user } = useAuthProvider();
 
   const { isPending, isError, error } = useQuery({
     queryKey: ["confirm-verification"],
@@ -14,13 +14,8 @@ export default function ConfirmVerification() {
       if (!token) {
         throw new Error("Missing token");
       }
-      if (!type) {
-        throw new Error("Missing type");
-      }
-      await confirmVerification(token, type);
-      if (redirect) {
-        window.location.href = redirect;
-      }
+      await confirmVerification(token);
+      return true;
     },
   });
 
@@ -35,7 +30,17 @@ export default function ConfirmVerification() {
   return (
     <div className="flex w-full flex-col items-center justify-center">
       <h2>Email Confirm Success</h2>
-      <p>Thank you for your payment.</p>
+      <p>Thank you for your verifying your email.</p>
+      {user && (
+        <Button asChild>
+          <a href="/">Go Home</a>
+        </Button>
+      )}
+      {!user && (
+        <Button asChild>
+          <a href="/signin">Sign In</a>
+        </Button>
+      )}
     </div>
   );
 }

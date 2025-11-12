@@ -22,53 +22,36 @@ type TeamInvitationMailParams struct {
 }
 
 type TeamInvitationService interface {
-	CreateInvitation(
-		ctx context.Context,
-		teamId uuid.UUID,
-		invitingUserId uuid.UUID,
-		inviteeEmail string,
-		role models.TeamMemberRole,
-		resend bool,
-	) error
-	CheckValidInvitation(
-		ctx context.Context,
-		userId uuid.UUID,
-		invitationToken string,
-	) (bool, error)
-	GetInvitation(
-		ctx context.Context,
-		invitationToken string,
-	) (*models.TeamInvitation, error)
-	AcceptInvitation(
-		ctx context.Context,
-		userId uuid.UUID,
-		invitationToken string,
-	) error
-	RejectInvitation(
-		ctx context.Context,
-		userId uuid.UUID,
-		invitationToken string,
-	) error
-
-	CancelInvitation(
-		ctx context.Context,
-		teamId uuid.UUID,
-		userId uuid.UUID,
-		invitationId uuid.UUID,
-	) error
-
-	FindInvitations(
-		ctx context.Context,
-		teamId uuid.UUID,
-	) ([]*models.TeamInvitation, error)
+	CreateInvitation(ctx context.Context, teamId uuid.UUID, invitingUserId uuid.UUID, inviteeEmail string, role models.TeamMemberRole, resend bool) error
+	CheckValidInvitation(ctx context.Context, userId uuid.UUID, invitationToken string) (bool, error)
+	GetInvitation(ctx context.Context, invitationToken string) (*models.TeamInvitation, error)
+	AcceptInvitation(ctx context.Context, userId uuid.UUID, invitationToken string) error
+	RejectInvitation(ctx context.Context, userId uuid.UUID, invitationToken string) error
+	CancelInvitation(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, invitationId uuid.UUID) error
+	FindInvitations(ctx context.Context, teamId uuid.UUID) ([]*models.TeamInvitation, error)
 }
 
 var _ TeamInvitationService = (*InvitationService)(nil)
 
 type InvitationService struct {
-	adapter    stores.StorageAdapterInterface
-	settings   conf.EnvConfig
-	jobService JobService
+	adapter        stores.StorageAdapterInterface
+	settings       conf.EnvConfig
+	jobService     JobService
+	paymentService PaymentService
+}
+
+func NewInvitationService(
+	adapter stores.StorageAdapterInterface,
+	settings conf.EnvConfig,
+	jobService JobService,
+	paymentService PaymentService,
+) TeamInvitationService {
+	return &InvitationService{
+		settings:       settings,
+		adapter:        adapter,
+		jobService:     jobService,
+		paymentService: paymentService,
+	}
 }
 
 // GetInvitation implements TeamInvitationService.
@@ -87,17 +70,6 @@ func (i *InvitationService) GetInvitation(ctx context.Context, invitationToken s
 
 }
 
-func NewInvitationService(
-	adapter stores.StorageAdapterInterface,
-	settings conf.EnvConfig,
-	jobService JobService,
-) TeamInvitationService {
-	return &InvitationService{
-		settings:   settings,
-		adapter:    adapter,
-		jobService: jobService,
-	}
-}
 func (i *InvitationService) CancelInvitation(
 	ctx context.Context,
 	teamId uuid.UUID,
@@ -129,7 +101,7 @@ func (i *InvitationService) CancelInvitation(
 	}
 	invitation.Status = models.TeamInvitationStatusCanceled
 
-	return i.adapter.TeamInvitation().UpdateInvitation(ctx, invitation)
+	return i.adapter.TeamInvitation().DeleteInvitation(ctx, invitation.ID)
 }
 
 // CheckValidInvitation implements TeamInvitationService.
@@ -166,29 +138,22 @@ func (i *InvitationService) CheckValidInvitation(
 }
 
 // AcceptInvitation implements TeamInvitationService.
-func (i *InvitationService) AcceptInvitation(
-	ctx context.Context,
-	userId uuid.UUID,
-	invitationToken string,
-) error {
-	teamMember := &models.TeamMember{}
-	err := i.adapter.TeamInvitation().AcceptInvitation(ctx, i.adapter, userId, invitationToken, teamMember)
-	if err != nil {
-		return err
-	}
-	err = i.jobService.EnqueueRefreshSubscriptionQuantityJob(ctx, &workers.RefreshSubscriptionQuantityJobArgs{
-		TeamID: teamMember.TeamID,
+func (i *InvitationService) AcceptInvitation(ctx2 context.Context, userId uuid.UUID, invitationToken string) error {
+	return i.adapter.RunInTxCtx(ctx2, func(txCtx context.Context) error {
+		teamMember := &models.TeamMember{}
+		err := i.adapter.TeamInvitation().AcceptInvitation(txCtx, i.adapter, userId, invitationToken, teamMember)
+		if err != nil {
+			return err
+		}
+		err = i.paymentService.VerifyAndUpdateTeamSubscriptionQuantity(txCtx, teamMember.TeamID)
+		if err != nil {
+			return err
+		}
+		return i.jobService.EnqueueTeamMemberAddedJob(txCtx, &workers.NewMemberNotificationJobArgs{
+			TeamMemberID: teamMember.ID,
+		})
 	})
-	if err != nil {
-		return err
-	}
-	err = i.jobService.EnqueueTeamMemberAddedJob(ctx, &workers.NewMemberNotificationJobArgs{
-		TeamMemberID: teamMember.ID,
-	})
-	if err != nil {
-		return err
-	}
-	return nil
+
 }
 
 // CreateInvitation implements TeamInvitationService.
@@ -300,7 +265,7 @@ func (i *InvitationService) RejectInvitation(ctx context.Context, userId uuid.UU
 		return fmt.Errorf("user does not match invitation")
 	}
 	invite.Status = models.TeamInvitationStatusDeclined
-	err = i.adapter.TeamInvitation().UpdateInvitation(ctx, invite)
+	err = i.adapter.TeamInvitation().DeleteInvitation(ctx, invite.ID)
 	if err != nil {
 		return err
 	}

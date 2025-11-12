@@ -2,6 +2,7 @@ package stores_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -82,7 +83,7 @@ func TestTeamStore_InvitationCRUD(t *testing.T) {
 		if err != nil || newinv == nil {
 			t.Fatalf("FindInvitationByID() = %v, err = %v", newinv, err)
 		}
-		if err == shared.ErrTokenExpired {
+		if errors.Is(err, shared.ErrTokenExpired) {
 			t.Fatalf("FindInvitationByID() expected ErrTokenExpired, got %v", err)
 		}
 
@@ -116,7 +117,6 @@ func TestTeamStore_InvitationCRUD(t *testing.T) {
 			t.Errorf("FindInvitationByID (expired) = %v, err = %v", found, err)
 		}
 
-		
 	})
 }
 
@@ -201,8 +201,19 @@ func TestInvitationStore_CRUD(t *testing.T) {
 		if err != nil || updated.Status != models.TeamInvitationStatusAccepted {
 			t.Errorf("UpdateInvitation() did not update status: %v, err = %v", updated, err)
 		}
+		// Delete invitation
+		err = teamStore.DeleteInvitation(ctx, invitation.ID)
+		if err != nil {
+			t.Errorf("DeleteInvitation() error = %v", err)
+		}
+		deleted, err := teamStore.FindInvitationByID(ctx, invitation.ID)
+		if err != nil {
+			t.Errorf("FindInvitationByID() after delete error = %v", err)
+		}
+		if deleted != nil {
+			t.Errorf("Expected invitation to be deleted, but found: %v", deleted)
+		}
 
-		
 	})
 }
 func TestTeamStore_FindPendingInvitation(t *testing.T) {
@@ -300,6 +311,5 @@ func TestTeamStore_FindPendingInvitation(t *testing.T) {
 			t.Errorf("Expected nil for other team, got %v", other)
 		}
 
-		
 	})
 }

@@ -16,7 +16,7 @@ type StripeSubscriptionListFilter struct {
 	Q       string                     `query:"q,omitempty" required:"false"`
 	Ids     []string                   `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	UserIDs []string                   `query:"user_id,omitempty" required:"false" format:"uuid"`
-	TeamIDs []string                   `query:"team_id,omitempty" required:"false" format:"uuid"`
+	TeamIDs []string                   `query:"team_ids,omitempty" required:"false" format:"uuid"`
 	Status  []StripeSubscriptionStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"trialing,active,canceled,incomplete,incomplete_expired,past_due,unpaid,paused"`
 }
 type StripeSubscriptionListParams struct {
@@ -37,7 +37,9 @@ func ToStripeSubscriptionListFilter(input *StripeSubscriptionListParams) (*store
 	filter.TeamIDs = utils.ParseValidUUIDs(input.TeamIDs...)
 	filter.UserIDs = utils.ParseValidUUIDs(input.UserIDs...)
 	filter.Expand = input.Expand
-
+	filter.Q = input.Q
+	filter.SortBy = input.SortBy
+	filter.SortOrder = input.SortOrder
 	return filter, nil
 }
 
@@ -60,7 +62,7 @@ func (api *Api) AdminStripeSubscriptions(ctx context.Context,
 	}
 	return &ApiPaginatedOutput[*StripeSubscription]{
 		Body: ApiPaginatedResponse[*StripeSubscription]{
-			Data: mapper.Map(subscriptions, FromModelSubscription),
+			Data: mapper.Map(subscriptions, fromModelSubscription),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
@@ -85,7 +87,7 @@ func (api *Api) AdminStripeSubscriptionsGet(ctx context.Context,
 	if len(subscriptions) == 0 {
 		return nil, nil
 	}
-	return &struct{ Body *StripeSubscription }{Body: FromModelSubscription(subscriptions[0])}, nil
+	return &struct{ Body *StripeSubscription }{Body: fromModelSubscription(subscriptions[0])}, nil
 }
 
 func ToStripeProductListFilter(input *StripeProductListParams) (*stores.StripeProductFilter, error) {
@@ -142,7 +144,7 @@ func (api *Api) AdminStripeProducts(ctx context.Context,
 	}
 	return &ApiPaginatedOutput[*StripeProduct]{
 		Body: ApiPaginatedResponse[*StripeProduct]{
-			Data: mapper.Map(products, FromModelProduct),
+			Data: mapper.Map(products, fromModelProduct),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
@@ -186,7 +188,7 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 	return &struct {
 		Body *StripeProduct
 	}{
-		Body: FromModelProduct(product),
+		Body: fromModelProduct(product),
 	}, nil
 }
 

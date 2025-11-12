@@ -46,8 +46,6 @@ type Executor interface {
 type Dbx interface {
 	Executor
 
-	Begin(ctx context.Context) (pgx.Tx, error)
-
 	BeginTx(ctx context.Context, opts ...func(*pgx.TxOptions)) (pgx.Tx, error)
 
 	// Close
@@ -70,18 +68,13 @@ type Queries struct {
 
 // Close calls close on the underlying pool.
 func (v *Queries) Close() {
-	slog.Info("close called on Queries. calling close on pool.")
+	slog.Debug("close called on Queries. calling close on pool.")
 	v.db.Close()
 
 }
 
 func (v *Queries) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
 	return v.db.QueryRow(ctx, sql, args...)
-}
-
-func (v *Queries) Begin(ctx context.Context) (pgx.Tx, error) {
-	opt := &pgx.TxOptions{}
-	return v.db.BeginTx(ctx, *opt)
 }
 
 // BeginTx acquires a connection from the Pool and starts a transaction with pgx.TxOptions determining the transaction mode.
@@ -132,15 +125,9 @@ func (v *txQueries) BeginTx(ctx context.Context, opts ...func(*pgx.TxOptions)) (
 	return v.db.Begin(ctx)
 }
 
-// Begin for txQueries will simply call the Begin, starting a pseudo nested transaction.
-// the opts will be ignored
-func (v *txQueries) Begin(ctx context.Context) (pgx.Tx, error) {
-	return v.db.Begin(ctx)
-}
-
 // Close is a no-op. this is here to implement Dbx
 func (v *txQueries) Close() {
-	slog.Info("close called on txQueries, nothing to do.")
+	slog.Debug("close called on txQueries, nothing to do.")
 }
 
 // RunInTxCtx implements Dbx.

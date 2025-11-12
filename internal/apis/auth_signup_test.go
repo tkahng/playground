@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -22,7 +21,7 @@ func TestApi_SignUp(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		testMailer := ExtractTestMailer(t, testApi)
+		testMailer := core.ExtractTestMailer(t, testApi.App)
 
 		tests := []ApiScenario{
 			{
@@ -43,8 +42,6 @@ func TestApi_SignUp(t *testing.T) {
 						t.Errorf("Error marshalling input: %v", err)
 					}
 					scenario.Body = strings.NewReader(string(data))
-					testMailer.Wg = &sync.WaitGroup{}
-					testMailer.Wg.Add(1)
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
 					if err := app.JobManager().PollOnce(context.Background()); err != nil {
@@ -84,7 +81,7 @@ func TestApi_SignUp_ExistingUsers(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		// testMailer := ExtractTestMailer(t, testApi)
+		// testMailer := ExtractTestMailer(t, testApi.App)
 		tests := []ApiScenario{
 			{
 				Name:           "Test signup fail for existing user",
@@ -95,11 +92,11 @@ func TestApi_SignUp_ExistingUsers(t *testing.T) {
 					return testApi
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-					existingUser := CreateUserWithOptions(
+					existingUser := core.CreateUserWithOptions(
 						t,
 						testApi.App,
-						UserWithPassword("Password123!"),
-						UserWithEmail("existing1@example.com"),
+						core.UserWithPassword("Password123!"),
+						core.UserWithEmail("existing1@example.com"),
 					)
 					assert.NotNil(t, existingUser, "User should not be nil")
 					dto := apis.SignupInput{
@@ -111,8 +108,6 @@ func TestApi_SignUp_ExistingUsers(t *testing.T) {
 						t.Errorf("Error marshalling input: %v", err)
 					}
 					scenario.Body = strings.NewReader(string(data))
-					// testMailer.Wg = &sync.WaitGroup{}
-					// testMailer.Wg.Add(1)
 				},
 				ExpectedContent: []string{
 					"user already exists",

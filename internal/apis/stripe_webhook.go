@@ -4,12 +4,29 @@ import (
 	"context"
 	"encoding/json"
 	"log/slog"
+	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/webhook"
 	"github.com/tkahng/playground/internal/tools/utils"
 )
+
+func (a *Api) bindStripeWebhook(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "stripe-webhook",
+			Method:      http.MethodPost,
+			Path:        "/stripe/webhook",
+			Summary:     "webhook",
+			Description: "Webhook for stripe",
+			Tags:        []string{"Stripe", "Webhook"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+		},
+		a.StripeWebhook,
+	)
+}
 
 type StripeWebhookInput struct {
 	Signature string `header:"Stripe-Signature"`

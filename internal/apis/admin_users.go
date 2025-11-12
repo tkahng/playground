@@ -7,8 +7,8 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/types"
@@ -78,7 +78,7 @@ func (api *Api) AdminUsersList(ctx context.Context, input *struct {
 
 	return &ApiPaginatedOutput[*ApiUser]{
 		Body: ApiPaginatedResponse[*ApiUser]{
-			Data: mapper.Map(users, FromUserModel),
+			Data: mapper.Map(users, fromUserModel),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
@@ -101,7 +101,6 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 }) (*struct {
 	Body *ApiUser
 }, error) {
-	action := api.App().Auth()
 	adapter := api.App().Adapter()
 	existingUser, err := adapter.User().FindUser(ctx, &stores.UserFilter{
 		Emails: []string{input.Body.Email},
@@ -112,23 +111,20 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	if existingUser != nil {
 		return nil, huma.Error409Conflict("User already exists")
 	}
-	user, err := action.Authenticate(ctx, &services.AuthenticationInput{
-		Email:             input.Body.Email,
-		Name:              input.Body.Name,
-		AvatarUrl:         input.Body.Image,
-		Provider:          models.ProvidersCredentials,
-		Password:          &input.Body.Password,
-		Type:              models.ProviderTypeCredentials,
-		ProviderAccountID: input.Body.Email,
-		EmailVerifiedAt:   input.Body.EmailVerifiedAt,
+	user, err := api.App().Auth().Signup(ctx, &auth.SignupInput{
+		Email:    input.Body.Email,
+		Name:     input.Body.Name,
+		Password: input.Body.Password,
+		Verified: input.Body.EmailVerifiedAt != nil,
 	})
+
 	if err != nil {
 		return nil, err
 	}
 	return &struct {
 		Body *ApiUser
 	}{
-		Body: FromUserModel(user),
+		Body: fromUserModel(&user.User),
 	}, nil
 
 }
@@ -223,5 +219,5 @@ func (api *Api) AdminUsersGet(ctx context.Context, input *struct {
 	if user == nil {
 		return nil, huma.Error404NotFound("User not found")
 	}
-	return &struct{ Body *ApiUser }{Body: FromUserModel(user)}, nil
+	return &struct{ Body *ApiUser }{Body: fromUserModel(user)}, nil
 }

@@ -39,7 +39,7 @@ type Task struct {
 	Project           *TaskProject      `db:"project" src:"project_id" dest:"id" table:"task_projects" json:"project,omitempty"`
 }
 
-func FromModelTask(task *models.Task) *Task {
+func fromModelTask(task *models.Task) *Task {
 	if task == nil {
 		return nil
 	}
@@ -59,10 +59,10 @@ func FromModelTask(task *models.Task) *Task {
 		ParentID:          task.ParentID,
 		CreatedAt:         task.CreatedAt,
 		UpdatedAt:         task.UpdatedAt,
-		Children:          mapper.Map(task.Children, FromModelTask),
-		CreatedByMember:   FromTeamMemberModel(task.CreatedByMember),
-		Team:              FromTeamModel(task.Team),
-		Project:           FromModelProject(task.Project),
+		Children:          mapper.Map(task.Children, fromModelTask),
+		CreatedByMember:   fromTeamMemberModel(task.CreatedByMember),
+		Team:              fromTeamModel(task.Team),
+		Project:           fromModelProject(task.Project),
 	}
 }
 
@@ -137,7 +137,7 @@ func (api *Api) TeamTaskList(ctx context.Context, input *TeamTaskListParams) (*T
 	}
 	return &TaskListResponse{
 		Body: &ApiPaginatedResponse[*Task]{
-			Data: mapper.Map(tasks, FromModelTask),
+			Data: mapper.Map(tasks, fromModelTask),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, total),
 		},
 	}, nil
@@ -301,19 +301,14 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	outputTask := FromModelTask(task)
-	if outputTask != nil {
-		if outputTask.AssigneeID != nil {
-			teamMemberId := *outputTask.AssigneeID
-			taskTeamInfo, err := api.app.Team().FindTeamInfoByMemberID(ctx, teamMemberId)
-			if err != nil {
-				return nil, err
-			}
-			outputTask.Assignee = FromTeamMemberModel(&taskTeamInfo.Member)
-			outputTask.Assignee.User = FromUserModel(&taskTeamInfo.User)
-			outputTask.Assignee.Team = FromTeamModel(&taskTeamInfo.Team)
-		}
+	team, err := api.app.Adapter().TeamGroup().FindTeamByID(ctx, task.TeamID)
+	if err != nil {
+		return nil, err
 	}
+	if team == nil {
+		return nil, huma.Error404NotFound("team not found")
+	}
+	outputTask := fromModelTask(task)
 	return &TaskResponse{
 		Body: outputTask,
 	}, nil

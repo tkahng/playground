@@ -2,12 +2,14 @@ package apis
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/mapper"
 )
 
@@ -21,7 +23,7 @@ type UserAccountOutput struct {
 	UpdatedAt         time.Time            `db:"updated_at" json:"updated_at"`
 }
 
-func FromModelUserAccountOutput(u *models.UserAccount) *UserAccountOutput {
+func fromModelUserAccountOutput(u *models.UserAccount) *UserAccountOutput {
 	if u == nil {
 		return nil
 	}
@@ -44,6 +46,24 @@ type MeOutput struct {
 	Body *UserWithAccounts
 }
 
+func (a *Api) bindMe(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "me",
+			Method:      http.MethodGet,
+			Path:        "/auth/me",
+			Summary:     "Me",
+			Description: "Me",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
+			Security: []map[string][]string{
+				{shared.BearerAuthSecurityKey: {}},
+			},
+		},
+		a.Me,
+	)
+}
 func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 	claims := contextstore.GetContextUserInfo(ctx)
 	if claims == nil {
@@ -64,17 +84,37 @@ func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 
 	return &MeOutput{
 		Body: &UserWithAccounts{
-			ApiUser:  FromUserModel(user),
-			Accounts: mapper.Map(acc, FromModelUserAccountOutput),
+			ApiUser:  fromUserModel(user),
+			Accounts: mapper.Map(acc, fromModelUserAccountOutput),
 		},
 	}, nil
 
 }
+
 type UpdateMeInput struct {
 	Name  *string `json:"name"`
 	Image *string `json:"image"`
 }
 
+func (a *Api) bindMeUpdate(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "meUpdate",
+			Method:      http.MethodPut,
+			Path:        "/auth/me",
+			Summary:     "Me Update",
+			Description: "Me Update",
+			Tags:        []string{"Auth"},
+			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		a.MeUpdate,
+	)
+
+}
 func (api *Api) MeUpdate(ctx context.Context, input *struct {
 	Body UpdateMeInput
 }) (*struct{}, error) {
@@ -97,6 +137,25 @@ func (api *Api) MeUpdate(ctx context.Context, input *struct {
 		return nil, err
 	}
 	return nil, nil
+}
+
+func (a *Api) bindMeDelete(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "me-delete",
+			Method:      http.MethodDelete,
+			Path:        "/auth/me",
+			Summary:     "Me delete",
+			Description: "Me delete",
+			Tags:        []string{"Auth", "Me"},
+			Errors:      []int{http.StatusUnauthorized, http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		a.MeDelete,
+	)
 }
 
 func (api *Api) MeDelete(ctx context.Context, input *struct{}) (*struct{}, error) {

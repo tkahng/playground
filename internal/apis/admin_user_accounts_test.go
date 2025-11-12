@@ -20,28 +20,28 @@ func TestApi_AdminUserAccounts(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
-		adminUser := CreateUserWithOptions(
+		adminUser := core.CreateUserWithOptions(
 			t,
 			testApi.App,
-			UserWithEmail("admin@k2dv.io"),
-			UserWithPermission(shared.PermissionNameAdmin),
-			UserWithProvider(models.ProvidersApple),
-			UserWithProviderType(models.ProviderTypeOAuth),
+			core.UserWithEmail("admin@k2dv.io"),
+			core.UserWithPermission(shared.PermissionNameAdmin),
+			core.UserWithProvider(models.ProvidersApple),
+			core.UserWithProviderType(models.ProviderTypeOAuth),
 		)
-		header := createTokenHeader(t, testApi.App, adminUser.User.Email)
-		_ = CreateUserWithOptions(
+		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
+		_ = core.CreateUserWithOptions(
 			t,
 			testApi.App,
-			UserWithEmail("user1@example.com"),
-			UserWithProvider(models.ProvidersCredentials),
-			UserWithProviderType(models.ProviderTypeCredentials),
+			core.UserWithEmail("user1@example.com"),
+			core.UserWithProvider(models.ProvidersCredentials),
+			core.UserWithProviderType(models.ProviderTypeCredentials),
 		)
-		_ = CreateUserWithOptions(
+		_ = core.CreateUserWithOptions(
 			t,
 			testApi.App,
-			UserWithEmail("user2@example.com"),
-			UserWithProvider(models.ProvidersGoogle),
-			UserWithProviderType(models.ProviderTypeOAuth),
+			core.UserWithEmail("user2@example.com"),
+			core.UserWithProvider(models.ProvidersGoogle),
+			core.UserWithProviderType(models.ProviderTypeOAuth),
 		)
 		tests := []ApiScenario{
 			{

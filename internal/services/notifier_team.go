@@ -171,7 +171,7 @@ func NewNewTeamMemberWorker(notifier *DbNotifier) *NewTeamMemberWorker {
 // 3. send notification to all team members except the team member.
 func (d *DbNotifier) NotifyMembersOfNewMember(ctx context.Context, teamMemberID uuid.UUID) error {
 	// 1. find team member with team and user
-	newMember, err := d.teamService.FindTeamInfoByMemberID(ctx, teamMemberID)
+	newMember, err := d.teamService.FindTeamMemberWithUserAndTeam(ctx, teamMemberID)
 	if err != nil {
 		return err
 	}

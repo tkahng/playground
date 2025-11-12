@@ -2,12 +2,14 @@ package apis
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/mapper"
 )
 
@@ -73,7 +75,7 @@ type StripeCustomer struct {
 	Subscriptions  []*StripeSubscription `db:"subscriptions" src:"id" dest:"stripe_customer_id" table:"stripe_subscriptions" json:"subscriptions,omitempty"`
 }
 
-func FromModelCustomer(sub *models.StripeCustomer) *StripeCustomer {
+func fromModelCustomer(sub *models.StripeCustomer) *StripeCustomer {
 	if sub == nil {
 		return nil
 	}
@@ -88,13 +90,13 @@ func FromModelCustomer(sub *models.StripeCustomer) *StripeCustomer {
 		PaymentMethod:  sub.PaymentMethod,
 		CreatedAt:      sub.CreatedAt,
 		UpdatedAt:      sub.UpdatedAt,
-		Team:           FromTeamModel(sub.Team),
-		User:           FromUserModel(sub.User),
-		Subscriptions:  mapper.Map(sub.Subscriptions, FromModelSubscription),
+		Team:           fromTeamModel(sub.Team),
+		User:           fromUserModel(sub.User),
+		Subscriptions:  mapper.Map(sub.Subscriptions, fromModelSubscription),
 	}
 }
 
-func FromModelSubscription(sub *models.StripeSubscription) *StripeSubscription {
+func fromModelSubscription(sub *models.StripeSubscription) *StripeSubscription {
 	if sub == nil {
 		return nil
 	}
@@ -117,8 +119,8 @@ func FromModelSubscription(sub *models.StripeSubscription) *StripeSubscription {
 		CreatedAt:          sub.CreatedAt,
 		UpdatedAt:          sub.UpdatedAt,
 		ItemID:             sub.ItemID,
-		StripeCustomer:     FromModelCustomer(sub.StripeCustomer),
-		Price:              FromModelPrice(sub.Price),
+		StripeCustomer:     fromModelCustomer(sub.StripeCustomer),
+		Price:              fromModelPrice(sub.Price),
 	}
 }
 
@@ -135,6 +137,28 @@ type StripeSubscriptionExpand struct {
 type StripeSubscriptionGetParams struct {
 	SubscriptionID string `path:"subscription-id" json:"subscription_id" required:"true"`
 	StripeSubscriptionExpand
+}
+
+func (a *Api) bindGetStripeSubscriptions(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "subscriptions-active",
+			Method:      http.MethodGet,
+			Path:        "/subscriptions/active",
+			Summary:     "subscriptions-active",
+			Description: "get active user subscriptions",
+			Tags:        []string{"Stripe", "Subscriptions"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				a.Middlewares().GetSelectCustomerFromUser(),
+			},
+		},
+		a.GetStripeSubscriptions,
+	)
 }
 
 func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*struct {
@@ -154,11 +178,33 @@ func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*s
 	output := &struct {
 		Body *StripeSubscription `json:"body,omitempty" required:"false"`
 	}{
-		Body: FromModelSubscription(subWithPriceProduct),
+		Body: fromModelSubscription(subWithPriceProduct),
 	}
 
 	return output, nil
 
+}
+func (a *Api) bindGetTeamStripeSubscriptions(stripeGroup huma.API) {
+	huma.Register(
+		stripeGroup,
+		huma.Operation{
+			OperationID: "team-subscriptions-active",
+			Method:      http.MethodGet,
+			Path:        "/teams/{team-id}/subscriptions/active",
+			Summary:     "team-subscriptions-active",
+			Description: "get active team subscriptions",
+			Tags:        []string{"Stripe", "Subscriptions", "Team"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{
+				a.Middlewares().GetTeamInfoFromTeamIDParam(),
+				a.Middlewares().GetSelectCustomerFromTeam(),
+			},
+		},
+		a.GetTeamStripeSubscriptions,
+	)
 }
 func (api *Api) GetTeamStripeSubscriptions(ctx context.Context, input *struct {
 	TeamID string `path:"team-id" json:"team_id" format:"uuid" required:"true"`
@@ -179,7 +225,7 @@ func (api *Api) GetTeamStripeSubscriptions(ctx context.Context, input *struct {
 	output := &struct {
 		Body *StripeSubscription `json:"body,omitempty" required:"false"`
 	}{
-		Body: FromModelSubscription(subWithPriceProduct),
+		Body: fromModelSubscription(subWithPriceProduct),
 	}
 
 	return output, nil

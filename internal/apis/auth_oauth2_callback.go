@@ -5,31 +5,47 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/tkahng/playground/internal/auth"
+	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/services"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
-// TODO: redirect to /auth/callback with refresh token
-func (api *Api) OAuth2CallbackPost(ctx context.Context, input *OAuth2CallbackInput) (*AuthenticatedInfoResponse, error) {
+func (a *Api) bindOAuth2CallbackPost(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "oauth2-callback-post",
+			Method:      http.MethodPost,
+			Path:        "/auth/callback",
+			Summary:     "OAuth2 Callback (POST)",
+			Description: "Handle OAuth2 callback (POST)",
+			Tags:        []string{"Auth", "OAuth2"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		func(ctx context.Context, input *OAuth2CallbackInput) (*AuthenticatedInfoResponse, error) {
+			dto, err := OAuth2Callback(ctx, a, input)
+			if err != nil {
+				return nil, err
+			}
+			redirectUrl := dto.RedirectTo
+			uri, err := url.Parse(redirectUrl)
+			if err != nil {
+				return nil, err
+			}
+			q := uri.Query()
+			q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
+			uri.RawQuery = q.Encode()
+			fmt.Println(uri.String())
 
-	dto, err := OAuth2Callback(ctx, api, input)
-	if err != nil {
-		return nil, err
-	}
-	redirectUrl := dto.RedirectTo
-	uri, err := url.Parse(redirectUrl)
-	if err != nil {
-		return nil, err
-	}
-	q := uri.Query()
-	q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
-	uri.RawQuery = q.Encode()
-	fmt.Println(uri.String())
-
-	return &AuthenticatedInfoResponse{
-		Body: dto.ApiUserInfoTokens,
-	}, nil
+			return &AuthenticatedInfoResponse{
+				Body: dto.ApiUserInfoTokens,
+			}, nil
+		},
+	)
 }
 
 type OAuth2CallbackInput struct {
@@ -43,28 +59,41 @@ type OAuth2CallbackGetResponse struct {
 	Url    string `header:"Location"`
 }
 
-func (api *Api) OAuth2CallbackGet(ctx context.Context, input *OAuth2CallbackInput) (*OAuth2CallbackGetResponse, error) {
+func (a *Api) bindOath2CallbackGet(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "oauth2-callback-get",
+			Method:      http.MethodGet,
+			Path:        "/auth/callback",
+			Summary:     "OAuth2 Callback (GET)",
+			Description: "Handle OAuth2 callback (GET)",
+			Tags:        []string{"Auth", "OAuth2"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		func(ctx context.Context, input *OAuth2CallbackInput) (*OAuth2CallbackGetResponse, error) {
+			dto, err := OAuth2Callback(ctx, a, input)
+			if err != nil {
+				return nil, err
+			}
+			redirectUrl := dto.RedirectTo
+			uri, err := url.Parse(redirectUrl)
+			if err != nil {
+				return nil, err
+			}
+			q := uri.Query()
+			q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
+			uri.RawQuery = q.Encode()
+			fmt.Println(uri.String())
 
-	dto, err := OAuth2Callback(ctx, api, input)
-	if err != nil {
-		return nil, err
-	}
-	redirectUrl := dto.RedirectTo
-	uri, err := url.Parse(redirectUrl)
-	if err != nil {
-		return nil, err
-	}
-	q := uri.Query()
-	q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
-	uri.RawQuery = q.Encode()
-	fmt.Println(uri.String())
+			return &OAuth2CallbackGetResponse{
+				Status: http.StatusTemporaryRedirect,
+				Url:    uri.String(),
+				// RefreshToken: dto.Tokens.RefreshToken,
+			}, nil
 
-	return &OAuth2CallbackGetResponse{
-		Status: http.StatusTemporaryRedirect,
-		Url:    uri.String(),
-		// RefreshToken: dto.Tokens.RefreshToken,
-	}, nil
-
+		},
+	)
 }
 
 func ToApiUserInfoTokens(userInfo *models.UserInfoTokens) *ApiUserInfoTokens {
@@ -73,7 +102,7 @@ func ToApiUserInfoTokens(userInfo *models.UserInfoTokens) *ApiUserInfoTokens {
 	}
 	return &ApiUserInfoTokens{
 		ApiUserInfo: ApiUserInfo{
-			User:        *FromUserModel(&userInfo.User),
+			User:        *fromUserModel(&userInfo.User),
 			Roles:       userInfo.Roles,
 			Permissions: userInfo.Permissions,
 			Providers:   userInfo.Providers,
@@ -108,28 +137,49 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	if err != nil {
 		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
 	}
-	params := &services.AuthenticationInput{
+	params := &auth.OAuth2SigninInput{
 		AvatarUrl:         &authUser.AvatarURL,
 		Email:             authUser.Email,
 		Name:              &authUser.Username,
-		EmailVerifiedAt:   &authUser.Expiry,
+		EmailVerifiedAt:   types.Pointer(time.Now()),
 		Provider:          models.Providers(parsedState.Provider),
-		Type:              models.ProviderTypeOAuth,
 		ProviderAccountID: authUser.Id,
 		AccessToken:       &authUser.AccessToken,
 		RefreshToken:      &authUser.RefreshToken,
 	}
-	user, err := action.Authenticate(ctx, params)
+	user, err := OAuth2Signin(ctx, api.App(), params)
 	if err != nil {
 		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
 
 	}
-	dto, err := action.CreateAuthTokensFromEmail(ctx, user.Email)
-	if err != nil || dto == nil {
-		return nil, fmt.Errorf("error creating auth dto: %w", err)
-	}
 	return &CallbackOutput{
-		ApiUserInfoTokens: *ToApiUserInfoTokens(dto),
+		ApiUserInfoTokens: *ToApiUserInfoTokens(user),
 		RedirectTo:        parsedState.RedirectTo,
 	}, nil
+}
+
+func OAuth2Signin(ctx context.Context, app core.App, input *auth.OAuth2SigninInput) (*models.UserInfoTokens, error) {
+	var output *models.UserInfoTokens
+	txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+		user, err := app.Auth().OAuth2Signin(txCtx, input)
+		if err != nil {
+			return err
+		}
+		existingCustomer, err := app.Payment().FindCustomerByUserId(txCtx, user.User.ID)
+		if err != nil {
+			return err
+		}
+		if existingCustomer == nil {
+			_, err = app.Payment().CreateUserCustomer(txCtx, &user.User)
+			if err != nil {
+				return err
+			}
+		}
+		output = user
+		return nil
+	})
+	if txErr != nil {
+		return nil, txErr
+	}
+	return output, nil
 }
