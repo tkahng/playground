@@ -14,6 +14,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/populator"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/types"
@@ -121,6 +122,75 @@ func TestApi_TeamTaskUpdate(t *testing.T) {
 				assert.Equal(t, input.EndAt.UTC(), result.EndAt.UTC())
 				assert.Equal(t, input.AssigneeID, result.AssigneeID)
 				assert.Equal(t, input.ReporterID, result.ReporterID)
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *TestApi {
+				return testApi
+			}
+			tt.Test(t)
+		})
+	}
+}
+
+func TestApi_TeamTaskGet(t *testing.T) {
+	tests := []ApiScenario{
+		{
+			Name:           "success: get task",
+			Method:         http.MethodGet,
+			URL:            "/tasks/{task-id}",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				project := core.CreateProjectAndTasks(t, app, &team1.Member)
+				task2 := repository.MustCreateOneCtx(t, t.Context(), repository.Task, app.Db(), &models.Task{
+					TeamID:            team1.Team.ID,
+					ProjectID:         project.ID,
+					Status:            models.TaskStatusTodo,
+					Rank:              0,
+					CreatedByMemberID: &team1.Member.ID,
+				})
+				task := repository.MustCreateOneCtx(t, t.Context(), repository.Task, app.Db(), &models.Task{
+					TeamID:            team1.Team.ID,
+					ProjectID:         project.ID,
+					Status:            models.TaskStatusTodo,
+					Rank:              0,
+					CreatedByMemberID: &team1.Member.ID,
+					ParentID:          &task2.ID,
+				})
+				pop := populator.NewPopulator(app.Adapter())
+				err := pop.PopulateTask(t.Context(), task)
+				if err != nil {
+					t.Fatal("failed to populate task", err)
+				}
+				scenario.Store.Set("task", task)
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/tasks/%s", task.ID.String())
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.Task](t, res.Body.Bytes())
+				input, ok := scenario.Store.Get("task").(*models.Task)
+				if !ok {
+					t.Fatal("no input")
+				}
+				assert.Equal(t, input.Name, result.Name)
+				assert.Equal(t, input.Description, result.Description)
+				assert.Equal(t, input.Status, result.Status)
+				assert.Equal(t, input.AssigneeID, result.AssigneeID)
+				assert.Equal(t, input.ReporterID, result.ReporterID)
+				assert.Equal(t, input.TeamID, result.TeamID)
+				assert.Equal(t, input.ProjectID, result.ProjectID)
+				assert.Equal(t, input.Rank, result.Rank)
+				assert.Equal(t, input.CreatedByMemberID, result.CreatedByMemberID)
+				assert.NotNil(t, result.CreatedByMember)
+				assert.NotNil(t, result.Team)
+				assert.NotNil(t, result.Project)
+				assert.NotNil(t, result.Parent)
 			},
 		},
 	}

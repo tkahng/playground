@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/populator"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
@@ -41,6 +42,7 @@ type Task struct {
 	Reporter          *TeamMember       `db:"reporter" src:"reporter_id" dest:"id" table:"team_members" json:"reporter,omitempty"`
 	Team              *Team             `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
 	Project           *TaskProject      `db:"project" src:"project_id" dest:"id" table:"task_projects" json:"project,omitempty"`
+	Parent            *Task             `db:"parent" src:"parent_id" dest:"id" table:"tasks" json:"parent,omitempty"`
 }
 
 func fromModelTask(task *models.Task) *Task {
@@ -67,6 +69,9 @@ func fromModelTask(task *models.Task) *Task {
 		CreatedByMember:   fromTeamMemberModel(task.CreatedByMember),
 		Team:              fromTeamModel(task.Team),
 		Project:           FromModelProject(task.Project),
+		Assignee:          fromTeamMemberModel(task.Assignee),
+		Reporter:          fromTeamMemberModel(task.Reporter),
+		Parent:            fromModelTask(task.Parent),
 	}
 }
 
@@ -151,6 +156,13 @@ func (api *Api) TeamTaskListBind(humaApi huma.API) {
 			tasks, err := api.App().Adapter().Task().ListTasks(ctx, newInput)
 			if err != nil {
 				return nil, huma.Error500InternalServerError("error listing tasks", err)
+			}
+			pop := populator.NewPopulator(api.App().Adapter())
+			for _, task := range tasks {
+				err = pop.PopulateTask(ctx, task)
+				if err != nil {
+					return nil, err
+				}
 			}
 			total, err := api.App().Adapter().Task().CountTasks(ctx, newInput)
 			if err != nil {
@@ -339,16 +351,18 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	task, err := api.App().Adapter().Task().FindTaskByID(ctx, id)
+	pop := populator.NewPopulator(api.App().Adapter())
+
+	task, err := pop.GetTaskByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	team, err := api.app.Adapter().TeamGroup().FindTeamByID(ctx, task.TeamID)
+	if task == nil {
+		return nil, huma.Error404NotFound("Task not found")
+	}
+	err = pop.PopulateTask(ctx, task)
 	if err != nil {
 		return nil, err
-	}
-	if team == nil {
-		return nil, huma.Error404NotFound("team not found")
 	}
 	outputTask := fromModelTask(task)
 	return &TaskResponse{
