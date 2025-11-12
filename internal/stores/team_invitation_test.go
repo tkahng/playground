@@ -201,6 +201,18 @@ func TestInvitationStore_CRUD(t *testing.T) {
 		if err != nil || updated.Status != models.TeamInvitationStatusAccepted {
 			t.Errorf("UpdateInvitation() did not update status: %v, err = %v", updated, err)
 		}
+		// Delete invitation
+		err = teamStore.DeleteInvitation(ctx, invitation.ID)
+		if err != nil {
+			t.Errorf("DeleteInvitation() error = %v", err)
+		}
+		deleted, err := teamStore.FindInvitationByID(ctx, invitation.ID)
+		if err != nil {
+			t.Errorf("FindInvitationByID() after delete error = %v", err)
+		}
+		if deleted != nil {
+			t.Errorf("Expected invitation to be deleted, but found: %v", deleted)
+		}
 
 	})
 }
