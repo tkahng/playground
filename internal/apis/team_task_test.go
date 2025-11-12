@@ -120,12 +120,12 @@ func TestApi_TeamTaskUpdate(t *testing.T) {
 				assert.Equal(t, input.Status, result.Status)
 				assert.Equal(
 					t,
-					input.StartAt.UTC().Round(time.Microsecond),
-					result.StartAt.UTC().Round(time.Microsecond))
+					input.StartAt.UTC().Truncate(time.Microsecond),
+					result.StartAt.UTC().Truncate(time.Microsecond))
 				assert.Equal(
 					t,
-					input.EndAt.UTC().Round(time.Microsecond),
-					result.EndAt.UTC().Round(time.Microsecond),
+					input.EndAt.UTC().Truncate(time.Microsecond),
+					result.EndAt.UTC().Truncate(time.Microsecond),
 				)
 				assert.Equal(t, input.AssigneeID, result.AssigneeID)
 				assert.Equal(t, input.ReporterID, result.ReporterID)
