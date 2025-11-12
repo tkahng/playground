@@ -107,7 +107,13 @@ export default function TeamCustomerForm({ subscription }: Props) {
         >
           <div className="mt-8 mb-4 text-xl font-semibold">
             {subscription ? (
-              `${subscriptionPrice}/${subscription?.price?.interval}`
+              `$${
+                ((subscription.price?.unit_amount || 0) *
+                  subscription.quantity) /
+                100
+              }: ${subscriptionPrice} x ${subscription.quantity} users / ${
+                subscription?.price?.interval
+              }`
             ) : (
               <Link to="/pricing">Choose your plan</Link>
             )}
