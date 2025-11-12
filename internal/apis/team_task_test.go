@@ -163,7 +163,7 @@ func TestApi_TeamTaskGet(t *testing.T) {
 					ParentID:          &task2.ID,
 				})
 				pop := populator.NewPopulator(app.Adapter())
-				err := pop.PopulateTask(t.Context(), task)
+				err := populator.PopulateTask(t.Context(), pop, task)
 				if err != nil {
 					t.Fatal("failed to populate task", err)
 				}

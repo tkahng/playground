@@ -16,7 +16,6 @@ type Populator interface {
 
 	GetTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error)
 	GetProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error)
-	PopulateTask(ctx context.Context, task *models.Task) error
 }
 
 type DbPopulator struct {
@@ -91,9 +90,6 @@ func getMember(ctx context.Context, populator Populator, memberId uuid.UUID) (*m
 	return nil, nil
 }
 
-func (p *DbPopulator) PopulateTask(ctx context.Context, task *models.Task) error {
-	return PopulateTask(ctx, p, task)
-}
 func PopulateTask(ctx context.Context, populator Populator, task *models.Task) error {
 	if task.CreatedByMemberID != nil {
 		member, err := getMember(ctx, populator, *task.CreatedByMemberID)

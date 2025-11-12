@@ -159,7 +159,7 @@ func (api *Api) TeamTaskListBind(humaApi huma.API) {
 			}
 			pop := populator.NewPopulator(api.App().Adapter())
 			for _, task := range tasks {
-				err = pop.PopulateTask(ctx, task)
+				err := populator.PopulateTask(ctx, pop, task)
 				if err != nil {
 					return nil, err
 				}
@@ -360,7 +360,7 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	if task == nil {
 		return nil, huma.Error404NotFound("Task not found")
 	}
-	err = pop.PopulateTask(ctx, task)
+	err = populator.PopulateTask(ctx, pop, task)
 	if err != nil {
 		return nil, err
 	}
