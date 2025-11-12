@@ -135,7 +135,7 @@ export function EditProjectTaskDialog({
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["project-tasks", task.project_id],
+        queryKey: [{ key: "project-tasks", project_id: task.project_id }],
       });
       toast.success("Task updated successfully");
       props?.onOpenChange(false);

@@ -14,7 +14,7 @@ export function useProject() {
     teamSlug: string;
   }>();
   return useQuery({
-    queryKey: ["project", projectId],
+    queryKey: [{ key: "project", project_id: projectId }],
     queryFn: async () => {
       return await taskProjectGet(user!.tokens.access_token, projectId!);
     },

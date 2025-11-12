@@ -83,7 +83,7 @@ export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["project-tasks", props.projectId],
+        queryKey: [{ key: "project-tasks", project_id: props.projectId }],
       });
       toast.success("Task updated");
     },
