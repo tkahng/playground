@@ -378,10 +378,10 @@ func (s *DbTaskStore) DeleteTask(ctx context.Context, taskID uuid.UUID) error {
 type TaskProjectsFilter struct {
 	PaginatedInput
 	SortParams
-	Q        string                     `query:"q,omitempty" json:"q,omitempty" required:"false"`
-	Ids      []uuid.UUID                `query:"ids,omitempty" json:"ids,omitempty" format:"uuid" required:"false"`
-	TeamIds  []uuid.UUID                `query:"team_ids,omitempty" json:"team_ids,omitempty" format:"uuid" required:"false"`
-	Statuses []models.TaskProjectStatus `query:"statuses,omitempty" json:"statuses,omitempty" required:"false"`
+	Q       string                     `query:"q,omitempty" json:"q,omitempty" required:"false"`
+	Ids     []uuid.UUID                `query:"ids,omitempty" json:"ids,omitempty" format:"uuid" required:"false"`
+	TeamIds []uuid.UUID                `query:"team_ids,omitempty" json:"team_ids,omitempty" format:"uuid" required:"false"`
+	Status  []models.TaskProjectStatus `query:"status,omitempty" json:"statuses,omitempty" required:"false"`
 }
 
 func (s *DbTaskStore) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error) {
@@ -487,9 +487,9 @@ func (*DbTaskStore) TaskProjectWhere(task *TaskProjectsFilter) *map[string]any {
 	// 		"_in": task.CreatedByMemberIds,
 	// 	}
 	// }
-	if len(task.Statuses) > 0 {
+	if len(task.Status) > 0 {
 		where["status"] = map[string]any{
-			"_in": task.Statuses,
+			"_in": task.Status,
 		}
 	}
 

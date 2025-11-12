@@ -191,15 +191,33 @@ func TestTeamStore_ListTeams(t *testing.T) {
 		}
 
 		// Add members
-		_, err = teamMemberStore.CreateTeamMember(ctx, teamA.ID, user1.ID, models.TeamMemberRoleMember, true)
+		_, err = teamMemberStore.CreateTeamMember(ctx, &models.TeamMember{
+			TeamID:           teamA.ID,
+			UserID:           &user1.ID,
+			Role:             models.TeamMemberRoleMember,
+			HasBillingAccess: true,
+			Active:           true,
+		})
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		_, err = teamMemberStore.CreateTeamMember(ctx, teamB.ID, user1.ID, models.TeamMemberRoleMember, true)
+		_, err = teamMemberStore.CreateTeamMember(ctx, &models.TeamMember{
+			TeamID:           teamB.ID,
+			UserID:           &user1.ID,
+			Role:             models.TeamMemberRoleMember,
+			HasBillingAccess: true,
+			Active:           true,
+		})
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		_, err = teamMemberStore.CreateTeamMember(ctx, teamC.ID, user2.ID, models.TeamMemberRoleMember, true)
+		_, err = teamMemberStore.CreateTeamMember(ctx, &models.TeamMember{
+			TeamID:           teamC.ID,
+			UserID:           &user2.ID,
+			Role:             models.TeamMemberRoleMember,
+			HasBillingAccess: true,
+			Active:           true,
+		})
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -305,15 +323,33 @@ func TestTeamStore_CountTeams(t *testing.T) {
 		}
 
 		// Add members
-		_, err = adapter.TeamMember().CreateTeamMember(ctx, teamA.ID, user1.ID, models.TeamMemberRoleMember, true)
+		_, err = adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
+			TeamID:           teamA.ID,
+			UserID:           &user1.ID,
+			Role:             models.TeamMemberRoleMember,
+			HasBillingAccess: true,
+			Active:           true,
+		})
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		_, err = adapter.TeamMember().CreateTeamMember(ctx, teamB.ID, user1.ID, models.TeamMemberRoleMember, true)
+		_, err = adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
+			TeamID:           teamB.ID,
+			UserID:           &user1.ID,
+			Role:             models.TeamMemberRoleMember,
+			HasBillingAccess: true,
+			Active:           true,
+		})
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		_, err = adapter.TeamMember().CreateTeamMember(ctx, teamC.ID, user2.ID, models.TeamMemberRoleMember, true)
+		_, err = adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
+			TeamID:           teamC.ID,
+			UserID:           &user2.ID,
+			Role:             models.TeamMemberRoleMember,
+			HasBillingAccess: true,
+			Active:           true,
+		})
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}

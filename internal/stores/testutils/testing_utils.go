@@ -175,7 +175,13 @@ func CreateTeamAndMemberWithOptions(t testing.TB, adapter stores.StorageAdapterI
 	if err != nil {
 		t.Fatalf("Error creating team: %v", err)
 	}
-	member, err := adapter.TeamMember().CreateTeamMember(ctx, team.ID, user.ID, option.role, option.billing)
+	member, err := adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
+		TeamID:           team.ID,
+		UserID:           &user.ID,
+		Role:             option.role,
+		Active:           true,
+		HasBillingAccess: option.billing,
+	})
 	if err != nil {
 		t.Fatalf("Error creating team member: %v", err)
 	}
@@ -209,7 +215,13 @@ func CreateTeam(adapter stores.StorageAdapterInterface, ctx context.Context, slu
 }
 
 func CreateTeamMember(adapter stores.StorageAdapterInterface, ctx context.Context, team *models.Team, user *models.User, role models.TeamMemberRole, billingAccess bool) *models.TeamMember {
-	member, err := adapter.TeamMember().CreateTeamMember(ctx, team.ID, user.ID, role, billingAccess)
+	member, err := adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
+		TeamID:           team.ID,
+		UserID:           &user.ID,
+		Role:             role,
+		Active:           true,
+		HasBillingAccess: billingAccess,
+	})
 	if err != nil {
 		panic(err)
 	}

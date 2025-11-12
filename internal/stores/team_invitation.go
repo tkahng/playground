@@ -275,7 +275,7 @@ func (i *DbTeamInvitationStore) AcceptInvitation(
 	if invite.Status != models.TeamInvitationStatusPending {
 		return fmt.Errorf("invitation is not pending")
 	}
-	teamMember, err := adapter.TeamMember().CreateTeamMember2(ctx, &models.TeamMember{
+	teamMember, err := adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
 		TeamID:           invite.TeamID,
 		UserID:           types.Pointer(user.ID),
 		Role:             invite.Role,

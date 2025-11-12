@@ -2,12 +2,17 @@ package apis
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/populator"
+	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/utils"
@@ -37,6 +42,7 @@ type Task struct {
 	Reporter          *TeamMember       `db:"reporter" src:"reporter_id" dest:"id" table:"team_members" json:"reporter,omitempty"`
 	Team              *Team             `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
 	Project           *TaskProject      `db:"project" src:"project_id" dest:"id" table:"task_projects" json:"project,omitempty"`
+	Parent            *Task             `db:"parent" src:"parent_id" dest:"id" table:"tasks" json:"parent,omitempty"`
 }
 
 func fromModelTask(task *models.Task) *Task {
@@ -62,7 +68,10 @@ func fromModelTask(task *models.Task) *Task {
 		Children:          mapper.Map(task.Children, fromModelTask),
 		CreatedByMember:   fromTeamMemberModel(task.CreatedByMember),
 		Team:              fromTeamModel(task.Team),
-		Project:           fromModelProject(task.Project),
+		Project:           FromModelProject(task.Project),
+		Assignee:          fromTeamMemberModel(task.Assignee),
+		Reporter:          fromTeamMemberModel(task.Reporter),
+		Parent:            fromModelTask(task.Parent),
 	}
 }
 
@@ -103,126 +112,171 @@ type TeamTaskListParams struct {
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"subtasks"`
 }
 
-func (api *Api) TeamTaskList(ctx context.Context, input *TeamTaskListParams) (*TaskListResponse, error) {
-
-	teamInfo := contextstore.GetContextTeamInfo(ctx)
-	if teamInfo == nil {
-		return nil, huma.Error401Unauthorized("Unauthorized")
-	}
-	newInput := &stores.TaskFilter{}
-	newInput.SortBy = input.SortBy
-	newInput.SortOrder = input.SortOrder
-	newInput.Page = input.Page
-	newInput.PerPage = input.PerPage
-	newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
-	newInput.Q = input.Q
-	newInput.Statuses = input.Status
-	newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
-	newInput.ProjectIds = utils.ParseValidUUIDs(input.ProjectID)
-	if input.ParentID != "" {
-		parentID, err := uuid.Parse(input.ParentID)
-		if err != nil {
-			return nil, huma.Error400BadRequest("Invalid parent ID format", err)
-		}
-		newInput.ParentIds = []uuid.UUID{parentID}
-	}
-
-	tasks, err := api.App().Adapter().Task().ListTasks(ctx, newInput)
-	if err != nil {
-		return nil, huma.Error500InternalServerError("error listing tasks", err)
-	}
-	total, err := api.App().Adapter().Task().CountTasks(ctx, newInput)
-	if err != nil {
-		return nil, huma.Error500InternalServerError("error counting tasks", err)
-	}
-	return &TaskListResponse{
-		Body: &ApiPaginatedResponse[*Task]{
-			Data: mapper.Map(tasks, fromModelTask),
-			Meta: ApiGenerateMeta(&input.PaginatedInput, total),
+func (api *Api) TeamTaskListBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "task-list",
+			Method:      http.MethodGet,
+			Path:        "/task-projects/{task-project-id}/tasks",
+			Summary:     "Task list",
+			Description: "List of tasks",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
-	}, nil
+		func(ctx context.Context, input *TeamTaskListParams) (*TaskListResponse, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("Unauthorized")
+			}
+			newInput := &stores.TaskFilter{}
+			newInput.SortBy = input.SortBy
+			newInput.SortOrder = input.SortOrder
+			newInput.Page = input.Page
+			newInput.PerPage = input.PerPage
+			newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
+			newInput.Q = input.Q
+			newInput.Statuses = input.Status
+			newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
+			newInput.ProjectIds = utils.ParseValidUUIDs(input.ProjectID)
+			if input.ParentID != "" {
+				parentID, err := uuid.Parse(input.ParentID)
+				if err != nil {
+					return nil, huma.Error400BadRequest("Invalid parent ID format", err)
+				}
+				newInput.ParentIds = []uuid.UUID{parentID}
+			}
+
+			tasks, err := api.App().Adapter().Task().ListTasks(ctx, newInput)
+			if err != nil {
+				return nil, huma.Error500InternalServerError("error listing tasks", err)
+			}
+			pop := populator.NewPopulator(api.App().Adapter())
+			for _, task := range tasks {
+				err := populator.PopulateTask(ctx, pop, task)
+				if err != nil {
+					return nil, err
+				}
+			}
+			total, err := api.App().Adapter().Task().CountTasks(ctx, newInput)
+			if err != nil {
+				return nil, huma.Error500InternalServerError("error counting tasks", err)
+			}
+			return &TaskListResponse{
+				Body: &ApiPaginatedResponse[*Task]{
+					Data: mapper.Map(tasks, fromModelTask),
+					Meta: ApiGenerateMeta(&input.PaginatedInput, total),
+				},
+			}, nil
+		},
+	)
+}
+func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "task-update",
+			Method:      http.MethodPut,
+			Path:        "/tasks/{task-id}",
+			Summary:     "Task update",
+			Description: "Update a task",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
+		},
+		func(ctx context.Context, input *UpdateTaskInput) (*struct{}, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("Team not found")
+			}
+			id, err := uuid.Parse(input.TaskID)
+			if err != nil {
+				return nil, huma.Error400BadRequest("Invalid task ID")
+			}
+			task, err := api.App().Adapter().Task().FindTaskByID(ctx, id)
+			if err != nil {
+				return nil, err
+			}
+
+			if task == nil {
+				return nil, huma.Error404NotFound("Task not found")
+			}
+			previousStatus := task.Status
+			previousDueDate := task.EndAt
+			previousAssignee := task.AssigneeID
+
+			task.Name = input.Body.Name
+			task.Description = input.Body.Description
+			task.Status = models.TaskStatus(input.Body.Status)
+			task.StartAt = input.Body.StartAt
+			task.EndAt = input.Body.EndAt
+
+			task.AssigneeID = input.Body.AssigneeID
+			task.ReporterID = input.Body.ReporterID
+			task.ParentID = input.Body.ParentID
+
+			err = api.App().Adapter().Task().UpdateTask(ctx, task)
+			if err != nil {
+				return nil, err
+			}
+
+			newAssignee := previousAssignee == nil && input.Body.AssigneeID != nil
+			differentAssignee := previousAssignee != nil && input.Body.AssigneeID != nil && *previousAssignee != *input.Body.AssigneeID
+			if newAssignee || differentAssignee {
+				err = api.App().JobService().EnqueAssignedToTaskJob(ctx, &workers.AssignedToTasJobArgs{
+					TaskID:              task.ID,
+					AssignedByMemeberID: teamInfo.Member.ID,
+					AssigneeMemberID:    *input.Body.AssigneeID,
+				})
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			newDueDate := previousDueDate == nil && task.EndAt != nil
+			differentDueDate := previousDueDate != nil && task.EndAt != nil && *previousDueDate != *task.EndAt
+			if newDueDate || differentDueDate {
+				dueDate := *task.EndAt
+				if dueDate.Before(time.Now()) {
+					dueDate = time.Now().Add(10 * time.Second)
+				}
+				err = api.App().JobService().EnqueTaskDueJob(ctx, &workers.TaskDueTodayJobArgs{
+					TaskID:  task.ID,
+					DueDate: dueDate,
+				})
+				if err != nil {
+					return nil, err
+				}
+			}
+			newDoneStatus := previousStatus != task.Status && task.Status == models.TaskStatusDone
+			if newDoneStatus {
+				err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
+					TaskID:              id,
+					CompletedByMemberID: teamInfo.Member.ID,
+					CompletedAt:         time.Now(),
+				})
+				if err != nil {
+					return nil, err
+				}
+			}
+			return nil, nil
+		},
+	)
 }
 
 type TaskResponse struct {
 	Body *Task
-}
-
-func (api *Api) TaskUpdate(ctx context.Context, input *UpdateTaskInput) (*struct{}, error) {
-	teamInfo := contextstore.GetContextTeamInfo(ctx)
-	if teamInfo == nil {
-		return nil, huma.Error401Unauthorized("Team not found")
-	}
-	id, err := uuid.Parse(input.TaskID)
-	if err != nil {
-		return nil, huma.Error400BadRequest("Invalid task ID")
-	}
-	task, err := api.App().Adapter().Task().FindTaskByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	if task == nil {
-		return nil, huma.Error404NotFound("Task not found")
-	}
-	previousStatus := task.Status
-	previousDueDate := task.EndAt
-	previousAssignee := task.AssigneeID
-
-	task.Name = input.Body.Name
-	task.Description = input.Body.Description
-	task.Status = models.TaskStatus(input.Body.Status)
-	task.StartAt = input.Body.StartAt
-	task.EndAt = input.Body.EndAt
-
-	task.AssigneeID = input.Body.AssigneeID
-	task.ReporterID = input.Body.ReporterID
-	task.ParentID = input.Body.ParentID
-
-	err = api.App().Adapter().Task().UpdateTask(ctx, task)
-	if err != nil {
-		return nil, err
-	}
-
-	newAssignee := previousAssignee == nil && input.Body.AssigneeID != nil
-	differentAssignee := previousAssignee != nil && input.Body.AssigneeID != nil && *previousAssignee != *input.Body.AssigneeID
-	if newAssignee || differentAssignee {
-		err = api.App().JobService().EnqueAssignedToTaskJob(ctx, &workers.AssignedToTasJobArgs{
-			TaskID:              task.ID,
-			AssignedByMemeberID: teamInfo.Member.ID,
-			AssigneeMemberID:    *input.Body.AssigneeID,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	newDueDate := previousDueDate == nil && task.EndAt != nil
-	differentDueDate := previousDueDate != nil && task.EndAt != nil && *previousDueDate != *task.EndAt
-	if newDueDate || differentDueDate {
-		dueDate := *task.EndAt
-		if dueDate.Before(time.Now()) {
-			dueDate = time.Now().Add(10 * time.Second)
-		}
-		err = api.App().JobService().EnqueTaskDueJob(ctx, &workers.TaskDueTodayJobArgs{
-			TaskID:  task.ID,
-			DueDate: dueDate,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-	newDoneStatus := previousStatus != task.Status && task.Status == models.TaskStatusDone
-	if newDoneStatus {
-		err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
-			TaskID:              id,
-			CompletedByMemberID: teamInfo.Member.ID,
-			CompletedAt:         time.Now(),
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-	return nil, nil
 }
 
 func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositionStatusInput) (*struct{}, error) {
@@ -297,16 +351,18 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	task, err := api.App().Adapter().Task().FindTaskByID(ctx, id)
+	pop := populator.NewPopulator(api.App().Adapter())
+
+	task, err := pop.GetTaskByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	team, err := api.app.Adapter().TeamGroup().FindTeamByID(ctx, task.TeamID)
+	if task == nil {
+		return nil, huma.Error404NotFound("Task not found")
+	}
+	err = populator.PopulateTask(ctx, pop, task)
 	if err != nil {
 		return nil, err
-	}
-	if team == nil {
-		return nil, huma.Error404NotFound("team not found")
 	}
 	outputTask := fromModelTask(task)
 	return &TaskResponse{

@@ -11,54 +11,24 @@ import (
 
 func bindTaskApi(appApi *Api) {
 	api := appApi.Api()
+	app := appApi.App()
 	// checkTaskOwnerMiddleware := middleware.CheckTaskOwnerMiddleware(api, appApi.App())
-	teamFromTask := humamiddleware.HumaChiMiddleware(middleware.TeamInfoFromTask(appApi.App()))
-	teamFromProject := humamiddleware.HumaChiMiddleware(middleware.TeamInfoFromTaskProject(appApi.App()))
-	teamFromPath := humamiddleware.HumaChiMiddleware(middleware.TeamInfoFromTeamIDParam(appApi.App()))
 
 	taskGroup := huma.NewGroup(api)
+	taskGroup.UseMiddleware(
+		humamiddleware.HumaChiMiddlewares(
+			middleware.TeamFromParam(app),
+			middleware.TaskFromParam(app),
+			middleware.TaskProjectFromParam(app),
+			middleware.TeamInfoFromContext(app),
+		)...,
+	)
 	// taskGroup.UseMiddleware(checkTaskOwnerMiddleware)
 	// task list
-	huma.Register(
-		taskGroup,
-		huma.Operation{
-			OperationID: "task-list",
-			Method:      http.MethodGet,
-			Path:        "/task-projects/{task-project-id}/tasks",
-			Summary:     "Task list",
-			Description: "List of tasks",
-			Tags:        []string{"Task"},
-			Errors:      []int{http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: huma.Middlewares{
-				teamFromProject,
-			},
-		},
-		appApi.TeamTaskList,
-	)
+	appApi.TeamTaskListBind(taskGroup)
 	// task create
 	// task update
-	huma.Register(
-		taskGroup,
-		huma.Operation{
-			OperationID: "task-update",
-			Method:      http.MethodPut,
-			Path:        "/tasks/{task-id}",
-			Summary:     "Task update",
-			Description: "Update a task",
-			Tags:        []string{"Task"},
-			Errors:      []int{http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: huma.Middlewares{
-				teamFromTask,
-			},
-		},
-		appApi.TaskUpdate,
-	)
+	appApi.TeamTaskUpdateBind(taskGroup)
 	// task position
 	// task position status
 	huma.Register(
@@ -74,9 +44,9 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromTask,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.UpdateTaskPositionStatus,
 	)
@@ -94,9 +64,9 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromTask,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TaskDelete,
 	)
@@ -114,78 +84,24 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromTask,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TaskGet,
 	)
 
 	// task project routes -------------------------------------------------------------------------------------------------
-	taskProjectGroup := huma.NewGroup(api)
+
 	// task project list
-	huma.Register(
-		taskProjectGroup,
-		huma.Operation{
-			OperationID: "task-project-list",
-			Method:      http.MethodGet,
-			Path:        "/teams/{team-id}/task-projects",
-			Summary:     "Task project list",
-			Description: "List of task projects",
-			Tags:        []string{"Task"},
-			Errors:      []int{http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: huma.Middlewares{
-				teamFromPath,
-			},
-		},
-		appApi.TeamTaskProjectList,
-	)
+	appApi.TeamTaskProjectListBind(taskGroup)
 	// task project create
-	huma.Register(
-		taskProjectGroup,
-		huma.Operation{
-			OperationID: "task-project-create",
-			Method:      http.MethodPost,
-			Path:        "/teams/{team-id}/task-projects",
-			Summary:     "Task project create",
-			Description: "Create a new task project",
-			Tags:        []string{"Task"},
-			Errors:      []int{http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: huma.Middlewares{
-				teamFromPath,
-			},
-		},
-		appApi.TeamTaskProjectCreate,
-	)
+	appApi.TeamTaskProjectCreateBind(taskGroup)
 	// task project create with ai
-	huma.Register(
-		taskProjectGroup,
-		huma.Operation{
-			OperationID: "task-project-create-with-ai",
-			Method:      http.MethodPost,
-			Path:        "/teams/{team-id}/task-projects/ai",
-			Summary:     "Task project create with ai",
-			Description: "Create a new task project with ai",
-			Tags:        []string{"Task"},
-			Errors:      []int{http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: huma.Middlewares{
-				teamFromPath,
-			},
-		},
-		appApi.TeamTaskProjectCreateWithAi,
-	)
+	appApi.TeamTaskProjectCreateWithAiBind(taskGroup)
 	// task project update
 	huma.Register(
-		taskProjectGroup,
+		taskGroup,
 		huma.Operation{
 			OperationID: "task-project-update",
 			Method:      http.MethodPut,
@@ -197,15 +113,15 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromProject,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TeamTaskProjectUpdate,
 	)
 	// // task project delete
 	huma.Register(
-		taskProjectGroup,
+		taskGroup,
 		huma.Operation{
 			OperationID: "task-project-delete",
 			Method:      http.MethodDelete,
@@ -217,15 +133,15 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromProject,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TeamTaskProjectDelete,
 	)
 	// // task project get
 	huma.Register(
-		taskProjectGroup,
+		taskGroup,
 		huma.Operation{
 			OperationID: "task-project-get",
 			Method:      http.MethodGet,
@@ -237,15 +153,15 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromProject,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TeamTaskProjectGet,
 	)
 	// task project tasks create
 	huma.Register(
-		taskProjectGroup,
+		taskGroup,
 		huma.Operation{
 			OperationID: "task-project-tasks-create",
 			Method:      http.MethodPost,
@@ -257,9 +173,9 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromProject,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TeamTaskProjectTasksCreate,
 	)

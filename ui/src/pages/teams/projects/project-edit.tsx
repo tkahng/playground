@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useProject } from "@/hooks/use-project";
 import { useTeam } from "@/hooks/use-team";
-import { taskList } from "@/lib/api";
+import { taskList } from "@/lib/task-queries";
 import { TaskStatus } from "@/schema.types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
@@ -36,7 +36,7 @@ export default function ProjectEdit() {
         data: res,
       };
     },
-    queryKey: ["project-tasks", project?.id],
+    queryKey: [{ key: "project-tasks", project_id: project?.id, input }],
     queryFn: async () => {
       return await taskList(user!.tokens.access_token, project!.id, {
         sort_by: "rank",
@@ -50,7 +50,7 @@ export default function ProjectEdit() {
 
   useEffect(() => {
     queryClient.invalidateQueries({
-      queryKey: ["project-tasks", project?.id],
+      queryKey: [{ key: "project-tasks", project_id: project?.id }],
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input]);

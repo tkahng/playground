@@ -2,7 +2,7 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { TaskCreateParams } from "@/schema.types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { createTask, updateTaskPositionStatus } from "./api";
+import { createTask, updateTaskPositionStatus } from "./task-queries";
 
 export function useUpdateTaskPosition() {
   const { user } = useAuthProvider();
@@ -27,7 +27,7 @@ export function useUpdateTaskPosition() {
     },
     onSuccess: async (_, variables) => {
       await queryClient.invalidateQueries({
-        queryKey: ["project-tasks", variables.projectId],
+        queryKey: [{ key: "project-tasks", project_id: variables.projectId }],
       });
       toast.success("Task updated");
     },
@@ -52,7 +52,7 @@ export function useCreateProjectTask(projectId: string, onSuccess: () => void) {
     onSuccess: async () => {
       onSuccess();
       await queryClient.invalidateQueries({
-        queryKey: ["project-tasks", projectId],
+        queryKey: [{ key: "project-tasks", project_id: projectId }],
       });
       toast.success("Task created successfully");
     },

@@ -2,14 +2,18 @@ package apis
 
 import (
 	"context"
+	"net/http"
 	"slices"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/services"
+	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/ai/googleai2"
 	"github.com/tkahng/playground/internal/tools/mapper"
@@ -37,7 +41,7 @@ type TaskProject struct {
 	Tasks             []*Task                  `db:"tasks" src:"id" dest:"project_id" table:"tasks" json:"tasks,omitempty"`
 }
 
-func fromModelProject(task *models.TaskProject) *TaskProject {
+func FromModelProject(task *models.TaskProject) *TaskProject {
 	if task == nil {
 		return nil
 	}
@@ -98,108 +102,200 @@ type TaskProjectListResponse struct {
 type TeamTaskProjectsListParams struct {
 	TeamID string `path:"team-id" required:"true" format:"uuid"`
 	PaginatedInput
-	Q        string                     `query:"q,omitempty" required:"false"`
-	Status   []models.TaskProjectStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
-	Ids      []string                   `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	Statuses []models.TaskProjectStatus `query:"task_status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
+	Q      string                     `query:"q,omitempty" required:"false"`
+	Status []models.TaskProjectStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
+	Ids    []string                   `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	SortParams
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"tasks,subtasks"`
 }
 
-func (api *Api) TeamTaskProjectList(ctx context.Context, input *TeamTaskProjectsListParams) (*TaskProjectListResponse, error) {
-
-	teamInfo := contextstore.GetContextTeamInfo(ctx)
-	if teamInfo == nil {
-		return nil, huma.Error401Unauthorized("Unauthorized")
-	}
-	newInput := &stores.TaskProjectsFilter{}
-	newInput.SortBy = input.SortBy
-	newInput.SortOrder = input.SortOrder
-	newInput.Page = input.Page
-	newInput.PerPage = input.PerPage
-	newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
-	newInput.Q = input.Q
-	newInput.Statuses = input.Statuses
-	newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
-	taskProject, err := api.App().Adapter().Task().ListTaskProjects(ctx, newInput)
-	if err != nil {
-		return nil, err
-	}
-	total, err := api.App().Adapter().Task().CountTaskProjects(ctx, newInput)
-	if err != nil {
-		return nil, err
-	}
-	taskProjectIds := mapper.Map(taskProject, func(taskProject *models.TaskProject) uuid.UUID {
-		return taskProject.ID
-	})
-
-	if input.Expand != nil && slices.Contains(input.Expand, "tasks") {
-		tasks, err := api.App().Adapter().Task().LoadTaskProjectsTasks(ctx, taskProjectIds...)
-		if err != nil {
-			return nil, err
-		}
-		for idx, taskProject := range taskProject {
-			taskProject.Tasks = tasks[idx]
-		}
-	}
-	return &TaskProjectListResponse{
-		Body: &ApiPaginatedResponse[*TaskProject]{
-			Data: mapper.Map(taskProject, func(taskProject *models.TaskProject) *TaskProject {
-				return fromModelProject(taskProject)
-			}),
-			Meta: ApiGenerateMeta(&input.PaginatedInput, total),
+func (api *Api) TeamTaskProjectListBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "task-project-list",
+			Method:      http.MethodGet,
+			Path:        "/teams/{team-id}/task-projects",
+			Summary:     "Task project list",
+			Description: "List of task projects",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
-	}, nil
+		func(ctx context.Context, input *TeamTaskProjectsListParams) (*TaskProjectListResponse, error) {
+
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("Unauthorized")
+			}
+			newInput := &stores.TaskProjectsFilter{}
+			newInput.SortBy = input.SortBy
+			newInput.SortOrder = input.SortOrder
+			newInput.Page = input.Page
+			newInput.PerPage = input.PerPage
+			newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
+			newInput.Q = input.Q
+			newInput.Status = input.Status
+			newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
+			taskProject, err := api.App().Adapter().Task().ListTaskProjects(ctx, newInput)
+			if err != nil {
+				return nil, err
+			}
+			total, err := api.App().Adapter().Task().CountTaskProjects(ctx, newInput)
+			if err != nil {
+				return nil, err
+			}
+			taskProjectIds := mapper.Map(taskProject, func(taskProject *models.TaskProject) uuid.UUID {
+				return taskProject.ID
+			})
+
+			if input.Expand != nil && slices.Contains(input.Expand, "tasks") {
+				tasks, err := api.App().Adapter().Task().LoadTaskProjectsTasks(ctx, taskProjectIds...)
+				if err != nil {
+					return nil, err
+				}
+				for idx, taskProject := range taskProject {
+					taskProject.Tasks = tasks[idx]
+				}
+			}
+			return &TaskProjectListResponse{
+				Body: &ApiPaginatedResponse[*TaskProject]{
+					Data: mapper.Map(taskProject, func(taskProject *models.TaskProject) *TaskProject {
+						return FromModelProject(taskProject)
+					}),
+					Meta: ApiGenerateMeta(&input.PaginatedInput, total),
+				},
+			}, nil
+		},
+	)
 }
 
-func (api *Api) TeamTaskProjectCreate(
-	ctx context.Context,
-	input *CreateTaskProjectWithTasksInput,
-) (
-	*struct {
-		Body *TaskProject
-	},
-	error,
-) {
-	if input == nil {
-		return nil, huma.Error400BadRequest("Input cannot be nil")
-	}
-	parsedTeamID, err := uuid.Parse(input.TeamID)
-	if err != nil {
-		return nil, huma.Error400BadRequest("Invalid team id")
-	}
-
-	teamInfo := contextstore.GetContextTeamInfo(ctx)
-	if teamInfo == nil {
-		return nil, huma.Error401Unauthorized("Unauthorized")
-	}
-
-	taskProject, err := api.App().Adapter().Task().CreateTaskProjectWithTasks(ctx, &stores.CreateTaskProjectWithTasksDTO{
-		CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
-			TeamID:      parsedTeamID,
-			MemberID:    teamInfo.Member.ID,
-			Name:        input.Body.Name,
-			Description: input.Body.Description,
-			Status:      input.Body.Status,
-			Rank:        input.Body.Rank,
+func (api *Api) TeamTaskProjectCreateBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "task-project-create",
+			Method:      http.MethodPost,
+			Path:        "/teams/{team-id}/task-projects",
+			Summary:     "Task project create",
+			Description: "Create a new task project",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
-		Tasks: mapper.Map(input.Body.Tasks, func(task CreateTaskProjectTaskDTO) stores.CreateTaskProjectTaskDTO {
-			return stores.CreateTaskProjectTaskDTO{
-				Name:        task.Name,
-				Description: task.Description,
-				Status:      models.TaskStatus(task.Status),
-				Rank:        task.Rank,
+		func(ctx context.Context, input *CreateTaskProjectWithTasksInput) (*struct {
+			Body *TaskProject
+		}, error) {
+			if input == nil {
+				return nil, huma.Error400BadRequest("Input cannot be nil")
 			}
-		}),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &struct {
-		Body *TaskProject
-	}{
-		Body: fromModelProject(taskProject),
-	}, nil
+			parsedTeamID, err := uuid.Parse(input.TeamID)
+			if err != nil {
+				return nil, huma.Error400BadRequest("Invalid team id")
+			}
+
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("Unauthorized")
+			}
+
+			taskProject, err := api.App().Adapter().Task().CreateTaskProjectWithTasks(ctx, &stores.CreateTaskProjectWithTasksDTO{
+				CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
+					TeamID:      parsedTeamID,
+					MemberID:    teamInfo.Member.ID,
+					Name:        input.Body.Name,
+					Description: input.Body.Description,
+					Status:      input.Body.Status,
+					Rank:        input.Body.Rank,
+				},
+				Tasks: mapper.Map(input.Body.Tasks, func(task CreateTaskProjectTaskDTO) stores.CreateTaskProjectTaskDTO {
+					return stores.CreateTaskProjectTaskDTO{
+						Name:        task.Name,
+						Description: task.Description,
+						Status:      models.TaskStatus(task.Status),
+						Rank:        task.Rank,
+					}
+				}),
+			})
+			if err != nil {
+				return nil, err
+			}
+			return &struct {
+				Body *TaskProject
+			}{
+				Body: FromModelProject(taskProject),
+			}, nil
+		},
+	)
+}
+func (api *Api) TeamTaskProjectCreateWithAiBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "task-project-create-with-ai",
+			Method:      http.MethodPost,
+			Path:        "/teams/{team-id}/task-projects/ai",
+			Summary:     "Task project create with ai",
+			Description: "Create a new task project with ai",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
+		},
+		func(ctx context.Context, input *TaskProjectCreateWithAiInput) (*struct {
+			Body *TaskProject
+		}, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("no team info")
+			}
+
+			aiService := googleai2.NewAiService(ctx, api.App().Config().AiConfig)
+			taskProjectPlan, err := aiService.GenerateProjectPlan(ctx, input.Body.Input)
+			if err != nil {
+				return nil, err
+			}
+			args := stores.CreateTaskProjectWithTasksDTO{
+				CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
+					Name:        taskProjectPlan.Project.Name,
+					Description: &taskProjectPlan.Project.Description,
+					Status:      models.TaskProjectStatusTodo,
+					TeamID:      teamInfo.Member.TeamID,
+					MemberID:    teamInfo.Member.ID,
+				},
+				Tasks: mapper.Map(taskProjectPlan.Tasks, func(task googleai2.Task) stores.CreateTaskProjectTaskDTO {
+					return stores.CreateTaskProjectTaskDTO{
+						Name:        task.Name,
+						Description: &task.Description,
+						Status:      models.TaskStatusTodo,
+					}
+				}),
+			}
+			taskProject, err := api.App().Adapter().Task().CreateTaskProjectWithTasks(ctx, &args)
+			if err != nil {
+				return nil, err
+			}
+			return &struct {
+				Body *TaskProject
+			}{
+				Body: FromModelProject(taskProject),
+			}, nil
+		},
+	)
 }
 
 type TaskProjectCreateWithAiDto struct {
@@ -208,46 +304,6 @@ type TaskProjectCreateWithAiDto struct {
 type TaskProjectCreateWithAiInput struct {
 	TeamID string                     `json:"team_id" path:"team-id" required:"true" format:"uuid"`
 	Body   TaskProjectCreateWithAiDto `json:"body"`
-}
-
-func (api *Api) TeamTaskProjectCreateWithAi(ctx context.Context, input *TaskProjectCreateWithAiInput) (*struct {
-	Body *TaskProject
-}, error) {
-	teamInfo := contextstore.GetContextTeamInfo(ctx)
-	if teamInfo == nil {
-		return nil, huma.Error401Unauthorized("no team info")
-	}
-
-	aiService := googleai2.NewAiService(ctx, api.App().Config().AiConfig)
-	taskProjectPlan, err := aiService.GenerateProjectPlan(ctx, input.Body.Input)
-	if err != nil {
-		return nil, err
-	}
-	args := stores.CreateTaskProjectWithTasksDTO{
-		CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
-			Name:        taskProjectPlan.Project.Name,
-			Description: &taskProjectPlan.Project.Description,
-			Status:      models.TaskProjectStatusTodo,
-			TeamID:      teamInfo.Member.TeamID,
-			MemberID:    teamInfo.Member.ID,
-		},
-		Tasks: mapper.Map(taskProjectPlan.Tasks, func(task googleai2.Task) stores.CreateTaskProjectTaskDTO {
-			return stores.CreateTaskProjectTaskDTO{
-				Name:        task.Name,
-				Description: &task.Description,
-				Status:      models.TaskStatusTodo,
-			}
-		}),
-	}
-	taskProject, err := api.App().Adapter().Task().CreateTaskProjectWithTasks(ctx, &args)
-	if err != nil {
-		return nil, err
-	}
-	return &struct {
-		Body *TaskProject
-	}{
-		Body: fromModelProject(taskProject),
-	}, nil
 }
 
 type TaskProjectResponse struct {
@@ -318,7 +374,7 @@ func (api *Api) TeamTaskProjectGet(ctx context.Context, input *struct {
 		}
 	}
 	return &TaskProjectResponse{
-		Body: fromModelProject(taskProject),
+		Body: FromModelProject(taskProject),
 	}, nil
 }
 

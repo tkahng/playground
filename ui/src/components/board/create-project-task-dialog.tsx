@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { createTask } from "@/lib/api";
+import { createTask } from "@/lib/task-queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -102,7 +102,7 @@ export function CreateProjectTaskDialog({
     onSuccess: async () => {
       setDialogOpen(false);
       await queryClient.invalidateQueries({
-        queryKey: ["project-tasks", projectId],
+        queryKey: [{ key: "project-tasks", project_id: projectId }],
       });
       toast.success("Task created successfully");
     },

@@ -148,7 +148,7 @@ func (t *TeamServiceImpl) CreateTeamWithOwner(ctx context.Context, name string, 
 	if team == nil {
 		return nil, errors.New("team not found")
 	}
-	teamMember, err := t.adapter.TeamMember().CreateTeamMember2(ctx, &models.TeamMember{
+	teamMember, err := t.adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
 		TeamID:           team.ID,
 		UserID:           types.Pointer(userId),
 		Role:             models.TeamMemberRoleOwner,

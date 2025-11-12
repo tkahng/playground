@@ -87,7 +87,7 @@ func TaskProjectFromParam(app core.App) HttpMiddelwareFunc {
 			if err != nil {
 				slog.ErrorContext(
 					r.Context(),
-					"error while parsing taskID in TaskProjectFromParam middleware",
+					"error while parsing task-project-id in TaskProjectFromParam middleware",
 					slog.Any("error", err),
 					slog.String(key, projectId),
 				)
@@ -95,13 +95,13 @@ func TaskProjectFromParam(app core.App) HttpMiddelwareFunc {
 				return
 			}
 			rawCtx := r.Context()
-			// query task project from task-project-id.
+			// query taskProject project from taskProject-project-id.
 			// do not filter by active, we will filter it later
-			task, err := app.Adapter().Task().FindTaskProjectByID(rawCtx, parsedProjectID)
+			taskProject, err := app.Adapter().Task().FindTaskProjectByID(rawCtx, parsedProjectID)
 			if err != nil {
 				slog.ErrorContext(
 					rawCtx,
-					"error while querying task in TaskFromParam middleware",
+					"error while querying task-project in TaskProjectFromParam middleware",
 					slog.Any("error", err),
 					slog.String(key, projectId),
 				)
@@ -112,7 +112,7 @@ func TaskProjectFromParam(app core.App) HttpMiddelwareFunc {
 			// it is reasonable to assume that the task exists,
 			// assuming the uuid was provided within our system.
 			// however this is not a security check, so we will log it and move on.
-			if task == nil {
+			if taskProject == nil {
 				slog.WarnContext(
 					rawCtx,
 					"no task with given task-project-id found",
@@ -122,7 +122,7 @@ func TaskProjectFromParam(app core.App) HttpMiddelwareFunc {
 				return
 			}
 			// add project to context
-			newCtx := contextstore.SetContextTaskProject(rawCtx, task)
+			newCtx := contextstore.SetContextTaskProject(rawCtx, taskProject)
 			r = r.WithContext(newCtx)
 			next.ServeHTTP(w, r)
 		})

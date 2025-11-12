@@ -315,7 +315,7 @@ type GetInvitationByTokenInput struct {
 	Token string `path:"token" required:"true"`
 }
 
-func (api *Api) BindGetInvitationByToken(aapi huma.API) {
+func (api *Api) GetInvitationByTokenBind(aapi huma.API) {
 	huma.Register(
 		aapi,
 		huma.Operation{

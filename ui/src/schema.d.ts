@@ -8090,7 +8090,6 @@ export interface operations {
                 q?: string;
                 status?: ("todo" | "in_progress" | "done")[] | null;
                 ids?: string[] | null;
-                task_status?: ("todo" | "in_progress" | "done")[] | null;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
                 expand?: ("tasks" | "subtasks")[] | null;
