@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -12,7 +13,6 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	appHttp "github.com/tkahng/playground/internal/tools/http"
-	"github.com/tkahng/playground/internal/tools/types"
 )
 
 // RequireTeamInfo checks if the request has team info
@@ -62,6 +62,48 @@ func RequireTeamMemberRolesMiddleware(roles ...models.TeamMemberRole) HttpMiddel
 	}
 }
 
+type GetTeamIdFunc func(ctx context.Context) (uuid.UUID, bool)
+
+var GetTeamIdFuncs []GetTeamIdFunc = []GetTeamIdFunc{
+	func(ctx context.Context) (uuid.UUID, bool) {
+		team := contextstore.GetContextTeam(ctx)
+		if team != nil {
+			return team.ID, true
+		}
+		return uuid.Nil, false
+	},
+	func(ctx context.Context) (uuid.UUID, bool) {
+		teamInfo := contextstore.GetContextTeamMember(ctx)
+		if teamInfo != nil {
+			return teamInfo.TeamID, true
+		}
+		return uuid.Nil, false
+	},
+	func(ctx context.Context) (uuid.UUID, bool) {
+		val := contextstore.GetContextTask(ctx)
+		if val != nil {
+			return val.TeamID, true
+		}
+		return uuid.Nil, false
+	},
+	func(ctx context.Context) (uuid.UUID, bool) {
+		val := contextstore.GetContextTaskProject(ctx)
+		if val != nil {
+			return val.TeamID, true
+		}
+		return uuid.Nil, false
+	},
+}
+
+func GetTeamIdFromContext(ctx context.Context) (uuid.UUID, bool) {
+	for _, fn := range GetTeamIdFuncs {
+		if teamId, ok := fn(ctx); ok {
+			return teamId, true
+		}
+	}
+	return uuid.Nil, false
+}
+
 // TeamInfoFromContext creates a [models.TeamInfoModel] from values found in the context and adds it to the context.
 //
 //   - it calls [contextstore.GetContextUserInfo] for the user. if the user is not found, it moves on.
@@ -80,62 +122,20 @@ func TeamInfoFromContext(app core.App) HttpMiddelwareFunc {
 				return
 			}
 
-			// get the team.
-			team := contextstore.GetContextTeam(rawCtx)
-			// if found, get the team member from the team.id and user.id
-			if team != nil {
-				teamMember, err := app.Adapter().TeamMember().FindTeamMember(rawCtx, &stores.TeamMemberFilter{
-					TeamIds: []uuid.UUID{team.ID},
-					UserIds: []uuid.UUID{userInfo.User.ID},
-					Active: types.OptionalParam[bool]{
-						Value: true, IsSet: true,
-					},
-				})
-				if err != nil {
-					slog.ErrorContext(
-						rawCtx,
-						"TeamInfoFromContext: error getting team member",
-						slog.Any("error", err),
-						slog.String("team_id", team.ID.String()),
-						slog.String("user_id", userInfo.User.ID.String()),
-					)
-					_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team info", err)
-					return
-				}
-				// if not found, user is not a member of this team.
-				// but this is not a security check, therefore we just move on without setting the team info.
-				// the next middleware will check the team info and return an error
-				if teamMember == nil {
-					next.ServeHTTP(w, r)
-					return
-				}
-				teamMember.User = &userInfo.User
-				teamMember.Team = team
-				teamInfo := &models.TeamInfoModel{
-					Team:   *team,
-					User:   userInfo.User,
-					Member: *teamMember,
-				}
-				ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)
-				r = r.WithContext(ctxx)
-				next.ServeHTTP(w, r)
-				return
-			}
-			// if team is not found in context, check for team member in context
-			ctxTeamMember := contextstore.GetContextTeamMember(rawCtx)
-			// if not found, move on.
-			if ctxTeamMember == nil {
+			// get team id from various context values
+			teamId, ok := GetTeamIdFromContext(rawCtx)
+			if !ok {
 				next.ServeHTTP(w, r)
 				return
 			}
 			// if found, get the team info using its member.team_id and user.id
-			teamInfo, err := app.Team().FindTeamInfo(rawCtx, ctxTeamMember.TeamID, userInfo.User.ID)
+			teamInfo, err := app.Team().FindTeamInfo(rawCtx, teamId, userInfo.User.ID)
 			if err != nil {
 				slog.ErrorContext(
 					rawCtx,
 					"TeamInfoFromContext: error getting team info",
 					slog.Any("error", err),
-					slog.String("team_id", ctxTeamMember.TeamID.String()),
+					slog.String("team_id", teamId.String()),
 					slog.String("user_id", userInfo.User.ID.String()),
 				)
 				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team info", err)
