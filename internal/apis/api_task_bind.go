@@ -11,12 +11,18 @@ import (
 
 func bindTaskApi(appApi *Api) {
 	api := appApi.Api()
+	app := appApi.App()
 	// checkTaskOwnerMiddleware := middleware.CheckTaskOwnerMiddleware(api, appApi.App())
-	teamFromTask := humamiddleware.HumaChiMiddleware(middleware.TeamInfoFromTask(appApi.App()))
-	teamFromProject := humamiddleware.HumaChiMiddleware(middleware.TeamInfoFromTaskProject(appApi.App()))
-	teamFromPath := humamiddleware.HumaChiMiddleware(middleware.TeamInfoFromTeamIDParam(appApi.App()))
 
 	taskGroup := huma.NewGroup(api)
+	taskGroup.UseMiddleware(
+		humamiddleware.HumaChiMiddlewares(
+			middleware.TeamFromParam(app),
+			middleware.TaskFromParam(app),
+			middleware.TaskProjectFromParam(app),
+			middleware.TeamInfoFromContext(app),
+		)...,
+	)
 	// taskGroup.UseMiddleware(checkTaskOwnerMiddleware)
 	// task list
 	huma.Register(
@@ -32,9 +38,9 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromProject,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TeamTaskList,
 	)
@@ -53,9 +59,9 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromTask,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TaskUpdate,
 	)
@@ -74,9 +80,9 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromTask,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.UpdateTaskPositionStatus,
 	)
@@ -94,9 +100,9 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromTask,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TaskDelete,
 	)
@@ -114,9 +120,9 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromTask,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TaskGet,
 	)
@@ -137,9 +143,9 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromPath,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TeamTaskProjectList,
 	)
@@ -157,9 +163,9 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromPath,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TeamTaskProjectCreate,
 	)
@@ -177,9 +183,9 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromPath,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TeamTaskProjectCreateWithAi,
 	)
@@ -197,9 +203,9 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromProject,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TeamTaskProjectUpdate,
 	)
@@ -217,9 +223,9 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromProject,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TeamTaskProjectDelete,
 	)
@@ -237,9 +243,9 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromProject,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TeamTaskProjectGet,
 	)
@@ -257,9 +263,9 @@ func bindTaskApi(appApi *Api) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
-			Middlewares: huma.Middlewares{
-				teamFromProject,
-			},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
 		appApi.TeamTaskProjectTasksCreate,
 	)
