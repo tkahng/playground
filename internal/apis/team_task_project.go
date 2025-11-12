@@ -109,7 +109,7 @@ type TeamTaskProjectsListParams struct {
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"tasks,subtasks"`
 }
 
-func (api *Api) BindTeamTaskProjectList(humaApi huma.API) {
+func (api *Api) TeamTaskProjectListBind(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
@@ -175,7 +175,7 @@ func (api *Api) BindTeamTaskProjectList(humaApi huma.API) {
 	)
 }
 
-func (api *Api) BindTeamTaskProjectCreate(humaApi huma.API) {
+func (api *Api) TeamTaskProjectCreateBind(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{

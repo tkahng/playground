@@ -25,28 +25,10 @@ func bindTaskApi(appApi *Api) {
 	)
 	// taskGroup.UseMiddleware(checkTaskOwnerMiddleware)
 	// task list
-	appApi.BindTeamTaskList(taskGroup)
+	appApi.TeamTaskListBind(taskGroup)
 	// task create
 	// task update
-	huma.Register(
-		taskGroup,
-		huma.Operation{
-			OperationID: "task-update",
-			Method:      http.MethodPut,
-			Path:        "/tasks/{task-id}",
-			Summary:     "Task update",
-			Description: "Update a task",
-			Tags:        []string{"Task"},
-			Errors:      []int{http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: humamiddleware.HumaChiMiddlewares(
-				middleware.RequireTeamInfo(),
-			),
-		},
-		appApi.TaskUpdate,
-	)
+	appApi.TeamTaskUpdateBind(taskGroup)
 	// task position
 	// task position status
 	huma.Register(
@@ -119,9 +101,9 @@ func bindTaskApi(appApi *Api) {
 		)...,
 	)
 	// task project list
-	appApi.BindTeamTaskProjectList(taskProjectGroup)
+	appApi.TeamTaskProjectListBind(taskProjectGroup)
 	// task project create
-	appApi.BindTeamTaskProjectCreate(taskProjectGroup)
+	appApi.TeamTaskProjectCreateBind(taskProjectGroup)
 	// task project create with ai
 	huma.Register(
 		taskProjectGroup,

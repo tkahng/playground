@@ -107,7 +107,7 @@ type TeamTaskListParams struct {
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"subtasks"`
 }
 
-func (api *Api) BindTeamTaskList(humaApi huma.API) {
+func (api *Api) TeamTaskListBind(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
@@ -165,87 +165,106 @@ func (api *Api) BindTeamTaskList(humaApi huma.API) {
 		},
 	)
 }
+func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "task-update",
+			Method:      http.MethodPut,
+			Path:        "/tasks/{task-id}",
+			Summary:     "Task update",
+			Description: "Update a task",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
+		},
+		func(ctx context.Context, input *UpdateTaskInput) (*struct{}, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("Team not found")
+			}
+			id, err := uuid.Parse(input.TaskID)
+			if err != nil {
+				return nil, huma.Error400BadRequest("Invalid task ID")
+			}
+			task, err := api.App().Adapter().Task().FindTaskByID(ctx, id)
+			if err != nil {
+				return nil, err
+			}
+
+			if task == nil {
+				return nil, huma.Error404NotFound("Task not found")
+			}
+			previousStatus := task.Status
+			previousDueDate := task.EndAt
+			previousAssignee := task.AssigneeID
+
+			task.Name = input.Body.Name
+			task.Description = input.Body.Description
+			task.Status = models.TaskStatus(input.Body.Status)
+			task.StartAt = input.Body.StartAt
+			task.EndAt = input.Body.EndAt
+
+			task.AssigneeID = input.Body.AssigneeID
+			task.ReporterID = input.Body.ReporterID
+			task.ParentID = input.Body.ParentID
+
+			err = api.App().Adapter().Task().UpdateTask(ctx, task)
+			if err != nil {
+				return nil, err
+			}
+
+			newAssignee := previousAssignee == nil && input.Body.AssigneeID != nil
+			differentAssignee := previousAssignee != nil && input.Body.AssigneeID != nil && *previousAssignee != *input.Body.AssigneeID
+			if newAssignee || differentAssignee {
+				err = api.App().JobService().EnqueAssignedToTaskJob(ctx, &workers.AssignedToTasJobArgs{
+					TaskID:              task.ID,
+					AssignedByMemeberID: teamInfo.Member.ID,
+					AssigneeMemberID:    *input.Body.AssigneeID,
+				})
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			newDueDate := previousDueDate == nil && task.EndAt != nil
+			differentDueDate := previousDueDate != nil && task.EndAt != nil && *previousDueDate != *task.EndAt
+			if newDueDate || differentDueDate {
+				dueDate := *task.EndAt
+				if dueDate.Before(time.Now()) {
+					dueDate = time.Now().Add(10 * time.Second)
+				}
+				err = api.App().JobService().EnqueTaskDueJob(ctx, &workers.TaskDueTodayJobArgs{
+					TaskID:  task.ID,
+					DueDate: dueDate,
+				})
+				if err != nil {
+					return nil, err
+				}
+			}
+			newDoneStatus := previousStatus != task.Status && task.Status == models.TaskStatusDone
+			if newDoneStatus {
+				err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
+					TaskID:              id,
+					CompletedByMemberID: teamInfo.Member.ID,
+					CompletedAt:         time.Now(),
+				})
+				if err != nil {
+					return nil, err
+				}
+			}
+			return nil, nil
+		},
+	)
+}
 
 type TaskResponse struct {
 	Body *Task
-}
-
-func (api *Api) TaskUpdate(ctx context.Context, input *UpdateTaskInput) (*struct{}, error) {
-	teamInfo := contextstore.GetContextTeamInfo(ctx)
-	if teamInfo == nil {
-		return nil, huma.Error401Unauthorized("Team not found")
-	}
-	id, err := uuid.Parse(input.TaskID)
-	if err != nil {
-		return nil, huma.Error400BadRequest("Invalid task ID")
-	}
-	task, err := api.App().Adapter().Task().FindTaskByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	if task == nil {
-		return nil, huma.Error404NotFound("Task not found")
-	}
-	previousStatus := task.Status
-	previousDueDate := task.EndAt
-	previousAssignee := task.AssigneeID
-
-	task.Name = input.Body.Name
-	task.Description = input.Body.Description
-	task.Status = models.TaskStatus(input.Body.Status)
-	task.StartAt = input.Body.StartAt
-	task.EndAt = input.Body.EndAt
-
-	task.AssigneeID = input.Body.AssigneeID
-	task.ReporterID = input.Body.ReporterID
-	task.ParentID = input.Body.ParentID
-
-	err = api.App().Adapter().Task().UpdateTask(ctx, task)
-	if err != nil {
-		return nil, err
-	}
-
-	newAssignee := previousAssignee == nil && input.Body.AssigneeID != nil
-	differentAssignee := previousAssignee != nil && input.Body.AssigneeID != nil && *previousAssignee != *input.Body.AssigneeID
-	if newAssignee || differentAssignee {
-		err = api.App().JobService().EnqueAssignedToTaskJob(ctx, &workers.AssignedToTasJobArgs{
-			TaskID:              task.ID,
-			AssignedByMemeberID: teamInfo.Member.ID,
-			AssigneeMemberID:    *input.Body.AssigneeID,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	newDueDate := previousDueDate == nil && task.EndAt != nil
-	differentDueDate := previousDueDate != nil && task.EndAt != nil && *previousDueDate != *task.EndAt
-	if newDueDate || differentDueDate {
-		dueDate := *task.EndAt
-		if dueDate.Before(time.Now()) {
-			dueDate = time.Now().Add(10 * time.Second)
-		}
-		err = api.App().JobService().EnqueTaskDueJob(ctx, &workers.TaskDueTodayJobArgs{
-			TaskID:  task.ID,
-			DueDate: dueDate,
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-	newDoneStatus := previousStatus != task.Status && task.Status == models.TaskStatusDone
-	if newDoneStatus {
-		err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
-			TaskID:              id,
-			CompletedByMemberID: teamInfo.Member.ID,
-			CompletedAt:         time.Now(),
-		})
-		if err != nil {
-			return nil, err
-		}
-	}
-	return nil, nil
 }
 
 func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositionStatusInput) (*struct{}, error) {
