@@ -48,6 +48,16 @@ func TestPopulateTask(t *testing.T) {
 			Status:            models.TaskProjectStatusTodo,
 		})
 
+		parent := repository.MustCreateOneCtx(t, ctx, repository.Task, db, &models.Task{
+			TeamID:            team.ID,
+			ProjectID:         project.ID,
+			CreatedByMemberID: &ownerMember.ID,
+			Name:              "Task Parent",
+			Status:            models.TaskStatusTodo,
+			AssigneeID:        &user1Member.ID,
+			ReporterID:        &user1Member.ID,
+		})
+
 		task := repository.MustCreateOneCtx(t, ctx, repository.Task, db, &models.Task{
 			TeamID:            team.ID,
 			ProjectID:         project.ID,
@@ -56,6 +66,7 @@ func TestPopulateTask(t *testing.T) {
 			Status:            models.TaskStatusTodo,
 			AssigneeID:        &user1Member.ID,
 			ReporterID:        &user1Member.ID,
+			ParentID:          &parent.ID,
 		})
 		assert.NotNil(t, task)
 		adapter := stores.NewDbAdapterDecorators(db)
@@ -72,7 +83,9 @@ func TestPopulateTask(t *testing.T) {
 		assert.Equal(t, user1Member.ID, task.Assignee.ID)
 		assert.NotNil(t, task.Reporter)
 		assert.Equal(t, user1Member.ID, task.Reporter.ID)
-		assert.Equal(t, 6, testPopulator.Recorder.Called())
+		assert.NotNil(t, task.Parent)
+		assert.Equal(t, parent.ID, task.Parent.ID)
+		assert.Equal(t, 7, testPopulator.Recorder.Called())
 	})
 
 }
