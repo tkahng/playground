@@ -1,4 +1,4 @@
-package stores
+package populator
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/memo"
 )
 
@@ -31,7 +32,7 @@ type TestPopulator struct {
 	DbPopulator
 }
 
-func NewTestPopulator(adapter StorageAdapterInterface) Populator {
+func NewTestPopulator(adapter stores.StorageAdapterInterface) *TestPopulator {
 	recorder := &CallRecorder{
 		mu:     sync.RWMutex{},
 		called: 0,
@@ -46,7 +47,7 @@ func NewTestPopulator(adapter StorageAdapterInterface) Populator {
 			}),
 			member: memo.NewMemoizedStore(func(ctx context.Context, key uuid.UUID) (*models.TeamMember, error) {
 				recorder.Increment()
-				return adapter.TeamMember().FindTeamMember(ctx, &TeamMemberFilter{
+				return adapter.TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
 					Ids: []uuid.UUID{key},
 				})
 			}),

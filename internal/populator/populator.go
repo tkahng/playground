@@ -1,10 +1,11 @@
-package stores
+package populator
 
 import (
 	"context"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/memo"
 )
 
@@ -48,13 +49,13 @@ func (s *DbPopulator) GetProjectByID(ctx context.Context, id uuid.UUID) (*models
 	return s.project.Get(ctx, id)
 }
 
-func NewPopulator(adapter StorageAdapterInterface) Populator {
+func NewPopulator(adapter stores.StorageAdapterInterface) Populator {
 	return &DbPopulator{
 		user: memo.NewMemoizedStore(func(ctx context.Context, key uuid.UUID) (*models.User, error) {
 			return adapter.User().FindUserByID(ctx, key)
 		}),
 		member: memo.NewMemoizedStore(func(ctx context.Context, key uuid.UUID) (*models.TeamMember, error) {
-			return adapter.TeamMember().FindTeamMember(ctx, &TeamMemberFilter{
+			return adapter.TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
 				Ids: []uuid.UUID{key},
 			})
 		}),
@@ -88,8 +89,7 @@ func getMember(ctx context.Context, populator Populator, memberId uuid.UUID) (*m
 	}
 	return nil, nil
 }
-func PopulateTask(ctx context.Context, adapter StorageAdapterInterface, task *models.Task) error {
-	populator := NewPopulator(adapter)
+func PopulateTask(ctx context.Context, populator Populator, task *models.Task) error {
 	if task.CreatedByMemberID != nil {
 		member, err := getMember(ctx, populator, *task.CreatedByMemberID)
 		if err != nil {
@@ -119,6 +119,17 @@ func PopulateTask(ctx context.Context, adapter StorageAdapterInterface, task *mo
 		}
 		task.Parent = parentTask
 	}
+	team, err := populator.GetTeamByID(ctx, task.TeamID)
+	if err != nil {
+		return err
+	}
+	task.Team = team
+
+	project, err := populator.GetProjectByID(ctx, task.ProjectID)
+	if err != nil {
+		return err
+	}
+	task.Project = project
 
 	return nil
 }
