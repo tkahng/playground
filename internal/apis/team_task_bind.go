@@ -92,23 +92,16 @@ func bindTaskApi(appApi *Api) {
 	)
 
 	// task project routes -------------------------------------------------------------------------------------------------
-	taskProjectGroup := huma.NewGroup(api)
-	taskProjectGroup.UseMiddleware(
-		humamiddleware.HumaChiMiddlewares(
-			middleware.TeamFromParam(app),
-			middleware.TaskProjectFromParam(app),
-			middleware.TeamInfoFromContext(app),
-		)...,
-	)
+
 	// task project list
-	appApi.TeamTaskProjectListBind(taskProjectGroup)
+	appApi.TeamTaskProjectListBind(taskGroup)
 	// task project create
-	appApi.TeamTaskProjectCreateBind(taskProjectGroup)
+	appApi.TeamTaskProjectCreateBind(taskGroup)
 	// task project create with ai
-	appApi.TeamTaskProjectCreateWithAiBind(taskProjectGroup)
+	appApi.TeamTaskProjectCreateWithAiBind(taskGroup)
 	// task project update
 	huma.Register(
-		taskProjectGroup,
+		taskGroup,
 		huma.Operation{
 			OperationID: "task-project-update",
 			Method:      http.MethodPut,
@@ -128,7 +121,7 @@ func bindTaskApi(appApi *Api) {
 	)
 	// // task project delete
 	huma.Register(
-		taskProjectGroup,
+		taskGroup,
 		huma.Operation{
 			OperationID: "task-project-delete",
 			Method:      http.MethodDelete,
@@ -148,7 +141,7 @@ func bindTaskApi(appApi *Api) {
 	)
 	// // task project get
 	huma.Register(
-		taskProjectGroup,
+		taskGroup,
 		huma.Operation{
 			OperationID: "task-project-get",
 			Method:      http.MethodGet,
@@ -168,7 +161,7 @@ func bindTaskApi(appApi *Api) {
 	)
 	// task project tasks create
 	huma.Register(
-		taskProjectGroup,
+		taskGroup,
 		huma.Operation{
 			OperationID: "task-project-tasks-create",
 			Method:      http.MethodPost,
