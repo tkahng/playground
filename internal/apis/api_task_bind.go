@@ -137,25 +137,7 @@ func bindTaskApi(appApi *Api) {
 		)...,
 	)
 	// task project list
-	huma.Register(
-		taskProjectGroup,
-		huma.Operation{
-			OperationID: "task-project-list",
-			Method:      http.MethodGet,
-			Path:        "/teams/{team-id}/task-projects",
-			Summary:     "Task project list",
-			Description: "List of task projects",
-			Tags:        []string{"Task"},
-			Errors:      []int{http.StatusNotFound},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-			Middlewares: humamiddleware.HumaChiMiddlewares(
-				middleware.RequireTeamInfo(),
-			),
-		},
-		appApi.TeamTaskProjectList,
-	)
+	appApi.BindTeamTaskProjectList(taskGroup)
 	// task project create
 	huma.Register(
 		taskProjectGroup,

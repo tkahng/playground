@@ -2,14 +2,18 @@ package apis
 
 import (
 	"context"
+	"net/http"
 	"slices"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/services"
+	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/ai/googleai2"
 	"github.com/tkahng/playground/internal/tools/mapper"
@@ -105,50 +109,70 @@ type TeamTaskProjectsListParams struct {
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"tasks,subtasks"`
 }
 
-func (api *Api) TeamTaskProjectList(ctx context.Context, input *TeamTaskProjectsListParams) (*TaskProjectListResponse, error) {
-
-	teamInfo := contextstore.GetContextTeamInfo(ctx)
-	if teamInfo == nil {
-		return nil, huma.Error401Unauthorized("Unauthorized")
-	}
-	newInput := &stores.TaskProjectsFilter{}
-	newInput.SortBy = input.SortBy
-	newInput.SortOrder = input.SortOrder
-	newInput.Page = input.Page
-	newInput.PerPage = input.PerPage
-	newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
-	newInput.Q = input.Q
-	newInput.Status = input.Status
-	newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
-	taskProject, err := api.App().Adapter().Task().ListTaskProjects(ctx, newInput)
-	if err != nil {
-		return nil, err
-	}
-	total, err := api.App().Adapter().Task().CountTaskProjects(ctx, newInput)
-	if err != nil {
-		return nil, err
-	}
-	taskProjectIds := mapper.Map(taskProject, func(taskProject *models.TaskProject) uuid.UUID {
-		return taskProject.ID
-	})
-
-	if input.Expand != nil && slices.Contains(input.Expand, "tasks") {
-		tasks, err := api.App().Adapter().Task().LoadTaskProjectsTasks(ctx, taskProjectIds...)
-		if err != nil {
-			return nil, err
-		}
-		for idx, taskProject := range taskProject {
-			taskProject.Tasks = tasks[idx]
-		}
-	}
-	return &TaskProjectListResponse{
-		Body: &ApiPaginatedResponse[*TaskProject]{
-			Data: mapper.Map(taskProject, func(taskProject *models.TaskProject) *TaskProject {
-				return FromModelProject(taskProject)
-			}),
-			Meta: ApiGenerateMeta(&input.PaginatedInput, total),
+func (api *Api) BindTeamTaskProjectList(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "task-project-list",
+			Method:      http.MethodGet,
+			Path:        "/teams/{team-id}/task-projects",
+			Summary:     "Task project list",
+			Description: "List of task projects",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
-	}, nil
+		func(ctx context.Context, input *TeamTaskProjectsListParams) (*TaskProjectListResponse, error) {
+
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("Unauthorized")
+			}
+			newInput := &stores.TaskProjectsFilter{}
+			newInput.SortBy = input.SortBy
+			newInput.SortOrder = input.SortOrder
+			newInput.Page = input.Page
+			newInput.PerPage = input.PerPage
+			newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
+			newInput.Q = input.Q
+			newInput.Status = input.Status
+			newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
+			taskProject, err := api.App().Adapter().Task().ListTaskProjects(ctx, newInput)
+			if err != nil {
+				return nil, err
+			}
+			total, err := api.App().Adapter().Task().CountTaskProjects(ctx, newInput)
+			if err != nil {
+				return nil, err
+			}
+			taskProjectIds := mapper.Map(taskProject, func(taskProject *models.TaskProject) uuid.UUID {
+				return taskProject.ID
+			})
+
+			if input.Expand != nil && slices.Contains(input.Expand, "tasks") {
+				tasks, err := api.App().Adapter().Task().LoadTaskProjectsTasks(ctx, taskProjectIds...)
+				if err != nil {
+					return nil, err
+				}
+				for idx, taskProject := range taskProject {
+					taskProject.Tasks = tasks[idx]
+				}
+			}
+			return &TaskProjectListResponse{
+				Body: &ApiPaginatedResponse[*TaskProject]{
+					Data: mapper.Map(taskProject, func(taskProject *models.TaskProject) *TaskProject {
+						return FromModelProject(taskProject)
+					}),
+					Meta: ApiGenerateMeta(&input.PaginatedInput, total),
+				},
+			}, nil
+		},
+	)
 }
 
 func (api *Api) TeamTaskProjectCreate(
