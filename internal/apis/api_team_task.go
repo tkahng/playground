@@ -2,12 +2,16 @@ package apis
 
 import (
 	"context"
+	"net/http"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/utils"
@@ -103,44 +107,63 @@ type TeamTaskListParams struct {
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"subtasks"`
 }
 
-func (api *Api) TeamTaskList(ctx context.Context, input *TeamTaskListParams) (*TaskListResponse, error) {
-
-	teamInfo := contextstore.GetContextTeamInfo(ctx)
-	if teamInfo == nil {
-		return nil, huma.Error401Unauthorized("Unauthorized")
-	}
-	newInput := &stores.TaskFilter{}
-	newInput.SortBy = input.SortBy
-	newInput.SortOrder = input.SortOrder
-	newInput.Page = input.Page
-	newInput.PerPage = input.PerPage
-	newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
-	newInput.Q = input.Q
-	newInput.Statuses = input.Status
-	newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
-	newInput.ProjectIds = utils.ParseValidUUIDs(input.ProjectID)
-	if input.ParentID != "" {
-		parentID, err := uuid.Parse(input.ParentID)
-		if err != nil {
-			return nil, huma.Error400BadRequest("Invalid parent ID format", err)
-		}
-		newInput.ParentIds = []uuid.UUID{parentID}
-	}
-
-	tasks, err := api.App().Adapter().Task().ListTasks(ctx, newInput)
-	if err != nil {
-		return nil, huma.Error500InternalServerError("error listing tasks", err)
-	}
-	total, err := api.App().Adapter().Task().CountTasks(ctx, newInput)
-	if err != nil {
-		return nil, huma.Error500InternalServerError("error counting tasks", err)
-	}
-	return &TaskListResponse{
-		Body: &ApiPaginatedResponse[*Task]{
-			Data: mapper.Map(tasks, fromModelTask),
-			Meta: ApiGenerateMeta(&input.PaginatedInput, total),
+func (api *Api) BindTeamTaskList(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "task-list",
+			Method:      http.MethodGet,
+			Path:        "/task-projects/{task-project-id}/tasks",
+			Summary:     "Task list",
+			Description: "List of tasks",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
-	}, nil
+		func(ctx context.Context, input *TeamTaskListParams) (*TaskListResponse, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("Unauthorized")
+			}
+			newInput := &stores.TaskFilter{}
+			newInput.SortBy = input.SortBy
+			newInput.SortOrder = input.SortOrder
+			newInput.Page = input.Page
+			newInput.PerPage = input.PerPage
+			newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
+			newInput.Q = input.Q
+			newInput.Statuses = input.Status
+			newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
+			newInput.ProjectIds = utils.ParseValidUUIDs(input.ProjectID)
+			if input.ParentID != "" {
+				parentID, err := uuid.Parse(input.ParentID)
+				if err != nil {
+					return nil, huma.Error400BadRequest("Invalid parent ID format", err)
+				}
+				newInput.ParentIds = []uuid.UUID{parentID}
+			}
+
+			tasks, err := api.App().Adapter().Task().ListTasks(ctx, newInput)
+			if err != nil {
+				return nil, huma.Error500InternalServerError("error listing tasks", err)
+			}
+			total, err := api.App().Adapter().Task().CountTasks(ctx, newInput)
+			if err != nil {
+				return nil, huma.Error500InternalServerError("error counting tasks", err)
+			}
+			return &TaskListResponse{
+				Body: &ApiPaginatedResponse[*Task]{
+					Data: mapper.Map(tasks, fromModelTask),
+					Meta: ApiGenerateMeta(&input.PaginatedInput, total),
+				},
+			}, nil
+		},
+	)
 }
 
 type TaskResponse struct {
