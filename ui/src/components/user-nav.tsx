@@ -35,7 +35,12 @@ export function UserNav({ links }: UserNavProps) {
     return (
       <Button variant="ghost" className="relative h-8 w-8 rounded-full">
         <Avatar>
-          <AvatarImage src="https://avatars.githubusercontent.com/u/124599?v=4" />
+          <AvatarImage
+            src={
+              user?.image ||
+              "https://avatars.githubusercontent.com/u/124599?v=4"
+            }
+          />
           <AvatarFallback>SC</AvatarFallback>
         </Avatar>
       </Button>
