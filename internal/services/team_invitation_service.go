@@ -138,11 +138,7 @@ func (i *InvitationService) CheckValidInvitation(
 }
 
 // AcceptInvitation implements TeamInvitationService.
-func (i *InvitationService) AcceptInvitation(
-	ctx2 context.Context,
-	userId uuid.UUID,
-	invitationToken string,
-) error {
+func (i *InvitationService) AcceptInvitation(ctx2 context.Context, userId uuid.UUID, invitationToken string) error {
 	return i.adapter.RunInTxCtx(ctx2, func(txCtx context.Context) error {
 		teamMember := &models.TeamMember{}
 		err := i.adapter.TeamInvitation().AcceptInvitation(txCtx, i.adapter, userId, invitationToken, teamMember)
