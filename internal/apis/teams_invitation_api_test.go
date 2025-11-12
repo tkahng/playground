@@ -363,8 +363,7 @@ func TestApi_CancelInvitation(t *testing.T) {
 						"_eq": invite.ID,
 					},
 				})
-				assert.NotNil(t, updatedInvite)
-				assert.Equal(t, models.TeamInvitationStatusCanceled, updatedInvite.Status)
+				assert.Nil(t, updatedInvite)
 			},
 		},
 		{
@@ -485,7 +484,7 @@ func TestApi_RejectInvitation(t *testing.T) {
 				count := repository.MustCountAllCtx(t, ctx, repository.TeamMember, app.Db(), nil)
 				assert.Equal(t, int64(1), count)
 				invitationCount := repository.MustFindOneCtx(t, ctx, repository.TeamInvitation, app.Db(), nil)
-				assert.Equal(t, models.TeamInvitationStatusDeclined, invitationCount.Status)
+				assert.Nil(t, invitationCount)
 
 			},
 		},

@@ -101,7 +101,7 @@ func (i *InvitationService) CancelInvitation(
 	}
 	invitation.Status = models.TeamInvitationStatusCanceled
 
-	return i.adapter.TeamInvitation().UpdateInvitation(ctx, invitation)
+	return i.adapter.TeamInvitation().DeleteInvitation(ctx, invitation.ID)
 }
 
 // CheckValidInvitation implements TeamInvitationService.
@@ -265,7 +265,7 @@ func (i *InvitationService) RejectInvitation(ctx context.Context, userId uuid.UU
 		return fmt.Errorf("user does not match invitation")
 	}
 	invite.Status = models.TeamInvitationStatusDeclined
-	err = i.adapter.TeamInvitation().UpdateInvitation(ctx, invite)
+	err = i.adapter.TeamInvitation().DeleteInvitation(ctx, invite.ID)
 	if err != nil {
 		return err
 	}
