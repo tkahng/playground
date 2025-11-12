@@ -2,7 +2,7 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { TaskCreateParams } from "@/schema.types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { createTask, updateTaskPositionStatus } from "./api";
+import { createTask, updateTaskPositionStatus } from "./task-queries";
 
 export function useUpdateTaskPosition() {
   const { user } = useAuthProvider();

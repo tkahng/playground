@@ -2,7 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { updateTaskPositionStatus } from "@/lib/api";
+import { updateTaskPositionStatus } from "@/lib/task-queries";
 import {
   Active,
   DataRef,

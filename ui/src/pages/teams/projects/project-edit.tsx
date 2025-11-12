@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useProject } from "@/hooks/use-project";
 import { useTeam } from "@/hooks/use-team";
-import { taskList } from "@/lib/api";
+import { taskList } from "@/lib/task-queries";
 import { TaskStatus } from "@/schema.types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";

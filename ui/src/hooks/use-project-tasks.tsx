@@ -1,4 +1,4 @@
-import { taskList } from "@/lib/api";
+import { taskList } from "@/lib/task-queries";
 import { TaskStatus } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthProvider } from "./use-auth-provider";

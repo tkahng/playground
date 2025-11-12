@@ -1,8 +1,8 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { taskQueries } from "@/lib/api";
 import { getTeamTeamMembers } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
+import { findTaskById } from "./task-queries";
 
 export const useTeamTeamMembers = () => {
   const { user } = useAuthProvider();
@@ -33,9 +33,9 @@ export const useTeamTeamMembers = () => {
 export const useTaskQuery = (taskId?: string) => {
   const { user } = useAuthProvider();
   return useQuery({
-    queryKey: ["task", taskId],
+    queryKey: [{ key: "task", task_id: taskId }],
     queryFn: async () => {
-      return await taskQueries.findTaskById(user!.tokens.access_token, taskId!);
+      return await findTaskById(user!.tokens.access_token, taskId!);
     },
     enabled: !!taskId && !!user?.tokens.access_token,
   });
