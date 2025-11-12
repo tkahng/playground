@@ -163,6 +163,8 @@ func TestApi_AcceptInvitation(t *testing.T) {
 					}
 					return false
 				})
+				invitationCount := repository.MustCountAllCtx(t, ctx, repository.TeamInvitation, app.Db(), nil)
+				assert.Equal(t, int64(0), invitationCount)
 				count := repository.MustCountAllCtx(t, ctx, repository.TeamMember, app.Db(), nil)
 				assert.NotNil(t, item)
 				assert.Equal(t, count, item.Quantity)
@@ -280,7 +282,7 @@ func TestApi_AcceptInvitation(t *testing.T) {
 				scenario.Headers = append(scenario.Headers, header)
 				decorator, ok := app.Adapter().TeamInvitation().(*stores.TeamInvitationStoreDecorator)
 				assert.True(t, ok)
-				decorator.UpdateInvitationFunc = func(ctx context.Context, invitation *models.TeamInvitation) error {
+				decorator.DeleteInvitationFunc = func(ctx context.Context, invitationId uuid.UUID) error {
 					return errors.New("unknown error")
 				}
 			},
