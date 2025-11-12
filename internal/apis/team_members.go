@@ -43,7 +43,7 @@ type FindTeamTeamMemberByIDInput struct {
 	TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
 }
 
-func (api *Api) bindFindTeamMemberByID(aapi huma.API) {
+func (api *Api) FindTeamMemberByIDBind(aapi huma.API) {
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -102,7 +102,7 @@ type FindTeamTeamMembersInput struct {
 	Active types.OptionalParam[bool] `query:"active,omitempty" required:"false"`
 }
 
-func (api *Api) bindFindTeamTeamMembers(humaApi huma.API) {
+func (api *Api) FindTeamTeamMembersBind(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{

@@ -82,7 +82,7 @@ type TeamInfoOutput struct {
 	Body *TeamInfo `json:"body"`
 }
 
-func (api *Api) bindCreateTeam(humaApi huma.API) {
+func (api *Api) CreateTeamBind(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
@@ -159,7 +159,7 @@ func (api *Api) bindCreateTeam(humaApi huma.API) {
 	)
 }
 
-func (api *Api) bindCheckTeamSlug(
+func (api *Api) CheckTeamSlugBind(
 	humaApi huma.API,
 ) {
 	huma.Register(
@@ -222,7 +222,7 @@ type UserListTeamsParams struct {
 	SortParams
 }
 
-func (api *Api) bindGetUserTeams(humaApi huma.API) {
+func (api *Api) GetUserTeamsBind(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
@@ -298,7 +298,7 @@ func (api *Api) GetUserTeams(
 	}, nil
 }
 
-func (api *Api) bindFindTeamInfoBySlug(humaApi huma.API) {
+func (api *Api) FindTeamInfoBySlugBind(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
@@ -334,7 +334,7 @@ func (api *Api) bindFindTeamInfoBySlug(humaApi huma.API) {
 	)
 }
 
-func (api *Api) bindUpdateTeam(humaApi huma.API) {
+func (api *Api) UpdateTeamBind(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
@@ -390,7 +390,7 @@ func (api *Api) UpdateTeam(
 	}, nil
 }
 
-func (api *Api) bindDeleteTeam(humaApi huma.API) {
+func (api *Api) DeleteTeamBind(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
@@ -427,7 +427,7 @@ func (api *Api) bindDeleteTeam(humaApi huma.API) {
 	)
 }
 
-func (api *Api) bindGetTeam(humaApi huma.API) {
+func (api *Api) GetTeamBind(humaApi huma.API) {
 	huma.Register(
 		humaApi,
 		huma.Operation{
