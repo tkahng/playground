@@ -62,7 +62,7 @@ func fromModelTask(task *models.Task) *Task {
 		Children:          mapper.Map(task.Children, fromModelTask),
 		CreatedByMember:   fromTeamMemberModel(task.CreatedByMember),
 		Team:              fromTeamModel(task.Team),
-		Project:           fromModelProject(task.Project),
+		Project:           FromModelProject(task.Project),
 	}
 }
 

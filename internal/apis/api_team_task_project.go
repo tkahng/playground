@@ -37,7 +37,7 @@ type TaskProject struct {
 	Tasks             []*Task                  `db:"tasks" src:"id" dest:"project_id" table:"tasks" json:"tasks,omitempty"`
 }
 
-func fromModelProject(task *models.TaskProject) *TaskProject {
+func FromModelProject(task *models.TaskProject) *TaskProject {
 	if task == nil {
 		return nil
 	}
@@ -145,7 +145,7 @@ func (api *Api) TeamTaskProjectList(ctx context.Context, input *TeamTaskProjects
 	return &TaskProjectListResponse{
 		Body: &ApiPaginatedResponse[*TaskProject]{
 			Data: mapper.Map(taskProject, func(taskProject *models.TaskProject) *TaskProject {
-				return fromModelProject(taskProject)
+				return FromModelProject(taskProject)
 			}),
 			Meta: ApiGenerateMeta(&input.PaginatedInput, total),
 		},
@@ -198,7 +198,7 @@ func (api *Api) TeamTaskProjectCreate(
 	return &struct {
 		Body *TaskProject
 	}{
-		Body: fromModelProject(taskProject),
+		Body: FromModelProject(taskProject),
 	}, nil
 }
 
@@ -246,7 +246,7 @@ func (api *Api) TeamTaskProjectCreateWithAi(ctx context.Context, input *TaskProj
 	return &struct {
 		Body *TaskProject
 	}{
-		Body: fromModelProject(taskProject),
+		Body: FromModelProject(taskProject),
 	}, nil
 }
 
@@ -318,7 +318,7 @@ func (api *Api) TeamTaskProjectGet(ctx context.Context, input *struct {
 		}
 	}
 	return &TaskProjectResponse{
-		Body: fromModelProject(taskProject),
+		Body: FromModelProject(taskProject),
 	}, nil
 }
 
