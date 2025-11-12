@@ -175,54 +175,68 @@ func (api *Api) BindTeamTaskProjectList(humaApi huma.API) {
 	)
 }
 
-func (api *Api) TeamTaskProjectCreate(
-	ctx context.Context,
-	input *CreateTaskProjectWithTasksInput,
-) (
-	*struct {
-		Body *TaskProject
-	},
-	error,
-) {
-	if input == nil {
-		return nil, huma.Error400BadRequest("Input cannot be nil")
-	}
-	parsedTeamID, err := uuid.Parse(input.TeamID)
-	if err != nil {
-		return nil, huma.Error400BadRequest("Invalid team id")
-	}
-
-	teamInfo := contextstore.GetContextTeamInfo(ctx)
-	if teamInfo == nil {
-		return nil, huma.Error401Unauthorized("Unauthorized")
-	}
-
-	taskProject, err := api.App().Adapter().Task().CreateTaskProjectWithTasks(ctx, &stores.CreateTaskProjectWithTasksDTO{
-		CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
-			TeamID:      parsedTeamID,
-			MemberID:    teamInfo.Member.ID,
-			Name:        input.Body.Name,
-			Description: input.Body.Description,
-			Status:      input.Body.Status,
-			Rank:        input.Body.Rank,
+func (api *Api) BindTeamTaskProjectCreate(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "task-project-create",
+			Method:      http.MethodPost,
+			Path:        "/teams/{team-id}/task-projects",
+			Summary:     "Task project create",
+			Description: "Create a new task project",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
 		},
-		Tasks: mapper.Map(input.Body.Tasks, func(task CreateTaskProjectTaskDTO) stores.CreateTaskProjectTaskDTO {
-			return stores.CreateTaskProjectTaskDTO{
-				Name:        task.Name,
-				Description: task.Description,
-				Status:      models.TaskStatus(task.Status),
-				Rank:        task.Rank,
+		func(ctx context.Context, input *CreateTaskProjectWithTasksInput) (*struct {
+			Body *TaskProject
+		}, error) {
+			if input == nil {
+				return nil, huma.Error400BadRequest("Input cannot be nil")
 			}
-		}),
-	})
-	if err != nil {
-		return nil, err
-	}
-	return &struct {
-		Body *TaskProject
-	}{
-		Body: FromModelProject(taskProject),
-	}, nil
+			parsedTeamID, err := uuid.Parse(input.TeamID)
+			if err != nil {
+				return nil, huma.Error400BadRequest("Invalid team id")
+			}
+
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("Unauthorized")
+			}
+
+			taskProject, err := api.App().Adapter().Task().CreateTaskProjectWithTasks(ctx, &stores.CreateTaskProjectWithTasksDTO{
+				CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
+					TeamID:      parsedTeamID,
+					MemberID:    teamInfo.Member.ID,
+					Name:        input.Body.Name,
+					Description: input.Body.Description,
+					Status:      input.Body.Status,
+					Rank:        input.Body.Rank,
+				},
+				Tasks: mapper.Map(input.Body.Tasks, func(task CreateTaskProjectTaskDTO) stores.CreateTaskProjectTaskDTO {
+					return stores.CreateTaskProjectTaskDTO{
+						Name:        task.Name,
+						Description: task.Description,
+						Status:      models.TaskStatus(task.Status),
+						Rank:        task.Rank,
+					}
+				}),
+			})
+			if err != nil {
+				return nil, err
+			}
+			return &struct {
+				Body *TaskProject
+			}{
+				Body: FromModelProject(taskProject),
+			}, nil
+		},
+	)
 }
 
 type TaskProjectCreateWithAiDto struct {
