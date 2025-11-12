@@ -101,8 +101,8 @@ func TestApi_TeamTaskUpdate(t *testing.T) {
 					Name:        "updated",
 					Description: types.Pointer("UpdateTaskDto"),
 					Status:      models.TaskStatusInProgress,
-					StartAt:     types.Pointer(time.Now()),
-					EndAt:       types.Pointer(time.Now()),
+					StartAt:     types.Pointer(time.Now().UTC()),
+					EndAt:       types.Pointer(time.Now().UTC()),
 					AssigneeID:  &team1.Member.ID,
 					ReporterID:  &team1.Member.ID,
 				}
