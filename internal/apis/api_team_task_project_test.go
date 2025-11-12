@@ -15,6 +15,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func TestApi_TeamTaskProjectList(t *testing.T) {
@@ -91,4 +92,50 @@ func TestApi_TeamTaskProjectList(t *testing.T) {
 			tt.Test(t)
 		}
 	})
+}
+func TestApi_TeamTaskProjectCreate(t *testing.T) {
+	// task
+	tests := []ApiScenario{
+		{
+			Name:           "success: create project",
+			Method:         http.MethodPost,
+			URL:            "/teams/{team-id}/task-projects",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/task-projects", team1.Team.ID.String())
+				input := apis.CreateTaskProjectWithoutTeamWithTasks{
+					CreateTaskProjectWithoutTeamDTO: apis.CreateTaskProjectWithoutTeamDTO{
+						Name:        "New Project",
+						Description: types.Pointer("This is a new project."),
+						Status:      models.TaskProjectStatusTodo,
+					},
+				}
+				scenario.Store.Set("input", input)
+				scenario.Body = JsonToReader(t, input)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.TaskProject](t, res.Body.Bytes())
+				input, ok := scenario.Store.Get("input").(apis.CreateTaskProjectWithoutTeamWithTasks)
+				if !ok {
+					t.Fatal("no input")
+				}
+				assert.Equal(t, input.CreateTaskProjectWithoutTeamDTO.Name, result.Name)
+				assert.Equal(t, input.CreateTaskProjectWithoutTeamDTO.Description, result.Description)
+				assert.Equal(t, input.CreateTaskProjectWithoutTeamDTO.Status, result.Status)
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *TestApi {
+				return testApi
+			}
+			tt.Test(t)
+		})
+	}
 }
