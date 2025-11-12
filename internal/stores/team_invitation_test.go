@@ -36,7 +36,16 @@ func TestTeamStore_InvitationCRUD(t *testing.T) {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
 		userID := user.ID
-		member, err := adapter.TeamMember().CreateTeamMember(ctx, team.ID, userID, "owner", false)
+		member, err := adapter.TeamMember().CreateTeamMember(
+			ctx,
+			&models.TeamMember{
+				TeamID:           team.ID,
+				UserID:           &userID,
+				Role:             models.TeamMemberRoleOwner,
+				Active:           true,
+				HasBillingAccess: false,
+			},
+		)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -136,7 +145,16 @@ func TestInvitationStore_CRUD(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
-		member, err := adapter.TeamMember().CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRole("owner"), true)
+		member, err := adapter.TeamMember().CreateTeamMember(
+			ctx,
+			&models.TeamMember{
+				TeamID:           team.ID,
+				UserID:           &user.ID,
+				Role:             models.TeamMemberRoleOwner,
+				Active:           true,
+				HasBillingAccess: true,
+			},
+		)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -234,7 +252,13 @@ func TestTeamStore_FindPendingInvitation(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
-		member, err := adapter.TeamMember().CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleOwner, true)
+		member, err := adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
+			TeamID:           team.ID,
+			UserID:           &user.ID,
+			Role:             models.TeamMemberRoleOwner,
+			Active:           true,
+			HasBillingAccess: true,
+		})
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}

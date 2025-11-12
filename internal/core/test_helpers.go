@@ -125,7 +125,7 @@ func CreateTeamAndMemberWithOptions(t testing.TB, app App, user *models.User, op
 	if err != nil {
 		t.Fatalf("Error creating team: %v", err)
 	}
-	member, err := app.Adapter().TeamMember().CreateTeamMember2(ctx, &models.TeamMember{
+	member, err := app.Adapter().TeamMember().CreateTeamMember(ctx, &models.TeamMember{
 		TeamID:           team.ID,
 		UserID:           types.Pointer(user.ID),
 		Role:             option.role,
@@ -207,7 +207,7 @@ func CreateTeamMemberWithOptions(t testing.TB, app App, teamID uuid.UUID, userId
 	for _, optFunc := range optFunc {
 		optFunc(option)
 	}
-	member, err := app.Adapter().TeamMember().CreateTeamMember2(ctx, &models.TeamMember{
+	member, err := app.Adapter().TeamMember().CreateTeamMember(ctx, &models.TeamMember{
 		TeamID:           teamID,
 		UserID:           types.Pointer(userId),
 		Role:             option.role,

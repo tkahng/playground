@@ -14,7 +14,6 @@ type TeamMemberStoreDecorator struct {
 	CountTeamMembersFunc                        func(ctx context.Context, filter *TeamMemberFilter) (int64, error)
 	CountTeamMembersByUserIDFunc                func(ctx context.Context, userId uuid.UUID) (int64, error)
 	CreateTeamFromUserFunc                      func(ctx context.Context, user *models.User) (*models.TeamMember, error)
-	CreateTeamMemberFunc                        func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error)
 	CreateTeamMember2Func                       func(ctx context.Context, model *models.TeamMember) (*models.TeamMember, error)
 	DeleteTeamMemberFunc                        func(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
 	FindLatestTeamMemberByUserIDFunc            func(ctx context.Context, userId uuid.UUID) (*models.TeamMember, error)
@@ -30,15 +29,15 @@ type TeamMemberStoreDecorator struct {
 	VerifyAndUpdateTeamSubscriptionQuantityFunc func(ctx context.Context, adapter StorageAdapterInterface, teamId uuid.UUID) (int64, error)
 }
 
-// CreateTeamMember2 implements DbTeamMemberStoreInterface.
-func (t *TeamMemberStoreDecorator) CreateTeamMember2(ctx context.Context, model *models.TeamMember) (*models.TeamMember, error) {
+// CreateTeamMember implements DbTeamMemberStoreInterface.
+func (t *TeamMemberStoreDecorator) CreateTeamMember(ctx context.Context, model *models.TeamMember) (*models.TeamMember, error) {
 	if t.CreateTeamMember2Func != nil {
 		return t.CreateTeamMember2Func(ctx, model)
 	}
 	if t.Delegate == nil {
 		return nil, ErrDelegateNil
 	}
-	return t.Delegate.CreateTeamMember2(ctx, model)
+	return t.Delegate.CreateTeamMember(ctx, model)
 }
 
 func NewTeamMemberStoreDecorator(db database.Dbx) *TeamMemberStoreDecorator {
@@ -96,7 +95,6 @@ func (t *TeamMemberStoreDecorator) Cleanup() {
 	t.CountOwnerTeamMembersFunc = nil
 	t.CountTeamMembersFunc = nil
 	t.CountTeamMembersByUserIDFunc = nil
-	t.CreateTeamMemberFunc = nil
 	t.DeleteTeamMemberFunc = nil
 	t.FindLatestTeamMemberByUserIDFunc = nil
 	t.FindTeamMemberFunc = nil
@@ -127,17 +125,6 @@ func (t *TeamMemberStoreDecorator) CreateTeamFromUser(ctx context.Context, user 
 		return nil, ErrDelegateNil
 	}
 	return t.Delegate.CreateTeamFromUser(ctx, user)
-}
-
-// CreateTeamMember implements DbTeamMemberStoreInterface.
-func (t *TeamMemberStoreDecorator) CreateTeamMember(ctx context.Context, teamId uuid.UUID, userId uuid.UUID, role models.TeamMemberRole, hasBillingAccess bool) (*models.TeamMember, error) {
-	if t.CreateTeamMemberFunc != nil {
-		return t.CreateTeamMemberFunc(ctx, teamId, userId, role, hasBillingAccess)
-	}
-	if t.Delegate == nil {
-		return nil, ErrDelegateNil
-	}
-	return t.Delegate.CreateTeamMember(ctx, teamId, userId, role, hasBillingAccess)
 }
 
 // DeleteTeamMember implements DbTeamMemberStoreInterface.

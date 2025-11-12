@@ -116,11 +116,15 @@ func TestStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
 
 		_, err = adapter.TeamMember().CreateTeamMember(
 			ctx,
-			team.ID,
-			user.ID,
-			models.TeamMemberRoleOwner,
-			true,
+			&models.TeamMember{
+				TeamID:           team.ID,
+				UserID:           &user.ID,
+				Role:             models.TeamMemberRoleOwner,
+				Active:           true,
+				HasBillingAccess: true,
+			},
 		)
+
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -242,10 +246,13 @@ func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 
 		_, err = adapter.TeamMember().CreateTeamMember(
 			ctx,
-			team.ID,
-			user.ID,
-			models.TeamMemberRoleOwner,
-			true,
+			&models.TeamMember{
+				TeamID:           team.ID,
+				UserID:           &user.ID,
+				Role:             models.TeamMemberRoleOwner,
+				HasBillingAccess: true,
+				Active:           true,
+			},
 		)
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
@@ -337,13 +344,13 @@ func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 			t.Fatalf("CreateTeam() error = %v", err)
 		}
 
-		_, err = adapter.TeamMember().CreateTeamMember(
-			ctx,
-			team.ID,
-			user.ID,
-			models.TeamMemberRoleOwner,
-			true,
-		)
+		_, err = adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
+			TeamID:           team.ID,
+			UserID:           &user.ID,
+			Role:             models.TeamMemberRoleOwner,
+			HasBillingAccess: true,
+			Active:           true,
+		})
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
