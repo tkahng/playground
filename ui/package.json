@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build && touch ./dist/.gitignore",
     "lint": "eslint .",
     "preview": "vite preview",
-    "generate:schema": "openapi-typescript http://localhost:8080/openapi.yaml -o ./src/schema.d.ts"
+    "generate:schema": "openapi-typescript http://localhost:8080/openapi.yaml -o ./src/schema.d.ts",
+    "ui:add": "npx shadcn@latest add"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -42,6 +43,7 @@
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
+    "input-otp": "^1.4.2",
     "jwt-decode": "^4.0.0",
     "lucide-react": "^0.485.0",
     "motion": "^12.23.6",
