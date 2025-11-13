@@ -17,14 +17,31 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import { Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
 import z from "zod";
+
+type OTPFormProps = {
+  onSubmit: (data: z.infer<typeof otpSchema>) => void;
+};
 
 const otpSchema = z.object({
   otp: z.string().length(6, "OTP must be 6 digits"),
 });
 
-export function OTPForm({ ...props }: React.ComponentProps<typeof Card> & {}) {
+export function OTPForm({
+  onSubmit,
+  ...props
+}: React.ComponentProps<typeof Card> & OTPFormProps) {
+  const form = useForm<z.infer<typeof otpSchema>>({
+    resolver: zodResolver(otpSchema),
+    defaultValues: {
+      otp: "",
+    },
+  });
+  function onUpdateSubmit(data: z.infer<typeof otpSchema>) {
+    onSubmit(data);
+  }
   return (
     <Card {...props}>
       <CardHeader>
@@ -32,10 +49,10 @@ export function OTPForm({ ...props }: React.ComponentProps<typeof Card> & {}) {
         <CardDescription>We sent a 6-digit code to your email.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form id="otp-form">
+        <form id="otp-form" onSubmit={form.handleSubmit(onUpdateSubmit)}>
           <Controller
             name="otp"
-            control={}
+            control={form.control}
             render={({ field }) => {
               return (
                 <FieldGroup>
@@ -63,7 +80,9 @@ export function OTPForm({ ...props }: React.ComponentProps<typeof Card> & {}) {
                     </FieldDescription>
                   </Field>
                   <FieldGroup>
-                    <Button type="submit">Verify</Button>
+                    <Button type="submit" form="otp-form">
+                      Verify
+                    </Button>
                     <FieldDescription className="text-center">
                       Didn&apos;t receive the code? <a href="#">Resend</a>
                     </FieldDescription>
