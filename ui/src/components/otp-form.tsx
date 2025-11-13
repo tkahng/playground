@@ -22,7 +22,7 @@ import { Controller, useForm } from "react-hook-form";
 import z from "zod";
 
 type OTPFormProps = {
-  onSubmit: (data: z.infer<typeof otpSchema>) => void;
+  mutate: (data: z.infer<typeof otpSchema>) => void;
 };
 
 const otpSchema = z.object({
@@ -30,7 +30,7 @@ const otpSchema = z.object({
 });
 
 export function OTPForm({
-  onSubmit,
+  mutate,
   ...props
 }: React.ComponentProps<typeof Card> & OTPFormProps) {
   const form = useForm<z.infer<typeof otpSchema>>({
@@ -40,7 +40,7 @@ export function OTPForm({
     },
   });
   function onUpdateSubmit(data: z.infer<typeof otpSchema>) {
-    onSubmit(data);
+    mutate(data);
   }
   return (
     <Card {...props}>
