@@ -51,7 +51,7 @@ export default function TeamSettingsPage() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["auth/me"],
+        queryKey: [{ key: "team-by-slug-layout" }],
       });
       toast.success("Profile updated successfully");
     },
@@ -76,7 +76,7 @@ export default function TeamSettingsPage() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["auth/me"],
+        queryKey: [{ key: "team-by-slug-layout" }],
       });
       toast.success("Account deleted successfully");
     },

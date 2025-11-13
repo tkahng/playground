@@ -14,11 +14,11 @@ import { toast } from "sonner";
 
 export default function TeamDashboardLayout() {
   const { user } = useAuthProvider();
+  const { pathname } = useLocation();
   const { teamSlug } = useParams<{ teamSlug: string }>();
   const { setTeam, team, teamMember } = useTeam();
-  const { pathname } = useLocation();
   const { isLoading, error, refetch } = useQuery({
-    queryKey: ["team-by-slug-layout", teamSlug] as const,
+    queryKey: [{ key: "team-by-slug-layout", teamSlug }] as const,
     queryFn: async () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
