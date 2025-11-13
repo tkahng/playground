@@ -1,5 +1,5 @@
 import { AuthProvider } from "@/context/auth-context";
-import { TeamProvider2 } from "@/context/team-context2";
+import { TeamProvider } from "@/context/team-context";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { ThemeProvider } from "./theme-provider";
@@ -13,9 +13,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
           <AuthProvider>
-            {/* <TeamProvider> */}
-            <TeamProvider2>{children}</TeamProvider2>
-            {/* </TeamProvider> */}
+            <TeamProvider>{children}</TeamProvider>
             {/* {children} */}
           </AuthProvider>
           <Toaster />
