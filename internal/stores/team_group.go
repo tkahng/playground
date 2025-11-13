@@ -2,8 +2,8 @@ package stores
 
 import (
 	"context"
+	"errors"
 	"slices"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
@@ -155,13 +155,17 @@ func (s *DbTeamGroupStore) FindTeamBySlug(ctx context.Context, slug string) (*mo
 
 // UpdateTeam implements TeamQueryer.
 func (s *DbTeamGroupStore) UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error) {
-	team := &models.Team{
-		ID:   teamId,
-		Name: name,
-		// StripeCustomerID: stripeCustomerId,
-		UpdatedAt: time.Now(),
+	team, err := s.FindTeamByID(ctx, teamId)
+	if err != nil {
+		return nil, err
 	}
-	_, err := repository.Team.PutOne(
+	if team == nil {
+		return nil, errors.New("team not found")
+	}
+
+	team.Name = name
+
+	_, err = repository.Team.PutOne(
 		ctx,
 		s.db,
 		team,

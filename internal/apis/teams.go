@@ -68,8 +68,8 @@ func fromTeamModel(team *models.Team) *Team {
 }
 
 type CreateTeamInput struct {
-	Name string `json:"name" required:"true"`
-	Slug string `json:"slug" required:"true"`
+	Name string `json:"name" required:"true" minLength:"3"`
+	Slug string `json:"slug" required:"true" minLength:"3"`
 }
 
 type TeamOutput struct {
@@ -363,8 +363,8 @@ type UpdateTeamInput struct {
 }
 
 type UpdateTeamDto struct {
-	Name string `json:"name" required:"true"`
-	Slug string `json:"slug" required:"true"`
+	Name string `json:"name" required:"true" minLength:"3"`
+	Slug string `json:"slug" required:"true" minLength:"3"`
 }
 
 func (api *Api) UpdateTeam(
