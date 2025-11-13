@@ -173,7 +173,10 @@ func (a *AuthServiceImpl) GenerateAuthTokens(ctx context.Context, email string) 
 		return nil, err
 	}
 
-	refreshToken, err := a.token.GenerateToken(ctx, userInfo.User.Email, models.TokenTypesRefreshToken)
+	refreshToken, err := a.token.GenerateToken(ctx, &token.GenerateTokenOptions{
+		Email: userInfo.User.Email,
+		Type:  models.TokenTypesRefreshToken,
+	})
 	if err != nil {
 		return nil, err
 	}

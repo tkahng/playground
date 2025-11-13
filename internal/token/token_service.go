@@ -12,7 +12,7 @@ import (
 )
 
 type TokenService interface {
-	GenerateToken(ctx context.Context, email string, tokenType models.TokenTypes) (string, error)
+	GenerateToken(ctx context.Context, options *GenerateTokenOptions) (string, error)
 	// ValidateToken uses the token, tokenType and the current time to validate the token.
 	// If the token is valid, it delete the token, and return the email asscoiated with the token.
 	// If the token is not valid, it will return an error.
@@ -55,11 +55,22 @@ func (t *TokenServiceImpl) ValidateToken(ctx context.Context, token string, toke
 	return dbtoken.Identifier, nil
 }
 
-// GenerateToken implements TokenService.
-func (t *TokenServiceImpl) GenerateToken(ctx context.Context, email string, tokenType models.TokenTypes) (string, error) {
-	token := security.GenerateTokenKey()
+type GenerateTokenOptions struct {
+	Email string
+	Otp   string
+	Type  models.TokenTypes
+}
+
+func (t *TokenServiceImpl) GenerateToken(ctx context.Context, options *GenerateTokenOptions) (string, error) {
+	var token string
+
+	if options.Otp != "" {
+		token = security.GenerateTokenHash(options.Email, options.Otp)
+	} else {
+		token = security.GenerateTokenKey()
+	}
 	var opt conf.TokenOption
-	switch tokenType {
+	switch options.Type {
 	case models.TokenTypesVerificationToken:
 		opt = t.opts.VerificationToken
 	case models.TokenTypesPasswordResetToken:
@@ -67,14 +78,14 @@ func (t *TokenServiceImpl) GenerateToken(ctx context.Context, email string, toke
 	case models.TokenTypesRefreshToken:
 		opt = t.opts.RefreshToken
 	default:
-		return "", fmt.Errorf("invalid email type %v", tokenType)
+		return "", fmt.Errorf("invalid email type %v", options.Type)
 	}
 	expiry := opt.Duration
 	err := t.store.SaveToken(ctx, &stores.CreateTokenDTO{
-		Type:       tokenType,
+		Type:       options.Type,
 		Token:      token,
-		Identifier: email,
-		Expires:    time.Now().Add(time.Duration(expiry) * time.Second),
+		Identifier: options.Email,
+		Expires:    time.Now().UTC().Add(time.Duration(expiry) * time.Second),
 	})
 	if err != nil {
 		return "", err

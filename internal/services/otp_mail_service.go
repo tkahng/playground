@@ -94,8 +94,12 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 	default:
 		return fmt.Errorf("invalid email type")
 	}
-
-	tokenHash, err := app.token.GenerateToken(ctx, user.Email, tokenOpts.Type)
+	otp := security.GenerateOtp(6)
+	tokenHash, err := app.token.GenerateToken(ctx, &token.GenerateTokenOptions{
+		Email: user.Email,
+		Type:  tokenOpts.Type,
+		Otp:   otp,
+	})
 	if err != nil {
 		return fmt.Errorf("error at creating verification token: %w", err)
 	}
@@ -105,8 +109,8 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 	claims.Type = tokenOpts.Type
 	claims.UserId = user.ID
 	claims.Email = user.Email
-	claims.Token = security.GenerateTokenKey()
-	claims.Otp = security.GenerateOtp(6)
+	claims.Token = tokenHash
+	claims.Otp = otp
 
 	sendMailParams, err := app.getSendMailParams(emailType, tokenHash, claims)
 	if err != nil {
