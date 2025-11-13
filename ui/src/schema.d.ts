@@ -609,6 +609,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/auth/confirm-verification/otp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Email verification OTP
+         * @description Confirm Email verification OTP
+         */
+        post: operations["confirm-verification-otp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/me": {
         parameters: {
             query?: never;
@@ -2182,6 +2202,15 @@ export interface components {
             readonly $schema?: string;
             url: string;
         };
+        OtpDto: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/OtpDto.json
+             */
+            readonly $schema?: string;
+            otp: string;
+        };
         OtpInput: {
             /**
              * Format: uri
@@ -2503,6 +2532,7 @@ export interface components {
             end_at: string | null;
             id: string;
             name: string;
+            parent?: components["schemas"]["Task"];
             parent_id: string | null;
             project?: components["schemas"]["TaskProject"];
             project_id: string;
@@ -4969,6 +4999,55 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EmailVerificationPostInput"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "confirm-verification-otp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OtpDto"];
             };
         };
         responses: {

@@ -886,6 +886,20 @@ export const confirmVerification = async (token: string) => {
   }
 };
 
+export const confirmVerificationOtp = async (token: string, otp: string) => {
+  const { error } = await client.POST("/api/auth/confirm-verification/otp", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: {
+      otp,
+    },
+  });
+  if (error) {
+    throw error;
+  }
+};
+
 export const getStats = async (token: string) => {
   const { data, error } = await client.GET("/api/stats", {
     headers: {
