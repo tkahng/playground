@@ -132,7 +132,7 @@ func (api *Api) VerifyEmailOtpBind(humaAPI huma.API) {
 		huma.Operation{
 			OperationID: "confirm-verification-otp",
 			Method:      http.MethodPost,
-			Path:        "/auth/confirm-verification-otp",
+			Path:        "/auth/confirm-verification/otp",
 			Summary:     "Confirm Email verification OTP",
 			Description: "Confirm Email verification OTP",
 			Tags:        []string{"Auth", "Verify"},

@@ -225,3 +225,126 @@ func TestApi_VerifyEmail(t *testing.T) {
 	}
 	// })
 }
+func TestApi_VerifyOtp(t *testing.T) {
+	tests := []ApiScenario{
+		{
+			Name:           "Fail: Unknown error during customer creation",
+			Method:         http.MethodPost,
+			URL:            "/auth/confirm-verification/otp",
+			ExpectedStatus: http.StatusInternalServerError,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				userInfo, err := app.Auth().Signup(t.Context(), &auth.SignupInput{
+					Email:    "test2@example.com",
+					Password: "Password123!",
+				})
+				if err != nil {
+					t.Fatalf("Error signing up user: %v", err)
+				}
+				if err := app.JobManager().PollOnce(context.Background()); err != nil {
+					t.Fatalf("Error polling job manager: %v", err)
+				}
+				testMailer := core.ExtractTestMailer(t, app)
+				var message *mailer.Message
+
+				if len(testMailer.Messages) > 0 {
+					message = testMailer.Messages[0]
+				} else {
+					t.Fatalf("No message found for user")
+				}
+				code, err := test.GetCodeParam(message.Body)
+				if err != nil {
+					t.Fatalf("Error getting code from email: %v", err)
+				}
+				if code == "" {
+					t.Fatalf("No code found in email. Body: %s", message.Body)
+				}
+				header := core.CreateTokenHeader(t, app, userInfo.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+				dto := apis.OtpDto{
+					Otp: code,
+				}
+				data, err := json.Marshal(dto)
+				if err != nil {
+					t.Errorf("Error marshalling input: %v", err)
+				}
+				scenario.Body = strings.NewReader(string(data))
+				var customerStore *stores.CustomerStoreDecorator
+				if m, ok := app.Adapter().Customer().(*stores.CustomerStoreDecorator); ok {
+					customerStore = m
+				} else {
+					t.Fatal("customer store is not a CustomerStoreDecorator")
+				}
+				customerStore.CreateCustomerFunc = func(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
+					return nil, errors.New("unknown error")
+				}
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				dbx := app.Db()
+				customerCount := repository.MustCountAllCtx(t, t.Context(), repository.StripeCustomer, dbx, nil)
+				user := repository.MustFindOneCtx(t, t.Context(), repository.User, dbx, nil)
+				assert.Nil(t, user.EmailVerifiedAt, "EmailVerifiedAt should be nil")
+				assert.Equal(t, 0, int(customerCount), "customer count should be 0")
+			},
+		},
+		{
+			Name:           "Success: confirm email verification",
+			Method:         http.MethodPost,
+			URL:            "/auth/confirm-verification/otp",
+			ExpectedStatus: http.StatusNoContent,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				testMailer := core.ExtractTestMailer(t, app)
+				userInfo, err := app.Auth().Signup(t.Context(), &auth.SignupInput{
+					Email:    "test1@example.com",
+					Password: "Password123!",
+				})
+				if err != nil {
+					t.Fatalf("Error signing up user: %v", err)
+				}
+				if err := app.JobManager().PollOnce(context.Background()); err != nil {
+					t.Fatalf("Error polling job manager: %v", err)
+				}
+				var message *mailer.Message
+				if len(testMailer.Messages) > 0 {
+					message = testMailer.Messages[0]
+				} else {
+					t.Fatalf("No message found for user")
+				}
+				code, err := test.GetCodeParam(message.Body)
+				if err != nil {
+					t.Fatalf("Error getting code from email: %v", err)
+				}
+				if code == "" {
+					t.Fatalf("No code found in email. Body: %s", message.Body)
+				}
+				header := core.CreateTokenHeader(t, app, userInfo.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+				dto := apis.OtpDto{
+					Otp: code,
+				}
+				data, err := json.Marshal(dto)
+				if err != nil {
+					t.Errorf("Error marshalling input: %v", err)
+				}
+				scenario.Body = strings.NewReader(string(data))
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				dbx := app.Db()
+				customerCount := repository.MustCountAllCtx(t, t.Context(), repository.StripeCustomer, dbx, nil)
+				user := repository.MustFindOneCtx(t, t.Context(), repository.User, dbx, nil)
+				assert.NotNil(t, user.EmailVerifiedAt, "EmailVerifiedAt should not be nil")
+				assert.True(t, user.EmailVerifiedAt.Before(time.Now()), "EmailVerifiedAt should have been before now")
+				assert.Equal(t, 1, int(customerCount), "customer count should be 1")
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *TestApi {
+				return testApi
+			}
+			tt.Test(t)
+		})
+	}
+	// })
+}
