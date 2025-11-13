@@ -16,7 +16,7 @@ type TokenService interface {
 	// ValidateToken uses the token, tokenType and the current time to validate the token.
 	// If the token is valid, it delete the token, and return the email asscoiated with the token.
 	// If the token is not valid, it will return an error.
-	ValidateToken(ctx context.Context, token string, tokenType models.TokenTypes) (string, error)
+	ValidateToken(ctx context.Context, options *ValidateTokenOptions) (string, error)
 	CheckToken(ctx context.Context, token string, tokenType models.TokenTypes) error
 }
 
@@ -37,18 +37,34 @@ func (t *TokenServiceImpl) CheckToken(ctx context.Context, token string, tokenTy
 	return nil
 }
 
+type ValidateTokenOptions struct {
+	Email string
+	Otp   string
+	Token string
+	Type  models.TokenTypes
+}
+
 // ValidateToken uses the token, tokenType and the current time to validate the token.
 // If the token is valid, it delete the token, and return the email asscoiated with the token.
 // If the token is not valid, it will return an error.
-func (t *TokenServiceImpl) ValidateToken(ctx context.Context, token string, tokenType models.TokenTypes) (string, error) {
-	dbtoken, err := t.store.GetTokenByValueTypeExpires(ctx, token, tokenType, time.Now())
+func (t *TokenServiceImpl) ValidateToken(ctx context.Context, options *ValidateTokenOptions) (string, error) {
+	var tokenToValidate string
+	if options.Otp != "" && options.Email != "" {
+		tokenToValidate = security.GenerateTokenHash(options.Email, options.Otp)
+	} else {
+		tokenToValidate = options.Token
+	}
+	if tokenToValidate == "" {
+		return "", fmt.Errorf("token to validate is empty")
+	}
+	dbtoken, err := t.store.GetTokenByValueTypeExpires(ctx, tokenToValidate, options.Type, time.Now())
 	if err != nil {
 		return "", err
 	}
 	if dbtoken == nil {
 		return "", nil
 	}
-	err = t.store.DeleteToken(ctx, token)
+	err = t.store.DeleteToken(ctx, tokenToValidate)
 	if err != nil {
 		return "", err
 	}

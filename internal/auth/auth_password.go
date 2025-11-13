@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/token"
 	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/workers"
 )
@@ -23,8 +24,11 @@ type PasswordManager interface {
 	UpdatePassword(ctx context.Context, userId uuid.UUID, oldPassword, newPassword string) error
 }
 
-func (a *AuthServiceImpl) ConfirmPasswordReset(ctx context.Context, token string, password string) error {
-	email, err := a.token.ValidateToken(ctx, token, models.TokenTypesPasswordResetToken)
+func (a *AuthServiceImpl) ConfirmPasswordReset(ctx context.Context, token1 string, password string) error {
+	email, err := a.token.ValidateToken(ctx, &token.ValidateTokenOptions{
+		Token: token1,
+		Type:  models.TokenTypesPasswordResetToken,
+	})
 	if err != nil {
 		return fmt.Errorf("error getting token: %w", err)
 	}

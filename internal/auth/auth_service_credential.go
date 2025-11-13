@@ -9,6 +9,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/token"
 )
 
 type (
@@ -149,7 +150,10 @@ func (a *AuthServiceImpl) Signin(ctx context.Context, params *SigninInput) (*mod
 
 // Signout implements AuthService.
 func (a *AuthServiceImpl) Signout(ctx context.Context, refreshToken string) error {
-	_, err := a.token.ValidateToken(ctx, refreshToken, models.TokenTypesRefreshToken)
+	_, err := a.token.ValidateToken(ctx, &token.ValidateTokenOptions{
+		Token: refreshToken,
+		Type:  models.TokenTypesRefreshToken,
+	})
 	if err != nil {
 		return fmt.Errorf("error verifying refresh token: %w", err)
 	}
