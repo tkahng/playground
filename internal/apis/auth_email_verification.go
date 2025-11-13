@@ -31,38 +31,21 @@ func (a *Api) bindRequestVerification(api huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 		},
-		a.RequestVerification,
-	)
-}
-func (api *Api) RequestVerification(ctx context.Context, input *struct{}) (*struct{}, error) {
-	claims := contextstore.GetContextUserInfo(ctx)
-	if claims == nil {
-		return nil, huma.Error404NotFound("User not found")
-	}
-	if claims.User.EmailVerifiedAt != nil {
-		return nil, huma.Error409Conflict("Email already verified")
-	}
-	err := api.App().Auth().SendEmailVerification(ctx, claims.User.Email)
+		func(ctx context.Context, input *struct{}) (*struct{}, error) {
+			claims := contextstore.GetContextUserInfo(ctx)
+			if claims == nil {
+				return nil, huma.Error404NotFound("User not found")
+			}
+			if claims.User.EmailVerifiedAt != nil {
+				return nil, huma.Error409Conflict("Email already verified")
+			}
+			err := a.App().Auth().SendEmailVerification(ctx, claims.User.Email)
 
-	if err != nil {
-		return nil, err
-	}
-	return nil, nil
-}
-
-func (a *Api) bindVerifyEmail(api huma.API) {
-	huma.Register(
-		api,
-		huma.Operation{
-			OperationID: "confirm-verification",
-			Method:      http.MethodPost,
-			Path:        "/auth/confirm-verification",
-			Summary:     "Confirm Email verification request",
-			Description: "Confirm Request email verification",
-			Tags:        []string{"Auth", "Verify"},
-			Errors:      []int{http.StatusNotFound},
+			if err != nil {
+				return nil, err
+			}
+			return nil, nil
 		},
-		a.VerifyEmail,
 	)
 }
 
@@ -79,44 +62,58 @@ func (a *Api) bindVerifyEmail(api huma.API) {
 // these two operations will run in a transaction, and if any of them fails, the transaction will be rolled back
 // to prevent data inconsistency. In case of a roll back, the only thing that will persist is the stripe customer on stripe's side,
 // which will not be accessed since each team creation attempt will simply create a new customer.
-func (api *Api) VerifyEmail(ctx context.Context, input *struct{ Body EmailVerificationPostInput }) (*struct{}, error) {
-	runInTxErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
-		// validate the verification token
-		email, err := api.App().Token().ValidateToken(txCtx, input.Body.Token, models.TokenTypesVerificationToken)
-		if err != nil {
-			return err
-		}
-		// get userinfo
-		userInfo, err := api.App().Adapter().User().GetUserInfo(txCtx, email)
-		if err != nil {
-			return err
-		}
-		if userInfo == nil {
-			return huma.Error404NotFound("userInfo not found")
-		}
-		user := &userInfo.User
-		if user.EmailVerifiedAt != nil {
-			return huma.Error409Conflict("Email already verified")
-		}
-		// update user's email_verified_at if it has not been set
-		user.EmailVerifiedAt = types.Pointer(time.Now())
-		err = api.App().Adapter().User().UpdateUser(txCtx, user)
-		if err != nil {
-			return err
-		}
-		// create user customer
-		_, err = api.App().Payment().CreateUserCustomer(
-			txCtx,
-			user,
-		)
-		if err != nil {
-			return err
-		}
+func (api *Api) bindVerifyEmail(humaAPI huma.API) {
+	huma.Register(
+		humaAPI,
+		huma.Operation{
+			OperationID: "confirm-verification",
+			Method:      http.MethodPost,
+			Path:        "/auth/confirm-verification",
+			Summary:     "Confirm Email verification request",
+			Description: "Confirm Request email verification",
+			Tags:        []string{"Auth", "Verify"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		func(ctx context.Context, input *struct{ Body EmailVerificationPostInput }) (*struct{}, error) {
+			runInTxErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+				// validate the verification token
+				email, err := api.App().Token().ValidateToken(txCtx, input.Body.Token, models.TokenTypesVerificationToken)
+				if err != nil {
+					return err
+				}
+				// get userinfo
+				userInfo, err := api.App().Adapter().User().GetUserInfo(txCtx, email)
+				if err != nil {
+					return err
+				}
+				if userInfo == nil {
+					return huma.Error404NotFound("userInfo not found")
+				}
+				user := &userInfo.User
+				if user.EmailVerifiedAt != nil {
+					return huma.Error409Conflict("Email already verified")
+				}
+				// update user's email_verified_at if it has not been set
+				user.EmailVerifiedAt = types.Pointer(time.Now())
+				err = api.App().Adapter().User().UpdateUser(txCtx, user)
+				if err != nil {
+					return err
+				}
+				// create user customer
+				_, err = api.App().Payment().CreateUserCustomer(
+					txCtx,
+					user,
+				)
+				if err != nil {
+					return err
+				}
 
-		return nil
-	})
-	if runInTxErr != nil {
-		return nil, runInTxErr
-	}
-	return nil, nil
+				return nil
+			})
+			if runInTxErr != nil {
+				return nil, runInTxErr
+			}
+			return nil, nil
+		},
+	)
 }
