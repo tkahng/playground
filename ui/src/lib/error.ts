@@ -20,6 +20,13 @@ export class ApiError extends Error {
     super(detail);
   }
 
+  static isApiError(error: unknown): error is ApiError {
+    if (error instanceof ApiError) {
+      return true;
+    }
+    return false;
+  }
+
   static fromErrorModel(error: ErrorModel): ApiError {
     return new ApiError(
       error.detail,

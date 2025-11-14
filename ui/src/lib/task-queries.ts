@@ -1,4 +1,5 @@
 import { client } from "@/lib/client";
+import { ApiError } from "@/lib/error";
 import { components, operations } from "@/schema";
 
 export const taskProjectList = async (
@@ -21,10 +22,10 @@ export const taskProjectList = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   if (!data) {
-    throw new Error("No data");
+    throw new ApiError("No data");
   }
   return data;
 };
@@ -41,7 +42,7 @@ export const findTaskById = async (token: string, taskId: string) => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -62,7 +63,7 @@ export const updateTaskById = async (
     body,
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -85,7 +86,7 @@ export const taskProjectGet = async (token: string, id: string) => {
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   if (!data) {
     throw new Error("No data");
@@ -113,10 +114,10 @@ export const taskProjectCreate = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   if (!data) {
-    throw new Error("No data");
+    throw new ApiError("No data");
   }
   return data;
 };
@@ -141,7 +142,7 @@ export const taskProjectCreateWithAi = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   if (!data) {
     throw new Error("No data");
@@ -169,7 +170,7 @@ export const taskList = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   if (!data) {
     throw new Error("No data");
@@ -197,7 +198,7 @@ export const createTask = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   if (!data) {
     throw new Error("No data");
@@ -221,7 +222,7 @@ export const updateTask = async (
     body: args,
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -245,7 +246,7 @@ export const updateTaskPositionStatus = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -270,7 +271,7 @@ export const taskProjectUpdate = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
