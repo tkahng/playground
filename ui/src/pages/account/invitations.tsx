@@ -2,7 +2,7 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DataTable } from "@/components/data-table";
 import { accountSidebarLinks } from "@/components/links";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { GetError } from "@/lib/get-error";
+import { GetError } from "@/lib/error";
 import { getUserTeamInvitations } from "@/lib/team-queries";
 import { Team } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";

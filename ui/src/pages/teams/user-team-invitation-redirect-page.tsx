@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { GetError, isErrorModel } from "@/lib/get-error";
+import { GetError, isErrorModel } from "@/lib/error";
 import {
   acceptInvitation,
   declineInvitation,

@@ -6,7 +6,7 @@ import { accountSidebarLinks } from "@/components/links";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { GetError } from "@/lib/get-error";
+import { GetError } from "@/lib/error";
 import { getUserTeams } from "@/lib/team-queries";
 import { Team } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";

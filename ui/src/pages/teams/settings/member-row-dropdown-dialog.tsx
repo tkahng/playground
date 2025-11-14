@@ -36,7 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { GetError } from "@/lib/get-error";
+import { GetError } from "@/lib/error";
 import { deleteMember, updateTeamMember } from "@/lib/team-queries";
 import { TeamMember, TeamMemberRole } from "@/schema.types";
 import { zodResolver } from "@hookform/resolvers/zod";

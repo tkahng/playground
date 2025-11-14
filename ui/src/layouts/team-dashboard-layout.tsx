@@ -5,7 +5,7 @@ import { RouteMap } from "@/components/route-map";
 import { TeamHeader } from "@/components/team-header";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { isErrorModel } from "@/lib/get-error";
+import { isErrorModel } from "@/lib/error";
 import { getTeamBySlug } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";

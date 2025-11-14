@@ -18,7 +18,7 @@ import {
   resetPassword,
   updateMe,
 } from "@/lib/api";
-import { GetError } from "@/lib/get-error";
+import { GetError } from "@/lib/error";
 import { useMeQuery } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
