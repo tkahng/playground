@@ -128,19 +128,17 @@ export default function UserTeamInvitationRedirectPage() {
     );
   }
   if (!user) {
-    if (data) {
-      return (
-        <Navigate
-          to={{
-            pathname: "/signin",
-            search: createSearchParams({
-              redirect_to: encodeURIComponent(window.location.href),
-              email: data.email,
-            }).toString(),
-          }}
-        />
-      );
-    }
+    return (
+      <Navigate
+        to={{
+          pathname: "/signin",
+          search: createSearchParams({
+            redirect_to: encodeURIComponent(window.location.href),
+            email: data.email,
+          }).toString(),
+        }}
+      />
+    );
   }
 
   return (
