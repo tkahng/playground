@@ -1,33 +1,38 @@
-import { Button } from "@/components/ui/button";
+import { OTPForm } from "@/components/otp-form";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { confirmVerificationOtp } from "@/lib/api";
+import { GetError } from "@/lib/get-error";
 import { useMeQuery } from "@/lib/queries";
-import { useLocation } from "react-router";
+import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import { useNavigate } from "react-router";
+import { toast } from "sonner";
+
 export default function VerifyEmail() {
-  const { search } = useLocation();
-  const params = new URLSearchParams(search);
-  const token = params.get("token");
-  const redirectTo = params.get("redirect_to");
-  const email = params.get("email");
-
-  let navigateTo: string;
-  const searchParams: URLSearchParams = new URLSearchParams();
-  if (email?.length && token?.length) {
-    navigateTo = `/team-invitation`;
-    searchParams.set("token", token);
-    searchParams.set("email", email);
-  } else if (redirectTo?.length) {
-    const newUrl = new URL(decodeURIComponent(redirectTo), "http://localhost");
-    console.log("newUrl", newUrl);
-    navigateTo = newUrl.pathname;
-    for (const [key, value] of newUrl.searchParams) {
-      searchParams.set(key, value);
-    }
-  } else {
-    navigateTo = "/account/dashboard";
-  }
   const { user } = useAuthProvider();
-
+  const [success, setSuccess] = useState(false);
+  const navigate = useNavigate();
   const { isPending, isError, error } = useMeQuery();
+  const mutation = useMutation({
+    mutationFn: async ({ otp }: { otp: string }) => {
+      if (!user?.tokens.access_token) {
+        throw new Error("User is not authenticated");
+      }
+      await confirmVerificationOtp(user.tokens.access_token, otp);
+    },
+    onSuccess: () => {
+      setSuccess(true);
+      toast.success("Email verified successfully!");
+    },
+    onError: (error: Error) => {
+      const err = GetError(error);
+      toast.error(`Failed to verify email: ${err.detail || err.title}`);
+    },
+  });
+
+  if (!user) {
+    navigate("/");
+  }
   if (isPending) {
     return <div>Loading...</div>;
   }
@@ -37,19 +42,14 @@ export default function VerifyEmail() {
   }
 
   return (
-    <div className="flex w-full flex-col items-center justify-center">
-      <h2>Email Confirm Success</h2>
-      <p>Thank you for your verifying your email.</p>
-      {user && (
-        <Button asChild>
-          <a href="/">Go Home</a>
-        </Button>
-      )}
-      {!user && (
-        <Button asChild>
-          <a href="/signin">Sign In</a>
-        </Button>
-      )}
+    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+      <div className="w-full max-w-xs">
+        {success ? (
+          <OTPForm mutate={mutation.mutate} />
+        ) : (
+          <div>Email verified successfully!</div>
+        )}
+      </div>
     </div>
   );
 }
