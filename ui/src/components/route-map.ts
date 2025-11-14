@@ -1,4 +1,5 @@
 export const RouteMap = {
+  VERIFY_EMAIL: "/verify-email",
   FORGOT_PASSWORD: "/forgot-password",
   RESET_PASSWORD: "/password-reset",
   FEATURES: "/features",

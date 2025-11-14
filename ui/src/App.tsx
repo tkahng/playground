@@ -12,6 +12,7 @@ import CallbackComponent from "@/pages/auth/callback";
 import ConfirmVerification from "@/pages/auth/confirm-verification";
 import Signin from "@/pages/auth/signin";
 import SignupPage from "@/pages/auth/signup";
+import VerifyEmailPage from "@/pages/auth/verify-email";
 import LandingAboutPage from "@/pages/landing/about";
 import LandingContactPage from "@/pages/landing/contact";
 import Features from "@/pages/landing/features";
@@ -171,6 +172,10 @@ function App() {
               <Route path={RouteMap.PAYMENT}>
                 <Route path="success" element={<PaymentSuccessPage />} />
               </Route>
+              <Route
+                path={RouteMap.VERIFY_EMAIL}
+                element={<VerifyEmailPage />}
+              />
             </Route>
             {/* account routes */}
             <Route element={<AuthenticatedLayoutOutlet />}>

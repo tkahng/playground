@@ -51,7 +51,7 @@ export default function SignupPage() {
       searchParams.set(key, value);
     }
   } else {
-    navigateTo = "/account/dashboard";
+    navigateTo = "/verify-email";
   }
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

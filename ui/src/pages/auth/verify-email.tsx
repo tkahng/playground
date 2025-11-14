@@ -1,18 +1,16 @@
 import { OTPForm } from "@/components/otp-form";
+import { RouteMap } from "@/components/route-map";
+import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { confirmVerificationOtp } from "@/lib/api";
 import { GetError } from "@/lib/get-error";
-import { useMeQuery } from "@/lib/queries";
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 
-export default function VerifyEmail() {
-  const { user } = useAuthProvider();
-  const [success, setSuccess] = useState(false);
+export default function VerifyEmailPage() {
+  const { user, checkAuth } = useAuthProvider();
   const navigate = useNavigate();
-  const { isPending, isError, error } = useMeQuery();
   const mutation = useMutation({
     mutationFn: async ({ otp }: { otp: string }) => {
       if (!user?.tokens.access_token) {
@@ -21,34 +19,70 @@ export default function VerifyEmail() {
       await confirmVerificationOtp(user.tokens.access_token, otp);
     },
     onSuccess: () => {
-      setSuccess(true);
-      toast.success("Email verified successfully!");
+      checkAuth().finally(() => {
+        toast.success("Email verified successfully!");
+      });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       const err = GetError(error);
       toast.error(`Failed to verify email: ${err.detail || err.title}`);
     },
   });
 
   if (!user) {
-    navigate("/");
+    return (
+      <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+        <div className="w-full max-w-xs">
+          <div>You are not logged in. Please sign in to verify your email.</div>
+          <Button asChild className="mt-4">
+            <Link to={RouteMap.SIGNIN}>Sign In</Link>
+          </Button>
+        </div>
+      </div>
+    );
   }
-  if (isPending) {
-    return <div>Loading...</div>;
+  if (user.user.email_verified_at) {
+    // you are already verified. return.
+    navigate(RouteMap.ACCOUNT_DASHBOARD);
+    return null;
   }
 
-  if (isError) {
-    return <div>Error: {error.message}</div>;
+  if (mutation.isPending) {
+    return (
+      <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+        <div className="w-full max-w-xs">
+          <div>Verifying...</div>
+        </div>
+      </div>
+    );
+  }
+  if (mutation.isError) {
+    return (
+      <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+        <div className="w-full max-w-xs">
+          <div>Error: {mutation.error.message}</div>
+          <Button onClick={() => mutation.reset()}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
+  if (mutation.isSuccess) {
+    return (
+      <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+        <div className="w-full max-w-xs">
+          <div>Email verified successfully!</div>
+          <Button asChild>
+            <Link to={RouteMap.ACCOUNT_DASHBOARD}>Continue</Link>
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-xs">
-        {success ? (
-          <OTPForm mutate={mutation.mutate} />
-        ) : (
-          <div>Email verified successfully!</div>
-        )}
+        <OTPForm mutate={mutation.mutate} />
       </div>
     </div>
   );
