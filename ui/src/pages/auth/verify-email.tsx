@@ -25,7 +25,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import z from "zod";
 
@@ -77,66 +77,78 @@ export default function VerifyEmailPage() {
   }
 
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-xs">
-        <Card>
-          <CardHeader>
-            <CardTitle>Enter verification code</CardTitle>
-            <CardDescription>
-              We sent a 6-digit code to your email.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form id="otp-form" onSubmit={form.handleSubmit(onUpdateSubmit)}>
-              <Controller
-                name="otp"
-                control={form.control}
-                render={({ field }) => {
-                  return (
-                    <FieldGroup>
-                      <Field>
-                        <FieldLabel htmlFor="otp">Verification code</FieldLabel>
-                        <InputOTP
-                          maxLength={6}
-                          id="otp"
-                          required
-                          name={field.name}
-                          value={field.value}
-                          onChange={field.onChange}
-                        >
-                          <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
-                            <InputOTPSlot index={0} />
-                            <InputOTPSlot index={1} />
-                            <InputOTPSlot index={2} />
-                            <InputOTPSlot index={3} />
-                            <InputOTPSlot index={4} />
-                            <InputOTPSlot index={5} />
-                          </InputOTPGroup>
-                        </InputOTP>
-                        <FieldDescription>
-                          Enter the 6-digit code sent to your email.
-                        </FieldDescription>
-                      </Field>
+    <div className="flex-row">
+      <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+        <div className="w-full max-w-xs">
+          <Card>
+            <CardHeader>
+              <CardTitle>Enter verification code</CardTitle>
+              <CardDescription>
+                We sent a 6-digit code to your email.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form id="otp-form" onSubmit={form.handleSubmit(onUpdateSubmit)}>
+                <Controller
+                  name="otp"
+                  control={form.control}
+                  render={({ field }) => {
+                    return (
                       <FieldGroup>
-                        <Button
-                          type="submit"
-                          form="otp-form"
-                          disabled={isPending}
-                        >
-                          {isPending && <Spinner />}
-                          Verify
-                        </Button>
-                        <FieldDescription className="text-center">
-                          Didn&apos;t receive the code? <a href="#">Resend</a>
-                        </FieldDescription>
+                        <Field>
+                          <FieldLabel htmlFor="otp">
+                            Verification code
+                          </FieldLabel>
+                          <InputOTP
+                            maxLength={6}
+                            id="otp"
+                            required
+                            name={field.name}
+                            value={field.value}
+                            onChange={field.onChange}
+                          >
+                            <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
+                              <InputOTPSlot index={0} />
+                              <InputOTPSlot index={1} />
+                              <InputOTPSlot index={2} />
+                              <InputOTPSlot index={3} />
+                              <InputOTPSlot index={4} />
+                              <InputOTPSlot index={5} />
+                            </InputOTPGroup>
+                          </InputOTP>
+                          <FieldDescription>
+                            Enter the 6-digit code sent to your email.
+                          </FieldDescription>
+                        </Field>
+                        <FieldGroup>
+                          <Button
+                            type="submit"
+                            form="otp-form"
+                            disabled={isPending}
+                          >
+                            {isPending && <Spinner />}
+                            Verify
+                          </Button>
+                          <FieldDescription className="text-center">
+                            Didn&apos;t receive the code? <a href="#">Resend</a>
+                          </FieldDescription>
+                        </FieldGroup>
                       </FieldGroup>
-                    </FieldGroup>
-                  );
-                }}
-              />
-            </form>
-          </CardContent>
-        </Card>
+                    );
+                  }}
+                />
+              </form>
+            </CardContent>
+          </Card>
+          <div className="flex justify-end px-4 md:px-6 lg:px-8 py-2">
+            <Link
+              className="text-muted-foreground"
+              to={RouteMap.ACCOUNT_DASHBOARD}
+            >
+              skip
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
