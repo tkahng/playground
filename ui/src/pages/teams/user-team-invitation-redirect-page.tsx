@@ -82,7 +82,7 @@ export default function UserTeamInvitationRedirectPage() {
     },
     onSuccess: () => {
       toast.success("Invitation declined successfully");
-      navigate(RouteMap.ACCOUNT_DASHBOARD);
+      navigate(RouteMap.ACCOUNT_OVERVIEW_TEAMS_INVITATION);
     },
     onError: (err) => {
       toast.error(`Failed to decline role: ${err.message}`);

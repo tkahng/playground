@@ -50,7 +50,10 @@ export default function SignupPage() {
         name: input.name,
       });
       setLoading(false);
-      navigate(navigateTo);
+      navigate({
+        pathname: navigateTo.pathname,
+        search: navigateTo.search,
+      });
     } catch (error) {
       if (ApiError.isApiError(error)) {
         toast.error(error.detail, {

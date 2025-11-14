@@ -42,7 +42,10 @@ export default function SigninPage() {
     try {
       await login({ email: email || input.email, password: input.password });
       setLoading(false);
-      navigate(navigateTo);
+      navigate({
+        pathname: navigateTo.pathname,
+        search: navigateTo.search,
+      });
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message, {
