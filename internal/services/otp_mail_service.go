@@ -157,8 +157,8 @@ func (i *DbOtpMailService) CreateTeamConfirmationUrl(tokenhash string) (string, 
 	path, err := mailer.GetPathParams(
 		"/team-invitation",
 		tokenhash,
-		string(models.TokenTypesInviteToken),
-		i.options.AppUrl,
+		"",
+		"",
 	)
 	if err != nil {
 		return "", err

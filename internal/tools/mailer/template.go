@@ -97,7 +97,9 @@ func GetPathParams(filepath string, token, tokenType, redirectTo string) (*url.U
 	}
 	q := path.Query()
 	q.Add("token", url.QueryEscape(token))
-	q.Add("type", url.QueryEscape(tokenType))
+	if tokenType != "" {
+		q.Add("token_type", url.QueryEscape(tokenType))
+	}
 	if redirectTo != "" {
 		q.Add("redirect_to", encodeRedirectURL(redirectTo))
 	}
