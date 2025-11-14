@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { ApiError } from "@/lib/error";
+import { decodeRedirectTo } from "@/lib/url";
 import { SignupInput } from "@/schema.types";
 import { Label } from "@radix-ui/react-label";
 import { Lock } from "lucide-react";
@@ -33,26 +35,10 @@ export default function SignupPage() {
 
   const { search } = useLocation();
   const params = new URLSearchParams(search);
-  const token = params.get("token");
   const redirectTo = params.get("redirect_to");
   const email = params.get("email");
 
-  let navigateTo: string;
-  const searchParams: URLSearchParams = new URLSearchParams();
-  if (email?.length && token?.length) {
-    navigateTo = `/team-invitation`;
-    searchParams.set("token", token);
-    searchParams.set("email", email);
-  } else if (redirectTo?.length) {
-    const newUrl = new URL(decodeURIComponent(redirectTo), "http://localhost");
-    console.log("newUrl", newUrl);
-    navigateTo = newUrl.pathname;
-    for (const [key, value] of newUrl.searchParams) {
-      searchParams.set(key, value);
-    }
-  } else {
-    navigateTo = "/verify-email";
-  }
+  const navigateTo = decodeRedirectTo(redirectTo, RouteMap.VERIFY_EMAIL);
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
@@ -64,28 +50,22 @@ export default function SignupPage() {
         name: input.name,
       });
       setLoading(false);
-      navigate({
-        pathname: navigateTo,
-        search: searchParams.toString(),
-      });
+      navigate(navigateTo);
     } catch (error) {
-      if (error instanceof Error) {
+      if (ApiError.isApiError(error)) {
+        toast.error(error.detail, {
+          description: "Please try again",
+        });
+      } else if (error instanceof Error) {
         toast.error(error.message, {
           description: "Please try again",
-          action: {
-            label: "Undo",
-            onClick: () => console.log("Undo"),
-          },
+        });
+      } else {
+        console.error(error);
+        toast.error("unknown error", {
+          description: "Please try again",
         });
       }
-      console.error(error);
-      toast.error("unknown error", {
-        description: "Please try again",
-        action: {
-          label: "Undo",
-          onClick: () => console.log("Undo"),
-        },
-      });
       setLoading(false);
     }
   };
@@ -160,7 +140,7 @@ export default function SignupPage() {
                 className="text-primary underline-offset-4 hover:underline"
                 to={{
                   pathname: RouteMap.SIGNIN,
-                  search: params.toString(),
+                  search: search,
                 }}
               >
                 Sign in

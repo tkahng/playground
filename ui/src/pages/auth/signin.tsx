@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { decodeRedirectTo } from "@/lib/url";
 import { SigninInput } from "@/schema.types";
 import { Label } from "@radix-ui/react-label";
 import { Lock } from "lucide-react";
@@ -30,26 +31,10 @@ export default function SigninPage() {
   const { login } = useAuthProvider();
 
   const params = new URLSearchParams(search);
-  const token = params.get("token");
   const redirectTo = params.get("redirect_to");
   const email = params.get("email");
 
-  let navigateTo: string;
-  const searchParams: URLSearchParams = new URLSearchParams();
-  if (email?.length && token?.length) {
-    navigateTo = `/team-invitation`;
-    searchParams.set("token", token);
-    searchParams.set("email", email);
-  } else if (redirectTo?.length) {
-    const newUrl = new URL(decodeURIComponent(redirectTo), "http://localhost");
-    console.log("newUrl", newUrl);
-    navigateTo = newUrl.pathname;
-    for (const [key, value] of newUrl.searchParams) {
-      searchParams.set(key, value);
-    }
-  } else {
-    navigateTo = "/account/dashboard";
-  }
+  const navigateTo = decodeRedirectTo(redirectTo, RouteMap.ACCOUNT_DASHBOARD);
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
@@ -57,28 +42,18 @@ export default function SigninPage() {
     try {
       await login({ email: email || input.email, password: input.password });
       setLoading(false);
-      navigate({
-        pathname: navigateTo,
-        search: searchParams.toString(),
-      });
+      navigate(navigateTo);
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message, {
           description: "Please try again",
-          action: {
-            label: "Undo",
-            onClick: () => console.log("Undo"),
-          },
+        });
+      } else {
+        console.error(error);
+        toast.error("unknown error", {
+          description: "Please try again",
         });
       }
-      console.error(error);
-      toast.error("unknown error", {
-        description: "Please try again",
-        action: {
-          label: "Undo",
-          onClick: () => console.log("Undo"),
-        },
-      });
       setLoading(false);
     }
   };
@@ -142,7 +117,7 @@ export default function SigninPage() {
                 className="text-primary underline-offset-4 hover:underline"
                 to={{
                   pathname: RouteMap.FORGOT_PASSWORD,
-                  search: params?.toString(),
+                  search: search,
                 }}
               >
                 Reset password
@@ -154,7 +129,7 @@ export default function SigninPage() {
                 className="text-primary underline-offset-4 hover:underline"
                 to={{
                   pathname: RouteMap.SIGNUP,
-                  search: params?.toString(),
+                  search: search,
                 }}
               >
                 Sign up
