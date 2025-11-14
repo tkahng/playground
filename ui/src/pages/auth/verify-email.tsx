@@ -1,16 +1,46 @@
-import { OTPForm } from "@/components/otp-form";
 import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { confirmVerificationOtp } from "@/lib/api";
-import { GetError } from "@/lib/error";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { Link } from "react-router";
 import { toast } from "sonner";
+import z from "zod";
 
+const otpSchema = z.object({
+  otp: z.string().length(6, "OTP must be 6 digits"),
+});
 export default function VerifyEmailPage() {
   const { user, checkAuth } = useAuthProvider();
+  const [success, setSuccess] = useState(false);
   // const navigate = useNavigate();
+  const form = useForm<z.infer<typeof otpSchema>>({
+    resolver: zodResolver(otpSchema),
+    defaultValues: {
+      otp: "",
+    },
+  });
   const mutation = useMutation({
     mutationFn: async ({ otp }: { otp: string }) => {
       if (!user?.tokens.access_token) {
@@ -20,15 +50,19 @@ export default function VerifyEmailPage() {
     },
     onSuccess: () => {
       checkAuth().finally(() => {
+        setSuccess(true);
         toast.success("Email verified successfully!");
       });
     },
     onError: (error) => {
-      const err = GetError(error);
-      toast.error(`Failed to verify email: ${err.detail || err.title}`);
+      form.reset();
+      toast.error(`Failed to verify email: ${error.message}`);
     },
   });
 
+  function onUpdateSubmit(data: z.infer<typeof otpSchema>) {
+    mutation.mutate(data);
+  }
   if (!user) {
     return (
       <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
@@ -54,42 +88,84 @@ export default function VerifyEmailPage() {
     );
   }
 
-  if (mutation.isPending) {
-    return (
-      <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-        <div className="w-full max-w-xs">
-          <div>Verifying your email...</div>
-        </div>
-      </div>
-    );
-  }
-  if (mutation.isError) {
-    return (
-      <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-        <div className="w-full max-w-xs">
-          <div>Error: {mutation.error.message}</div>
-          <Button onClick={() => mutation.reset()}>Try Again</Button>
-        </div>
-      </div>
-    );
-  }
-  if (mutation.isSuccess) {
-    return (
-      <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-        <div className="w-full max-w-xs">
-          <div>Email verified successfully!</div>
-          <Button asChild>
-            <Link to={RouteMap.ACCOUNT_DASHBOARD}>Continue</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  // if (mutation.isPending) {
+  //   return (
+  //     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
+  //       <div className="w-full max-w-xs">
+  //         <div>Verifying your email...</div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-xs">
-        <OTPForm mutate={mutation.mutate} />
+        {success && (
+          <div>
+            <div>Email verified successfully!</div>
+            <Button asChild>
+              <Link to={RouteMap.ACCOUNT_DASHBOARD}>Continue</Link>
+            </Button>
+          </div>
+        )}
+        {!success && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Enter verification code</CardTitle>
+              <CardDescription>
+                We sent a 6-digit code to your email.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form id="otp-form" onSubmit={form.handleSubmit(onUpdateSubmit)}>
+                <Controller
+                  name="otp"
+                  control={form.control}
+                  render={({ field }) => {
+                    return (
+                      <FieldGroup>
+                        <Field>
+                          <FieldLabel htmlFor="otp">
+                            Verification code
+                          </FieldLabel>
+                          <InputOTP
+                            maxLength={6}
+                            id="otp"
+                            required
+                            name={field.name}
+                            value={field.value}
+                            onChange={field.onChange}
+                          >
+                            <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
+                              <InputOTPSlot index={0} />
+                              <InputOTPSlot index={1} />
+                              <InputOTPSlot index={2} />
+                              <InputOTPSlot index={3} />
+                              <InputOTPSlot index={4} />
+                              <InputOTPSlot index={5} />
+                            </InputOTPGroup>
+                          </InputOTP>
+                          <FieldDescription>
+                            Enter the 6-digit code sent to your email.
+                          </FieldDescription>
+                        </Field>
+                        <FieldGroup>
+                          <Button type="submit" form="otp-form">
+                            Verify
+                          </Button>
+                          <FieldDescription className="text-center">
+                            Didn&apos;t receive the code? <a href="#">Resend</a>
+                          </FieldDescription>
+                        </FieldGroup>
+                      </FieldGroup>
+                    );
+                  }}
+                />
+              </form>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
