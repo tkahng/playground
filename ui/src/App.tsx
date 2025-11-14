@@ -172,10 +172,15 @@ function App() {
               <Route path={RouteMap.PAYMENT}>
                 <Route path="success" element={<PaymentSuccessPage />} />
               </Route>
-              <Route
-                path={RouteMap.VERIFY_EMAIL}
-                element={<VerifyEmailPage />}
-              />
+            </Route>
+            {/* authenticated minimal layout */}
+            <Route element={<AuthenticatedLayoutOutlet />}>
+              <Route element={<PublicLayout />}>
+                <Route
+                  path={RouteMap.VERIFY_EMAIL}
+                  element={<VerifyEmailPage />}
+                />
+              </Route>
             </Route>
             {/* account routes */}
             <Route element={<AuthenticatedLayoutOutlet />}>

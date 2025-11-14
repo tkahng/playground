@@ -18,13 +18,14 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import { Spinner } from "@/components/ui/spinner";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { confirmVerificationOtp } from "@/lib/api";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Link } from "react-router";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import z from "zod";
 
@@ -33,8 +34,8 @@ const otpSchema = z.object({
 });
 export default function VerifyEmailPage() {
   const { user, checkAuth } = useAuthProvider();
-  const [success, setSuccess] = useState(false);
-  // const navigate = useNavigate();
+  const [isPending, setIsPending] = useState(false);
+  const navigate = useNavigate();
   const form = useForm<z.infer<typeof otpSchema>>({
     resolver: zodResolver(otpSchema),
     defaultValues: {
@@ -43,6 +44,7 @@ export default function VerifyEmailPage() {
   });
   const mutation = useMutation({
     mutationFn: async ({ otp }: { otp: string }) => {
+      setIsPending(true);
       if (!user?.tokens.access_token) {
         throw new Error("User is not authenticated");
       }
@@ -50,11 +52,12 @@ export default function VerifyEmailPage() {
     },
     onSuccess: () => {
       checkAuth().finally(() => {
-        setSuccess(true);
+        setIsPending(false);
         toast.success("Email verified successfully!");
       });
     },
     onError: (error) => {
+      setIsPending(false);
       form.reset();
       toast.error(`Failed to verify email: ${error.message}`);
     },
@@ -64,108 +67,76 @@ export default function VerifyEmailPage() {
     mutation.mutate(data);
   }
   if (!user) {
-    return (
-      <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-        <div className="w-full max-w-xs">
-          <div>You are not logged in. Please sign in to verify your email.</div>
-          <Button asChild className="mt-4">
-            <Link to={RouteMap.SIGNIN}>Sign In</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
-  if (user.user.email_verified_at) {
-    return (
-      <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-        <div className="w-full max-w-xs">
-          <div>Your email is already verified.</div>
-          <Button asChild className="mt-4">
-            <Link to={RouteMap.ACCOUNT_DASHBOARD}>Go to Dashboard</Link>
-          </Button>
-        </div>
-      </div>
-    );
+    navigate(RouteMap.SIGNIN);
+    return;
   }
 
-  // if (mutation.isPending) {
-  //   return (
-  //     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-  //       <div className="w-full max-w-xs">
-  //         <div>Verifying your email...</div>
-  //       </div>
-  //     </div>
-  //   );
-  // }
+  if (user.user.email_verified_at) {
+    navigate(RouteMap.ACCOUNT_DASHBOARD);
+    return;
+  }
 
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
       <div className="w-full max-w-xs">
-        {success && (
-          <div>
-            <div>Email verified successfully!</div>
-            <Button asChild>
-              <Link to={RouteMap.ACCOUNT_DASHBOARD}>Continue</Link>
-            </Button>
-          </div>
-        )}
-        {!success && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Enter verification code</CardTitle>
-              <CardDescription>
-                We sent a 6-digit code to your email.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form id="otp-form" onSubmit={form.handleSubmit(onUpdateSubmit)}>
-                <Controller
-                  name="otp"
-                  control={form.control}
-                  render={({ field }) => {
-                    return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Enter verification code</CardTitle>
+            <CardDescription>
+              We sent a 6-digit code to your email.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form id="otp-form" onSubmit={form.handleSubmit(onUpdateSubmit)}>
+              <Controller
+                name="otp"
+                control={form.control}
+                render={({ field }) => {
+                  return (
+                    <FieldGroup>
+                      <Field>
+                        <FieldLabel htmlFor="otp">Verification code</FieldLabel>
+                        <InputOTP
+                          maxLength={6}
+                          id="otp"
+                          required
+                          name={field.name}
+                          value={field.value}
+                          onChange={field.onChange}
+                        >
+                          <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
+                            <InputOTPSlot index={0} />
+                            <InputOTPSlot index={1} />
+                            <InputOTPSlot index={2} />
+                            <InputOTPSlot index={3} />
+                            <InputOTPSlot index={4} />
+                            <InputOTPSlot index={5} />
+                          </InputOTPGroup>
+                        </InputOTP>
+                        <FieldDescription>
+                          Enter the 6-digit code sent to your email.
+                        </FieldDescription>
+                      </Field>
                       <FieldGroup>
-                        <Field>
-                          <FieldLabel htmlFor="otp">
-                            Verification code
-                          </FieldLabel>
-                          <InputOTP
-                            maxLength={6}
-                            id="otp"
-                            required
-                            name={field.name}
-                            value={field.value}
-                            onChange={field.onChange}
-                          >
-                            <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
-                              <InputOTPSlot index={0} />
-                              <InputOTPSlot index={1} />
-                              <InputOTPSlot index={2} />
-                              <InputOTPSlot index={3} />
-                              <InputOTPSlot index={4} />
-                              <InputOTPSlot index={5} />
-                            </InputOTPGroup>
-                          </InputOTP>
-                          <FieldDescription>
-                            Enter the 6-digit code sent to your email.
-                          </FieldDescription>
-                        </Field>
-                        <FieldGroup>
-                          <Button type="submit" form="otp-form">
-                            Verify
-                          </Button>
-                          <FieldDescription className="text-center">
-                            Didn&apos;t receive the code? <a href="#">Resend</a>
-                          </FieldDescription>
-                        </FieldGroup>
+                        <Button
+                          type="submit"
+                          form="otp-form"
+                          disabled={isPending}
+                        >
+                          {isPending && <Spinner />}
+                          Verify
+                        </Button>
+                        <FieldDescription className="text-center">
+                          Didn&apos;t receive the code? <a href="#">Resend</a>
+                        </FieldDescription>
                       </FieldGroup>
-                    );
-                  }}
-                />
-              </form>
-            </CardContent>
-          </Card>
-        )}
+                    </FieldGroup>
+                  );
+                }}
+              />
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
