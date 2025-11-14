@@ -1,3 +1,4 @@
+import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { GetError, isErrorModel } from "@/lib/error";
+import { ApiError, GetError, isErrorModel } from "@/lib/error";
 import {
   acceptInvitation,
   declineInvitation,
@@ -17,7 +18,12 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowRight, Check, Home } from "lucide-react";
 import { useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router";
+import {
+  createSearchParams,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from "react-router";
 import { toast } from "sonner";
 
 export default function UserTeamInvitationRedirectPage() {
@@ -31,7 +37,7 @@ export default function UserTeamInvitationRedirectPage() {
     queryKey: ["get-team-invitation-by-token"],
     queryFn: async () => {
       if (!token) {
-        throw new Error("Missing session ID");
+        throw new ApiError("Missing token");
       }
       return getTeamInvitationByToken(token);
     },
@@ -40,20 +46,19 @@ export default function UserTeamInvitationRedirectPage() {
   const acceptMutation = useMutation({
     mutationFn: async (token?: string) => {
       if (!user?.tokens.access_token) {
-        throw new Error("Missing access token");
+        throw new ApiError("Missing access token");
       }
       if (!token) {
-        throw new Error("Missing invitation token");
+        throw new ApiError("Missing invitation token");
       }
       const result = await acceptInvitation(user.tokens.access_token, token);
       if (!result) {
-        throw new Error("Failed to accept invitation");
+        throw new ApiError("Failed to accept invitation");
       }
       return result;
     },
     onSuccess: () => {
       toast.success("Invitation accepted successfully");
-      console.log("navigating to team dashboard");
       navigate(`/teams/${data?.team?.slug}/dashboard`);
     },
     onError: (err) => {
@@ -64,19 +69,20 @@ export default function UserTeamInvitationRedirectPage() {
   const declineMutation = useMutation({
     mutationFn: async (token?: string) => {
       if (!user?.tokens.access_token) {
-        throw new Error("Missing access token");
+        throw new ApiError("Missing access token");
       }
       if (!token) {
-        throw new Error("Missing invitation token");
+        throw new ApiError("Missing invitation token");
       }
       const result = await declineInvitation(user.tokens.access_token, token);
       if (!result) {
-        throw new Error("Failed to decline invitation");
+        throw new ApiError("Failed to decline invitation");
       }
       return result;
     },
     onSuccess: () => {
-      navigate(`/dashboard`);
+      toast.success("Invitation declined successfully");
+      navigate(RouteMap.ACCOUNT_DASHBOARD);
     },
     onError: (err) => {
       toast.error(`Failed to decline role: ${err.message}`);
@@ -123,12 +129,14 @@ export default function UserTeamInvitationRedirectPage() {
   }
   if (!user) {
     if (data) {
-      params.set("email", data.email);
       return (
         <Navigate
           to={{
             pathname: "/signin",
-            search: params.toString(),
+            search: createSearchParams({
+              redirect_to: encodeURIComponent(window.location.href),
+              email: data.email,
+            }).toString(),
           }}
         />
       );
