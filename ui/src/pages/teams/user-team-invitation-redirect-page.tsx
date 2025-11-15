@@ -131,7 +131,7 @@ export default function UserTeamInvitationRedirectPage() {
     return (
       <Navigate
         to={{
-          pathname: "/signin",
+          pathname: "/signup",
           search: createSearchParams({
             redirect_to: encodeURIComponent(window.location.href),
             email: data.email,
