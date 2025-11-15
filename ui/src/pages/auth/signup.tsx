@@ -15,12 +15,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { ApiError } from "@/lib/error";
-import { decodeRedirectTo } from "@/lib/url";
 import { SignupInput } from "@/schema.types";
 import { Label } from "@radix-ui/react-label";
 import { Lock } from "lucide-react";
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
+import {
+  createSearchParams,
+  Link,
+  useLocation,
+  useNavigate,
+} from "react-router";
 import { toast } from "sonner";
 
 export default function SignupPage() {
@@ -38,7 +42,6 @@ export default function SignupPage() {
   const redirectTo = params.get("redirect_to");
   const email = params.get("email");
 
-  const navigateTo = decodeRedirectTo(redirectTo, RouteMap.VERIFY_EMAIL);
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
@@ -51,8 +54,12 @@ export default function SignupPage() {
       });
       setLoading(false);
       navigate({
-        pathname: navigateTo.pathname,
-        search: navigateTo.search,
+        pathname: RouteMap.VERIFY_EMAIL,
+        search: redirectTo
+          ? createSearchParams({
+              redirect_to: redirectTo,
+            }).toString()
+          : "",
       });
     } catch (error) {
       if (ApiError.isApiError(error)) {
