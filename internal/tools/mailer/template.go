@@ -6,7 +6,8 @@ import (
 	"html/template"
 	"log"
 	"net/url"
-	"strings"
+
+	"github.com/tkahng/playground/internal/tools/http"
 )
 
 type EmailType = string
@@ -101,23 +102,12 @@ func GetPathParams(filepath string, token, tokenType, redirectTo string) (*url.U
 		q.Add("token_type", url.QueryEscape(tokenType))
 	}
 	if redirectTo != "" {
-		q.Add("redirect_to", encodeRedirectURL(redirectTo))
+		q.Add("redirect_to", http.EncodeRedirectURL(redirectTo))
 	}
 	path.RawQuery = q.Encode()
 	return path, nil
 }
 
-func encodeRedirectURL(referrerURL string) string {
-	if len(referrerURL) > 0 {
-		if strings.ContainsAny(referrerURL, "&=#") {
-			// if the string contains &, = or # it has not been URL
-			// encoded by the caller, which means it should be URL
-			// encoded by us otherwise, it should be taken as-is
-			referrerURL = url.QueryEscape(referrerURL)
-		}
-	}
-	return referrerURL
-}
 func GenerateBody[T any](name string, mailTemplate string, params T) string {
 	tmpl, err := template.New(name).Parse(mailTemplate)
 	if err != nil {

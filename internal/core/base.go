@@ -41,8 +41,8 @@ type BaseApp struct {
 	paymentClient services.PaymentClient
 	payment       services.PaymentService
 	hash          services.HashService
-
-	auth auth.AuthService
+	encrypt       services.Encryptor
+	auth          auth.AuthService
 
 	rbac    services.RBACService
 	checker services.ConstraintChecker
@@ -61,6 +61,13 @@ type BaseApp struct {
 	sseManager sse.Manager
 
 	eventManager events.EventManager
+}
+
+func (b *BaseApp) Encrypt() services.Encryptor {
+	if b.encrypt == nil {
+		panic("encrypt not initialized")
+	}
+	return b.encrypt
 }
 
 // PaymentClient implements App.

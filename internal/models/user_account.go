@@ -6,6 +6,8 @@ import (
 	"github.com/google/uuid"
 )
 
+// ProviderTypes distinguishes between different types authentication providers,
+// such as credentials, oauth,
 type ProviderTypes string
 
 const (
@@ -17,6 +19,7 @@ func (p ProviderTypes) String() string {
 	return string(p)
 }
 
+// enum:"google,apple,facebook,github,credentials"
 type Providers string
 
 const (

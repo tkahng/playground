@@ -512,13 +512,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
          * OAuth2 Authorization URL
-         * @description Get OAuth2 authorization URL
+         * @description Create OAuth2 authorization URL
          */
-        get: operations["oauth2-authorization-url"];
-        put?: never;
-        post?: never;
+        post: operations["oauth2-authorization-url"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2192,6 +2192,20 @@ export interface components {
         NotificationPayloadTaskDueTodayNotificationData: {
             data: components["schemas"]["TaskDueTodayNotificationData"];
             notification: components["schemas"]["NotificationContent"];
+        };
+        OAuth2AuthorizationUrlInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/OAuth2AuthorizationUrlInput.json
+             */
+            readonly $schema?: string;
+            /** Format: email */
+            email?: string;
+            /** @enum {string} */
+            provider: "google" | "github";
+            /** Format: uri */
+            redirect_to?: string;
         };
         OAuth2AuthorizationUrlOutputBody: {
             /**
@@ -4729,15 +4743,16 @@ export interface operations {
     };
     "oauth2-authorization-url": {
         parameters: {
-            query: {
-                provider: "google" | "github";
-                redirect_to?: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OAuth2AuthorizationUrlInput"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {

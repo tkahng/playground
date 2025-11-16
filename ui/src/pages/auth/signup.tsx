@@ -170,6 +170,8 @@ export default function SignupPage() {
                     <ProviderConnectionForm
                       type="Login"
                       providerName={providerName}
+                      redirectTo={redirectTo}
+                      email={email || undefined}
                     />
                   </li>
                 ))}

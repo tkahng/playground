@@ -83,7 +83,7 @@ func (a *Assembler) setBasicServices(app *BaseApp) {
 	dbx := app.Db()
 
 	app.hash = services.NewHashService()
-
+	app.encrypt = services.NewCrypto(cfg.EncryptionKey)
 	app.jwt = services.NewJwtService()
 
 	app.rbac = services.NewRBACService(adapter)
@@ -127,6 +127,7 @@ func (a *Assembler) setIntegrationServices(app *BaseApp) {
 	jobService := app.JobService()
 	tokenService := app.Token()
 	hashService := app.Hash()
+	enc := app.Encrypt()
 	jwtService := app.Jwt()
 
 	app.mailService = services.NewOtpMailService(
@@ -142,6 +143,6 @@ func (a *Assembler) setIntegrationServices(app *BaseApp) {
 	app.payment = services.NewPaymentService(client, adapter)
 	app.teamInvitation = services.NewInvitationService(adapter, *cfg, jobService, app.payment)
 
-	app.auth = auth.NewAuthService(cfg, logger, adapter, hashService, jwtService, tokenService, jobService)
+	app.auth = auth.NewAuthService(cfg, logger, adapter, hashService, jwtService, tokenService, jobService, enc)
 
 }

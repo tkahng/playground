@@ -73,5 +73,5 @@ func bindAuthApi(appApi *Api) {
 	// oauth2 callback post
 	appApi.bindOAuth2CallbackPost(api)
 	// oauth2 authorization url
-	appApi.bindOauth2AuthorizationUrl(api)
+	appApi.OAuth2AuthorizationUrlBind(api)
 }

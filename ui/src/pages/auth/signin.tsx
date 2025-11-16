@@ -155,6 +155,8 @@ export default function SigninPage() {
                     <ProviderConnectionForm
                       type="Login"
                       providerName={providerName}
+                      redirectTo={redirectTo}
+                      email={email || undefined}
                     />
                   </li>
                 ))}

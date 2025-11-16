@@ -11,8 +11,14 @@ import (
 	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/models"
+	appHttp "github.com/tkahng/playground/internal/tools/http"
 	"github.com/tkahng/playground/internal/tools/types"
 )
+
+type OAuth2CallbackInput struct {
+	Code  string `json:"code" query:"code" required:"true" minLength:"1"`
+	State string `json:"state" query:"state" required:"true" minLength:"1"`
+}
 
 func (a *Api) bindOAuth2CallbackPost(api huma.API) {
 	huma.Register(
@@ -39,19 +45,12 @@ func (a *Api) bindOAuth2CallbackPost(api huma.API) {
 			q := uri.Query()
 			q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
 			uri.RawQuery = q.Encode()
-			fmt.Println(uri.String())
 
 			return &AuthenticatedInfoResponse{
 				Body: dto.ApiUserInfoTokens,
 			}, nil
 		},
 	)
-}
-
-type OAuth2CallbackInput struct {
-	Code  string `json:"code" query:"code" required:"true" minLength:"1"`
-	State string `json:"state" query:"state" required:"true" minLength:"1"`
-	// Provider db.AuthProviders `json:"provider" path:"provider"`
 }
 
 type OAuth2CallbackGetResponse struct {
@@ -76,20 +75,20 @@ func (a *Api) bindOath2CallbackGet(api huma.API) {
 			if err != nil {
 				return nil, err
 			}
-			redirectUrl := dto.RedirectTo
-			uri, err := url.Parse(redirectUrl)
+			uri, err := url.Parse(a.app.Config().AppUrl + "/auth/callback")
 			if err != nil {
 				return nil, err
 			}
 			q := uri.Query()
-			q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
+			q.Add(string(models.TokenTypesRefreshToken), url.QueryEscape(dto.Tokens.RefreshToken))
+			if dto.RedirectTo != "" {
+				q.Add("redirect_to", appHttp.EncodeRedirectURL(dto.RedirectTo))
+			}
 			uri.RawQuery = q.Encode()
-			fmt.Println(uri.String())
 
 			return &OAuth2CallbackGetResponse{
 				Status: http.StatusTemporaryRedirect,
 				Url:    uri.String(),
-				// RefreshToken: dto.Tokens.RefreshToken,
 			}, nil
 
 		},

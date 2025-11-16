@@ -46,7 +46,6 @@ export default function TeamSelect() {
         page: pageIndex,
         perPage: pageSize,
       });
-      console.log({ data, meta });
       return { data: data, meta };
     },
   });

@@ -30,18 +30,18 @@ export const providerIcons: Record<ProviderName, React.ReactNode> = {
 export function ProviderConnectionForm({
   redirectTo,
   providerName,
+  email,
 }: {
-  redirectTo?: string | null;
+  email?: string;
+  redirectTo: string | null;
   type: "Connect" | "Login" | "Signup";
   providerName: ProviderName;
 }) {
-  const callbackUrl = new URL(
-    window.location.origin + "/auth/callback"
-  ).toString();
   const onSubmit = async () => {
     const url = await getAuthUrl({
       provider: providerName,
-      redirect: redirectTo || callbackUrl,
+      redirect: redirectTo || undefined,
+      email,
     });
     window.location.href = url;
   };
