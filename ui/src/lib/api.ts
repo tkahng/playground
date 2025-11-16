@@ -843,16 +843,17 @@ export const createTeamBillingPortalSession = async (
 export const getAuthUrl = async ({
   provider,
   redirect,
+  email,
 }: {
   provider: "google" | "github";
   redirect?: string;
+  email?: string;
 }) => {
-  const { data, error } = await client.GET("/api/auth/authorization-url", {
-    params: {
-      query: {
-        provider,
-        redirect_to: redirect || "",
-      },
+  const { data, error } = await client.POST("/api/auth/authorization-url", {
+    body: {
+      provider,
+      redirect_to: redirect,
+      email,
     },
   });
   if (error) {
