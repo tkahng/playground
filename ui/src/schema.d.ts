@@ -512,13 +512,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        get?: never;
+        put?: never;
         /**
          * OAuth2 Authorization URL
-         * @description Get OAuth2 authorization URL
+         * @description Create OAuth2 authorization URL
          */
-        get: operations["oauth2-authorization-url"];
-        put?: never;
-        post?: never;
+        post: operations["oauth2-authorization-url"];
         delete?: never;
         options?: never;
         head?: never;
@@ -603,6 +603,26 @@ export interface paths {
          * @description Confirm Request email verification
          */
         post: operations["confirm-verification"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/confirm-verification/otp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Email verification OTP
+         * @description Confirm Email verification OTP
+         */
+        post: operations["confirm-verification-otp"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2173,6 +2193,20 @@ export interface components {
             data: components["schemas"]["TaskDueTodayNotificationData"];
             notification: components["schemas"]["NotificationContent"];
         };
+        OAuth2AuthorizationUrlInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/OAuth2AuthorizationUrlInput.json
+             */
+            readonly $schema?: string;
+            /** Format: email */
+            email?: string;
+            /** @enum {string} */
+            provider: "google" | "github";
+            /** Format: uri */
+            redirect_to?: string;
+        };
         OAuth2AuthorizationUrlOutputBody: {
             /**
              * Format: uri
@@ -2181,6 +2215,15 @@ export interface components {
              */
             readonly $schema?: string;
             url: string;
+        };
+        OtpDto: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/OtpDto.json
+             */
+            readonly $schema?: string;
+            otp: string;
         };
         OtpInput: {
             /**
@@ -2503,6 +2546,7 @@ export interface components {
             end_at: string | null;
             id: string;
             name: string;
+            parent?: components["schemas"]["Task"];
             parent_id: string | null;
             project?: components["schemas"]["TaskProject"];
             project_id: string;
@@ -4699,15 +4743,16 @@ export interface operations {
     };
     "oauth2-authorization-url": {
         parameters: {
-            query: {
-                provider: "google" | "github";
-                redirect_to?: string;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OAuth2AuthorizationUrlInput"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
@@ -4969,6 +5014,55 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EmailVerificationPostInput"];
+            };
+        };
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "confirm-verification-otp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OtpDto"];
             };
         };
         responses: {
@@ -8090,7 +8184,6 @@ export interface operations {
                 q?: string;
                 status?: ("todo" | "in_progress" | "done")[] | null;
                 ids?: string[] | null;
-                task_status?: ("todo" | "in_progress" | "done")[] | null;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
                 expand?: ("tasks" | "subtasks")[] | null;

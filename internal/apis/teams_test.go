@@ -396,7 +396,7 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 			t.Errorf("Error creating user: %v", err)
 			return
 		}
-		member2, err := app.Adapter().TeamMember().CreateTeamMember2(ctx, &models.TeamMember{
+		member2, err := app.Adapter().TeamMember().CreateTeamMember(ctx, &models.TeamMember{
 			TeamID:           member1.Team.ID,
 			UserID:           types.Pointer(user2.ID),
 			Role:             models.TeamMemberRoleMember,

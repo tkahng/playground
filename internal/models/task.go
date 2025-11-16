@@ -24,6 +24,7 @@ type Task struct {
 	CreatedAt         time.Time    `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time    `db:"updated_at" json:"updated_at"`
 	Children          []*Task      `db:"children" src:"id" dest:"parent_id" table:"task.tasks" json:"children,omitempty"`
+	Parent            *Task        `db:"parent" src:"parent_id" dest:"id" table:"task.tasks" json:"parent,omitempty"`
 	CreatedByMember   *TeamMember  `db:"created_by_member" src:"created_by_member_id" dest:"id" table:"org.team_members" json:"created_by_member,omitempty"`
 	Assignee          *TeamMember  `db:"assignee" src:"assignee_id" dest:"id" table:"org.team_members" json:"assignee,omitempty"`
 	Reporter          *TeamMember  `db:"reporter" src:"reporter_id" dest:"id" table:"org.team_members" json:"reporter,omitempty"`

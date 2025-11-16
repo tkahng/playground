@@ -14,6 +14,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/token"
 	"github.com/tkahng/playground/internal/tools/mailer"
 )
 
@@ -84,7 +85,10 @@ func TestApi_ResetPassword(t *testing.T) {
 					return testApi
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-					checktoken, err := app.Token().GenerateToken(ctx, userInfo.User.Email, models.TokenTypesPasswordResetToken)
+					checktoken, err := app.Token().GenerateToken(ctx, &token.GenerateTokenOptions{
+						Email: userInfo.User.Email,
+						Type:  models.TokenTypesPasswordResetToken,
+					})
 					if err != nil {
 						t.Fatalf("Error getting token from email: %v", err)
 					}
@@ -112,7 +116,10 @@ func TestApi_ResetPassword(t *testing.T) {
 					return testApi
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-					checktoken, err := app.Token().GenerateToken(ctx, userInfo.User.Email, models.TokenTypesPasswordResetToken)
+					checktoken, err := app.Token().GenerateToken(ctx, &token.GenerateTokenOptions{
+						Email: userInfo.User.Email,
+						Type:  models.TokenTypesPasswordResetToken,
+					})
 					if err != nil {
 						t.Fatalf("Error getting token from email: %v", err)
 					}

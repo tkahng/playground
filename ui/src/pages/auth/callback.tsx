@@ -1,4 +1,6 @@
+import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { decodeRedirectTo } from "@/lib/url";
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
@@ -11,6 +13,10 @@ export default function CallbackComponent() {
     if (!isMounted.current) {
       isMounted.current = true;
       const params = new URLSearchParams(window.location.search);
+      const redirectTo = decodeRedirectTo(
+        params.get("redirect_to"),
+        RouteMap.ACCOUNT_DASHBOARD
+      );
       const code = params.get("refresh_token");
       const error = params.get("error");
       console.log("OAuth callback:", { code, error });
@@ -28,12 +34,14 @@ export default function CallbackComponent() {
         // (This part depends on your OAuth2 provider and backend implementation)
         auth
           .getOrRefreshToken(code)
-          .then((data) => {
+          .then(() => {
             // Store the access token and refresh token
-            console.log("Token data:", data);
             isMounted.current = false;
             // Redirect to a protected route
-            navigate("/");
+            navigate({
+              pathname: redirectTo.pathname,
+              search: redirectTo.search,
+            });
           })
           .catch((error) => {
             // Handle error (e.g., display an error message)

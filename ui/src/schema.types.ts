@@ -54,7 +54,22 @@ export type Price = components["schemas"]["StripePrice"];
 
 export type UserPermissions = components["schemas"]["PermissionSource"];
 
-export type ErrorModel = components["schemas"]["ErrorModel"];
+export interface ErrorModel {
+  readonly $schema?: string | undefined;
+  detail?: string | undefined;
+  errors?:
+    | {
+        location?: string;
+        message?: string;
+        value?: unknown;
+      }[]
+    | null
+    | undefined;
+  instance?: string;
+  status?: number;
+  title?: string;
+  type: string;
+}
 
 export type UserWithAccounts = components["schemas"]["UserWithAccounts"];
 

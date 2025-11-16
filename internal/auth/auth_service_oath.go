@@ -38,7 +38,7 @@ type (
 )
 
 type Oauth2Authenticator interface {
-	OAuth2Url(ctx context.Context, provider models.Providers, redirectUrl string) (string, error)
+	OAuth2Url(ctx context.Context, provider models.Providers, redirectUrl string, email string) (string, error)
 	// OAuth2Signin user.
 	// the callback handlers will call this method
 	//
@@ -52,7 +52,7 @@ type Oauth2Authenticator interface {
 }
 
 // OAuth2Url implements AuthService.
-func (a *AuthServiceImpl) OAuth2Url(ctx context.Context, providerInput models.Providers, redirectUrl string) (string, error) {
+func (a *AuthServiceImpl) OAuth2Url(ctx context.Context, providerInput models.Providers, redirectUrl string, email string) (string, error) {
 	redirectTo := redirectUrl
 	if redirectTo == "" {
 		redirectTo = a.config.AppUrl
@@ -71,6 +71,7 @@ func (a *AuthServiceImpl) OAuth2Url(ctx context.Context, providerInput models.Pr
 		Type:       models.TokenTypesStateToken,
 		Provider:   providerInput,
 		RedirectTo: redirectTo,
+		Email:      email,
 		Token:      security.GenerateTokenKey(),
 	}
 	if provider.Pkce() {
@@ -80,11 +81,22 @@ func (a *AuthServiceImpl) OAuth2Url(ctx context.Context, providerInput models.Pr
 			s256challengeOpt,
 		)
 	}
+	if email != "" {
+		info.Email = email
+		urlOpts = append(urlOpts,
+			oauth2.SetAuthURLParam("login_hint", email),
+		)
+	}
 	state, err := a.CreateAndPersistStateToken(ctx, info)
 	if err != nil {
 		return "", err
 	}
-	res := provider.BuildAuthURL(state, urlOpts...)
+	encryptedState, err := a.encrypter.Encrypt([]byte(state))
+	if err != nil {
+		return "", err
+	}
+
+	res := provider.BuildAuthURL(encryptedState, urlOpts...)
 	if res == "" {
 		return "", fmt.Errorf("error at building auth url")
 	}
@@ -232,6 +244,7 @@ type ProviderStatePayload struct {
 	Provider     models.Providers  `json:"provider"`
 	CodeVerifier string            `json:"code_verifier,omitempty"`
 	RedirectTo   string            `json:"redirect_to,omitempty"`
+	Email        string            `json:"email,omitempty"`
 }
 
 // CreateAndPersistStateToken implements AuthActions.
@@ -263,9 +276,14 @@ func (a *AuthServiceImpl) CreateAndPersistStateToken(ctx context.Context, payloa
 	return token, nil
 }
 func (a *AuthServiceImpl) VerifyStateToken(ctx context.Context, token string) (*ProviderStateClaims, error) {
+	decryptedToken, err := a.encrypter.Decrypt(token)
+	if err != nil {
+		return nil, fmt.Errorf("error decrypting state token: %w", err)
+	}
+
 	opts := a.config.AuthOptions
 	var claims ProviderStateClaims
-	err := a.jwt.ParseToken(token, opts.StateToken, &claims)
+	err = a.jwt.ParseToken(string(decryptedToken), opts.StateToken, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error verifying state token: %w", err)
 	}

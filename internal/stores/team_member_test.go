@@ -142,7 +142,13 @@ func TestCreateTeamMember(t *testing.T) {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
 		userID := user.ID
-		member, err := adapter.TeamMember().CreateTeamMember(ctx, team.ID, userID, models.TeamMemberRoleMember, true)
+		member, err := adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
+			TeamID:           team.ID,
+			UserID:           &userID,
+			Role:             models.TeamMemberRoleMember,
+			Active:           true,
+			HasBillingAccess: true,
+		})
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -171,7 +177,13 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
 		userID := user.ID
-		_, err = teamStore.CreateTeamMember(ctx, team.ID, userID, models.TeamMemberRoleMember, true)
+		_, err = teamStore.CreateTeamMember(ctx, &models.TeamMember{
+			TeamID:           team.ID,
+			UserID:           &userID,
+			Role:             models.TeamMemberRoleMember,
+			Active:           true,
+			HasBillingAccess: true,
+		})
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -208,11 +220,23 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
 		userID := user.ID
-		teamMember1, err := adapter.TeamMember().CreateTeamMember(ctx, team1.ID, userID, models.TeamMemberRoleMember, true)
+		teamMember1, err := adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
+			TeamID:           team1.ID,
+			UserID:           &userID,
+			Role:             models.TeamMemberRoleMember,
+			Active:           true,
+			HasBillingAccess: true,
+		})
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		teamMember2, err := adapter.TeamMember().CreateTeamMember(ctx, team2.ID, userID, models.TeamMemberRoleMember, true)
+		teamMember2, err := adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
+			TeamID:           team2.ID,
+			UserID:           &userID,
+			Role:             models.TeamMemberRoleMember,
+			Active:           true,
+			HasBillingAccess: true,
+		})
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -266,7 +290,13 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
-		member, err := adapter.TeamMember().CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleMember, true)
+		member, err := adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
+			TeamID:           team.ID,
+			UserID:           &user.ID,
+			Role:             models.TeamMemberRoleMember,
+			Active:           true,
+			HasBillingAccess: true,
+		})
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -324,7 +354,13 @@ func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateUser() error = %v", err)
 		}
-		member, err := teamStore.CreateTeamMember(ctx, team.ID, user.ID, models.TeamMemberRoleMember, true)
+		member, err := teamStore.CreateTeamMember(ctx, &models.TeamMember{
+			TeamID:           team.ID,
+			UserID:           &user.ID,
+			Role:             models.TeamMemberRoleMember,
+			Active:           true,
+			HasBillingAccess: true,
+		})
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
@@ -383,7 +419,13 @@ func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
 			teamsMap[team.ID] = team
 			teamsSlice = append(teamsSlice, team)
 			teamIds = append(teamIds, team.ID)
-			_, err = adapter.TeamMember().CreateTeamMember(ctx, team.ID, user1.ID, models.TeamMemberRoleMember, true)
+			_, err = adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
+				TeamID:           team.ID,
+				UserID:           &user1.ID,
+				Role:             models.TeamMemberRoleMember,
+				Active:           true,
+				HasBillingAccess: true,
+			})
 			if err != nil {
 				t.Fatalf("CreateTeamMember() error = %v", err)
 			}

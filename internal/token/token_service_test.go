@@ -19,14 +19,20 @@ func TestTokenServiceImpl_GenerateToken(t *testing.T) {
 			store := stores.NewPostgresTokenStore(db)
 			tokenService := token.NewTokenService(cfg, store)
 			email := "admin@k2dv.io"
-			token, err := tokenService.GenerateToken(ctx, email, models.TokenTypesVerificationToken)
+			token1, err := tokenService.GenerateToken(ctx, &token.GenerateTokenOptions{
+				Email: email,
+				Type:  models.TokenTypesVerificationToken,
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
-			if token == "" {
+			if token1 == "" {
 				t.Fatal("token is empty")
 			}
-			value, err := tokenService.ValidateToken(ctx, token, models.TokenTypesVerificationToken)
+			value, err := tokenService.ValidateToken(ctx, &token.ValidateTokenOptions{
+				Token: token1,
+				Type:  models.TokenTypesVerificationToken,
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -42,15 +48,21 @@ func TestTokenServiceImpl_GenerateToken(t *testing.T) {
 			store := stores.NewPostgresTokenStore(db)
 			tokenService := token.NewTokenService(cfg, store)
 			email := "admin@k2dv.io"
-			token, err := tokenService.GenerateToken(ctx, email, models.TokenTypesVerificationToken)
+			token1, err := tokenService.GenerateToken(ctx, &token.GenerateTokenOptions{
+				Email: email,
+				Type:  models.TokenTypesVerificationToken,
+			})
 			if err != nil {
 				t.Fatal(err)
 			}
-			if token == "" {
+			if token1 == "" {
 				t.Fatal("token is empty")
 			}
 			time.Sleep(time.Second * 1)
-			_, err = tokenService.ValidateToken(ctx, token, models.TokenTypesVerificationToken)
+			_, err = tokenService.ValidateToken(ctx, &token.ValidateTokenOptions{
+				Token: token1,
+				Type:  models.TokenTypesVerificationToken,
+			})
 			if err == nil {
 				t.Fatal(err)
 			}

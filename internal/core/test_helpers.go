@@ -13,6 +13,7 @@ import (
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mailer"
+	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
@@ -124,7 +125,7 @@ func CreateTeamAndMemberWithOptions(t testing.TB, app App, user *models.User, op
 	if err != nil {
 		t.Fatalf("Error creating team: %v", err)
 	}
-	member, err := app.Adapter().TeamMember().CreateTeamMember2(ctx, &models.TeamMember{
+	member, err := app.Adapter().TeamMember().CreateTeamMember(ctx, &models.TeamMember{
 		TeamID:           team.ID,
 		UserID:           types.Pointer(user.ID),
 		Role:             option.role,
@@ -206,7 +207,7 @@ func CreateTeamMemberWithOptions(t testing.TB, app App, teamID uuid.UUID, userId
 	for _, optFunc := range optFunc {
 		optFunc(option)
 	}
-	member, err := app.Adapter().TeamMember().CreateTeamMember2(ctx, &models.TeamMember{
+	member, err := app.Adapter().TeamMember().CreateTeamMember(ctx, &models.TeamMember{
 		TeamID:           teamID,
 		UserID:           types.Pointer(userId),
 		Role:             option.role,
@@ -381,4 +382,82 @@ func CreateProductsAndPrices(t testing.TB, app *BaseApp) {
 	if err := app.Payment().FindAndUpsertAllPrices(t.Context()); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func WithProjectStatus(status models.TaskProjectStatus) func(*projectTaskOption) {
+	return func(r *projectTaskOption) {
+		r.project.Status = status
+	}
+}
+
+func WithProjectDescription(description string) func(*projectTaskOption) {
+	return func(r *projectTaskOption) {
+		r.project.Description = types.Pointer(description)
+	}
+}
+
+func WithProjectName(name string) func(*projectTaskOption) {
+	return func(r *projectTaskOption) {
+		r.project.Name = name
+	}
+}
+
+func WithTaskByCountAndStatus(count int, status models.TaskStatus) func(*projectTaskOption) {
+	return func(r *projectTaskOption) {
+		for range count {
+			task := &models.Task{
+				Name:        fmt.Sprintf("Task %d", r.taskNum+1),
+				Description: types.Pointer(fmt.Sprintf("Description for task %d", r.taskNum+1)),
+				Status:      status,
+				Rank:        float64(r.taskNum + 1),
+			}
+			r.tasks = append(r.tasks, task)
+			r.taskNum++
+		}
+	}
+}
+
+type projectTaskOption struct {
+	taskNum int
+	project *models.TaskProject
+	tasks   []*models.Task
+}
+
+func CreateProjectAndTasks(t testing.TB, app App, owner *models.TeamMember, fns ...func(*projectTaskOption)) *models.TaskProject {
+	ctx := context.Background()
+	projectTaskOptions := &projectTaskOption{
+		project: &models.TaskProject{
+			TeamID:            owner.TeamID,
+			Name:              fmt.Sprintf("Project %s", uuid.NewString()),
+			Description:       types.Pointer("description"),
+			Status:            models.TaskProjectStatusTodo,
+			CreatedByMemberID: &owner.ID,
+		},
+		tasks: []*models.Task{},
+	}
+	for _, fn := range fns {
+		fn(projectTaskOptions)
+	}
+
+	taskProject, err := app.Adapter().Task().CreateTaskProjectWithTasks(ctx, &stores.CreateTaskProjectWithTasksDTO{
+		CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
+			TeamID:      projectTaskOptions.project.TeamID,
+			MemberID:    *projectTaskOptions.project.CreatedByMemberID,
+			Name:        projectTaskOptions.project.Name,
+			Status:      projectTaskOptions.project.Status,
+			Description: projectTaskOptions.project.Description,
+		},
+		Tasks: mapper.Map(projectTaskOptions.tasks, func(task *models.Task) stores.CreateTaskProjectTaskDTO {
+			return stores.CreateTaskProjectTaskDTO{
+				Name:        task.Name,
+				Description: task.Description,
+				Status:      models.TaskStatus(task.Status),
+				Rank:        task.Rank,
+			}
+		}),
+	})
+	if err != nil {
+		t.Fatalf("failed to create project with tasks: %v", err)
+	}
+	return taskProject
 }

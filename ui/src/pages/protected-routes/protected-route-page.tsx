@@ -1,6 +1,6 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { protectedApi } from "@/lib/api";
-import { GetError } from "@/lib/get-error";
+import { GetError } from "@/lib/error";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "react-router";
 

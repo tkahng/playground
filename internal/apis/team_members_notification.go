@@ -34,7 +34,7 @@ type PlaygroundSecurityExtensions struct {
 	AccessToken  string    `json:"access_token"`
 }
 
-func (api *Api) bindTeamMembersSseEvents(humapi huma.API) {
+func (api *Api) TeamMembersSseEventsBind(humapi huma.API) {
 	hanlder := sse.ServeSSE(
 		func(ctx context.Context, f func(any) error, input *TeamMemberSseInput) sse.Client {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
@@ -133,7 +133,7 @@ func fromModelNotification(notification *models.Notification) *Notification {
 		Team:         fromTeamModel(notification.Team),
 	}
 }
-func (api *Api) bindFindTeamMembersNotifications(aapi huma.API) {
+func (api *Api) FindTeamMembersNotificationsBind(aapi huma.API) {
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -189,7 +189,7 @@ type ReadTeamMembersNotificationsInput struct {
 	TeamMemberID   string `path:"team-member-id" required:"true" format:"uuid"`
 }
 
-func (api *Api) bindReadTeamMembersNotifications(aapi huma.API) {
+func (api *Api) ReadTeamMembersNotificationsBind(aapi huma.API) {
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -240,7 +240,7 @@ func (api *Api) bindReadTeamMembersNotifications(aapi huma.API) {
 	)
 }
 
-func (api *Api) bindDeleteTeamMembersNotifications(aapi huma.API) {
+func (api *Api) DeleteTeamMembersNotificationsBind(aapi huma.API) {
 	huma.Register(
 		aapi,
 		huma.Operation{

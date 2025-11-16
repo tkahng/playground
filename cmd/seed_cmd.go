@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"log/slog"
 
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/spf13/cobra"
@@ -10,13 +9,16 @@ import (
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/slug"
 )
 
 func NewSeedCmd() *cobra.Command {
+
 	seedCmd.AddCommand(seedRolesCmd)
 	seedCmd.AddCommand(seedUserCmd)
+	seedCmd.AddCommand(seedAllCmd)
 	seedCmd.AddCommand(seedTeam)
 	return seedCmd
 }
@@ -24,6 +26,23 @@ func NewSeedCmd() *cobra.Command {
 var seedCmd = &cobra.Command{
 	Use:   "seed",
 	Short: "seed",
+}
+
+var seedAllCmd = &cobra.Command{
+	Use:   "all",
+	Short: "seed all",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := seedRolesCmd.RunE(cmd, args); err != nil {
+			return err
+		}
+		if err := stripeSyncCmd.RunE(cmd, args); err != nil {
+			return err
+		}
+		if err := stripeRolesCmd.RunE(cmd, args); err != nil {
+			return err
+		}
+		return nil
+	},
 }
 
 var seedRolesCmd = &cobra.Command{
@@ -37,39 +56,7 @@ var seedRolesCmd = &cobra.Command{
 		defer dbx.Close()
 
 		rbacStore := stores.NewDbRBACStore(dbx)
-		err := rbacStore.EnsureRoleAndPermissions(ctx, "superuser", "superuser", "advanced", "pro", "basic")
-		if err != nil {
-			slog.Error(
-				"error at createing roles",
-				"error", err,
-				"role", "superuser",
-			)
-		}
-		err = rbacStore.EnsureRoleAndPermissions(ctx, "advanced", "advanced", "pro", "basic")
-		if err != nil {
-			slog.Error(
-				"error at createing roles",
-				"error", err,
-				"role", "basic",
-			)
-		}
-		err = rbacStore.EnsureRoleAndPermissions(ctx, "pro", "pro", "basic")
-		if err != nil {
-			slog.Error(
-				"error at createing roles",
-				"error", err,
-				"role", "basic",
-			)
-		}
-		err = rbacStore.EnsureRoleAndPermissions(ctx, "basic", "basic")
-		if err != nil {
-			slog.Error(
-				"error at createing roles",
-				"error", err,
-				"role", "basic",
-			)
-		}
-		return err
+		return rbacStore.CreateRolesAndPermissions(ctx, shared.KnownRoleNamesPermissionsMap)
 	},
 }
 

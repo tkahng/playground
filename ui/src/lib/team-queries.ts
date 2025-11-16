@@ -1,4 +1,5 @@
 import { client } from "@/lib/client";
+import { ApiError } from "@/lib/error";
 import { components } from "@/schema";
 
 export const createTeam = async (
@@ -12,7 +13,7 @@ export const createTeam = async (
     body: args,
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -43,7 +44,7 @@ export const getUserTeams = async ({
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -58,7 +59,7 @@ export const getTeamBySlug = async (token: string, slug: string) => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -95,7 +96,7 @@ export const getTeamTeamMembers = async ({
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -115,7 +116,7 @@ export const updateTeam = async (
     body,
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -144,7 +145,7 @@ export const updateTeamMember = async ({
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -167,7 +168,7 @@ export const deleteMember = async ({
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -187,7 +188,7 @@ export const inviteTeamMember = async (
     body,
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return true;
 };
@@ -211,7 +212,7 @@ export const getTeamInvitations = async (
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -236,7 +237,7 @@ export const cancelTeamInvitation = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return true;
 };
@@ -254,7 +255,7 @@ export const verifyTeamInvitation = async (
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return true;
 };
@@ -272,7 +273,7 @@ export const acceptInvitation = async (
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return true;
 };
@@ -290,7 +291,7 @@ export const declineInvitation = async (
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return true;
 };
@@ -312,7 +313,7 @@ export const getUserTeamInvitations = async (
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -332,7 +333,7 @@ export const getTeamInvitationByToken = async (invitationToken: string) => {
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -365,7 +366,7 @@ export const getTeamMemberNotifications = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -390,7 +391,7 @@ export const readTeamMemberNotification = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return true;
 };

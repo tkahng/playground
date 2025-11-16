@@ -5,8 +5,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { useTeam } from "@/hooks/use-team";
-import { Progress } from "@radix-ui/react-progress";
 import { BarChart, Cpu, LineChart, PieChart, Users, Zap } from "lucide-react";
 
 export default function Dashboard() {

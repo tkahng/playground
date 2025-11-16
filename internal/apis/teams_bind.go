@@ -24,27 +24,27 @@ func bindTeamsApi(appApi *Api) {
 	// get team members
 	//  /api/team-members
 
-	appApi.bindFindTeamTeamMembers(teamsGroup)
+	appApi.FindTeamTeamMembersBind(teamsGroup)
 
 	// check team slug
-	appApi.bindCheckTeamSlug(teamsGroup)
+	appApi.CheckTeamSlugBind(teamsGroup)
 
 	// get user teams
-	appApi.bindGetUserTeams(teamsGroup)
+	appApi.GetUserTeamsBind(teamsGroup)
 
 	// create team
-	appApi.bindCreateTeam(teamsGroup)
+	appApi.CreateTeamBind(teamsGroup)
 
 	// get team
-	appApi.bindGetTeam(teamsGroup)
+	appApi.GetTeamBind(teamsGroup)
 	// get team by slug
-	appApi.bindFindTeamInfoBySlug(teamsGroup)
+	appApi.FindTeamInfoBySlugBind(teamsGroup)
 
 	// update team
-	appApi.bindUpdateTeam(teamsGroup)
+	appApi.UpdateTeamBind(teamsGroup)
 
 	// delete team
-	appApi.bindDeleteTeam(teamsGroup)
+	appApi.DeleteTeamBind(teamsGroup)
 
 	// team invitations -----------------------------------------------------------------------------------------------------------
 
@@ -191,16 +191,16 @@ func bindTeamsApi(appApi *Api) {
 		appApi.GetUserTeamInvitations,
 	)
 
-	appApi.BindGetInvitationByToken(teamsGroup)
-	appApi.bindTeamMembersSseEvents(teamsGroup)
+	appApi.GetInvitationByTokenBind(teamsGroup)
+	appApi.TeamMembersSseEventsBind(teamsGroup)
 
-	appApi.bindFindTeamMembersNotifications(teamsGroup)
+	appApi.FindTeamMembersNotificationsBind(teamsGroup)
 
-	appApi.bindReadTeamMembersNotifications(teamsGroup)
+	appApi.ReadTeamMembersNotificationsBind(teamsGroup)
 
-	appApi.bindDeleteTeamMembersNotifications(teamsGroup)
+	appApi.DeleteTeamMembersNotificationsBind(teamsGroup)
 
-	appApi.bindFindTeamMemberByID(teamsGroup)
+	appApi.FindTeamMemberByIDBind(teamsGroup)
 
 	appApi.UpdateTeamMemberBind(teamsGroup)
 

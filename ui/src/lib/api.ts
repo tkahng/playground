@@ -1,4 +1,5 @@
 import { client } from "@/lib/client";
+import { ApiError } from "@/lib/error";
 import { components, operations } from "@/schema";
 import {
   JobsParams,
@@ -22,7 +23,7 @@ export const signIn = async (args: SigninInput): Promise<UserInfoTokens> => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -40,7 +41,7 @@ export const signOut = async (
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
 };
 
@@ -57,7 +58,7 @@ export const refreshToken = async (
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -71,7 +72,7 @@ export const signUp = async (args: SignupInput): Promise<UserInfoTokens> => {
     body: args,
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -83,7 +84,7 @@ export const getMe = async (token: string): Promise<UserWithAccounts> => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -98,7 +99,7 @@ export const updateMe = async (
     body,
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -117,7 +118,7 @@ export const userPaginate = async (
   });
 
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -136,7 +137,7 @@ export const rolesPaginate = async (
   });
 
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -157,7 +158,7 @@ export const getRoleWithPermission = async (token: string, id: string) => {
   });
 
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -173,7 +174,7 @@ export const createRole = async (
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -196,7 +197,7 @@ export const updateRole = async (
   });
 
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -211,7 +212,7 @@ export const deleteRole = async (token: string, id: string) => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -237,7 +238,7 @@ export const deleteRolePermission = async (
   );
 
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -263,7 +264,7 @@ export const createRolePermission = async (
   );
 
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -282,7 +283,7 @@ export const permissionsPaginate = async (
   });
 
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -299,7 +300,7 @@ export const deletePermission = async (token: string, id: string) => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -314,7 +315,7 @@ export const createPermission = async (
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -336,7 +337,7 @@ export const updatePermission = async (
   });
 
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -356,7 +357,7 @@ export const getUserAccounts = async (token: string, id: string) => {
   });
 
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -376,7 +377,7 @@ export const getUserRoles = async (token: string, id: string) => {
   });
 
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -393,7 +394,7 @@ export const getPermission = async (token: string, id: string) => {
   });
 
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -421,7 +422,7 @@ export const getUserPermissions = async (
     }
   ); // TODO: add pagination
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -445,7 +446,7 @@ export const getUserPermissions2 = async (token: string, userId: string) => {
     }
   ); // TODO: add pagination
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -460,7 +461,7 @@ export const createUser = async (
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -482,7 +483,7 @@ export const updateUser = async (
     body,
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -499,7 +500,7 @@ export const getUser = async (token: string, id: string) => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -591,7 +592,7 @@ export const createUserRoles = async (
     }
   ); // TODO: add pagination
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -616,7 +617,7 @@ export const removeUserRole = async (
     }
   ); // TODO: add pagination
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -641,7 +642,7 @@ export const createUserPermissions = async (
     }
   ); // TODO: add pagination
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -666,7 +667,7 @@ export const removeUserPermission = async (
     }
   ); // TODO: add pagination
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -680,7 +681,7 @@ export const getProductsWithPrices = async (token?: string) => {
       : {},
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   if (!data) {
     throw new Error("No data");
@@ -696,7 +697,7 @@ export const getUserSubscriptions = async (token: string) => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data ? data : null;
 };
@@ -715,7 +716,7 @@ export const getTeamSubscriptions = async (token: string, teamId: string) => {
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data ? data : null;
 };
@@ -735,7 +736,7 @@ export const getCheckoutSession = async (token: string, id: string) => {
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   if (!data) {
     throw new Error("No data");
@@ -759,7 +760,7 @@ export const createCheckoutSession = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   if (!data) {
     throw new Error("No data");
@@ -788,7 +789,7 @@ export const createTeamCheckoutSession = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   if (!data) {
     throw new Error("No data");
@@ -806,7 +807,7 @@ export const createBillingPortalSession = async (token: string) => {
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   if (!data) {
     throw new Error("No data");
@@ -831,7 +832,7 @@ export const createTeamBillingPortalSession = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   if (!data) {
     throw new Error("No data");
@@ -842,20 +843,21 @@ export const createTeamBillingPortalSession = async (
 export const getAuthUrl = async ({
   provider,
   redirect,
+  email,
 }: {
   provider: "google" | "github";
   redirect?: string;
+  email?: string;
 }) => {
-  const { data, error } = await client.GET("/api/auth/authorization-url", {
-    params: {
-      query: {
-        provider,
-        redirect_to: redirect || "",
-      },
+  const { data, error } = await client.POST("/api/auth/authorization-url", {
+    body: {
+      provider,
+      redirect_to: redirect,
+      email,
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   if (!data) {
     throw new Error("No data");
@@ -870,7 +872,7 @@ export const requestVerification = async (token: string) => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return true;
 };
@@ -882,282 +884,22 @@ export const confirmVerification = async (token: string) => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
 };
 
-export const taskProjectList = async (
-  token: string,
-  teamId: string,
-  args: operations["task-project-list"]["parameters"]["query"]
-) => {
-  const { data, error } = await client.GET(
-    "/api/teams/{team-id}/task-projects",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        path: {
-          "team-id": teamId,
-        },
-        query: args,
-      },
-    }
-  );
-  if (error) {
-    throw error;
-  }
-  if (!data) {
-    throw new Error("No data");
-  }
-  return data;
-};
-export const taskQueries = {
-  findTaskById: async (token: string, taskId: string) => {
-    const { data, error } = await client.GET(`/api/tasks/{task-id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        path: {
-          "task-id": taskId,
-        },
-      },
-    });
-    if (error) {
-      throw error;
-    }
-    return data;
-  },
-  updateTask: async (
-    token: string,
-    taskId: string,
-    body: components["schemas"]["UpdateTaskDto"]
-  ) => {
-    const { data, error } = await client.PUT(`/api/tasks/{task-id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        path: {
-          "task-id": taskId,
-        },
-      },
-      body,
-    });
-    if (error) {
-      throw error;
-    }
-    return data;
-  },
-};
-export const taskProjectGet = async (token: string, id: string) => {
-  const { data, error } = await client.GET(
-    "/api/task-projects/{task-project-id}",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        query: {
-          expand: ["tasks"],
-        },
-        path: {
-          "task-project-id": id,
-        },
-      },
-    }
-  );
-  if (error) {
-    throw error;
-  }
-  if (!data) {
-    throw new Error("No data");
-  }
-  return data;
-};
-
-export const taskProjectCreate = async (
-  token: string,
-  teamId: string,
-  args: operations["task-project-create"]["requestBody"]["content"]["application/json"]
-) => {
-  const { data, error } = await client.POST(
-    "/api/teams/{team-id}/task-projects",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        path: {
-          "team-id": teamId,
-        },
-      },
-      body: args,
-    }
-  );
-  if (error) {
-    throw error;
-  }
-  if (!data) {
-    throw new Error("No data");
-  }
-  return data;
-};
-
-export const taskProjectCreateWithAi = async (
-  token: string,
-  teamId: string,
-  args: operations["task-project-create-with-ai"]["requestBody"]["content"]["application/json"]
-) => {
-  const { data, error } = await client.POST(
-    "/api/teams/{team-id}/task-projects/ai",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        path: {
-          "team-id": teamId,
-        },
-      },
-      body: args,
-    }
-  );
-  if (error) {
-    throw error;
-  }
-  if (!data) {
-    throw new Error("No data");
-  }
-  return data;
-};
-
-export const taskList = async (
-  token: string,
-  taskProjectId: string,
-  args: operations["task-list"]["parameters"]["query"]
-) => {
-  const { data, error } = await client.GET(
-    "/api/task-projects/{task-project-id}/tasks",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        path: {
-          "task-project-id": taskProjectId,
-        },
-        query: args,
-      },
-    }
-  );
-  if (error) {
-    throw error;
-  }
-  if (!data) {
-    throw new Error("No data");
-  }
-  return data;
-};
-
-export const createTask = async (
-  token: string,
-  taskProjectId: string,
-  args: operations["task-project-tasks-create"]["requestBody"]["content"]["application/json"]
-) => {
-  const { data, error } = await client.POST(
-    "/api/task-projects/{task-project-id}",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        path: {
-          "task-project-id": taskProjectId,
-        },
-      },
-      body: args,
-    }
-  );
-  if (error) {
-    throw error;
-  }
-  if (!data) {
-    throw new Error("No data");
-  }
-  return data;
-};
-export const updateTask = async (
-  token: string,
-  taskId: string,
-  args: operations["task-update"]["requestBody"]["content"]["application/json"]
-) => {
-  const { data, error } = await client.PUT("/api/tasks/{task-id}", {
+export const confirmVerificationOtp = async (token: string, otp: string) => {
+  const { error } = await client.POST("/api/auth/confirm-verification/otp", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
-    params: {
-      path: {
-        "task-id": taskId,
-      },
+    body: {
+      otp,
     },
-    body: args,
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
-  return data;
-};
-export const updateTaskPositionStatus = async (
-  token: string,
-  taskId: string,
-  args: operations["update-task-position-status"]["requestBody"]["content"]["application/json"]
-) => {
-  const { data, error } = await client.PUT(
-    `/api/tasks/{task-id}/position-status`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        path: {
-          "task-id": taskId,
-        },
-      },
-      body: args,
-    }
-  );
-  if (error) {
-    throw error;
-  }
-  return data;
-};
-
-export const taskProjectUpdate = async (
-  token: string,
-  taskProjectId: string,
-  args: operations["task-project-update"]["requestBody"]["content"]["application/json"]
-) => {
-  const { data, error } = await client.PUT(
-    "/api/task-projects/{task-project-id}",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        path: {
-          "task-project-id": taskProjectId,
-        },
-      },
-      body: args,
-    }
-  );
-  if (error) {
-    throw error;
-  }
-  return data;
 };
 
 export const getStats = async (token: string) => {
@@ -1167,7 +909,7 @@ export const getStats = async (token: string) => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   if (!data) {
     throw new Error("No data");
@@ -1182,7 +924,7 @@ export const checkPasswordReset = async (token: string) => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -1203,7 +945,7 @@ export const confirmPasswordReset = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -1215,7 +957,7 @@ export const requestPasswordReset = async (email: string) => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return true;
 };
@@ -1235,7 +977,7 @@ export const resetPassword = async (
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -1262,7 +1004,7 @@ export const adminResetUserPassword = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -1280,7 +1022,7 @@ export const adminStripeProducts = async (
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -1298,7 +1040,7 @@ export const adminStripeProduct = async (token: string, id: string) => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -1321,7 +1063,7 @@ export const adminStripeProductRolesCreate = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -1346,7 +1088,7 @@ export const adminStripeProductPermissionsDelete = async (
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -1364,7 +1106,7 @@ export const adminStripeSubscriptions = async (
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -1385,7 +1127,7 @@ export const adminStripeSubscription = async (token: string, id: string) => {
     }
   );
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -1397,7 +1139,7 @@ export const deleteUser = async (token: string) => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -1414,7 +1156,7 @@ export const protectedApi = async (token: string, args: string) => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -1429,7 +1171,7 @@ export const permissionsList = async () => {
     },
   });
   if (error) {
-    throw error;
+    throw ApiError.fromErrorModel(error);
   }
   return data;
 };
@@ -1447,7 +1189,7 @@ export const adminJobQueries = {
       },
     });
     if (error) {
-      throw error;
+      throw ApiError.fromErrorModel(error);
     }
     return data;
   },
@@ -1461,7 +1203,7 @@ export const adminJobQueries = {
       },
     });
     if (error) {
-      throw error;
+      throw ApiError.fromErrorModel(error);
     }
     return data;
   },
@@ -1483,7 +1225,7 @@ export const adminJobQueries = {
       },
     });
     if (error) {
-      throw error;
+      throw ApiError.fromErrorModel(error);
     }
     return true;
   },
@@ -1497,14 +1239,14 @@ export const userReactionQueries = {
       },
     });
     if (error) {
-      throw error;
+      throw ApiError.fromErrorModel(error);
     }
     return data;
   },
   getStats: async () => {
     const { data, error } = await client.GET("/api/user-reactions/stats", {});
     if (error) {
-      throw error;
+      throw ApiError.fromErrorModel(error);
     }
     return data;
   },

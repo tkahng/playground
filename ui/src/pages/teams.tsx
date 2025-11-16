@@ -3,7 +3,7 @@ import { CreateTeamDisabledTooltip } from "@/components/create-team-disabled-too
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { GetError } from "@/lib/get-error";
+import { GetError } from "@/lib/error";
 import { getUserTeams } from "@/lib/team-queries";
 import { Team } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
@@ -46,7 +46,6 @@ export default function TeamSelect() {
         page: pageIndex,
         perPage: pageSize,
       });
-      console.log({ data, meta });
       return { data: data, meta };
     },
   });

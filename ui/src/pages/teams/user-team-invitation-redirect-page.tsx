@@ -1,3 +1,4 @@
+import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -8,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { GetError, isErrorModel } from "@/lib/get-error";
+import { ApiError, GetError, isErrorModel } from "@/lib/error";
 import {
   acceptInvitation,
   declineInvitation,
@@ -17,9 +18,20 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { ArrowRight, Check, Home } from "lucide-react";
 import { useState } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router";
+import {
+  createSearchParams,
+  Navigate,
+  useLocation,
+  useNavigate,
+} from "react-router";
 import { toast } from "sonner";
-
+/**
+ * Renders a page for handling team invitation redirects.
+ * This component checks for an invitation token in the URL,
+ * fetches invitation details, and allows the user to accept or decline the invitation.
+ * If the user is not logged in, it redirects to the signup page with pre-filled email.
+ *
+ */
 export default function UserTeamInvitationRedirectPage() {
   const [disabled, setDisabled] = useState(false);
   const { search } = useLocation();
@@ -31,7 +43,7 @@ export default function UserTeamInvitationRedirectPage() {
     queryKey: ["get-team-invitation-by-token"],
     queryFn: async () => {
       if (!token) {
-        throw new Error("Missing session ID");
+        throw new ApiError("Missing token");
       }
       return getTeamInvitationByToken(token);
     },
@@ -40,20 +52,19 @@ export default function UserTeamInvitationRedirectPage() {
   const acceptMutation = useMutation({
     mutationFn: async (token?: string) => {
       if (!user?.tokens.access_token) {
-        throw new Error("Missing access token");
+        throw new ApiError("Missing access token");
       }
       if (!token) {
-        throw new Error("Missing invitation token");
+        throw new ApiError("Missing invitation token");
       }
       const result = await acceptInvitation(user.tokens.access_token, token);
       if (!result) {
-        throw new Error("Failed to accept invitation");
+        throw new ApiError("Failed to accept invitation");
       }
       return result;
     },
     onSuccess: () => {
       toast.success("Invitation accepted successfully");
-      console.log("navigating to team dashboard");
       navigate(`/teams/${data?.team?.slug}/dashboard`);
     },
     onError: (err) => {
@@ -64,19 +75,20 @@ export default function UserTeamInvitationRedirectPage() {
   const declineMutation = useMutation({
     mutationFn: async (token?: string) => {
       if (!user?.tokens.access_token) {
-        throw new Error("Missing access token");
+        throw new ApiError("Missing access token");
       }
       if (!token) {
-        throw new Error("Missing invitation token");
+        throw new ApiError("Missing invitation token");
       }
       const result = await declineInvitation(user.tokens.access_token, token);
       if (!result) {
-        throw new Error("Failed to decline invitation");
+        throw new ApiError("Failed to decline invitation");
       }
       return result;
     },
     onSuccess: () => {
-      navigate(`/dashboard`);
+      toast.success("Invitation declined successfully");
+      navigate(RouteMap.ACCOUNT_OVERVIEW_TEAMS_INVITATION);
     },
     onError: (err) => {
       toast.error(`Failed to decline role: ${err.message}`);
@@ -121,18 +133,22 @@ export default function UserTeamInvitationRedirectPage() {
       </div>
     );
   }
+  /**
+   * if user is not logged in, redirect to signup  withe the current url state as redirect_uri to comeback to,
+   * and set email param to preconfigure the forms to use the required email. after signup, they should com back.
+   */
   if (!user) {
-    if (data) {
-      params.set("email", data.email);
-      return (
-        <Navigate
-          to={{
-            pathname: "/signin",
-            search: params.toString(),
-          }}
-        />
-      );
-    }
+    return (
+      <Navigate
+        to={{
+          pathname: RouteMap.SIGNUP,
+          search: createSearchParams({
+            redirect_to: encodeURIComponent(window.location.href),
+            email: data.email,
+          }).toString(),
+        }}
+      />
+    );
   }
 
   return (
