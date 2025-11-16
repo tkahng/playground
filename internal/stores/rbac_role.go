@@ -14,6 +14,59 @@ import (
 	"github.com/tkahng/playground/internal/models"
 )
 
+type DbRbacStoreInterface interface { // size=16 (0x10)
+	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
+	CountNotUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error)
+	CountPermissions(ctx context.Context, filter *PermissionFilter) (int64, error)
+	CountRoles(ctx context.Context, filter *RoleListFilter) (int64, error)
+	CountUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error)
+	CreatePermission(ctx context.Context, name string, description *string) (*models.Permission, error)
+	CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
+	CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error
+	CreateRole(ctx context.Context, role *CreateRoleDto) (*models.Role, error)
+	CreateRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error
+	CreateUserPermissions(ctx context.Context, userId uuid.UUID, permissionIds ...uuid.UUID) error
+	CreateUserRoles(ctx context.Context, userId uuid.UUID, roleIds ...uuid.UUID) error
+	DeletePermission(ctx context.Context, id uuid.UUID) error
+	DeleteProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error
+	DeleteProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
+	DeleteRole(ctx context.Context, id uuid.UUID) error
+	DeleteRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error
+	DeleteUserRole(ctx context.Context, userId uuid.UUID, roleId uuid.UUID) error
+	EnsureRoleAndPermissions(ctx context.Context, roleName string, permissionNames ...string) error
+	FindOrCreatePermission(ctx context.Context, permissionName string) (*models.Permission, error)
+	FindOrCreateRole(ctx context.Context, roleName string) (*models.Role, error)
+	FindPermission(ctx context.Context, filter *PermissionFilter) (*models.Permission, error)
+	FindPermissionById(ctx context.Context, id uuid.UUID) (*models.Permission, error)
+	FindPermissionByName(ctx context.Context, name string) (*models.Permission, error)
+	FindPermissionsByIds(ctx context.Context, params []uuid.UUID) ([]*models.Permission, error)
+	FindRoleById(ctx context.Context, id uuid.UUID) (*models.Role, error)
+	FindRoleByName(ctx context.Context, name string) (*models.Role, error)
+	FindRolesByIds(ctx context.Context, params []uuid.UUID) ([]*models.Role, error)
+	GetUserRoles(ctx context.Context, userIds ...uuid.UUID) ([][]*models.Role, error)
+	ListPermissions(ctx context.Context, input *PermissionFilter) ([]*models.Permission, error)
+	ListRoles(ctx context.Context, input *RoleListFilter) ([]*models.Role, error)
+	ListUserNotPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]*models.PermissionSource, error)
+	ListUserPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]*models.PermissionSource, error)
+	LoadProductPermissions(ctx context.Context, productIds ...string) ([][]*models.Permission, error)
+	LoadRolePermissions(ctx context.Context, roleIds ...uuid.UUID) ([][]*models.Permission, error)
+	UpdatePermission(ctx context.Context, id uuid.UUID, roledto *UpdatePermissionDto) error
+	UpdateRole(ctx context.Context, id uuid.UUID, roledto *UpdateRoleDto) error
+	CreateRolesAndPermissions(ctx context.Context, rolePermissionsMap map[string][]string) error
+}
+
+var _ DbRbacStoreInterface = (*DbRbacStore)(nil)
+
+type DbRbacStore struct {
+	db database.Dbx
+}
+
+func NewDbRBACStore(db database.Dbx) *DbRbacStore {
+	return &DbRbacStore{
+		db: db,
+	}
+}
+
 type RoleListFilter struct {
 	PaginatedInput
 	SortParams
@@ -26,19 +79,9 @@ type RoleListFilter struct {
 	Expand    []string    `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"users,permissions"`
 }
 
-type DbRbacStore struct {
-	db database.Dbx
-}
-
 func (p *DbRbacStore) WithTx(tx database.Dbx) *DbRbacStore {
 	return &DbRbacStore{
 		db: tx,
-	}
-}
-
-func NewDbRBACStore(db database.Dbx) *DbRbacStore {
-	return &DbRbacStore{
-		db: db,
 	}
 }
 
@@ -277,44 +320,22 @@ func (p *DbRbacStore) filter(q squirrel.SelectBuilder, filter *RoleListFilter) s
 	return sq
 }
 
-type DbRbacStoreInterface interface { // size=16 (0x10)
-	AssignUserRoles(ctx context.Context, userId uuid.UUID, roleNames ...string) error
-	CountNotUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error)
-	CountPermissions(ctx context.Context, filter *PermissionFilter) (int64, error)
-	CountRoles(ctx context.Context, filter *RoleListFilter) (int64, error)
-	CountUserPermissionSource(ctx context.Context, userId uuid.UUID) (int64, error)
-	CreatePermission(ctx context.Context, name string, description *string) (*models.Permission, error)
-	CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
-	CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error
-	CreateRole(ctx context.Context, role *CreateRoleDto) (*models.Role, error)
-	CreateRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error
-	CreateUserPermissions(ctx context.Context, userId uuid.UUID, permissionIds ...uuid.UUID) error
-	CreateUserRoles(ctx context.Context, userId uuid.UUID, roleIds ...uuid.UUID) error
-	DeletePermission(ctx context.Context, id uuid.UUID) error
-	DeleteProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error
-	DeleteProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
-	DeleteRole(ctx context.Context, id uuid.UUID) error
-	DeleteRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error
-	DeleteUserRole(ctx context.Context, userId uuid.UUID, roleId uuid.UUID) error
-	EnsureRoleAndPermissions(ctx context.Context, roleName string, permissionNames ...string) error
-	FindOrCreatePermission(ctx context.Context, permissionName string) (*models.Permission, error)
-	FindOrCreateRole(ctx context.Context, roleName string) (*models.Role, error)
-	FindPermission(ctx context.Context, filter *PermissionFilter) (*models.Permission, error)
-	FindPermissionById(ctx context.Context, id uuid.UUID) (*models.Permission, error)
-	FindPermissionByName(ctx context.Context, name string) (*models.Permission, error)
-	FindPermissionsByIds(ctx context.Context, params []uuid.UUID) ([]*models.Permission, error)
-	FindRoleById(ctx context.Context, id uuid.UUID) (*models.Role, error)
-	FindRoleByName(ctx context.Context, name string) (*models.Role, error)
-	FindRolesByIds(ctx context.Context, params []uuid.UUID) ([]*models.Role, error)
-	GetUserRoles(ctx context.Context, userIds ...uuid.UUID) ([][]*models.Role, error)
-	ListPermissions(ctx context.Context, input *PermissionFilter) ([]*models.Permission, error)
-	ListRoles(ctx context.Context, input *RoleListFilter) ([]*models.Role, error)
-	ListUserNotPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]*models.PermissionSource, error)
-	ListUserPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]*models.PermissionSource, error)
-	LoadProductPermissions(ctx context.Context, productIds ...string) ([][]*models.Permission, error)
-	LoadRolePermissions(ctx context.Context, roleIds ...uuid.UUID) ([][]*models.Permission, error)
-	UpdatePermission(ctx context.Context, id uuid.UUID, roledto *UpdatePermissionDto) error
-	UpdateRole(ctx context.Context, id uuid.UUID, roledto *UpdateRoleDto) error
+func (p *DbRbacStore) CreateRolesAndPermissions(ctx context.Context, rolePermissionsMap map[string][]string) error {
+	for roleName, permissionNames := range rolePermissionsMap {
+		role, err := p.FindOrCreateRole(ctx, roleName)
+		if err != nil {
+			return err
+		}
+		for _, permissionName := range permissionNames {
+			permission, err := p.FindOrCreatePermission(ctx, permissionName)
+			if err != nil {
+				return err
+			}
+			err = p.CreateRolePermissions(ctx, role.ID, permission.ID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
-
-var _ DbRbacStoreInterface = (*DbRbacStore)(nil)

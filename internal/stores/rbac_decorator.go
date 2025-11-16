@@ -21,25 +21,25 @@ type RbacStoreDecorator struct {
 	CreateRoleFunc                   func(ctx context.Context, role *CreateRoleDto) (*models.Role, error)
 	CreateRolePermissionsFunc        func(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error
 	CreateUserPermissionsFunc        func(ctx context.Context, userId uuid.UUID, permissionIds ...uuid.UUID) error
-
-	CreateUserRolesFunc          func(ctx context.Context, userId uuid.UUID, roleIds ...uuid.UUID) error
-	DeletePermissionFunc         func(ctx context.Context, id uuid.UUID) error
-	DeleteProductRolesFunc       func(ctx context.Context, productId string, roleIds ...uuid.UUID) error
-	DeleteProductPermissionsFunc func(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
-	DeleteRoleFunc               func(ctx context.Context, id uuid.UUID) error
-	DeleteRolePermissionsFunc    func(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error
-	DeleteUserRoleFunc           func(ctx context.Context, userId uuid.UUID, roleId uuid.UUID) error
-	EnsureRoleAndPermissionsFunc func(ctx context.Context, roleName string, permissionNames ...string) error
-	FindOrCreatePermissionFunc   func(ctx context.Context, permissionName string) (*models.Permission, error)
-	FindOrCreateRoleFunc         func(ctx context.Context, roleName string) (*models.Role, error)
-	FindPermissionFunc           func(ctx context.Context, filter *PermissionFilter) (*models.Permission, error)
-	FindPermissionByIdFunc       func(ctx context.Context, id uuid.UUID) (*models.Permission, error)
-	FindPermissionByNameFunc     func(ctx context.Context, name string) (*models.Permission, error)
-	FindPermissionsByIdsFunc     func(ctx context.Context, params []uuid.UUID) ([]*models.Permission, error)
-	FindRoleByIdFunc             func(ctx context.Context, id uuid.UUID) (*models.Role, error)
-	FindRoleByNameFunc           func(ctx context.Context, name string) (*models.Role, error)
-	FindRolesByIdsFunc           func(ctx context.Context, params []uuid.UUID) ([]*models.Role, error)
-	GetUserRolesFunc             func(ctx context.Context, userIds ...uuid.UUID) ([][]*models.Role, error)
+	CreateRolesAndPermissionsFunc    func(ctx context.Context, rolePermissionsMap map[string][]string) error
+	CreateUserRolesFunc              func(ctx context.Context, userId uuid.UUID, roleIds ...uuid.UUID) error
+	DeletePermissionFunc             func(ctx context.Context, id uuid.UUID) error
+	DeleteProductRolesFunc           func(ctx context.Context, productId string, roleIds ...uuid.UUID) error
+	DeleteProductPermissionsFunc     func(ctx context.Context, productId string, permissionIds ...uuid.UUID) error
+	DeleteRoleFunc                   func(ctx context.Context, id uuid.UUID) error
+	DeleteRolePermissionsFunc        func(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error
+	DeleteUserRoleFunc               func(ctx context.Context, userId uuid.UUID, roleId uuid.UUID) error
+	EnsureRoleAndPermissionsFunc     func(ctx context.Context, roleName string, permissionNames ...string) error
+	FindOrCreatePermissionFunc       func(ctx context.Context, permissionName string) (*models.Permission, error)
+	FindOrCreateRoleFunc             func(ctx context.Context, roleName string) (*models.Role, error)
+	FindPermissionFunc               func(ctx context.Context, filter *PermissionFilter) (*models.Permission, error)
+	FindPermissionByIdFunc           func(ctx context.Context, id uuid.UUID) (*models.Permission, error)
+	FindPermissionByNameFunc         func(ctx context.Context, name string) (*models.Permission, error)
+	FindPermissionsByIdsFunc         func(ctx context.Context, params []uuid.UUID) ([]*models.Permission, error)
+	FindRoleByIdFunc                 func(ctx context.Context, id uuid.UUID) (*models.Role, error)
+	FindRoleByNameFunc               func(ctx context.Context, name string) (*models.Role, error)
+	FindRolesByIdsFunc               func(ctx context.Context, params []uuid.UUID) ([]*models.Role, error)
+	GetUserRolesFunc                 func(ctx context.Context, userIds ...uuid.UUID) ([][]*models.Role, error)
 
 	ListPermissionsFunc              func(ctx context.Context, input *PermissionFilter) ([]*models.Permission, error)
 	ListRolesFunc                    func(ctx context.Context, input *RoleListFilter) ([]*models.Role, error)
@@ -49,6 +49,17 @@ type RbacStoreDecorator struct {
 	LoadRolePermissionsFunc          func(ctx context.Context, roleIds ...uuid.UUID) ([][]*models.Permission, error)
 	UpdatePermissionFunc             func(ctx context.Context, id uuid.UUID, roledto *UpdatePermissionDto) error
 	UpdateRoleFunc                   func(ctx context.Context, id uuid.UUID, roledto *UpdateRoleDto) error
+}
+
+// CreateRolesAndPermissions implements DbRbacStoreInterface.
+func (r *RbacStoreDecorator) CreateRolesAndPermissions(ctx context.Context, rolePermissionsMap map[string][]string) error {
+	if r.CreateRolesAndPermissionsFunc != nil {
+		return r.CreateRolesAndPermissionsFunc(ctx, rolePermissionsMap)
+	}
+	if r.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return r.Delegate.CreateRolesAndPermissions(ctx, rolePermissionsMap)
 }
 
 func NewRbacStoreDecorator(db database.Dbx) *RbacStoreDecorator {
@@ -70,6 +81,8 @@ func (r *RbacStoreDecorator) Cleanup() {
 	r.CreateRoleFunc = nil
 	r.CreateRolePermissionsFunc = nil
 	r.CreateUserPermissionsFunc = nil
+	r.CreateRolesAndPermissionsFunc = nil
+	r.DeleteProductPermissionsFunc = nil
 	r.CreateUserRolesFunc = nil
 	r.DeletePermissionFunc = nil
 	r.DeleteProductRolesFunc = nil
