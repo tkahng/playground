@@ -97,7 +97,9 @@ func GetPathParams(filepath string, token, tokenType, redirectTo string) (*url.U
 	}
 	q := path.Query()
 	q.Add("token", url.QueryEscape(token))
-	q.Add("type", url.QueryEscape(tokenType))
+	if tokenType != "" {
+		q.Add("token_type", url.QueryEscape(tokenType))
+	}
 	if redirectTo != "" {
 		q.Add("redirect_to", encodeRedirectURL(redirectTo))
 	}
@@ -142,6 +144,7 @@ const DefaultConfirmationMail = `<h2>Confirm your email</h2>
 
 <p>Follow this link to confirm your email:</p>
 <p><a href="{{ .ConfirmationURL }}">Confirm your email address</a></p>
+<p>Alternatively, enter the code: {{ .Token }}</p>
 `
 
 const DefaultSecurityPasswordResetMail = `<h2>Your password has been reset due to security concerns</h2>

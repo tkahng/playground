@@ -14,14 +14,14 @@ import { Separator } from "@/components/ui/separator";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import {
   deleteUser,
-  getMe,
   requestVerification,
   resetPassword,
   updateMe,
 } from "@/lib/api";
-import { GetError } from "@/lib/get-error";
+import { GetError } from "@/lib/error";
+import { useMeQuery } from "@/lib/queries";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -42,15 +42,7 @@ const resetPasswordSchema = z.object({
 export default function AccountSettingsPage() {
   const [, setIsPending] = useState(false);
   const { user } = useAuthProvider();
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["auth/me"],
-    queryFn: async () => {
-      if (!user) {
-        throw new Error("User not found");
-      }
-      return getMe(user.tokens.access_token);
-    },
-  });
+  const { data, isLoading, isError, error } = useMeQuery();
   const credentialsAccount = data?.accounts?.find(
     (account) => account.provider === "credentials"
   );
@@ -67,7 +59,7 @@ export default function AccountSettingsPage() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["auth/me"],
+        queryKey: [{ key: "me" }],
       });
       toast.success("Profile updated successfully");
     },
@@ -92,7 +84,7 @@ export default function AccountSettingsPage() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["auth/me"],
+        queryKey: [{ key: "me" }],
       });
       toast.success("Account deleted successfully");
     },
@@ -121,7 +113,7 @@ export default function AccountSettingsPage() {
     onSuccess: async () => {
       setIsPending(true);
       await queryClient.invalidateQueries({
-        queryKey: ["auth/me"],
+        queryKey: [{ key: "me" }],
       });
       resetPasswordForm.reset();
     },
@@ -136,7 +128,7 @@ export default function AccountSettingsPage() {
     onSuccess: async () => {
       setIsPending(false);
       await queryClient.invalidateQueries({
-        queryKey: ["auth/me"],
+        queryKey: [{ key: "me" }],
       });
       toast.success("Verification email sent successfully");
     },

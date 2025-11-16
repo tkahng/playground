@@ -5,7 +5,7 @@ import { RouteMap } from "@/components/route-map";
 import { TeamHeader } from "@/components/team-header";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { isErrorModel } from "@/lib/get-error";
+import { isErrorModel } from "@/lib/error";
 import { getTeamBySlug } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
@@ -14,11 +14,11 @@ import { toast } from "sonner";
 
 export default function TeamDashboardLayout() {
   const { user } = useAuthProvider();
+  const { pathname } = useLocation();
   const { teamSlug } = useParams<{ teamSlug: string }>();
   const { setTeam, team, teamMember } = useTeam();
-  const { pathname } = useLocation();
   const { isLoading, error, refetch } = useQuery({
-    queryKey: ["team-by-slug-layout", teamSlug] as const,
+    queryKey: [{ key: "team-by-slug-layout", teamSlug }] as const,
     queryFn: async () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");

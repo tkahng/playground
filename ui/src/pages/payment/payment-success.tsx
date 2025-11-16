@@ -3,7 +3,7 @@ import { PlaygroundMinimalFooter } from "@/components/playground-minimal-footer"
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { getCheckoutSession } from "@/lib/api";
-import { GetError } from "@/lib/get-error";
+import { GetError } from "@/lib/error";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, Home, Settings } from "lucide-react";
 import { Link, useSearchParams } from "react-router";

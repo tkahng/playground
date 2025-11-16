@@ -1,7 +1,10 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { getTeamTeamMembers } from "@/lib/team-queries";
+import { getMe } from "@/lib/api";
+import { getTeamBySlug, getTeamTeamMembers } from "@/lib/team-queries";
+import { TeamWithMember } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
+import { useParams } from "react-router";
 import { findTaskById } from "./task-queries";
 
 export const useTeamTeamMembers = () => {
@@ -38,5 +41,43 @@ export const useTaskQuery = (taskId?: string) => {
       return await findTaskById(user!.tokens.access_token, taskId!);
     },
     enabled: !!taskId && !!user?.tokens.access_token,
+  });
+};
+
+export const useMeQuery = () => {
+  const { user } = useAuthProvider();
+  return useQuery({
+    queryKey: [{ key: "me" }],
+    queryFn: async () => {
+      if (!user?.tokens.access_token) {
+        throw new Error("No access token");
+      }
+      return getMe(user!.tokens.access_token);
+    },
+    enabled: !!user?.tokens.access_token,
+  });
+};
+
+export const useTeamBySlugQuery = () => {
+  const { user } = useAuthProvider();
+  const { teamSlug } = useParams<{ teamSlug: string }>();
+  return useQuery({
+    select: (data): TeamWithMember => {
+      return {
+        ...data.team,
+        member: data.member,
+      };
+    },
+    queryKey: [{ key: "team-by-slug", teamSlug }],
+    queryFn: async () => {
+      if (!user?.tokens.access_token) {
+        throw new Error("No access token");
+      }
+      if (!teamSlug) {
+        throw new Error("No team slug");
+      }
+      return getTeamBySlug(user!.tokens.access_token, teamSlug);
+    },
+    enabled: !!user?.tokens?.access_token?.length && !!teamSlug?.length,
   });
 };

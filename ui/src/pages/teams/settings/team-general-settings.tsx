@@ -14,7 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
 import { deleteUser } from "@/lib/api";
-import { GetError } from "@/lib/get-error";
+import { GetError } from "@/lib/error";
 import { updateTeam } from "@/lib/team-queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -51,7 +51,7 @@ export default function TeamSettingsPage() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["auth/me"],
+        queryKey: [{ key: "team-by-slug-layout" }],
       });
       toast.success("Profile updated successfully");
     },
@@ -76,7 +76,7 @@ export default function TeamSettingsPage() {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: ["auth/me"],
+        queryKey: [{ key: "team-by-slug-layout" }],
       });
       toast.success("Account deleted successfully");
     },

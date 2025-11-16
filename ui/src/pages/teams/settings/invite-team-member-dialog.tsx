@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { GetError } from "@/lib/get-error";
+import { GetError } from "@/lib/error";
 import { inviteTeamMember } from "@/lib/team-queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";

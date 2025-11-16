@@ -119,3 +119,16 @@ Authorization happens on the set of all permissions assigned to a user.
 | ![user list](assets/user-list.png) | ![user edit](assets/user-edit.png) | ![user roles](assets/user-assign-roles.png) |
 | ---------------------------------- | ---------------------------------- | ------------------------------------------- |
 | user list                          | user edit                          | user roles                                  |
+
+# UI flows
+
+## team invitations
+
+### new user
+
+1. User is invited.
+2. User clicks on the invitation link.
+3. User is redirected to the signup page. The invitation page and its paramaters are all passed as a redirect_to parameter to the signup page, along with the email of the user to preset the form with the correct email.
+4. User signs up (e.g., with email/password or OAuth).
+5. If signed up with email/password, user is redirected to verify their email otp form, along with other query parameters.
+6. user provides the otp from mail, verifies, then redirects to the destination in the redirect_to parameter.

@@ -55,9 +55,11 @@ func bindAuthApi(appApi *Api) {
 		appApi.VerifyPost,
 	)
 	// request verification -------------------------------------------------------------
-	appApi.bindRequestVerification(api)
+	appApi.RequestVerificationBind(api)
 	// confirm verification -------------------------------------------------------------
-	appApi.bindVerifyEmail(api)
+	appApi.VerifyEmailBind(api)
+	// confirm verification otp -------------------------------------------------------------
+	appApi.VerifyEmailOtpBind(api)
 	// request password reset -------------------------------------------------------------
 	appApi.bindRequestPasswordReset(api)
 	// confirm password reset -------------------------------------------------------------

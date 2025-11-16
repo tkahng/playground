@@ -29,8 +29,8 @@ import { useJsLoaded } from "@/hooks/use-js-loaded";
 import { groupItems } from "@/lib/array";
 import { useUpdateTaskPosition } from "@/lib/mutation";
 import { Task, TaskStatus, TeamMember } from "@/schema.types";
-import { CreateProjectTaskDialog2 } from "./tasks/create-project-task-dialog copy";
-import { EditTaskDialog2 } from "./tasks/edit-project-task-dialog copy";
+import { CreateProjectTaskDialog2 } from "./tasks/create-project-task-dialog-2";
+import { EditTaskDialog2 } from "./tasks/edit-project-task-dialog-2";
 import { TaskEditDropdown2 } from "./tasks/task-edit-dropdown-2";
 
 // Types

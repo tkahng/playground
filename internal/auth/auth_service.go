@@ -104,7 +104,10 @@ func (a *AuthServiceImpl) SendEmailVerification(ctx context.Context, email strin
 
 // ValidateEmailVerification implements AuthService.
 func (a *AuthServiceImpl) ValidateEmailVerification(ctx context.Context, code string) error {
-	email, err := a.token.ValidateToken(ctx, code, models.TokenTypesVerificationToken)
+	email, err := a.token.ValidateToken(ctx, &token.ValidateTokenOptions{
+		Token: code,
+		Type:  models.TokenTypesVerificationToken,
+	})
 	if err != nil {
 		return err
 	}
@@ -173,7 +176,10 @@ func (a *AuthServiceImpl) GenerateAuthTokens(ctx context.Context, email string) 
 		return nil, err
 	}
 
-	refreshToken, err := a.token.GenerateToken(ctx, userInfo.User.Email, models.TokenTypesRefreshToken)
+	refreshToken, err := a.token.GenerateToken(ctx, &token.GenerateTokenOptions{
+		Email: userInfo.User.Email,
+		Type:  models.TokenTypesRefreshToken,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +207,10 @@ func (a *AuthServiceImpl) VerifyAccessToken(ctx context.Context, token string) (
 
 // RefreshToken implements AuthService.
 func (a *AuthServiceImpl) RefreshToken(ctx context.Context, refreshToken string) (*models.UserInfoTokens, error) {
-	email, err := a.token.ValidateToken(ctx, refreshToken, models.TokenTypesRefreshToken)
+	email, err := a.token.ValidateToken(ctx, &token.ValidateTokenOptions{
+		Token: refreshToken,
+		Type:  models.TokenTypesRefreshToken,
+	})
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid refresh token")
 	}

@@ -37,7 +37,7 @@ import { TaskContext } from "@/context/task-context";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useDialog } from "@/hooks/use-dialog";
 import { useTeam } from "@/hooks/use-team";
-import { GetError } from "@/lib/get-error";
+import { GetError } from "@/lib/error";
 import { useTaskQuery } from "@/lib/queries";
 import { updateTask } from "@/lib/task-queries";
 import { getTeamTeamMembers } from "@/lib/team-queries";
