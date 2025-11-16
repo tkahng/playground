@@ -25,7 +25,13 @@ import {
   useNavigate,
 } from "react-router";
 import { toast } from "sonner";
-
+/**
+ * Renders a page for handling team invitation redirects.
+ * This component checks for an invitation token in the URL,
+ * fetches invitation details, and allows the user to accept or decline the invitation.
+ * If the user is not logged in, it redirects to the signup page with pre-filled email.
+ *
+ */
 export default function UserTeamInvitationRedirectPage() {
   const [disabled, setDisabled] = useState(false);
   const { search } = useLocation();
@@ -127,11 +133,15 @@ export default function UserTeamInvitationRedirectPage() {
       </div>
     );
   }
+  /**
+   * if user is not logged in, redirect to signup  withe the current url state as redirect_uri to comeback to,
+   * and set email param to preconfigure the forms to use the required email. after signup, they should com back.
+   */
   if (!user) {
     return (
       <Navigate
         to={{
-          pathname: "/signup",
+          pathname: RouteMap.SIGNUP,
           search: createSearchParams({
             redirect_to: encodeURIComponent(window.location.href),
             email: data.email,

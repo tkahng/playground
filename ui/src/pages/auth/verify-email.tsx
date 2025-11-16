@@ -21,11 +21,12 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { confirmVerificationOtp } from "@/lib/api";
+import { decodeRedirectTo } from "@/lib/url";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import z from "zod";
 
@@ -34,6 +35,8 @@ const otpSchema = z.object({
 });
 export default function VerifyEmailPage() {
   const { user, checkAuth } = useAuthProvider();
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get("redirect_to");
   const [isPending, setIsPending] = useState(false);
   const navigate = useNavigate();
   const form = useForm<z.infer<typeof otpSchema>>({
@@ -42,36 +45,47 @@ export default function VerifyEmailPage() {
       otp: "",
     },
   });
+  const navigateTo = decodeRedirectTo(redirectTo, RouteMap.ACCOUNT_DASHBOARD);
+
   const mutation = useMutation({
-    mutationFn: async ({ otp }: { otp: string }) => {
+    onMutate: () => {
       setIsPending(true);
+    },
+    mutationFn: async ({ otp }: { otp: string }) => {
       if (!user?.tokens.access_token) {
         throw new Error("User is not authenticated");
       }
       await confirmVerificationOtp(user.tokens.access_token, otp);
     },
     onSuccess: () => {
-      checkAuth().finally(() => {
-        setIsPending(false);
-        toast.success("Email verified successfully!");
+      toast.success("Email verified successfully!");
+      navigate({
+        pathname: navigateTo.pathname,
+        search: navigateTo.search,
       });
+      checkAuth();
     },
     onError: (error) => {
-      setIsPending(false);
-      form.reset();
       toast.error(`Failed to verify email: ${error.message}`);
     },
+    onSettled: () => {
+      form.reset();
+      setIsPending(false);
+    },
   });
-
   function onUpdateSubmit(data: z.infer<typeof otpSchema>) {
     mutation.mutate(data);
   }
   if (!user) {
-    navigate(RouteMap.SIGNIN);
+    toast.error("User is not authenticated", {
+      description: "Please sign in",
+    });
+    navigate({ pathname: RouteMap.SIGNIN, search: searchParams.toString() });
     return;
   }
 
   if (user.user.email_verified_at) {
+    toast.warning("Email already verified");
     navigate(RouteMap.ACCOUNT_DASHBOARD);
     return;
   }
