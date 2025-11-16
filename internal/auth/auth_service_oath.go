@@ -38,7 +38,7 @@ type (
 )
 
 type Oauth2Authenticator interface {
-	OAuth2Url(ctx context.Context, provider models.Providers, redirectUrl string) (string, error)
+	OAuth2Url(ctx context.Context, provider models.Providers, redirectUrl string, email string) (string, error)
 	// OAuth2Signin user.
 	// the callback handlers will call this method
 	//
@@ -52,7 +52,7 @@ type Oauth2Authenticator interface {
 }
 
 // OAuth2Url implements AuthService.
-func (a *AuthServiceImpl) OAuth2Url(ctx context.Context, providerInput models.Providers, redirectUrl string) (string, error) {
+func (a *AuthServiceImpl) OAuth2Url(ctx context.Context, providerInput models.Providers, redirectUrl string, email string) (string, error) {
 	redirectTo := redirectUrl
 	if redirectTo == "" {
 		redirectTo = a.config.AppUrl
@@ -71,6 +71,7 @@ func (a *AuthServiceImpl) OAuth2Url(ctx context.Context, providerInput models.Pr
 		Type:       models.TokenTypesStateToken,
 		Provider:   providerInput,
 		RedirectTo: redirectTo,
+		Email:      email,
 		Token:      security.GenerateTokenKey(),
 	}
 	if provider.Pkce() {
@@ -78,6 +79,12 @@ func (a *AuthServiceImpl) OAuth2Url(ctx context.Context, providerInput models.Pr
 		s256challengeOpt := oauth2.S256ChallengeOption(info.CodeVerifier)
 		urlOpts = append(urlOpts,
 			s256challengeOpt,
+		)
+	}
+	if email != "" {
+		info.Email = email
+		urlOpts = append(urlOpts,
+			oauth2.SetAuthURLParam("login_hint", email),
 		)
 	}
 	state, err := a.CreateAndPersistStateToken(ctx, info)
@@ -237,6 +244,7 @@ type ProviderStatePayload struct {
 	Provider     models.Providers  `json:"provider"`
 	CodeVerifier string            `json:"code_verifier,omitempty"`
 	RedirectTo   string            `json:"redirect_to,omitempty"`
+	Email        string            `json:"email,omitempty"`
 }
 
 // CreateAndPersistStateToken implements AuthActions.
