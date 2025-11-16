@@ -36,6 +36,11 @@ type AuthService interface {
 }
 
 type (
+	Encrypter interface {
+		Encrypt(data []byte) (string, error)
+		Decrypt(cipherText string) ([]byte, error)
+	}
+
 	HashService interface {
 		Hash(input string) (string, error)
 		Verify(value, hash string) (match bool, err error)
@@ -57,26 +62,30 @@ func NewAuthService(
 	jwt JwtService,
 	token token.TokenService,
 	job JobService,
+	encrypter Encrypter,
 ) AuthService {
 	oauth.OAuth2ConfigFromEnv(*config)
 	return &AuthServiceImpl{
-		config:  config,
-		adapter: adapter,
-		hash:    hash,
-		jwt:     jwt,
-		token:   token,
-		job:     job,
+		config:    config,
+		adapter:   adapter,
+		hash:      hash,
+		jwt:       jwt,
+		token:     token,
+		job:       job,
+		logger:    logger,
+		encrypter: encrypter,
 	}
 }
 
 type AuthServiceImpl struct {
-	config  *conf.EnvConfig
-	adapter stores.StorageAdapterInterface
-	hash    HashService
-	jwt     JwtService
-	token   token.TokenService
-	job     JobService
-	logger  *slog.Logger
+	config    *conf.EnvConfig
+	adapter   stores.StorageAdapterInterface
+	hash      HashService
+	jwt       JwtService
+	token     token.TokenService
+	job       JobService
+	logger    *slog.Logger
+	encrypter Encrypter
 }
 
 var _ AuthService = (*AuthServiceImpl)(nil)
