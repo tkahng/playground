@@ -84,7 +84,12 @@ func (a *AuthServiceImpl) OAuth2Url(ctx context.Context, providerInput models.Pr
 	if err != nil {
 		return "", err
 	}
-	res := provider.BuildAuthURL(state, urlOpts...)
+	encryptedState, err := a.encrypter.Encrypt([]byte(state))
+	if err != nil {
+		return "", err
+	}
+
+	res := provider.BuildAuthURL(encryptedState, urlOpts...)
 	if res == "" {
 		return "", fmt.Errorf("error at building auth url")
 	}
@@ -263,9 +268,14 @@ func (a *AuthServiceImpl) CreateAndPersistStateToken(ctx context.Context, payloa
 	return token, nil
 }
 func (a *AuthServiceImpl) VerifyStateToken(ctx context.Context, token string) (*ProviderStateClaims, error) {
+	decryptedToken, err := a.encrypter.Decrypt(token)
+	if err != nil {
+		return nil, fmt.Errorf("error decrypting state token: %w", err)
+	}
+
 	opts := a.config.AuthOptions
 	var claims ProviderStateClaims
-	err := a.jwt.ParseToken(token, opts.StateToken, &claims)
+	err = a.jwt.ParseToken(string(decryptedToken), opts.StateToken, &claims)
 	if err != nil {
 		return nil, fmt.Errorf("error verifying state token: %w", err)
 	}
