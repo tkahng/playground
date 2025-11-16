@@ -10,7 +10,7 @@ export interface AuthContextType {
   signUp: (args: SignupInput) => Promise<UserInfoTokens>;
   login: (args: SigninInput) => Promise<UserInfoTokens>;
   logout: () => Promise<void>;
-  checkAuth: () => Promise<void>;
+  checkAuth: (refreshToken?: string) => Promise<void>;
   getOrRefreshToken: (token?: string) => Promise<UserInfoTokens>;
 }
 
@@ -68,6 +68,7 @@ export const AuthProvider: React.FC<{
         const decoded = jwtDecode(user.tokens.access_token);
         if (!decoded?.exp) {
           console.error("Token does not have an expiration time.");
+          setUser(null);
           return Promise.reject();
         }
         if (decoded?.exp <= Math.round(Date.now() / 1000)) {
@@ -86,15 +87,11 @@ export const AuthProvider: React.FC<{
       return Promise.reject();
     }
   };
-  const checkAuth = async () => {
-    if (!user) {
-      return;
-    }
+  const checkAuth = async (refreshTokenParam?: string) => {
     try {
-      await getOrRefreshToken(user.tokens.refresh_token);
+      await getOrRefreshToken(refreshTokenParam);
     } catch (error) {
       console.error("Error checking auth:", error);
-      setUser(null);
       return Promise.reject();
     }
   };

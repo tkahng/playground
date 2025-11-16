@@ -22,7 +22,7 @@ export function useLocalStorage<T>(
     try {
       window.localStorage.setItem(keyName, JSON.stringify(newValue));
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
     setStoredValue(newValue);
   };
@@ -59,7 +59,7 @@ export function useNullableLocalStorage<T>(
         window.localStorage.setItem(keyName, JSON.stringify(newValue));
       }
     } catch (err) {
-      console.log(err);
+      console.error(err);
     }
     setStoredValue(newValue);
   };

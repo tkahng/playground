@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/models"
+	appHttp "github.com/tkahng/playground/internal/tools/http"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
@@ -74,19 +75,20 @@ func (a *Api) bindOath2CallbackGet(api huma.API) {
 			if err != nil {
 				return nil, err
 			}
-			redirectUrl := dto.RedirectTo
-			uri, err := url.Parse(redirectUrl)
+			uri, err := url.Parse(a.app.Config().AppUrl + "/auth/callback")
 			if err != nil {
 				return nil, err
 			}
 			q := uri.Query()
-			q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
+			q.Add(string(models.TokenTypesRefreshToken), url.QueryEscape(dto.Tokens.RefreshToken))
+			if dto.RedirectTo != "" {
+				q.Add("redirect_to", appHttp.EncodeRedirectURL(dto.RedirectTo))
+			}
 			uri.RawQuery = q.Encode()
 
 			return &OAuth2CallbackGetResponse{
 				Status: http.StatusTemporaryRedirect,
 				Url:    uri.String(),
-				// RefreshToken: dto.Tokens.RefreshToken,
 			}, nil
 
 		},
