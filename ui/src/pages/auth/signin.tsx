@@ -13,10 +13,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { decodeRedirectTo } from "@/lib/url";
 import { SigninInput } from "@/schema.types";
-import { Label } from "@radix-ui/react-label";
 import { Lock } from "lucide-react";
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
