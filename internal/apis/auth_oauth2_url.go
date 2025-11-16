@@ -9,8 +9,8 @@ import (
 )
 
 type OAuth2AuthorizationUrlInput struct {
-	Provider   models.Providers `json:"provider"  query:"provider" form:"provider" enum:"google,github" required:"true"`
-	RedirectTo string           `json:"redirect_to" query:"redirect_to" form:"redirect_to" format:"uri" required:"false"`
+	Provider   models.Providers `json:"provider"  query:"provider" form:"provider" enum:"google,github" required:"true"` // only support google and github for now
+	RedirectTo string           `json:"redirect_to,omitempty" query:"redirect_to" form:"redirect_to" format:"uri" required:"false"`
 }
 
 type OAuth2AuthorizationUrlOutput struct {
@@ -31,29 +31,26 @@ func (a *Api) bindOauth2AuthorizationUrl(api huma.API) {
 			Tags:        []string{"Auth", "OAuth2"},
 			Errors:      []int{http.StatusNotFound},
 		},
-		a.OAuth2AuthorizationUrl,
-	)
-}
+		func(ctx context.Context, input *OAuth2AuthorizationUrlInput) (*OAuth2AuthorizationUrlOutput, error) {
+			if input == nil {
+				return nil, huma.Error400BadRequest("input is required")
+			}
+			res, err := a.App().Auth().OAuth2Url(
+				ctx,
+				models.Providers(input.Provider),
+				input.RedirectTo,
+			)
+			if err != nil {
+				return nil, err
+			}
 
-func (api *Api) OAuth2AuthorizationUrl(ctx context.Context, input *OAuth2AuthorizationUrlInput) (*OAuth2AuthorizationUrlOutput, error) {
-	if input == nil {
-		return nil, huma.Error400BadRequest("input is required")
-	}
-	res, err := api.App().Auth().OAuth2Url(
-		ctx,
-		models.Providers(input.Provider),
-		input.RedirectTo,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return &OAuth2AuthorizationUrlOutput{
-		Body: struct {
-			Url string `json:"url"`
-		}{
-			Url: res,
+			return &OAuth2AuthorizationUrlOutput{
+				Body: struct {
+					Url string `json:"url"`
+				}{
+					Url: res,
+				},
+			}, nil
 		},
-	}, nil
-
+	)
 }
