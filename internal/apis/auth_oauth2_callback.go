@@ -14,6 +14,11 @@ import (
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
+type OAuth2CallbackInput struct {
+	Code  string `json:"code" query:"code" required:"true" minLength:"1"`
+	State string `json:"state" query:"state" required:"true" minLength:"1"`
+}
+
 func (a *Api) bindOAuth2CallbackPost(api huma.API) {
 	huma.Register(
 		api,
@@ -39,19 +44,12 @@ func (a *Api) bindOAuth2CallbackPost(api huma.API) {
 			q := uri.Query()
 			q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
 			uri.RawQuery = q.Encode()
-			fmt.Println(uri.String())
 
 			return &AuthenticatedInfoResponse{
 				Body: dto.ApiUserInfoTokens,
 			}, nil
 		},
 	)
-}
-
-type OAuth2CallbackInput struct {
-	Code  string `json:"code" query:"code" required:"true" minLength:"1"`
-	State string `json:"state" query:"state" required:"true" minLength:"1"`
-	// Provider db.AuthProviders `json:"provider" path:"provider"`
 }
 
 type OAuth2CallbackGetResponse struct {
@@ -84,7 +82,6 @@ func (a *Api) bindOath2CallbackGet(api huma.API) {
 			q := uri.Query()
 			q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
 			uri.RawQuery = q.Encode()
-			fmt.Println(uri.String())
 
 			return &OAuth2CallbackGetResponse{
 				Status: http.StatusTemporaryRedirect,
