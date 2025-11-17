@@ -18,36 +18,32 @@ export default function Landing() {
               <h1 className="text-3xl font-bold tracking-tighter sm:text-2xl md:text-3xl lg:text-4xl/none">
                 Welcome to my Playground
               </h1>
+              <h2 className="mx-auto max-w-[700px] text-2xl font-bold text-shadow-muted-foreground">
+                Lets build cool toys
+              </h2>
               <p className="mx-auto max-w-[700px] text-lg text-muted-foreground">
                 This is where I experiment, learn, but most importantly have fun
                 implementing cool features.
-              </p>
-              <p className="mx-auto max-w-[700px] text-2xl font-bold">
-                If it piqued my interest, i probably will implement it here.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="flex w-full flex-col items-center py-12">
+      <section className="flex w-full flex-col items-center">
         <div className="container px-4 md:px-6">
-          <h2 className="mb-12 text-center text-3xl font-bold tracking-tighter sm:text-5xl">
+          <h2 className="mb-12 text-center text-3xl font-bold tracking-tighter sm:text-2xl md:text-3xl lg:text-4xl/none">
             What you can do here:
           </h2>
           <div className="flex flex-wrap justify-center gap-10">
             {landingFeatures.map(({ icon, title, content }, index) => (
-              <div key={index} className="flex grow justify-center">
-                <div className="w-90 flex flex-col items-center space-y-3 text-center">
-                  {icon}
-                  <h3 className="text-xl font-bold">{title}</h3>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    {content.map((item) => {
-                      return <span key={item}>{item}</span>;
-                    })}
-                  </p>
-                </div>
-              </div>
+              <CardSection
+                index={index}
+                key={index}
+                icon={icon}
+                title={title}
+                content={content}
+              />
             ))}
           </div>
         </div>
@@ -101,3 +97,29 @@ export const landingFeatures: LandingCardSectionProps[] = [
     ],
   },
 ];
+
+function CardSection({
+  index,
+  icon,
+  title,
+  content,
+}: {
+  index: number;
+  icon: JSX.Element;
+  title: string;
+  content: string[];
+}) {
+  return (
+    <div key={index} className="flex grow justify-center">
+      <div className="min-w-80 flex flex-col items-center space-y-3 text-center">
+        {icon}
+        <h3 className="text-xl">{title}</h3>
+        <p className="text-gray-500 dark:text-gray-400">
+          {content.map((item) => {
+            return <span key={item}>{item}</span>;
+          })}
+        </p>
+      </div>
+    </div>
+  );
+}
