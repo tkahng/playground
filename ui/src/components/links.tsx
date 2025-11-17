@@ -1,4 +1,5 @@
 import { RouteMap } from "@/components/route-map";
+import { Home, LayoutDashboard, Settings, ShieldUser } from "lucide-react";
 import { JSX } from "react";
 export type LinkDto = {
   title?: string;
@@ -8,6 +9,12 @@ export type LinkDto = {
 };
 
 export const RouteLinks = {
+  HOME: {
+    to: RouteMap.HOME,
+    title: "Home",
+    current: (pathname: string) => pathname === RouteMap.HOME,
+    icon: <Home />,
+  },
   TEAM_LIST: {
     to: RouteMap.TEAM_LIST,
     title: "Teams",
@@ -21,6 +28,7 @@ export const RouteLinks = {
     to: RouteMap.ACCOUNT_DASHBOARD,
     title: "Dashboard",
     current: (pathname: string) => pathname === RouteMap.ACCOUNT_DASHBOARD,
+    icon: <LayoutDashboard />,
   },
   ACCOUNT_TEAMS: {
     to: RouteMap.ACCOUNT_OVERVIEW_TEAMS,
@@ -51,11 +59,18 @@ export const RouteLinks = {
   SETTINGS: {
     to: RouteMap.SETTINGS,
     title: "Settings",
+    icon: <Settings />,
     current: (pathname: string) => pathname.startsWith(RouteMap.SETTINGS),
   },
   GENERAL_SETTINGS: { to: RouteMap.SETTINGS, title: "General" },
   BILLING_SETTINGS: { to: RouteMap.BILLING_SETTINGS, title: "Billing" },
   ADMIN: {
+    to: RouteMap.ADMIN,
+    title: "Admin",
+    current: (pathname: string) => pathname.startsWith(RouteMap.ADMIN),
+    icon: <ShieldUser />,
+  },
+  ADMIN_OVERVIEW: {
     to: RouteMap.ADMIN,
     title: "Overview",
   },
@@ -108,8 +123,13 @@ export const landingLinks: LinkDto[] = [
   RouteLinks.SAY_HELLO,
 ];
 
+export const userDropdownLinks: LinkDto[] = [
+  RouteLinks.ACCOUNT_DASHBOARD,
+  RouteLinks.SETTINGS,
+  RouteLinks.HOME,
+];
 export const adminHeaderLinks: LinkDto[] = [
-  RouteLinks.ADMIN,
+  RouteLinks.ADMIN_OVERVIEW,
   RouteLinks.ADMIN_DASHBOARD_USERS,
   RouteLinks.ADMIN_DASHBOARD_ROLES,
   RouteLinks.ADMIN_DASHBOARD_PERMISSIONS,
