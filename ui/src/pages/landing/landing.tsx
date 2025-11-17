@@ -1,5 +1,5 @@
-import { LandingCardSection } from "@/pages/landing/landing-card-section";
-import { landingFeatures } from "@/pages/landing/landing-features";
+import { Hand, IdCard, ListTodo, ShieldUser, Users } from "lucide-react";
+import { JSX } from "react";
 
 export default function Landing() {
   return (
@@ -19,14 +19,27 @@ export default function Landing() {
         </div>
       </section>
 
-      <section className="flex w-full flex-col items-center py-12 md:py-16 lg:py-24 xl:py-32">
+      <section className="flex w-full flex-col items-center py-12">
         <div className="container px-4 md:px-6">
           <h2 className="mb-12 text-center text-3xl font-bold tracking-tighter sm:text-5xl">
             What you can do here:
           </h2>
-          <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-3">
-            {landingFeatures.map((card, index) => (
-              <LandingCardSection key={index} {...card} />
+          <div className="flex flex-wrap justify-center gap-10">
+            {landingFeatures.map(({ icon, title, content }, index) => (
+              <div className="flex grow justify-center">
+                <div
+                  key={index}
+                  className="w-90 flex flex-col items-center space-y-3 text-center"
+                >
+                  {icon}
+                  <h3 className="text-xl font-bold">{title}</h3>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    {content.map((item) => {
+                      return <p>{item}</p>;
+                    })}
+                  </p>
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -34,3 +47,42 @@ export default function Landing() {
     </>
   );
 }
+export type LandingCardSectionProps = {
+  title: string;
+  content: string[];
+  icon: JSX.Element;
+};
+export const landingFeatures: LandingCardSectionProps[] = [
+  {
+    title: "Say Hello!",
+    icon: <Hand className="h-10 w-10" />,
+    content: ["Whoever you are, wherever you are, you can say hello!"],
+  },
+  {
+    title: "Teams",
+    icon: <Users className="h-10 w-10" />,
+    content: [
+      "Create your own team with members. Easily manage member's roles and access",
+    ],
+  },
+  {
+    title: "Projects & Tasks",
+    icon: <ListTodo className="h-10 w-10" />,
+    content: [
+      "Tackle real-world problems by creating projects with tasks. Assign others and track progress.",
+    ],
+  },
+  {
+    title: "Authentication",
+    icon: <IdCard className="h-10 w-10" />,
+    content: ["Join your way: From Email/Password to Google, Github, etc."],
+  },
+
+  {
+    title: "Admin",
+    icon: <ShieldUser className="h-10 w-10" />,
+    content: [
+      "Manage users, roles and permissions, products, and subscriptions",
+    ],
+  },
+];
