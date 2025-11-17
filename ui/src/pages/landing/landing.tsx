@@ -16,7 +16,7 @@ export default function Landing() {
           <div className="flex flex-col items-center space-y-4 text-center">
             <div className="space-y-2">
               <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
-                Welcome to the Playground
+                Welcome to my Playground
               </h1>
               <p className="mx-auto max-w-[700px]">
                 This is a place of learning and experimentation.
