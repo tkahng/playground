@@ -1,3 +1,5 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import {
   Banknote,
   Hand,
@@ -35,9 +37,10 @@ export default function Landing() {
           <h2 className="mb-12 text-center text-3xl font-bold tracking-tighter sm:text-2xl md:text-3xl lg:text-4xl/none">
             What you can do here:
           </h2>
-          <div className="flex flex-wrap justify-center gap-10">
+          <div className="@container flex flex-wrap justify-center gap-10">
             {landingFeatures.map(({ icon, title, content }, index) => (
-              <CardSection
+              <CardSection2
+                className=""
                 index={index}
                 key={index}
                 icon={icon}
@@ -98,28 +101,35 @@ export const landingFeatures: LandingCardSectionProps[] = [
   },
 ];
 
-function CardSection({
+function CardSection2({
   index,
   icon,
   title,
   content,
+  className,
 }: {
   index: number;
   icon: JSX.Element;
   title: string;
   content: string[];
+  className?: string;
 }) {
   return (
-    <div key={index} className="flex grow justify-center">
-      <div className="min-w-80 flex flex-col items-center space-y-3 text-center">
+    <Card
+      key={index}
+      className={cn(" w-[30cqw] justify-center grow py-6", className)}
+    >
+      <CardHeader className="flex flex-col items-center">
         {icon}
-        <h3 className="text-xl">{title}</h3>
-        <p className="text-gray-500 dark:text-gray-400">
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p>
           {content.map((item) => {
             return <span key={item}>{item}</span>;
           })}
         </p>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
