@@ -1,4 +1,4 @@
-import { ThemeProviderNext } from "@/components/theme-provider";
+import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/auth-context";
 import { TeamProvider } from "@/context/team-context";
@@ -11,8 +11,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <>
       <QueryClientProvider client={queryClient}>
-        <ThemeProviderNext
+        <ThemeProvider
           attribute="class"
+          themes={["dark", "light", "system"]}
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
@@ -21,7 +22,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             <TeamProvider>{children}</TeamProvider>
           </AuthProvider>
           <Toaster />
-        </ThemeProviderNext>
+        </ThemeProvider>
         {import.meta.env.DEV && <ReactQueryDevtools />}
       </QueryClientProvider>
     </>
