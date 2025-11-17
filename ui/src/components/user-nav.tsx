@@ -1,5 +1,8 @@
-import { LinkDto } from "@/components/links";
+import { NavbarLink } from "@/components/link/nav-link";
+import { RouteLinks, userDropdownLinks } from "@/components/links";
+import { ModeToggle } from "@/components/mode-toggle";
 import { RouteMap } from "@/components/route-map";
+import { themes } from "@/components/themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,24 +11,23 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useTheme } from "next-themes";
 import { Link, useNavigate } from "react-router";
-import ThemeSwitcher from "./theme-switcher";
 
-type UserNavProps = {
-  links: LinkDto[];
-};
-
-export function UserNav({ links }: UserNavProps) {
+export function UserNav() {
+  const { theme, setTheme } = useTheme();
   const { user: auth, logout } = useAuthProvider();
-  // const { setTheme, theme } = useTheme();
   const user = auth?.user;
-  //   const { pathname } = useLocation();
   const isAdmin = auth?.roles?.includes("superuser");
+  const links2 = [...userDropdownLinks, ...(isAdmin ? [RouteLinks.ADMIN] : [])];
   const navigate = useNavigate();
+
   const handleLogout = async (event: React.FormEvent) => {
     event.preventDefault();
     await logout();
@@ -33,17 +35,11 @@ export function UserNav({ links }: UserNavProps) {
   };
   if (!auth) {
     return (
-      <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-        <Avatar>
-          <AvatarImage
-            src={
-              user?.image ||
-              "https://avatars.githubusercontent.com/u/124599?v=4"
-            }
-          />
-          <AvatarFallback>SC</AvatarFallback>
-        </Avatar>
-      </Button>
+      <>
+        <NavbarLink title="Sign In" to={RouteMap.SIGNIN} />
+        <NavbarLink title="Sign Up" to={RouteMap.SIGNUP} />
+        <ModeToggle />
+      </>
     );
   }
   return (
@@ -70,60 +66,45 @@ export function UserNav({ links }: UserNavProps) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          {links.map((link) => (
-            <DropdownMenuItem key={link.to}>
-              <Link to={link.to} className="w-full">
-                {link.title}
-              </Link>
-            </DropdownMenuItem>
+          {links2.map((link) => (
+            <>
+              <DropdownMenuItem key={link.to}>
+                <Link to={link.to} className="w-full">
+                  <div className="flex flex-row gap-2 items-center">
+                    {link.icon && link.icon}
+                    {link.title}
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+            </>
           ))}
         </DropdownMenuGroup>
-        <>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <Link to={RouteMap.LANDING_HOME} className="w-full">
-              Home
-            </Link>
-          </DropdownMenuItem>
-        </>
-        {isAdmin && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Link to={RouteMap.ADMIN} className="w-full">
-                Admin
-              </Link>
-            </DropdownMenuItem>
-          </>
-        )}
-        {/* <DropdownMenuGroup>
-          <DropdownMenuItem> */}
-        {/* </DropdownMenuItem> */}
-        {/* <DropdownMenuItem onClick={() => setTheme("light")}>
-            <span>Light</span>
-            <Dot className={theme === "light" ? "ml-2" : "hidden"} />
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme("dark")}>
-            <span>Dark</span>
-            <Dot className={theme === "dark" ? "ml-2" : "hidden"} />
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setTheme("system")}>
-            <span>System</span>
-            <Dot className={theme === "system" ? "ml-2" : "hidden"} />
-          </DropdownMenuItem> */}
-        {/* </DropdownMenuGroup> */}
         <DropdownMenuSeparator />
-        <div className="flex">
-          <DropdownMenuItem>
-            <Button onClick={handleLogout}>
-              {/* <NavLink onClick={handleLogout} to={RouteMap.HOME}> */}
-              <span>Sign out</span>
-              {/* </NavLink> */}
-            </Button>
-            {/* <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut> */}
-          </DropdownMenuItem>
-          <ThemeSwitcher />
-        </div>
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>Theme</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={theme}
+            onValueChange={(value) => {
+              setTheme(value);
+            }}
+          >
+            {themes.map((theme) => (
+              <DropdownMenuRadioItem
+                key={theme.value}
+                value={theme.value}
+                onSelect={(e) => e.preventDefault()}
+              >
+                {theme.name}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem>
+          <Button onClick={handleLogout} variant={"ghost"}>
+            Sign out
+          </Button>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

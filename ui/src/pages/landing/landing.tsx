@@ -1,4 +1,11 @@
-import { Hand, IdCard, ListTodo, ShieldUser, Users } from "lucide-react";
+import {
+  Banknote,
+  Hand,
+  IdCard,
+  ListTodo,
+  ShieldUser,
+  Users,
+} from "lucide-react";
 import { JSX } from "react";
 
 export default function Landing() {
@@ -26,16 +33,13 @@ export default function Landing() {
           </h2>
           <div className="flex flex-wrap justify-center gap-10">
             {landingFeatures.map(({ icon, title, content }, index) => (
-              <div className="flex grow justify-center">
-                <div
-                  key={index}
-                  className="w-90 flex flex-col items-center space-y-3 text-center"
-                >
+              <div key={index} className="flex grow justify-center">
+                <div className="w-90 flex flex-col items-center space-y-3 text-center">
                   {icon}
                   <h3 className="text-xl font-bold">{title}</h3>
                   <p className="text-gray-500 dark:text-gray-400">
                     {content.map((item) => {
-                      return <p>{item}</p>;
+                      return <span key={item}>{item}</span>;
                     })}
                   </p>
                 </div>
@@ -63,6 +67,13 @@ export const landingFeatures: LandingCardSectionProps[] = [
     icon: <Users className="h-10 w-10" />,
     content: [
       "Create your own team with members. Easily manage member's roles and access",
+    ],
+  },
+  {
+    title: "Payment Integration",
+    icon: <Banknote className="h-10 w-10" />,
+    content: [
+      "Teams can subscribe to different plans and manage their subscriptions.",
     ],
   },
   {
