@@ -15,11 +15,15 @@ export default function Landing() {
         <div className="container px-4 md:px-6">
           <div className="flex flex-col items-center space-y-4 text-center">
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
+              <h1 className="text-3xl font-bold tracking-tighter sm:text-2xl md:text-3xl lg:text-4xl/none">
                 Welcome to my Playground
               </h1>
-              <p className="mx-auto max-w-[700px]">
-                This is a place of learning and experimentation.
+              <p className="mx-auto max-w-[700px] text-lg text-muted-foreground">
+                This is where I experiment, learn, but most importantly have fun
+                implementing cool features.
+              </p>
+              <p className="mx-auto max-w-[700px] text-2xl font-bold">
+                If it piqued my interest, i probably will implement it here.
               </p>
             </div>
           </div>
