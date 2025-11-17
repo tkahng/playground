@@ -1,14 +1,10 @@
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import {
-  Banknote,
-  Hand,
-  IdCard,
-  ListTodo,
-  ShieldUser,
-  Users,
-} from "lucide-react";
+import { landingFeatures } from "@/pages/landing/features-list";
+import { ArrowRight } from "lucide-react";
 import { JSX } from "react";
+import { Link } from "react-router";
 
 export default function Landing() {
   return (
@@ -38,81 +34,46 @@ export default function Landing() {
             What you can do here:
           </h2>
           <div className="@container flex flex-wrap justify-center gap-10">
-            {landingFeatures.map(({ icon, title, content }, index) => (
-              <CardSection2
-                className=""
-                index={index}
-                key={index}
-                icon={icon}
-                title={title}
-                content={content}
-              />
-            ))}
+            {landingFeatures.map(
+              ({ icon, title, content, featureLink }, index) => (
+                <LandingFeatureCard
+                  featureLink={featureLink}
+                  className=""
+                  index={index}
+                  key={index}
+                  icon={icon}
+                  title={title}
+                  content={content}
+                />
+              )
+            )}
           </div>
         </div>
       </section>
     </>
   );
 }
-export type LandingCardSectionProps = {
+export type LandingFeatureCardProps = {
   title: string;
   content: string[];
   icon: JSX.Element;
+  featureLink: string;
 };
-export const landingFeatures: LandingCardSectionProps[] = [
-  {
-    title: "Say Hello!",
-    icon: <Hand className="h-10 w-10" />,
-    content: ["Whoever you are, wherever you are, you can say hello!"],
-  },
-  {
-    title: "Teams",
-    icon: <Users className="h-10 w-10" />,
-    content: [
-      "Create your own team with members. Easily manage member's roles and access",
-    ],
-  },
-  {
-    title: "Payment Integration",
-    icon: <Banknote className="h-10 w-10" />,
-    content: [
-      "Teams can subscribe to different plans and manage their subscriptions.",
-    ],
-  },
-  {
-    title: "Projects & Tasks",
-    icon: <ListTodo className="h-10 w-10" />,
-    content: [
-      "Tackle real-world problems by creating projects with tasks. Assign others and track progress.",
-    ],
-  },
-  {
-    title: "Authentication",
-    icon: <IdCard className="h-10 w-10" />,
-    content: ["Join your way: From Email/Password to Google, Github, etc."],
-  },
 
-  {
-    title: "Admin",
-    icon: <ShieldUser className="h-10 w-10" />,
-    content: [
-      "Manage users, roles and permissions, products, and subscriptions",
-    ],
-  },
-];
-
-function CardSection2({
+function LandingFeatureCard({
   index,
   icon,
   title,
   content,
   className,
+  featureLink,
 }: {
   index: number;
   icon: JSX.Element;
   title: string;
   content: string[];
   className?: string;
+  featureLink: string;
 }) {
   return (
     <Card
@@ -123,12 +84,23 @@ function CardSection2({
         {icon}
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent>
-        <p>
+      <CardContent className="flex flex-col gap-10">
+        <div>
           {content.map((item) => {
-            return <span key={item}>{item}</span>;
+            return <p key={item}>{item}</p>;
           })}
-        </p>
+        </div>
+        {featureLink && (
+          <Button asChild variant={"ghost"}>
+            <Link
+              to={featureLink}
+              className="gap-2 text-muted-foreground hover:bg-muted"
+            >
+              Read More
+              <ArrowRight className="mr-2 h-4 w-4" />
+            </Link>
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
