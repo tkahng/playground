@@ -1,4 +1,9 @@
 import {
+  themedAuthenticationFeatureImage,
+  ThemedImage,
+  themedSayHelloFeatureImage,
+} from "@/pages/landing/images";
+import {
   Banknote,
   Hand,
   IdCard,
@@ -14,7 +19,9 @@ export type Feature = {
   fragment: string;
   path: string;
   detailLink?: string;
+  featureImageComponent?: React.JSX.Element;
 };
+
 export const features: Feature[] = [
   {
     title: "Say Hello!",
@@ -25,6 +32,9 @@ export const features: Feature[] = [
     ],
     fragment: "say-hello",
     path: "/features",
+    featureImageComponent: (
+      <ThemedImage {...themedSayHelloFeatureImage} className="max-h-100" />
+    ),
   },
   {
     title: "Authentication",
@@ -37,6 +47,12 @@ export const features: Feature[] = [
     ],
     fragment: "authentication",
     path: "/features",
+    featureImageComponent: (
+      <ThemedImage
+        {...themedAuthenticationFeatureImage}
+        className="max-h-100"
+      />
+    ),
   },
   {
     title: "Teams",

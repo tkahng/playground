@@ -24,6 +24,7 @@ export default function Features() {
     </div>
   );
 }
+
 function FeatureCard(feature: Feature) {
   return (
     <div
@@ -31,7 +32,17 @@ function FeatureCard(feature: Feature) {
       key={feature.fragment}
       className="flex flex-col md:flex-row items-center gap-x-12 gap-y-6 md:even:flex-row-reverse"
     >
-      <div className="w-full aspect-[4/3] bg-muted rounded-xl border border-border/50 basis-1/2" />
+      {feature.featureImageComponent ? (
+        <div className="w-fit bg-muted rounded-xl border">
+          {feature.featureImageComponent}
+        </div>
+      ) : (
+        <div className="w-full aspect-[4/3] bg-muted rounded-xl border border-border/50 basis-1/2">
+          <div className="flex items-center justify-center w-full h-full">
+            <div className="">{feature.icon}</div>
+          </div>
+        </div>
+      )}
       <div className="basis-1/2 shrink-0">
         <span className="uppercase font-medium text-sm text-muted-foreground">
           {feature.title}
