@@ -19,10 +19,11 @@ import { useUserTeams } from "@/hooks/use-user-teams";
 import { Team } from "@/schema.types";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { CreateTeamDialog } from "./create-team-dialog";
 
 export default function TeamSwitcher() {
+  const { teamSlug } = useParams<{ teamSlug: string }>();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const { data, error: teamsError, isLoading: teamsLoading } = useUserTeams();
@@ -53,14 +54,18 @@ export default function TeamSwitcher() {
             aria-label="Select a team"
             className="w-[200px] justify-between"
           >
-            <div className="flex items-center">
-              <Avatar className="mr-2 h-5 w-5">
-                <AvatarFallback>
-                  {team?.name.slice(0, 2).toUpperCase()}
-                </AvatarFallback>
-              </Avatar>
-              <span className="truncate">{team?.name}</span>
-            </div>
+            {teamSlug ? (
+              <div className="flex items-center">
+                <Avatar className="mr-2 h-5 w-5">
+                  <AvatarFallback>
+                    {team?.name.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="truncate">{team?.name}</span>
+              </div>
+            ) : (
+              <span className="truncate">Select a team</span>
+            )}
             <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
@@ -103,8 +108,6 @@ export default function TeamSwitcher() {
               <CommandGroup>
                 <CommandItem>
                   <CreateTeamDialog />
-                  {/* <Plus className="mr-2 h-4 w-4" />
-                  Create Team */}
                 </CommandItem>
               </CommandGroup>
             </CommandList>
