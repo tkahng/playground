@@ -46,7 +46,7 @@ export default function Landing() {
                 index
               ) => (
                 <LandingFeatureCard
-                  featureLink={path + featureLink}
+                  featureLink={path + "#" + featureLink}
                   index={index}
                   key={index}
                   icon={icon}
@@ -102,6 +102,9 @@ function LandingFeatureCard({
           <Button asChild variant={"ghost"}>
             <HashLink
               to={featureLink}
+              scroll={(el) =>
+                el.scrollIntoView({ behavior: "smooth", block: "center" })
+              }
               className="gap-2 text-muted-foreground hover:bg-muted"
             >
               Read More
