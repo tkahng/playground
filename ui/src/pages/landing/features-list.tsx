@@ -23,7 +23,19 @@ export const features: Feature[] = [
     mainContent: [
       `This is a simple feature that allows you to say hello to the world. It's a great way to test out the basic functionality of the website and get a feel for how things work.`,
     ],
-    fragment: "#say-hello",
+    fragment: "say-hello",
+    path: "/features",
+  },
+  {
+    title: "Authentication",
+    icon: <IdCard className="h-10 w-10" />,
+    shortContent: [
+      "Join your way: From Email/Password to Google, Github, etc.",
+    ],
+    mainContent: [
+      `Experience seamless and secure login with various authentication options, including email/password, Google, and GitHub. Your data is protected with the latest security protocols.`,
+    ],
+    fragment: "authentication",
     path: "/features",
   },
   {
@@ -35,20 +47,8 @@ export const features: Feature[] = [
     mainContent: [
       `Create and manage your own teams, invite members, and assign roles with ease. Foster collaboration and streamline your workflow by working together on projects.`,
     ],
-    fragment: "#teams",
+    fragment: "teams",
     path: "/features",
-  },
-  {
-    title: "Payment Integration",
-    icon: <Banknote className="h-10 w-10" />,
-    shortContent: [
-      "Teams can subscribe to different plans and manage their subscriptions.",
-    ],
-    fragment: "#payment-integration",
-    path: "/features",
-    mainContent: [
-      `Integrate with Stripe to manage subscriptions and products. Offer various plans to your teams and handle billing with confidence.`,
-    ],
   },
   {
     title: "Projects & Tasks",
@@ -56,32 +56,31 @@ export const features: Feature[] = [
     shortContent: [
       "Tackle real-world problems by creating projects with tasks. Assign others and track progress.",
     ],
-    fragment: "#projects-and-tasks",
+    fragment: "projects-and-tasks",
     path: "/features",
     mainContent: [
       `Break down your work into manageable projects and tasks. Assign tasks to team members, set deadlines, and monitor progress to ensure timely completion.`,
     ],
   },
   {
-    title: "Authentication",
-    icon: <IdCard className="h-10 w-10" />,
+    title: "Payment Integration",
+    icon: <Banknote className="h-10 w-10" />,
     shortContent: [
-      "Join your way: From Email/Password to Google, Github, etc.",
+      "Teams can subscribe to different plans and manage their subscriptions.",
     ],
-    mainContent: [
-      `Experience seamless and secure login with various authentication options, including email/password, Google, and GitHub. Your data is protected with the latest security protocols.`,
-    ],
-    fragment: "#authentication",
+    fragment: "payment-integration",
     path: "/features",
+    mainContent: [
+      `Integrate with Stripe to manage subscriptions and products. Offer various plans to your teams and handle billing with confidence.`,
+    ],
   },
-
   {
     title: "Admin",
     icon: <ShieldUser className="h-10 w-10" />,
     shortContent: [
       "Manage users, roles and permissions, products, and subscriptions",
     ],
-    fragment: "#admin",
+    fragment: "admin",
     path: "/features",
     mainContent: [
       `Gain full control over your platform with robust admin features. Manage users, roles, permissions, products, and subscriptions from a centralized dashboard.`,
