@@ -1,10 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { landingFeatures } from "@/pages/landing/features-list";
+import { features } from "@/pages/landing/features-list";
 import { ArrowRight } from "lucide-react";
 import { JSX } from "react";
-import { Link } from "react-router";
+import { HashLink } from "react-router-hash-link";
 
 export default function Landing() {
   return (
@@ -34,11 +34,19 @@ export default function Landing() {
             What you can do here:
           </h2>
           <div className="@container flex flex-wrap justify-center gap-10">
-            {landingFeatures.map(
-              ({ icon, title, content, featureLink }, index) => (
+            {features.map(
+              (
+                {
+                  icon,
+                  title,
+                  shortContent: content,
+                  fragment: featureLink,
+                  path,
+                },
+                index
+              ) => (
                 <LandingFeatureCard
-                  featureLink={featureLink}
-                  className=""
+                  featureLink={path + featureLink}
                   index={index}
                   key={index}
                   icon={icon}
@@ -92,13 +100,13 @@ function LandingFeatureCard({
         </div>
         {featureLink && (
           <Button asChild variant={"ghost"}>
-            <Link
+            <HashLink
               to={featureLink}
               className="gap-2 text-muted-foreground hover:bg-muted"
             >
               Read More
               <ArrowRight className="mr-2 h-4 w-4" />
-            </Link>
+            </HashLink>
           </Button>
         )}
       </CardContent>

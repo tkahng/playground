@@ -1,96 +1,57 @@
-import LandingTopSection from "@/components/section/landing-top-section";
-import PrimarySection from "@/components/section/primary-section";
-import SecondarySection from "@/components/section/secondary-section";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Zap } from "lucide-react";
+import { Feature, features } from "@/pages/landing/features-list";
+import { ArrowRight } from "lucide-react";
+import { Link } from "react-router";
 
 export default function Features() {
   return (
-    <>
-      <LandingTopSection
-        {...{
-          heading: "Powerful Features to Supercharge Your Workflow",
-          description: `Discover how NexusAI can revolutionize your work with
-                cutting-edge AI technology.`,
-        }}
-      />
-      <SecondarySection>
-        <FeatureCard
-          title="AI Task Generation"
-          description="Describe your project in plain language, and our AI will break it down
-          into actionable tasks with deadlines."
-          items={[
-            "Suggested timelines and dependencies based on task complexity",
-            "Automatically adjusts timelines as tasks are completed",
-          ]}
-        />
-        <FeatureCard
-          title="User Management and Security"
-          description="Manage your users with ease"
-          items={[
-            "Customizable user roles and permissions",
-            "Secure user access with authentication and authorization",
-            "Product based access control",
-          ]}
-        />
-        <FeatureCard
-          title="Product and subscription integration"
-          description="With Stripe Integration you can connect your products to your subscription plan."
-          items={[
-            "Stripe Webhook Integration",
-            "Stripe Subscription Management",
-            "Stripe Billing Portal Integration",
-          ]}
-        />
-      </SecondarySection>
-      <PrimarySection>
-        <div className="space-y-2">
-          <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-            Ready to Get Started?
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="max-w-(--breakpoint-lg) w-full py-10 px-6">
+        <section>
+          <h2 className="text-4xl md:text-[2.75rem] md:leading-[1.2] font-semibold tracking-[-0.03em] sm:max-w-xl text-pretty sm:mx-auto sm:text-center">
+            <span className="italic font-light">Features</span> of this website
           </h2>
-          <p className="mx-auto max-w-[700px] ">
-            Join thousands of satisfied users and experience the power of
-            NexusAI today.
+          <p className="mt-2 text-muted-foreground text-lg sm:text-xl sm:text-center">
+            This website is not a SaaS, or some kind of service, but a canvas
+            for me to freely implement whatever I find interesting or useful.
           </p>
+        </section>
+        <p className="mt-2 text-muted-foreground text-lg sm:text-xl sm:text-center"></p>
+        <div className="mt-8 md:mt-16 w-full mx-auto space-y-20">
+          {features.map((feature) => FeatureCard(feature))}
         </div>
-        <div className="space-x-4">
-          <Button size="lg">Start Free Trial</Button>
-          <Button variant="outline" size="lg">
-            Contact Sales
-          </Button>
-        </div>
-      </PrimarySection>
-    </>
+      </div>
+    </div>
   );
 }
-function FeatureCard(props: {
-  title: string;
-  description: string;
-  items: string[];
-}) {
+function FeatureCard(feature: Feature) {
   return (
-    <Card>
-      <CardHeader>
-        <Zap className="h-8 w-8 text-primary mb-2" />
-        <CardTitle className="text-2xl font-bold">{props.title}</CardTitle>
-        <CardDescription className="text-lg">
-          {props.description}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ul className="list-disc list-inside space-y-2">
-          {props.items.map((item) => (
-            <li key={item}>{item}</li>
+    <div
+      id={feature.fragment}
+      key={feature.fragment}
+      className="flex flex-col md:flex-row items-center gap-x-12 gap-y-6 md:even:flex-row-reverse"
+    >
+      <div className="w-full aspect-[4/3] bg-muted rounded-xl border border-border/50 basis-1/2" />
+      <div className="basis-1/2 shrink-0">
+        <span className="uppercase font-medium text-sm text-muted-foreground">
+          {feature.title}
+        </span>
+        <h4 className="my-3 text-2xl font-semibold tracking-tight">
+          {feature.title}
+        </h4>
+        <p className="text-muted-foreground">
+          {feature.mainContent.map((item) => (
+            <span>{item}</span>
           ))}
-        </ul>
-      </CardContent>
-    </Card>
+        </p>
+        {feature.detailLink && (
+          <Button asChild size="lg" className="mt-6 rounded-full gap-3">
+            <Link to={feature.detailLink}>
+              Learn More <ArrowRight />
+            </Link>
+          </Button>
+        )}
+      </div>
+    </div>
   );
 }
