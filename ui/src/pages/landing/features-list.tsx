@@ -1,8 +1,8 @@
-import {
-  themedAuthenticationFeatureImage,
-  ThemedImage,
-  themedSayHelloFeatureImage,
-} from "@/pages/landing/images";
+import AuthenticationDark from "@/assets/authentication-dark.png";
+import AuthenticationLight from "@/assets/authentication-light.png";
+import SayHelloDark from "@/assets/say-hello-preview-dark.png";
+import SayHelloLight from "@/assets/say-hello-preview-light.png";
+import { ThemedImage } from "@/components/themed-image";
 import {
   Banknote,
   Hand,
@@ -33,7 +33,11 @@ export const features: Feature[] = [
     fragment: "say-hello",
     path: "/features",
     featureImageComponent: (
-      <ThemedImage {...themedSayHelloFeatureImage} className="max-h-100" />
+      <ThemedImage
+        dark={SayHelloDark}
+        light={SayHelloLight}
+        className="max-h-100"
+      />
     ),
   },
   {
@@ -49,7 +53,8 @@ export const features: Feature[] = [
     path: "/features",
     featureImageComponent: (
       <ThemedImage
-        {...themedAuthenticationFeatureImage}
+        dark={AuthenticationDark}
+        light={AuthenticationLight}
         className="max-h-100"
       />
     ),
