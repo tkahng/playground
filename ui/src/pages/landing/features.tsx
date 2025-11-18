@@ -58,7 +58,7 @@ function FeatureCard(feature: Feature) {
         {feature.detailLink && (
           <Button asChild size="lg" className="mt-6 rounded-full gap-3">
             <Link to={feature.detailLink}>
-              Learn More <ArrowRight />
+              {feature.detailLinkText || "Learn More"} <ArrowRight />
             </Link>
           </Button>
         )}
