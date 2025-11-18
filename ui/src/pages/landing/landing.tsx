@@ -39,14 +39,15 @@ export default function Landing() {
                 {
                   icon,
                   title,
+                  landingLink,
+                  landingLinkText,
                   shortContent: content,
-                  fragment: featureLink,
-                  path,
                 },
                 index
               ) => (
                 <LandingFeatureCard
-                  featureLink={path + "#" + featureLink}
+                  featureLink={landingLink}
+                  landingLinkText={landingLinkText}
                   index={index}
                   key={index}
                   icon={icon}
@@ -61,12 +62,6 @@ export default function Landing() {
     </>
   );
 }
-export type LandingFeatureCardProps = {
-  title: string;
-  content: string[];
-  icon: JSX.Element;
-  featureLink: string;
-};
 
 function LandingFeatureCard({
   index,
@@ -75,6 +70,7 @@ function LandingFeatureCard({
   content,
   className,
   featureLink,
+  landingLinkText,
 }: {
   index: number;
   icon: JSX.Element;
@@ -82,6 +78,7 @@ function LandingFeatureCard({
   content: string[];
   className?: string;
   featureLink: string;
+  landingLinkText?: string;
 }) {
   return (
     <Card
@@ -107,7 +104,7 @@ function LandingFeatureCard({
               }
               className="gap-2 text-muted-foreground hover:bg-muted"
             >
-              Read More
+              {landingLinkText || "Learn More"}
               <ArrowRight className="mr-2 h-4 w-4" />
             </HashLink>
           </Button>

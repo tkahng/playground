@@ -19,7 +19,10 @@ export type Feature = {
   fragment: string;
   path: string;
   detailLink?: string;
+  detailLinkText?: string;
   featureImageComponent?: React.JSX.Element;
+  landingLinkText?: string;
+  landingLink: string;
 };
 
 export const features: Feature[] = [
@@ -32,6 +35,10 @@ export const features: Feature[] = [
     ],
     fragment: "say-hello",
     path: "/features",
+    landingLink: "/features#say-hello",
+    landingLinkText: "Try Saying Hello!",
+    detailLink: "/say-hello",
+    detailLinkText: "Try Saying Hello",
     featureImageComponent: (
       <ThemedImage
         dark={SayHelloDark}
@@ -51,6 +58,9 @@ export const features: Feature[] = [
     ],
     fragment: "authentication",
     path: "/features",
+    landingLink: "/features#authentication",
+    detailLink: "/signup",
+    detailLinkText: "Sign Up",
     featureImageComponent: (
       <ThemedImage
         dark={AuthenticationDark}
@@ -70,6 +80,7 @@ export const features: Feature[] = [
     ],
     fragment: "teams",
     path: "/features",
+    landingLink: "/features#teams",
   },
   {
     title: "Projects & Tasks",
@@ -82,6 +93,7 @@ export const features: Feature[] = [
     mainContent: [
       `Break down your work into manageable projects and tasks. Assign tasks to team members, set deadlines, and monitor progress to ensure timely completion.`,
     ],
+    landingLink: "/features#projects-and-tasks",
   },
   {
     title: "Payment Integration",
@@ -94,6 +106,7 @@ export const features: Feature[] = [
     mainContent: [
       `Integrate with Stripe to manage subscriptions and products. Offer various plans to your teams and handle billing with confidence.`,
     ],
+    landingLink: "/features#payment-integration",
   },
   {
     title: "Admin",
@@ -106,5 +119,6 @@ export const features: Feature[] = [
     mainContent: [
       `Gain full control over your platform with robust admin features. Manage users, roles, permissions, products, and subscriptions from a centralized dashboard.`,
     ],
+    landingLink: "/features#admin",
   },
 ];
