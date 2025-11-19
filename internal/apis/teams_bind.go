@@ -205,6 +205,8 @@ func bindTeamsApi(appApi *Api) {
 
 	appApi.FindTeamMemberByIDBind(teamsGroup)
 
+	appApi.GetUserTeamMembersBind(teamsGroup)
+
 	appApi.UpdateTeamMemberBind(teamsGroup)
 
 	appApi.DeactivateTeamMemberBind(teamsGroup)
