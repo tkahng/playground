@@ -1247,6 +1247,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/team-members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get-user-team-members
+         * @description get all team members for a user
+         */
+        get: operations["get-user-team-members"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/team-members/{team-member-id}": {
         parameters: {
             query?: never;
@@ -1520,6 +1540,26 @@ export interface paths {
          */
         get: operations["get-team-team-members"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team-id}/select": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * update-selected-team
+         * @description updates the last selected team for a user
+         */
+        put: operations["update-select-team"];
         post?: never;
         delete?: never;
         options?: never;
@@ -7060,6 +7100,61 @@ export interface operations {
             };
         };
     };
+    "get-user-team-members": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                q?: string;
+                sort_by?: "last_selected_at" | "team.name" | "team.created_at" | "team.updated_at" | "user.email" | "user.name" | "user.created_at" | "user.updated_at";
+                sort_order?: "asc" | "desc";
+                active?: boolean;
+                has_billing_access?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiPaginatedResponseTeamMember"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "update-team-member": {
         parameters: {
             query?: never;
@@ -7466,8 +7561,11 @@ export interface operations {
             query?: {
                 page?: number;
                 per_page?: number;
-                sort_by?: string;
+                q?: string;
+                sort_by?: "last_selected_at" | "team.name" | "team.created_at" | "team.updated_at" | "user.email" | "user.name" | "user.created_at" | "user.updated_at";
                 sort_order?: "asc" | "desc";
+                active?: boolean;
+                has_billing_access?: boolean;
             };
             header?: never;
             path?: never;
@@ -7995,6 +8093,53 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ApiPaginatedResponseTeamMember"];
                 };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "update-select-team": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Bad Request */
             400: {
