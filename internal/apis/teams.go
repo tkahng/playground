@@ -16,6 +16,7 @@ import (
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 type TeamInfo struct {
@@ -219,7 +220,12 @@ type TeamMemberListInput struct {
 
 type UserListTeamsParams struct {
 	PaginatedInput
-	SortParams
+	Q                string                    `query:"q"`
+	SortBy           string                    `query:"sort_by,omitempty" required:"false" enum:"last_selected_at,team.name,team.created_at,team.updated_at,user.email,user.name,user.created_at,user.updated_at"`
+	SortOrder        string                    `query:"sort_order,omitempty" required:"false" enum:"asc,desc"`
+	Roles            []TeamMemberRole          `json:"roles,omitempty" minimum:"1" maximum:"3" enum:"owner,member,guest"`
+	Active           types.OptionalParam[bool] `query:"active" required:"false"`
+	HasBillingAccess types.OptionalParam[bool] `query:"has_billing_access" required:"false"`
 }
 
 func (api *Api) GetUserTeamsBind(humaApi huma.API) {
@@ -453,6 +459,41 @@ func (api *Api) GetTeamBind(humaApi huma.API) {
 			return &TeamOutput{
 				Body: fromTeamModel(team),
 			}, nil
+		},
+	)
+}
+
+func (api *Api) UpdateLastSelectedTeam(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "update-select-team",
+			Method:      http.MethodPut,
+			Path:        "/teams/{team-id}/select",
+			Summary:     "update-selected-team",
+			Description: "updates the last selected team for a user",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
+		},
+		func(ctx context.Context, input *struct {
+			TeamID string `path:"team-id" required:"true"`
+		}) (*struct{}, error) {
+			info := contextstore.GetContextTeamInfo(ctx)
+			if info == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			err := api.App().Adapter().TeamMember().UpdateTeamMemberSelectedAt(ctx, info.Team.ID, info.User.ID)
+			if err != nil {
+				slog.ErrorContext(ctx, "error deleting team", "teamId", info.Team.ID.String(), "userId", info.User.ID.String(), "error", err)
+				return nil, err
+			}
+			return nil, nil
 		},
 	)
 }
