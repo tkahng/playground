@@ -515,7 +515,7 @@ func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
 		err = adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, user1Team3Member.TeamID, *user1Team3Member.UserID)
 		assert.NoError(t, err)
 
-		t.Run("sort by user email", func(t *testing.T) {
+		t.Run("sort by user email asc", func(t *testing.T) {
 			members := FindAndPopulateTeamMembers(t, ctx, adapter, &stores.TeamMemberFilter{
 				SortParams: stores.SortParams{
 					SortBy:    "user.email",
@@ -524,6 +524,72 @@ func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
 			})
 			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
 				return a.User.Email < b.User.Email
+			})
+		})
+		t.Run("sort by user email desc", func(t *testing.T) {
+			members := FindAndPopulateTeamMembers(t, ctx, adapter, &stores.TeamMemberFilter{
+				SortParams: stores.SortParams{
+					SortBy:    "user.email",
+					SortOrder: "DESC",
+				},
+			})
+			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
+				return a.User.Email > b.User.Email
+			})
+		})
+		t.Run("sort by team name asc", func(t *testing.T) {
+			members := FindAndPopulateTeamMembers(t, ctx, adapter, &stores.TeamMemberFilter{
+				SortParams: stores.SortParams{
+					SortBy:    "team.name",
+					SortOrder: "ASC",
+				},
+			})
+			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
+				return a.Team.Name < b.Team.Name
+			})
+		})
+		t.Run("sort by team name desc", func(t *testing.T) {
+			members := FindAndPopulateTeamMembers(t, ctx, adapter, &stores.TeamMemberFilter{
+				SortParams: stores.SortParams{
+					SortBy:    "team.name",
+					SortOrder: "DESC",
+				},
+			})
+			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
+				return a.Team.Name > b.Team.Name
+			})
+		})
+		t.Run("sort by team member last selected at asc", func(t *testing.T) {
+			members := FindAndPopulateTeamMembers(t, ctx, adapter, &stores.TeamMemberFilter{
+				SortParams: stores.SortParams{
+					SortBy:    "last_selected_at",
+					SortOrder: "ASC",
+				},
+			})
+			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
+				return b.LastSelectedAt.After(a.LastSelectedAt)
+			})
+		})
+		t.Run("sort by team member last selected at desc", func(t *testing.T) {
+			members := FindAndPopulateTeamMembers(t, ctx, adapter, &stores.TeamMemberFilter{
+				SortParams: stores.SortParams{
+					SortBy:    "last_selected_at",
+					SortOrder: "DESC",
+				},
+			})
+			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
+				return b.LastSelectedAt.Before(a.LastSelectedAt)
+			})
+		})
+		t.Run("sort by team member last selected at desc", func(t *testing.T) {
+			members := FindAndPopulateTeamMembers(t, ctx, adapter, &stores.TeamMemberFilter{
+				SortParams: stores.SortParams{
+					SortBy:    "last_selected_at",
+					SortOrder: "DESC",
+				},
+			})
+			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
+				return b.LastSelectedAt.Before(a.LastSelectedAt)
 			})
 		})
 	})
