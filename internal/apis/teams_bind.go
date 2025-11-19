@@ -46,6 +46,9 @@ func bindTeamsApi(appApi *Api) {
 	// delete team
 	appApi.DeleteTeamBind(teamsGroup)
 
+	// update last selected team
+	appApi.UpdateLastSelectedTeam(teamsGroup)
+
 	// team invitations -----------------------------------------------------------------------------------------------------------
 
 	// create team invitation
