@@ -181,6 +181,12 @@ func (s *DbTeamMemberStore) FindTeamMembers(ctx context.Context, filter *TeamMem
 		qs.PlaceholderFormat(squirrel.Dollar),
 	)
 	if err != nil {
+		slog.ErrorContext(
+			ctx,
+			"error while finding team members",
+			slog.Any("error", err),
+			slog.Any("filter", filter),
+		)
 		return nil, err
 	}
 	return members, nil
@@ -313,9 +319,9 @@ func (s *DbTeamMemberStore) sortQuery(qs squirrel.SelectBuilder, filter Sortable
 		// if the sort by field is a joined field, we need to prefix it with the table name.
 		// if `team.` is a prefix for team fields, `user.` is a prefix for user fields.
 		if strings.HasPrefix(sortBy, "team.") {
-			sortBy = "org." + sortBy
+			sortBy = "org." + strings.ReplaceAll(sortBy, "team.", "teams.")
 		} else if strings.HasPrefix(sortBy, "user.") {
-			sortBy = "auth." + sortBy
+			sortBy = "auth." + strings.ReplaceAll(sortBy, "user.", "users.")
 		}
 		qs = qs.OrderBy(sortBy + " " + strings.ToUpper(sortOrder))
 	} else {
