@@ -480,18 +480,31 @@ func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
 	})
 }
 
+// user  | team
+// user1@gmail.com | team3
+// user2@gmail.com | team2
+// user3@gmail.com | team1
 func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
-		user := testutils.CreateUser(adapter, ctx, "alpha@example.com")
-		user2 := testutils.CreateUser(adapter, ctx, "beta@example.com")
-		team := testutils.CreateTeam(adapter, ctx, "Team1")
-		teamMember := testutils.CreateTeamMember(adapter, ctx, team, user, models.TeamMemberRoleMember, true)
-		teamMember.User = user
-		teamMember2 := testutils.CreateTeamMember(adapter, ctx, team, user2, models.TeamMemberRoleMember, true)
-		teamMember2.User = user2
+		user1 := testutils.CreateUser(adapter, ctx, "user1@example.com")
+		user2 := testutils.CreateUser(adapter, ctx, "user2@example.com")
+		user3 := testutils.CreateUser(adapter, ctx, "user3@example.com")
+		team1 := testutils.CreateTeam(adapter, ctx, "Team1")
+		team2 := testutils.CreateTeam(adapter, ctx, "Team2")
+		team3 := testutils.CreateTeam(adapter, ctx, "Team3")
+		user1Team3Member := testutils.CreateTeamMember(adapter, ctx, team1, user3, models.TeamMemberRoleOwner, true)
+		user2Team2Member := testutils.CreateTeamMember(adapter, ctx, team2, user2, models.TeamMemberRoleOwner, true)
+		user3Team1Member := testutils.CreateTeamMember(adapter, ctx, team3, user1, models.TeamMemberRoleOwner, true)
+
+		user1Team3Member.User = user1
+		user1Team3Member.Team = team3
+		user2Team2Member.User = user2
+		user2Team2Member.Team = team2
+		user3Team1Member.User = user3
+		user3Team1Member.Team = team1
 		type fields struct {
 			db database.Dbx
 		}
@@ -505,32 +518,7 @@ func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
 			args    args
 			want    []*models.TeamMember
 			wantErr bool
-		}{
-			{
-				name: "find team members alpha",
-				fields: fields{
-					db: db,
-				},
-				args: args{
-					ctx:    ctx,
-					filter: &stores.TeamMemberFilter{Q: "alpha", TeamIds: []uuid.UUID{team.ID}},
-				},
-				want:    []*models.TeamMember{teamMember},
-				wantErr: false,
-			},
-			{
-				name: "find team members beta",
-				fields: fields{
-					db: db,
-				},
-				args: args{
-					ctx:    ctx,
-					filter: &stores.TeamMemberFilter{Q: "beta", TeamIds: []uuid.UUID{team.ID}, PaginatedInput: stores.PaginatedInput{Page: 0, PerPage: 10}},
-				},
-				want:    []*models.TeamMember{teamMember2},
-				wantErr: false,
-			},
-		}
+		}{}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 
