@@ -13,6 +13,7 @@ import (
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/populator"
 
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
@@ -36,6 +37,77 @@ type TeamMember struct {
 }
 type TeamMemberOutput struct {
 	Body *TeamMember `json:"body"`
+}
+
+type UserTeamMembersParams struct {
+	PaginatedInput
+	Q                string                    `query:"q"`
+	SortBy           string                    `query:"sort_by,omitempty" required:"false" enum:"last_selected_at,team.name,team.created_at,team.updated_at,user.email,user.name,user.created_at,user.updated_at"`
+	SortOrder        string                    `query:"sort_order,omitempty" required:"false" enum:"asc,desc"`
+	Roles            []TeamMemberRole          `json:"roles,omitempty" minimum:"1" maximum:"3" enum:"owner,member,guest"`
+	Active           types.OptionalParam[bool] `query:"active" required:"false"`
+	HasBillingAccess types.OptionalParam[bool] `query:"has_billing_access" required:"false"`
+}
+
+func (api *Api) GetUserTeamMembersBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "get-user-team-members",
+			Method:      http.MethodGet,
+			Path:        "/team-members",
+			Summary:     "get-user-team-members",
+			Description: "get all team members for a user",
+			Tags:        []string{"Teams", "Team Members"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		func(ctx context.Context, input *UserListTeamsParams) (*ApiPaginatedOutput[*TeamMember], error) {
+			info := contextstore.GetContextUserInfo(ctx)
+			if info == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			params := &stores.TeamMemberFilter{
+				UserIds: []uuid.UUID{info.User.ID},
+			}
+			if input != nil {
+				params.Page = input.Page
+				params.PerPage = input.PerPage
+				params.SortBy = input.SortBy
+				params.SortOrder = input.SortOrder
+				params.Active = input.Active
+				params.HasBillingAccess = input.HasBillingAccess
+				params.Q = input.Q
+			}
+
+			members, err := api.App().Adapter().TeamMember().FindTeamMembers(ctx, params)
+			if err != nil {
+				return nil, err
+			}
+			pop := populator.NewPopulator(api.app.Adapter())
+			for _, r := range members {
+				err := populator.PopulateTeamMember(ctx, pop, r)
+				if err != nil {
+					return nil, err
+				}
+			}
+			count, err := api.App().Adapter().TeamMember().CountTeamMembers(ctx, params)
+			if err != nil {
+				return nil, err
+			}
+			othermembers := mapper.Map(members, func(m *models.TeamMember) *TeamMember {
+				return fromTeamMemberModel(m)
+			})
+			return &ApiPaginatedOutput[*TeamMember]{
+				Body: ApiPaginatedResponse[*TeamMember]{
+					Data: othermembers,
+					Meta: ApiGenerateMeta(&input.PaginatedInput, count),
+				},
+			}, nil
+		},
+	)
 }
 
 type FindTeamTeamMemberByIDInput struct {
@@ -182,25 +254,6 @@ func (api *Api) FindTeamTeamMembersBind(humaApi huma.API) {
 			}, nil
 		},
 	)
-}
-
-func fromTeamMemberModel(member *models.TeamMember) *TeamMember {
-	if member == nil {
-		return nil
-	}
-	return &TeamMember{
-		ID:               member.ID,
-		TeamID:           member.TeamID,
-		UserID:           member.UserID,
-		Active:           member.Active,
-		Role:             TeamMemberRole(member.Role),
-		HasBillingAccess: member.HasBillingAccess,
-		LastSelectedAt:   member.LastSelectedAt,
-		CreatedAt:        member.CreatedAt,
-		UpdatedAt:        member.UpdatedAt,
-		Team:             fromTeamModel(member.Team),
-		User:             fromUserModel(member.User),
-	}
 }
 
 type UpdateTeamMemberDto struct {
@@ -380,4 +433,23 @@ func (api *Api) LeaveTeam(humaApi huma.API) {
 			return nil, nil
 		},
 	)
+}
+
+func fromTeamMemberModel(member *models.TeamMember) *TeamMember {
+	if member == nil {
+		return nil
+	}
+	return &TeamMember{
+		ID:               member.ID,
+		TeamID:           member.TeamID,
+		UserID:           member.UserID,
+		Active:           member.Active,
+		Role:             TeamMemberRole(member.Role),
+		HasBillingAccess: member.HasBillingAccess,
+		LastSelectedAt:   member.LastSelectedAt,
+		CreatedAt:        member.CreatedAt,
+		UpdatedAt:        member.UpdatedAt,
+		Team:             fromTeamModel(member.Team),
+		User:             fromUserModel(member.User),
+	}
 }

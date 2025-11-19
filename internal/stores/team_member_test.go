@@ -312,9 +312,6 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
 		}
-		if err != nil {
-			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
-		}
 
 		// Fetch the member again to check updated_at
 		updated, err := adapter.TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
