@@ -54,7 +54,7 @@ func TestSliceLength[M any](t *testing.T, got []*M, expected int) {
 	}
 }
 
-func TestSliceItemsOrderByFunc[T any](t *testing.T, got []T, fn func(first T, second T) bool) {
+func TestSliceItemsOrderByFunc[T any](t testing.TB, got []T, fn func(first T, second T) bool) {
 	for i := 1; i < len(got)-1; i++ {
 		// firstName, secondName := *got[i].Name, *got[i+1].Name
 		// if firstName > secondName {

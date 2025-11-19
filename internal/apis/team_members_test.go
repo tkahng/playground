@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"slices"
 	"testing"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores/testutils"
 	"github.com/tkahng/playground/internal/test"
 )
 
@@ -255,6 +257,169 @@ func TestApi_FindTeamTeamMembers(t *testing.T) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1Member2.User.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("/teams/%s/members", team1Member2.Team.ID.String())
+				},
+			},
+		}
+		for _, tt := range tests {
+			tt.Test(t)
+		}
+	})
+}
+func TestApi_FindUserTeamMembers(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := SetupApi(t, ctx, db)
+		adapter := testApi.App.Adapter()
+		user1 := testutils.CreateUser(adapter, ctx, "user1@example.com")
+		team1 := testutils.CreateTeam(adapter, ctx, "Team1")
+		team2 := testutils.CreateTeam(adapter, ctx, "Team2")
+		team3 := testutils.CreateTeam(adapter, ctx, "Team3")
+		user1Team3Member := testutils.CreateTeamMember(adapter, ctx, team1, user1, models.TeamMemberRoleOwner, true)
+		user2Team2Member := testutils.CreateTeamMember(adapter, ctx, team2, user1, models.TeamMemberRoleOwner, true)
+		user3Team1Member := testutils.CreateTeamMember(adapter, ctx, team3, user1, models.TeamMemberRoleOwner, true)
+
+		user1Team3Member.User = user1
+		user1Team3Member.Team = team3
+		user2Team2Member.User = user1
+		user2Team2Member.Team = team2
+		user3Team1Member.User = user1
+		user3Team1Member.Team = team1
+
+		err := adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, user2Team2Member.TeamID, *user2Team2Member.UserID)
+		assert.NoError(t, err)
+		err = adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, user3Team1Member.TeamID, *user3Team1Member.UserID)
+		assert.NoError(t, err)
+		err = adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, user1Team3Member.TeamID, *user1Team3Member.UserID)
+		assert.NoError(t, err)
+		// testMailer := ExtractTestMailer(t, testApi.App)
+		tests := []ApiScenario{
+			{
+				Name:           "success: user1 find its teamMembers sorted by team name asc",
+				Method:         http.MethodGet,
+				URL:            "/team-members",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user1.Email)
+					scenario.Headers = []string{tokenHeader}
+					u, err := url.Parse("/team-members")
+					assert.NoError(t, err)
+					q := u.Query()
+					q.Add("sort_by", "team.name")
+					u.RawQuery = q.Encode()
+					scenario.URL = u.RequestURI()
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
+					members := result.Data
+					assert.Equal(t, 3, len(members))
+					for _, member := range result.Data {
+						assert.Equal(t, user1.ID, *member.UserID)
+						assert.NotNil(t, member.User)
+						assert.NotNil(t, member.Team)
+					}
+					test.TestSliceItemsOrderByFunc(t, members, func(a, b *apis.TeamMember) bool {
+						return a.Team.Name < b.Team.Name
+					})
+				},
+			},
+			{
+				Name:           "success: user1 find its teamMembers sorted by team name desc",
+				Method:         http.MethodGet,
+				URL:            "/team-members",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user1.Email)
+					scenario.Headers = []string{tokenHeader}
+					u, err := url.Parse("/team-members")
+					assert.NoError(t, err)
+					q := u.Query()
+					q.Add("sort_by", "team.name")
+					q.Add("sort_order", "desc")
+					u.RawQuery = q.Encode()
+					scenario.URL = u.RequestURI()
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
+					members := result.Data
+					assert.Equal(t, 3, len(members))
+					for _, member := range result.Data {
+						assert.Equal(t, user1.ID, *member.UserID)
+						assert.NotNil(t, member.User)
+						assert.NotNil(t, member.Team)
+					}
+					test.TestSliceItemsOrderByFunc(t, members, func(a, b *apis.TeamMember) bool {
+						return a.Team.Name > b.Team.Name
+					})
+				},
+			},
+			{
+				Name:           "success: user1 find its teamMembers sorted by member last selected at asc",
+				Method:         http.MethodGet,
+				URL:            "/team-members",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user1.Email)
+					scenario.Headers = []string{tokenHeader}
+					u, err := url.Parse("/team-members")
+					assert.NoError(t, err)
+					q := u.Query()
+					q.Add("sort_by", "last_selected_at")
+					u.RawQuery = q.Encode()
+					scenario.URL = u.RequestURI()
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
+					members := result.Data
+					assert.Equal(t, 3, len(members))
+					for _, member := range result.Data {
+						assert.Equal(t, user1.ID, *member.UserID)
+						assert.NotNil(t, member.User)
+						assert.NotNil(t, member.Team)
+					}
+					test.TestSliceItemsOrderByFunc(t, members, func(a, b *apis.TeamMember) bool {
+						return a.LastSelectedAt.Before(b.LastSelectedAt)
+					})
+				},
+			},
+			{
+				Name:           "success: user1 find its teamMembers sorted by member last selected at desc",
+				Method:         http.MethodGet,
+				URL:            "/team-members",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user1.Email)
+					scenario.Headers = []string{tokenHeader}
+					u, err := url.Parse("/team-members")
+					assert.NoError(t, err)
+					q := u.Query()
+					q.Add("sort_by", "last_selected_at")
+					q.Add("sort_order", "desc")
+					u.RawQuery = q.Encode()
+					scenario.URL = u.RequestURI()
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
+					members := result.Data
+					assert.Equal(t, 3, len(members))
+					for _, member := range result.Data {
+						assert.Equal(t, user1.ID, *member.UserID)
+						assert.NotNil(t, member.User)
+						assert.NotNil(t, member.Team)
+					}
+					test.TestSliceItemsOrderByFunc(t, members, func(a, b *apis.TeamMember) bool {
+						return a.LastSelectedAt.After(b.LastSelectedAt)
+					})
 				},
 			},
 		}
