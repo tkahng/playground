@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/populator"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/stores/testutils"
 	"github.com/tkahng/playground/internal/test"
@@ -505,65 +507,35 @@ func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
 		user2Team2Member.Team = team2
 		user3Team1Member.User = user3
 		user3Team1Member.Team = team1
-		type fields struct {
-			db database.Dbx
-		}
-		type args struct {
-			ctx    context.Context
-			filter *stores.TeamMemberFilter
-		}
-		tests := []struct {
-			name    string
-			fields  fields
-			args    args
-			want    []*models.TeamMember
-			wantErr bool
-		}{}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
 
-				got, err := adapter.TeamMember().FindTeamMembers(tt.args.ctx, tt.args.filter)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("DbTeamMemberStore.FindTeamMembers() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				if len(got) > 0 {
-					userIds := make([]uuid.UUID, len(got))
-					for idx, member := range got {
-						if member == nil {
-							continue
-						}
-						if member.UserID == nil {
-							continue
-						}
-						userIds[idx] = *member.UserID
-					}
-					users, err := adapter.User().LoadUsersByUserIds(ctx, userIds...)
-					if err != nil {
-						t.Fatalf("LoadUsersByUserIds() error = %v", err)
-					}
-					for idx := range userIds {
-						member := got[idx]
-						if member == nil {
-							continue
-						}
-						user := users[idx]
-						if user == nil {
-							continue
-						}
-						member.User = user
-					}
+		err := adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, user2Team2Member.TeamID, *user2Team2Member.UserID)
+		assert.NoError(t, err)
+		err = adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, user3Team1Member.TeamID, *user3Team1Member.UserID)
+		assert.NoError(t, err)
+		err = adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, user1Team3Member.TeamID, *user1Team3Member.UserID)
+		assert.NoError(t, err)
 
-				}
-				if len(got) != len(tt.want) {
-					t.Errorf("DbTeamMemberStore.FindTeamMembers() = %v, want %v", len(got), len(tt.want))
-				}
-				for idx, item := range got {
-					if item.User.Email != tt.want[idx].User.Email {
-						t.Errorf("DbTeamMemberStore.FindTeamMembers() = %v, want %v", item.ID, tt.want[idx].ID)
-					}
-				}
+		t.Run("sort by user email", func(t *testing.T) {
+			members := FindAndPopulateTeamMembers(t, ctx, adapter, &stores.TeamMemberFilter{
+				SortParams: stores.SortParams{
+					SortBy:    "user.email",
+					SortOrder: "ASC",
+				},
 			})
-		}
+			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
+				return a.User.Email < b.User.Email
+			})
+		})
 	})
+}
+
+func FindAndPopulateTeamMembers(t *testing.T, ctx context.Context, adapter *stores.StorageAdapter, filter *stores.TeamMemberFilter) []*models.TeamMember {
+	pop := populator.NewPopulator(adapter)
+	res, err := adapter.TeamMember().FindTeamMembers(ctx, filter)
+	assert.NoError(t, err)
+	for _, r := range res {
+		err := populator.PopulateTeamMember(ctx, pop, r)
+		assert.NoError(t, err)
+	}
+	return res
 }
