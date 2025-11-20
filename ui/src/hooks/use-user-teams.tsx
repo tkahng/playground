@@ -1,4 +1,4 @@
-import { getUserTeams } from "@/lib/team-queries";
+import { getUserTeamMembers } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthProvider } from "./use-auth-provider";
 
@@ -17,10 +17,10 @@ export const useUserTeams = () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
       }
-      const { data, meta } = await getUserTeams({
+      const { data, meta } = await getUserTeamMembers({
         token: user.tokens.access_token,
         page: 0,
-        perPage: 20,
+        per_page: 20,
       });
 
       return { data: data || [], meta };

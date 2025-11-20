@@ -17,45 +17,7 @@ export const createTeam = async (
   }
   return data;
 };
-export const getUserTeams = async ({
-  token,
-  page = 0,
-  perPage = 10,
-  sortBy = "team.name",
-  sortOrder = "asc",
-}: {
-  token: string;
-  page?: number;
-  perPage?: number;
-  sortBy?:
-    | "last_selected_at"
-    | "team.name"
-    | "team.created_at"
-    | "team.updated_at"
-    | "user.email"
-    | "user.name"
-    | "user.created_at"
-    | "user.updated_at";
-  sortOrder?: "asc" | "desc" | undefined;
-}) => {
-  const { data, error } = await client.GET("/api/teams", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    params: {
-      query: {
-        page,
-        per_page: perPage,
-        sort_by: sortBy,
-        sort_order: sortOrder,
-      },
-    },
-  });
-  if (error) {
-    throw ApiError.fromErrorModel(error);
-  }
-  return data;
-};
+
 export const getUserTeamMembers = async ({
   token,
   page = 0,

@@ -7,7 +7,7 @@ import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
 import { GetError } from "@/lib/error";
-import { getUserTeams } from "@/lib/team-queries";
+import { getUserTeamMembers } from "@/lib/team-queries";
 import { Team } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
@@ -47,10 +47,10 @@ export default function AccountTeamsPage() {
       }
 
       // const stats = await getStats(user.tokens.access_token);
-      const teams = await getUserTeams({
+      const teams = await getUserTeamMembers({
         token: user.tokens.access_token,
         page: pageIndex,
-        perPage: pageSize,
+        per_page: pageSize,
       });
       console.log({ teams });
       return teams;
@@ -96,11 +96,11 @@ export default function AccountTeamsPage() {
                 cell: ({ row }) => {
                   return (
                     <NavLink
-                      to={`${RouteMap.TEAM_LIST}/${row.original.slug}/dashboard`}
+                      to={`${RouteMap.TEAM_LIST}/${row.original.team?.slug}/dashboard`}
                       className="hover:underline text-blue-500"
-                      onClick={() => handleSelectTeam(row.original)}
+                      onClick={() => handleSelectTeam(row.original.team!)}
                     >
-                      {row.original.name}
+                      {row.original.team?.name}
                     </NavLink>
                   );
                 },
@@ -109,14 +109,8 @@ export default function AccountTeamsPage() {
                 accessorKey: "role",
                 header: "Member Role",
                 cell: ({ row }) => {
-                  const members = row.original.member;
-                  if (!members) {
-                    return <span className="text-gray-500">No members</span>;
-                  }
                   return (
-                    <span className="text-gray-500">
-                      {members?.role || "Member"}
-                    </span>
+                    <span className="text-gray-500">{row.original.role}</span>
                   );
                 },
               },
