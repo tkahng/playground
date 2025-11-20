@@ -1,6 +1,6 @@
 import { client } from "@/lib/client";
 import { ApiError } from "@/lib/error";
-import { components } from "@/schema";
+import { components, operations } from "@/schema";
 
 export const createTeam = async (
   accessToken: string,
@@ -21,13 +21,21 @@ export const getUserTeams = async ({
   token,
   page = 0,
   perPage = 10,
-  sortBy = "name",
+  sortBy = "team.name",
   sortOrder = "asc",
 }: {
   token: string;
   page?: number;
   perPage?: number;
-  sortBy?: string;
+  sortBy?:
+    | "last_selected_at"
+    | "team.name"
+    | "team.created_at"
+    | "team.updated_at"
+    | "user.email"
+    | "user.name"
+    | "user.created_at"
+    | "user.updated_at";
   sortOrder?: "asc" | "desc" | undefined;
 }) => {
   const { data, error } = await client.GET("/api/teams", {
@@ -48,72 +56,29 @@ export const getUserTeams = async ({
   }
   return data;
 };
-
-export const getTeamBySlug = async (token: string, slug: string) => {
-  const { data, error } = await client.GET("/api/teams/slug/{team-slug}", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    params: {
-      path: { "team-slug": slug },
-    },
-  });
-  if (error) {
-    throw ApiError.fromErrorModel(error);
-  }
-  return data;
-};
-
-export const getTeamTeamMembers = async ({
+export const getUserTeamMembers = async ({
   token,
-  teamId,
   page = 0,
-  perPage = 10,
-  search,
-  active = true,
+  per_page = 10,
+  sort_by = "team.name",
+  sort_order = "asc",
+  ...rest
 }: {
   token: string;
-  teamId: string;
-  page?: number;
-  perPage?: number;
-  search?: string;
-  active?: boolean;
-}) => {
-  const { data, error } = await client.GET("/api/teams/{team-id}/members", {
+} & operations["get-user-team-members"]["parameters"]["query"]) => {
+  const { data, error } = await client.GET("/api/team-members", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
     params: {
-      path: {
-        "team-id": teamId,
-      },
       query: {
         page,
-        per_page: perPage,
-        q: search,
-        active,
+        per_page,
+        sort_by,
+        sort_order,
+        ...rest,
       },
     },
-  });
-  if (error) {
-    throw ApiError.fromErrorModel(error);
-  }
-  return data;
-};
-
-export const updateTeam = async (
-  token: string,
-  teamId: string,
-  body: components["schemas"]["UpdateTeamDto"]
-) => {
-  const { data, error } = await client.PUT("/api/teams/{team-id}", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    params: {
-      path: { "team-id": teamId },
-    },
-    body,
   });
   if (error) {
     throw ApiError.fromErrorModel(error);
@@ -149,29 +114,6 @@ export const updateTeamMember = async ({
   }
   return data;
 };
-export const deleteMember = async ({
-  memberId,
-  token,
-}: {
-  token: string;
-  memberId: string;
-}) => {
-  const { data, error } = await client.DELETE(
-    "/api/team-members/{team-member-id}",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        path: { "team-member-id": memberId },
-      },
-    }
-  );
-  if (error) {
-    throw ApiError.fromErrorModel(error);
-  }
-  return data;
-};
 
 export const inviteTeamMember = async (
   token: string,
@@ -191,30 +133,6 @@ export const inviteTeamMember = async (
     throw ApiError.fromErrorModel(error);
   }
   return true;
-};
-
-export const getTeamInvitations = async (
-  token: string,
-  teamId: string,
-  page: number = 0,
-  perPage: number = 10
-) => {
-  const { data, error } = await client.GET("/api/teams/{team-id}/invitations", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    params: {
-      path: { "team-id": teamId },
-      query: {
-        page,
-        per_page: perPage,
-      },
-    },
-  });
-  if (error) {
-    throw ApiError.fromErrorModel(error);
-  }
-  return data;
 };
 
 export const cancelTeamInvitation = async (
@@ -242,47 +160,11 @@ export const cancelTeamInvitation = async (
   return true;
 };
 
-export const verifyTeamInvitation = async (
-  // token: string,
-  invitationToken: string
-) => {
-  const { error } = await client.POST("/api/team-invitations/check", {
-    // headers: {
-    //   Authorization: `Bearer ${token}`,
-    // },
-    body: {
-      token: invitationToken,
-    },
-  });
-  if (error) {
-    throw ApiError.fromErrorModel(error);
-  }
-  return true;
-};
-
 export const acceptInvitation = async (
   token: string,
   invitationToken: string
 ) => {
   const { error } = await client.POST("/api/team-invitations/accept", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: {
-      token: invitationToken,
-    },
-  });
-  if (error) {
-    throw ApiError.fromErrorModel(error);
-  }
-  return true;
-};
-
-export const declineInvitation = async (
-  token: string,
-  invitationToken: string
-) => {
-  const { error } = await client.POST("/api/team-invitations/decline", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -312,26 +194,6 @@ export const getUserTeamInvitations = async (
       },
     },
   });
-  if (error) {
-    throw ApiError.fromErrorModel(error);
-  }
-  return data;
-};
-
-export const getTeamInvitationByToken = async (invitationToken: string) => {
-  const { data, error } = await client.GET(
-    "/api/team-invitations/token/{token}",
-    {
-      // headers: {
-      //   Authorization: `Bearer ${token}`,
-      // },
-      params: {
-        path: {
-          token: invitationToken,
-        },
-      },
-    }
-  );
   if (error) {
     throw ApiError.fromErrorModel(error);
   }
