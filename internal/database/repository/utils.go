@@ -82,7 +82,6 @@ func ParseFieldTag(tagContent string) *FieldTag {
 		return nil
 	}
 	return fieldTag
-
 }
 
 // TagOption represents a key=value properties of a field tag.
@@ -120,5 +119,4 @@ func ParseTagOption(s string) *TagOption {
 	} else {
 		return nil
 	}
-
 }

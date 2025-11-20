@@ -43,17 +43,14 @@ func TestNewUserAccountRepositoryResource_FilterFunc(t *testing.T) {
 			"id": map[string]any{"_in": []uuid.UUID{id1, id2}},
 		}, *where)
 	})
-
 }
 
 func TestUserAccountRepositoryResource_Create(t *testing.T) {
-
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		userResource := User
 		accountResource := UserAccount
 
 		t.Run("Create with valid data", func(t *testing.T) {
-
 			user, err := userResource.Create(ctx, db, &models.User{
 				Email: "test@example.com",
 			})
@@ -97,13 +94,11 @@ func TestUserAccountRepositoryResource_Create(t *testing.T) {
 			_, err = accountResource.Create(ctx, db, userAccount2)
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "duplicate key value violates unique constraint")
-
 		})
 	})
 }
 
 func TestUserAccountRepsository_find(t *testing.T) {
-
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		userResource := User
 		user1, err := userResource.Create(ctx, db, &models.User{
@@ -212,7 +207,6 @@ func TestUserAccountRepsository_find(t *testing.T) {
 					if len(got) != 2 {
 						t.Errorf("UserRepository.find() got = %d, want %d", len(got), 2)
 					}
-
 				},
 			},
 			{

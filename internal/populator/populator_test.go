@@ -87,7 +87,6 @@ func TestPopulateTask(t *testing.T) {
 		assert.Equal(t, parent.ID, task.Parent.ID)
 		assert.Equal(t, 7, testPopulator.Recorder.Called())
 	})
-
 }
 func TestPopulateMember(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
@@ -153,8 +152,6 @@ func TestPopulateMember(t *testing.T) {
 			assert.Equal(t, existingMember.Team.ID, member.Team.ID)
 			assert.Equal(t, existingMember.Team.Name, member.Team.Name)
 			assert.Equal(t, existingMember.Team.Slug, member.Team.Slug)
-
 		}
 	})
-
 }

@@ -108,7 +108,6 @@ func (r *RbacStoreDecorator) Cleanup() {
 	r.LoadRolePermissionsFunc = nil
 	r.UpdatePermissionFunc = nil
 	r.UpdateRoleFunc = nil
-
 }
 
 // AssignUserRoles implements DbRbacStoreInterface.

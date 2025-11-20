@@ -67,7 +67,6 @@ func TestTokenStore_CRUD(t *testing.T) {
 			assert.ErrorIs(t, err, shared.ErrTokenExpired)
 			assert.Nil(t, got)
 		})
-
 	})
 }
 
@@ -79,7 +78,6 @@ func TestDbTokenStore_GetTokenByValueTypeExpires(t *testing.T) {
 		// opts := conf.ZeroEnvConfig()
 
 		t.Run("GetTokenByValueTypeExpires-success", func(t *testing.T) {
-
 			tok := &stores.CreateTokenDTO{
 				Type:       models.TokenTypesAccessToken,
 				Identifier: "user@example.com",
@@ -96,7 +94,6 @@ func TestDbTokenStore_GetTokenByValueTypeExpires(t *testing.T) {
 			assert.Equal(t, tok.Token, got.Token)
 		})
 		t.Run("GetTokenByValueTypeExpires-fail expired", func(t *testing.T) {
-
 			tok := &stores.CreateTokenDTO{
 				Type:       models.TokenTypesAccessToken,
 				Identifier: "user@example.com",

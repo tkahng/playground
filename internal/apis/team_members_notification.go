@@ -35,7 +35,7 @@ type PlaygroundSecurityExtensions struct {
 }
 
 func (api *Api) TeamMembersSseEventsBind(humapi huma.API) {
-	hanlder := sse.ServeSSE(
+	handler := sse.ServeSSE(
 		func(ctx context.Context, f func(any) error, input *TeamMemberSseInput) sse.Client {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
 			return sse.NewClient(TeamChannel(teamInfo.Member.ID.String()), f, slog.Default(), func() any {
@@ -78,9 +78,8 @@ func (api *Api) TeamMembersSseEventsBind(humapi huma.API) {
 			"assigned_to_task": &notification.NotificationPayload[notification.AssignedToTaskNotificationData]{},
 			"ping":             &PingMessage{},
 		},
-		hanlder,
+		handler,
 	)
-
 }
 
 type PingMessage struct {

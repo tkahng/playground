@@ -15,7 +15,6 @@ import (
 )
 
 func NewSeedCmd() *cobra.Command {
-
 	seedCmd.AddCommand(seedRolesCmd)
 	seedCmd.AddCommand(seedUserCmd)
 	seedCmd.AddCommand(seedAllCmd)

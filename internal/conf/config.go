@@ -98,7 +98,7 @@ func ZeroEnvConfig() *EnvConfig {
 	if dbEnv.Db == "playground" {
 		dbEnv.Db = "playground_test"
 	}
-	// nolint:exhaustruct
+	//nolint:exhaustruct
 	return &EnvConfig{
 		Db:          dbEnv,
 		AppConfig:   appEnv,

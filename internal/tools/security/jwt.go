@@ -84,6 +84,5 @@ func NewJWT(payload jwt.MapClaims, signingKey string, duration time.Duration) (s
 }
 
 func NewJWTWithClaims(payload jwt.Claims, signingKey string) (string, error) {
-
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, payload).SignedString([]byte(signingKey))
 }

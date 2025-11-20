@@ -51,7 +51,6 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 			if err != nil {
 				return nil, err
 			}
-
 		}
 	}
 
@@ -132,7 +131,7 @@ func (api *Api) MediaList(ctx context.Context, input *MediaListFilter) (*ApiPagi
 	if err != nil {
 		return nil, err
 	}
-	var data []*Media
+	data := []*Media{}
 	for _, media := range medias {
 		url, err := api.App().Fs().GeneratePresignedURL(ctx, media.Disk, path.Join(media.Directory, media.Filename))
 		if err != nil {

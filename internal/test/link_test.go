@@ -24,7 +24,6 @@ func TestGetLinkParam(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			got, gotErr := test.GetLinkParam(tt.html, tt.paramName)
 			if gotErr != nil {
 				if !tt.wantErr {

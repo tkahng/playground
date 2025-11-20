@@ -241,7 +241,6 @@ func (api *Api) FindTeamTeamMembersBind(humaApi huma.API) {
 					}
 					member.User = user
 				}
-
 			}
 			count, err := api.App().Adapter().TeamMember().CountTeamMembers(ctx, filter)
 			if err != nil {

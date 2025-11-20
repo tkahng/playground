@@ -101,7 +101,6 @@ func TestStripeService_CreateUserCustomer(t *testing.T) {
 				assert.Fail(t, "customer should be created")
 			}
 		})
-
 	})
 
 	t.Run("client error", func(t *testing.T) {
@@ -123,9 +122,7 @@ func TestStripeService_CreateUserCustomer(t *testing.T) {
 			assert.Error(t, err)
 			assert.Nil(t, result)
 		})
-
 	})
-
 }
 
 func TestStripeService_FindCustomerByTeam(t *testing.T) {
@@ -144,7 +141,6 @@ func TestStripeService_FindCustomerByTeam(t *testing.T) {
 		teamId := teamInfo.Team.ID
 
 		t.Run("success", func(t *testing.T) {
-
 			// store.On("FindCustomer", ctx, mock.AnythingOfType("*models.StripeCustomer")).Return(customer, nil)
 			result, err := service.FindCustomerByTeamId(ctx, teamId)
 			assert.NoError(t, err)
@@ -152,7 +148,6 @@ func TestStripeService_FindCustomerByTeam(t *testing.T) {
 		})
 
 		t.Run("store error", func(t *testing.T) {
-
 			adapter.CustomerFunc.FindCustomerFunc = func(ctx context.Context, filter *stores.StripeCustomerFilter) (*models.StripeCustomer, error) {
 				return nil, errors.New("db error")
 			}
@@ -176,7 +171,6 @@ func TestStripeService_FindCustomerByUser(t *testing.T) {
 		customer := services.TestHelperCreateUserCustomer(t, service, user)
 
 		t.Run("success", func(t *testing.T) {
-
 			// store.On("FindCustomer", ctx, mock.AnythingOfType("*models.StripeCustomer")).Return(customer, nil)
 			result, err := service.FindCustomerByUserId(ctx, user.ID)
 			assert.NoError(t, err)
@@ -184,7 +178,6 @@ func TestStripeService_FindCustomerByUser(t *testing.T) {
 		})
 
 		t.Run("store error", func(t *testing.T) {
-
 			adapter.CustomerFunc.FindCustomerFunc = func(ctx context.Context, filter *stores.StripeCustomerFilter) (*models.StripeCustomer, error) {
 				return nil, errors.New("db error")
 			}
@@ -237,7 +230,6 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 		}
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
 		assert.NoError(t, err)
-
 	})
 
 	t.Run("no update if quantity matches", func(t *testing.T) {
@@ -259,7 +251,6 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 		// store.On("CountTeamMembers", ctx, teamId).Return(int64(2), nil)
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
 		assert.NoError(t, err)
-
 	})
 
 	t.Run("does not return error if no subscription", func(t *testing.T) {
@@ -288,7 +279,6 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 		// store.On("FindCustomer", ctx, mock.Anything).Return(nil, errors.New("db error"))
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
 		assert.Error(t, err)
-
 	})
 
 	t.Run("returns error if no customer", func(t *testing.T) {
@@ -302,7 +292,6 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
 		assert.NoError(t, err)
-
 	})
 
 	t.Run("returns error if CountTeamMembers fails", func(t *testing.T) {
@@ -324,7 +313,6 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
 		assert.Error(t, err)
-
 	})
 
 	t.Run("returns nil if team member count is zero", func(t *testing.T) {
@@ -349,7 +337,6 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
 		assert.NoError(t, err)
-
 	})
 
 	t.Run("returns error if UpdateItemQuantity fails", func(t *testing.T) {
@@ -372,6 +359,5 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 		}
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
 		assert.Error(t, err)
-
 	})
 }

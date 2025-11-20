@@ -70,7 +70,6 @@ func TestApi_RequestVerification(t *testing.T) {
 					)
 					header := core.CreateTokenHeader(t, testApi.App, userInfo.User.Email)
 					scenario.Headers = append(scenario.Headers, header)
-
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
 					if err := app.JobManager().PollOnce(context.Background()); err != nil {

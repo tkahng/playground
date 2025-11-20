@@ -17,7 +17,6 @@ import (
 )
 
 func TestTeamStore_UpdateTeamMember(t *testing.T) {
-
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user, err := adapter.User().CreateUser(ctx, &models.User{
@@ -74,7 +73,6 @@ func TestTeamStore_UpdateTeamMember(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-
 				got, err := adapter.TeamMember().UpdateTeamMember(tt.args.ctx, tt.args.member)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("PostgresTeamStore.UpdateTeamMember() error = %v, wantErr %v", err, tt.wantErr)
@@ -157,7 +155,6 @@ func TestCreateTeamMember(t *testing.T) {
 		if member.TeamID != team.ID || member.UserID == nil || *member.UserID != userID {
 			t.Errorf("CreateTeamMember() = %v, want teamID %v and userID %v", member, team.ID, userID)
 		}
-
 	})
 }
 
@@ -196,7 +193,6 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 		if len(members) == 0 || *members[0].UserID != userID {
 			t.Errorf("FindTeamMembersByUserID() = %v, want userID %v", members, userID)
 		}
-
 	})
 }
 
@@ -272,7 +268,6 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 		if latest.ID != teamMember1.ID {
 			t.Errorf("FindLatestTeamMemberByUserID() = %v, want teamMember2 ID %v", latest.ID, teamMember2.ID)
 		}
-
 	})
 }
 
@@ -331,7 +326,6 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 				updated.UpdatedAt,
 			)
 		}
-
 	})
 }
 func TestUpdateTeamMemberSelectedAt(t *testing.T) {
@@ -388,12 +382,10 @@ func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 		if !updated.LastSelectedAt.After(original) {
 			t.Errorf("LastSelectedAt not updated recently: %v", updated.LastSelectedAt)
 		}
-
 	})
 }
 
 func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
-
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user1, err := adapter.User().CreateUser(ctx, &models.User{

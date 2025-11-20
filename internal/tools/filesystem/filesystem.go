@@ -44,7 +44,6 @@ type S3FileSystem struct {
 }
 
 func (fs *S3FileSystem) PutFile(ctx context.Context, authority string, key string, file io.Reader) error {
-
 	_, err := fs.storageClient.PutObject(ctx, &awss3.PutObjectInput{
 		Bucket: aws.String(fs.cfg.BucketName),
 		Key:    aws.String(key),
@@ -78,7 +77,6 @@ func NewFileSystem(cfg conf.StorageConfig) (FileSystem, error) {
 }
 
 func (fs *S3FileSystem) GeneratePresignedURL(ctx context.Context, bucket, key string) (string, error) {
-
 	presignResult, err := fs.presignClient.PresignGetObject(ctx, &awss3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(key),

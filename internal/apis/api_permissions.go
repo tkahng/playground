@@ -47,5 +47,4 @@ func (api *Api) PermissionsList(ctx context.Context, input *struct {
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
-
 }

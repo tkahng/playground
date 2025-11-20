@@ -104,7 +104,6 @@ func TestUserStore_CRUD(t *testing.T) {
 		if deleted != nil {
 			t.Errorf("User should be deleted, got = %v", deleted)
 		}
-
 	})
 }
 
@@ -133,7 +132,6 @@ func TestUserStore_LoadUsersByUserIds(t *testing.T) {
 		if users[0] == nil || users[1] == nil {
 			t.Errorf("Expected non-nil users, got: %v", users)
 		}
-
 	})
 }
 
@@ -217,6 +215,5 @@ func TestUserStore_FindUserById(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }

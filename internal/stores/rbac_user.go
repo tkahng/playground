@@ -73,7 +73,7 @@ func (a *DbRbacStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, rol
 }
 
 func (p *DbRbacStore) CreateUserPermissions(ctx context.Context, userId uuid.UUID, permissionIds ...uuid.UUID) error {
-	var dtos []models.UserPermission
+	dtos := []models.UserPermission{}
 	for _, id := range permissionIds {
 		dtos = append(dtos, models.UserPermission{
 			UserID:       userId,
@@ -92,7 +92,7 @@ func (p *DbRbacStore) CreateUserPermissions(ctx context.Context, userId uuid.UUI
 }
 
 func (p *DbRbacStore) CreateUserRoles(ctx context.Context, userId uuid.UUID, roleIds ...uuid.UUID) error {
-	var dtos []models.UserRole
+	dtos := make([]models.UserRole, 0)
 	for _, id := range roleIds {
 		dtos = append(dtos, models.UserRole{
 			UserID: userId,
@@ -105,7 +105,6 @@ func (p *DbRbacStore) CreateUserRoles(ctx context.Context, userId uuid.UUID, rol
 		dtos,
 	)
 	if err != nil {
-
 		return err
 	}
 	return nil

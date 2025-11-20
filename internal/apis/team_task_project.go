@@ -128,7 +128,6 @@ func (api *Api) TeamTaskProjectListBind(humaApi huma.API) {
 			),
 		},
 		func(ctx context.Context, input *TeamTaskProjectsListParams) (*TaskProjectListResponse, error) {
-
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
 			if teamInfo == nil {
 				return nil, huma.Error401Unauthorized("Unauthorized")

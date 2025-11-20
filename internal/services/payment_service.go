@@ -546,7 +546,8 @@ func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, stripe
 		return "", err
 	}
 	grouped := mapper.MapToMany(prices, prodIds, func(p *models.StripePrice) string { return p.ProductID })
-	var configurations []*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams
+
+	configurations := make([]*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams, 0)
 	for i, id := range prods {
 		price := grouped[i]
 		con := &stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams{

@@ -35,7 +35,6 @@ func NewPermissionQueryResource(
 						sq.ILike{"auth.permissions.description": "%" + filter.Q + "%"},
 					},
 				)
-
 			}
 			if len(filter.Names) > 0 {
 				qs = qs.Where(sq.Eq{"auth.permissions.name": filter.Names})
@@ -51,11 +50,9 @@ func NewPermissionQueryResource(
 						filter.RoleId,
 					)
 					qs = qs.Where("auth.role_permissions.permission_id is null")
-
 				} else {
 					qs = qs.Join("auth.role_permissions on auth.permissions.id = auth.role_permissions.permission_id and auth.role_permissions.role_id = ?", filter.RoleId).
 						Where(sq.Eq{"auth.role_permissions.role_id": filter.RoleId})
-
 				}
 			}
 			return qs

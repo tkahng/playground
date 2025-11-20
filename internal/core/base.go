@@ -153,7 +153,6 @@ func (app *BaseApp) Config() *conf.EnvConfig {
 func (app *BaseApp) Db() database.Dbx {
 	if app.db == nil {
 		panic("db not initialized")
-
 	}
 	return app.db
 }

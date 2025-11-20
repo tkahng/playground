@@ -70,7 +70,6 @@ func (c *client) Write(p Message) error {
 // Close implements the Closer interface. Note the behavior of calling Close()
 // multiple times is undefined; this implementation swallows all errors.
 func (c *client) Close() error {
-
 	return nil
 }
 
