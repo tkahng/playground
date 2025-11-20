@@ -20,7 +20,13 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { CheckCircle, CircleX } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Link, useNavigate } from "react-router";
 
@@ -60,13 +66,27 @@ export function UserNav() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
-        <DropdownMenuLabel className="font-normal">
+        <DropdownMenuLabel className="font-normal flex justify-between">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{user?.name}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email}
             </p>
           </div>
+          <Tooltip>
+            <TooltipTrigger className="h-8 w-8">
+              {auth.user.email_verified_at ? (
+                <CheckCircle className="text-green-600 dark:text-green-300" />
+              ) : (
+                <CircleX className="h-8 w-8 text-destructive" />
+              )}
+            </TooltipTrigger>
+            <TooltipContent>
+              {auth.user.email_verified_at
+                ? "Email verified"
+                : "Email not verified"}
+            </TooltipContent>
+          </Tooltip>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
