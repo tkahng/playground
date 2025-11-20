@@ -33,7 +33,7 @@ import { useUserTeamMembers } from "@/hooks/use-user-team-members";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, ChevronsUpDown } from "lucide-react";
-import { PropsWithChildren, useState } from "react";
+import { JSX, PropsWithChildren, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router";
 import { z } from "zod";
@@ -41,13 +41,19 @@ const formSchema = z.object({
   teamSlug: z.string().nullable(),
 });
 
-export function TeamSelectDialog({ children }: PropsWithChildren<unknown>) {
+export function OwnerTeamSelectDialog({
+  children,
+}: PropsWithChildren<unknown>): JSX.Element {
   const [selectedSLug, setSelectedSLug] = useState<string | null>(null);
   const {
     data: teamsData,
     error: teamsError,
     isLoading: teamsLoading,
-  } = useUserTeamMembers({ sort_by: "last_selected_at", sort_order: "desc" });
+  } = useUserTeamMembers({
+    sort_by: "last_selected_at",
+    sort_order: "desc",
+    roles: ["owner"],
+  });
   const teamDialog = useDialog();
 
   const form = useForm<z.infer<typeof formSchema>>({

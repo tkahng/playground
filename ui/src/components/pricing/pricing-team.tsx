@@ -1,4 +1,4 @@
-import { TeamSelectDialog } from "@/components/pricing/team-select-dialog";
+import { OwnerTeamSelectDialog } from "@/components/pricing/owner-team-select-dialog";
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTabs } from "@/hooks/use-tabs";
@@ -162,11 +162,11 @@ export default function PricingTeam({ products, subscription }: Props) {
                     </span>
                   </p>
                   {user && (
-                    <TeamSelectDialog>
+                    <OwnerTeamSelectDialog>
                       <Button className="block w-full py-2 mt-8 text-sm font-semibold text-center rounded-md">
                         Subscribe
                       </Button>
-                    </TeamSelectDialog>
+                    </OwnerTeamSelectDialog>
                   )}
                   {!user && (
                     <Button
