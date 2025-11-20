@@ -29,9 +29,6 @@ func bindTeamsApi(appApi *Api) {
 	// check team slug
 	appApi.CheckTeamSlugBind(teamsGroup)
 
-	// get user teams
-	appApi.GetUserTeamsBind(teamsGroup)
-
 	// create team
 	appApi.CreateTeamBind(teamsGroup)
 

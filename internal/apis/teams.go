@@ -14,7 +14,6 @@ import (
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
-	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/types"
 )
@@ -226,82 +225,6 @@ type UserListTeamsParams struct {
 	Roles            []TeamMemberRole          `json:"roles,omitempty" minimum:"1" maximum:"3" enum:"owner,member,guest"`
 	Active           types.OptionalParam[bool] `query:"active" required:"false"`
 	HasBillingAccess types.OptionalParam[bool] `query:"has_billing_access" required:"false"`
-}
-
-func (api *Api) GetUserTeamsBind(humaApi huma.API) {
-	huma.Register(
-		humaApi,
-		huma.Operation{
-			OperationID: "get-user-teams",
-			Method:      http.MethodGet,
-			Path:        "/teams",
-			Summary:     "get-user-teams",
-			Description: "get all teams for a user",
-			Tags:        []string{"Teams"},
-			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-		},
-		api.GetUserTeams,
-	)
-}
-
-func (api *Api) GetUserTeams(
-	ctx context.Context,
-	input *UserListTeamsParams,
-) (
-	*ApiPaginatedOutput[*TeamWithMember],
-	error,
-) {
-	info := contextstore.GetContextUserInfo(ctx)
-	if info == nil {
-		return nil, huma.Error401Unauthorized("unauthorized")
-	}
-	params := &stores.TeamFilter{
-		UserIds: []uuid.UUID{info.User.ID},
-	}
-	if input != nil {
-		params.Page = input.Page
-		params.PerPage = input.PerPage
-		params.SortBy = input.SortBy
-		params.SortOrder = input.SortOrder
-	}
-
-	teams, err := api.App().Adapter().TeamGroup().ListTeams(ctx, params)
-	if err != nil {
-		return nil, err
-	}
-	var teamsWithMember []*TeamWithMember
-	if len(teams) > 0 {
-		teamIds := mapper.Map(teams, func(t *models.Team) uuid.UUID {
-			return t.ID
-		})
-		members, err := api.App().Adapter().TeamMember().LoadTeamMembersByUserAndTeamIds(ctx, info.User.ID, teamIds...)
-		if err != nil {
-			return nil, err
-		}
-		for idx := range teamIds {
-			team := teams[idx]
-			member := members[idx]
-			member.User = &info.User
-			teamWithMember := &TeamWithMember{
-				Team:   *fromTeamModel(team),
-				Member: fromTeamMemberModel(member),
-			}
-			teamsWithMember = append(teamsWithMember, teamWithMember)
-		}
-	}
-	count, err := api.App().Adapter().TeamGroup().CountTeams(ctx, params)
-	if err != nil {
-		return nil, err
-	}
-	return &ApiPaginatedOutput[*TeamWithMember]{
-		Body: ApiPaginatedResponse[*TeamWithMember]{
-			Data: teamsWithMember,
-			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
-		},
-	}, nil
 }
 
 func (api *Api) FindTeamInfoBySlugBind(humaApi huma.API) {
