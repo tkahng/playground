@@ -7,7 +7,7 @@ export const useUserTeams = () => {
   const { data, isLoading, error, isError } = useQuery({
     queryKey: [
       {
-        key: "get-user-teams",
+        key: "get-user-team-members",
         user_id: user?.user.id,
         page: 0,
         per_page: 20,
