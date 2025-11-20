@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"html"
 	"net/url"
 	"regexp"
 )
@@ -9,7 +10,7 @@ import (
 var (
 	// LinkRegex is a regular expression to extract a link from an HTML email.
 	LinkRegex = regexp.MustCompile(`href\s*=\s*"([^"]+)"`)
-	CodeRegex = regexp.MustCompile(`code:\s*(\d{6})`)
+	CodeRegex = regexp.MustCompile(`<h3>(\d+)</h3>`)
 )
 
 func GetLinkParam(html, paramName string) (string, error) {
@@ -30,9 +31,10 @@ func GetLinkParam(html, paramName string) (string, error) {
 	val := parsed.Query().Get(paramName)
 	return val, nil
 }
-func GetCodeParam(html string) (string, error) {
+func GetCodeParam(body string) (string, error) {
+	unescaped := html.UnescapeString(body)
 	// Compile regex to extract href value
-	matches := CodeRegex.FindAllStringSubmatch(html, -1)
+	matches := CodeRegex.FindAllStringSubmatch(unescaped, -1)
 	if len(matches) < 1 {
 		return "", fmt.Errorf("no code found in HTML")
 	}
