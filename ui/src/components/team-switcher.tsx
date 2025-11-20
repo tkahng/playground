@@ -15,7 +15,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { useTeam } from "@/hooks/use-team";
-import { useUserTeams } from "@/hooks/use-user-teams";
+import { useUserTeamMembers } from "@/hooks/use-user-team-members";
 import { Team } from "@/schema.types";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
@@ -26,7 +26,11 @@ export default function TeamSwitcher() {
   const { teamSlug } = useParams<{ teamSlug: string }>();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const { data, error: teamsError, isLoading: teamsLoading } = useUserTeams();
+  const {
+    data,
+    error: teamsError,
+    isLoading: teamsLoading,
+  } = useUserTeamMembers();
   const { team, setTeam } = useTeam();
 
   if (teamsLoading) {
