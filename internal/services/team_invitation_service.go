@@ -67,7 +67,6 @@ func (i *InvitationService) GetInvitation(ctx context.Context, invitationToken s
 		return nil, fmt.Errorf("invitation is expired")
 	}
 	return inv, nil
-
 }
 
 func (i *InvitationService) CancelInvitation(
@@ -153,7 +152,6 @@ func (i *InvitationService) AcceptInvitation(ctx2 context.Context, userId uuid.U
 			TeamMemberID: teamMember.ID,
 		})
 	})
-
 }
 
 // CreateInvitation implements TeamInvitationService.
@@ -165,7 +163,6 @@ func (i *InvitationService) CreateInvitation(
 	role models.TeamMemberRole,
 	resend bool,
 ) error {
-
 	member, err := i.adapter.TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
 		TeamIds: []uuid.UUID{teamId},
 		UserIds: []uuid.UUID{invitingUserId},

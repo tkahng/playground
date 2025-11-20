@@ -173,5 +173,4 @@ func CheckTaskOwnerMiddleware(app core.App) HttpMiddelwareFunc {
 			next.ServeHTTP(w, r)
 		})
 	}
-
 }

@@ -65,7 +65,6 @@ func (s *DbTaskStore) CreateTask(ctx context.Context, task *models.Task) (*model
 }
 
 func (s *DbTaskStore) FindTask(ctx context.Context, task *TaskFilter) (*models.Task, error) {
-
 	where := s.taskWhere(task)
 
 	return repository.Task.GetOne(ctx, s.db, where)
@@ -362,7 +361,6 @@ func (s *DbTaskStore) FindLastTaskRank(ctx context.Context, taskProjectID uuid.U
 }
 
 func (s *DbTaskStore) DeleteTask(ctx context.Context, taskID uuid.UUID) error {
-
 	_, err := repository.Task.Delete(
 		ctx,
 		s.db,
@@ -385,7 +383,6 @@ type TaskProjectsFilter struct {
 }
 
 func (s *DbTaskStore) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error) {
-
 	task, err := repository.TaskProject.GetOne(
 		ctx,
 		s.db,
@@ -421,7 +418,6 @@ func ListTasksOrderByFunc(input *TaskFilter) *map[string]string {
 
 // ListTasks implements AdminCrudActions.
 func (s *DbTaskStore) ListTasks(ctx context.Context, input *TaskFilter) ([]*models.Task, error) {
-
 	iimit, offset := pagination(input)
 	order := ListTasksOrderByFunc(input)
 	where := s.taskWhere(input)
@@ -508,7 +504,6 @@ func ListTaskProjectsOrderByFunc(input *TaskProjectsFilter) *map[string]string {
 
 // ListTaskProjects implements AdminCrudActions.
 func (s *DbTaskStore) ListTaskProjects(ctx context.Context, input *TaskProjectsFilter) ([]*models.TaskProject, error) {
-
 	limit, offset := input.LimitOffset()
 	oredr := ListTaskProjectsOrderByFunc(input)
 	where := s.TaskProjectWhere(input)
@@ -580,7 +575,7 @@ func (s *DbTaskStore) CreateTaskProjectWithTasks(ctx context.Context, input *Cre
 	if taskProject == nil {
 		return nil, errors.New("task project not created")
 	}
-	var tasks []*models.Task
+	tasks := []*models.Task{}
 	for i, task := range input.Tasks {
 		task.Rank = float64(i * 1000)
 		newTask, err := s.CreateTaskFromInput(ctx, taskProject.TeamID, taskProject.ID, input.MemberID, &task)
@@ -719,7 +714,6 @@ func (s *DbTaskStore) CalculateTaskRankStatus(ctx context.Context, taskId uuid.U
 	}
 	sideElements := sideele[0]
 	return (element.Rank + sideElements.Rank) / 2, nil
-
 }
 
 func (s *DbTaskStore) UpdateTaskProjectUpdateDate(ctx context.Context, taskProjectID uuid.UUID) error {

@@ -142,7 +142,6 @@ func (s *DbTeamInvitationStore) FindInvitationByID(ctx context.Context, invitati
 		return nil, nil
 	}
 	if invitation.ExpiresAt.Before(time.Now()) {
-
 		return nil, shared.ErrTokenExpired
 	}
 	return invitation, nil

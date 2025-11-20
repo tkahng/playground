@@ -48,7 +48,6 @@ func TestApi_ResetPassword(t *testing.T) {
 						t.Errorf("Error marshalling input: %v", err)
 					}
 					scenario.Body = strings.NewReader(string(data))
-
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
 					err := app.JobManager().PollOnce(ctx)
@@ -133,7 +132,6 @@ func TestApi_ResetPassword(t *testing.T) {
 						t.Fatalf("Error marshalling input: %v", err)
 					}
 					scenario.Body = strings.NewReader(string(data))
-
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
 					authTokens, err := app.Auth().Signin(ctx, &auth.SigninInput{

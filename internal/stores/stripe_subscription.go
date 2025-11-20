@@ -160,7 +160,6 @@ func (s *DbSubscriptionStore) FindActiveSubscriptionsByUserIds(ctx context.Conte
 		return nil, err
 	}
 	return mapper.MapToPointer(subscriptions, userIds, func(s *models.StripeSubscription) uuid.UUID {
-
 		if s == nil || s.StripeCustomer == nil || s.StripeCustomer.UserID == nil {
 			return uuid.Nil
 		}
@@ -321,7 +320,6 @@ func (s *DbSubscriptionStore) IsFirstSubscription(ctx context.Context, customerI
 }
 
 func (s *DbSubscriptionStore) ListSubscriptions(ctx context.Context, input *StripeSubscriptionListFilter) ([]*models.StripeSubscription, error) {
-
 	limit, offset := input.LimitOffset()
 	where := s.filter(input)
 	order := s.listSubscriptionOrderByFunc(input)

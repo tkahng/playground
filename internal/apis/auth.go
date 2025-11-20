@@ -7,9 +7,9 @@ type ApiUserInfoTokens struct { // size=360 (0x168), class=384 (0x180)
 	Tokens TokenDto `json:"tokens"`
 }
 type ApiUserInfo struct { // size=360 (0x168), class=384 (0x180)
-	User        ApiUser        `db:"user" json:"user"`
-	Roles       []string       `db:"roles" json:"roles"`
-	Permissions []string       `db:"permissions" json:"permissions"`
+	User        ApiUser            `db:"user" json:"user"`
+	Roles       []string           `db:"roles" json:"roles"`
+	Permissions []string           `db:"permissions" json:"permissions"`
 	Providers   []models.Providers `db:"providers" json:"providers" enum:"google,apple,facebook,github,credentials"`
 }
 

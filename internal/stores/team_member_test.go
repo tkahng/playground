@@ -7,15 +7,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/populator"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/stores/testutils"
 	"github.com/tkahng/playground/internal/test"
 )
 
 func TestTeamStore_UpdateTeamMember(t *testing.T) {
-
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user, err := adapter.User().CreateUser(ctx, &models.User{
@@ -72,7 +73,6 @@ func TestTeamStore_UpdateTeamMember(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-
 				got, err := adapter.TeamMember().UpdateTeamMember(tt.args.ctx, tt.args.member)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("PostgresTeamStore.UpdateTeamMember() error = %v, wantErr %v", err, tt.wantErr)
@@ -155,7 +155,6 @@ func TestCreateTeamMember(t *testing.T) {
 		if member.TeamID != team.ID || member.UserID == nil || *member.UserID != userID {
 			t.Errorf("CreateTeamMember() = %v, want teamID %v and userID %v", member, team.ID, userID)
 		}
-
 	})
 }
 
@@ -194,7 +193,6 @@ func TestFindTeamMembersByUserID(t *testing.T) {
 		if len(members) == 0 || *members[0].UserID != userID {
 			t.Errorf("FindTeamMembersByUserID() = %v, want userID %v", members, userID)
 		}
-
 	})
 }
 
@@ -270,7 +268,6 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 		if latest.ID != teamMember1.ID {
 			t.Errorf("FindLatestTeamMemberByUserID() = %v, want teamMember2 ID %v", latest.ID, teamMember2.ID)
 		}
-
 	})
 }
 
@@ -310,9 +307,6 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
 		}
-		if err != nil {
-			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
-		}
 
 		// Fetch the member again to check updated_at
 		updated, err := adapter.TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
@@ -332,7 +326,6 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 				updated.UpdatedAt,
 			)
 		}
-
 	})
 }
 func TestUpdateTeamMemberSelectedAt(t *testing.T) {
@@ -389,12 +382,10 @@ func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 		if !updated.LastSelectedAt.After(original) {
 			t.Errorf("LastSelectedAt not updated recently: %v", updated.LastSelectedAt)
 		}
-
 	})
 }
 
 func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
-
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user1, err := adapter.User().CreateUser(ctx, &models.User{
@@ -480,102 +471,126 @@ func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
 	})
 }
 
+// user  | team
+// user1@gmail.com | team3
+// user2@gmail.com | team2
+// user3@gmail.com | team1
 func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
-		user := testutils.CreateUser(adapter, ctx, "alpha@example.com")
-		user2 := testutils.CreateUser(adapter, ctx, "beta@example.com")
-		team := testutils.CreateTeam(adapter, ctx, "Team1")
-		teamMember := testutils.CreateTeamMember(adapter, ctx, team, user, models.TeamMemberRoleMember, true)
-		teamMember.User = user
-		teamMember2 := testutils.CreateTeamMember(adapter, ctx, team, user2, models.TeamMemberRoleMember, true)
-		teamMember2.User = user2
-		type fields struct {
-			db database.Dbx
-		}
-		type args struct {
-			ctx    context.Context
-			filter *stores.TeamMemberFilter
-		}
-		tests := []struct {
-			name    string
-			fields  fields
-			args    args
-			want    []*models.TeamMember
-			wantErr bool
-		}{
-			{
-				name: "find team members alpha",
-				fields: fields{
-					db: db,
-				},
-				args: args{
-					ctx:    ctx,
-					filter: &stores.TeamMemberFilter{Q: "alpha", TeamIds: []uuid.UUID{team.ID}},
-				},
-				want:    []*models.TeamMember{teamMember},
-				wantErr: false,
-			},
-			{
-				name: "find team members beta",
-				fields: fields{
-					db: db,
-				},
-				args: args{
-					ctx:    ctx,
-					filter: &stores.TeamMemberFilter{Q: "beta", TeamIds: []uuid.UUID{team.ID}, PaginatedInput: stores.PaginatedInput{Page: 0, PerPage: 10}},
-				},
-				want:    []*models.TeamMember{teamMember2},
-				wantErr: false,
-			},
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
+		user1 := testutils.CreateUser(adapter, ctx, "user1@example.com")
+		user2 := testutils.CreateUser(adapter, ctx, "user2@example.com")
+		user3 := testutils.CreateUser(adapter, ctx, "user3@example.com")
+		team1 := testutils.CreateTeam(adapter, ctx, "Team1")
+		team2 := testutils.CreateTeam(adapter, ctx, "Team2")
+		team3 := testutils.CreateTeam(adapter, ctx, "Team3")
+		user1Team3Member := testutils.CreateTeamMember(adapter, ctx, team1, user3, models.TeamMemberRoleOwner, true)
+		user2Team2Member := testutils.CreateTeamMember(adapter, ctx, team2, user2, models.TeamMemberRoleOwner, true)
+		user3Team1Member := testutils.CreateTeamMember(adapter, ctx, team3, user1, models.TeamMemberRoleOwner, true)
 
-				got, err := adapter.TeamMember().FindTeamMembers(tt.args.ctx, tt.args.filter)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("DbTeamMemberStore.FindTeamMembers() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				if len(got) > 0 {
-					userIds := make([]uuid.UUID, len(got))
-					for idx, member := range got {
-						if member == nil {
-							continue
-						}
-						if member.UserID == nil {
-							continue
-						}
-						userIds[idx] = *member.UserID
-					}
-					users, err := adapter.User().LoadUsersByUserIds(ctx, userIds...)
-					if err != nil {
-						t.Fatalf("LoadUsersByUserIds() error = %v", err)
-					}
-					for idx := range userIds {
-						member := got[idx]
-						if member == nil {
-							continue
-						}
-						user := users[idx]
-						if user == nil {
-							continue
-						}
-						member.User = user
-					}
+		user1Team3Member.User = user1
+		user1Team3Member.Team = team3
+		user2Team2Member.User = user2
+		user2Team2Member.Team = team2
+		user3Team1Member.User = user3
+		user3Team1Member.Team = team1
 
-				}
-				if len(got) != len(tt.want) {
-					t.Errorf("DbTeamMemberStore.FindTeamMembers() = %v, want %v", len(got), len(tt.want))
-				}
-				for idx, item := range got {
-					if item.User.Email != tt.want[idx].User.Email {
-						t.Errorf("DbTeamMemberStore.FindTeamMembers() = %v, want %v", item.ID, tt.want[idx].ID)
-					}
-				}
+		err := adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, user2Team2Member.TeamID, *user2Team2Member.UserID)
+		assert.NoError(t, err)
+		err = adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, user3Team1Member.TeamID, *user3Team1Member.UserID)
+		assert.NoError(t, err)
+		err = adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, user1Team3Member.TeamID, *user1Team3Member.UserID)
+		assert.NoError(t, err)
+
+		t.Run("sort by user email asc", func(t *testing.T) {
+			members := FindAndPopulateTeamMembers(t, ctx, adapter, &stores.TeamMemberFilter{
+				SortParams: stores.SortParams{
+					SortBy:    "user.email",
+					SortOrder: "ASC",
+				},
 			})
-		}
+			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
+				return a.User.Email < b.User.Email
+			})
+		})
+		t.Run("sort by user email desc", func(t *testing.T) {
+			members := FindAndPopulateTeamMembers(t, ctx, adapter, &stores.TeamMemberFilter{
+				SortParams: stores.SortParams{
+					SortBy:    "user.email",
+					SortOrder: "DESC",
+				},
+			})
+			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
+				return a.User.Email > b.User.Email
+			})
+		})
+		t.Run("sort by team name asc", func(t *testing.T) {
+			members := FindAndPopulateTeamMembers(t, ctx, adapter, &stores.TeamMemberFilter{
+				SortParams: stores.SortParams{
+					SortBy:    "team.name",
+					SortOrder: "ASC",
+				},
+			})
+			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
+				return a.Team.Name < b.Team.Name
+			})
+		})
+		t.Run("sort by team name desc", func(t *testing.T) {
+			members := FindAndPopulateTeamMembers(t, ctx, adapter, &stores.TeamMemberFilter{
+				SortParams: stores.SortParams{
+					SortBy:    "team.name",
+					SortOrder: "DESC",
+				},
+			})
+			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
+				return a.Team.Name > b.Team.Name
+			})
+		})
+		t.Run("sort by team member last selected at asc", func(t *testing.T) {
+			members := FindAndPopulateTeamMembers(t, ctx, adapter, &stores.TeamMemberFilter{
+				SortParams: stores.SortParams{
+					SortBy:    "last_selected_at",
+					SortOrder: "ASC",
+				},
+			})
+			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
+				return b.LastSelectedAt.After(a.LastSelectedAt)
+			})
+		})
+		t.Run("sort by team member last selected at desc", func(t *testing.T) {
+			members := FindAndPopulateTeamMembers(t, ctx, adapter, &stores.TeamMemberFilter{
+				SortParams: stores.SortParams{
+					SortBy:    "last_selected_at",
+					SortOrder: "DESC",
+				},
+			})
+			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
+				return b.LastSelectedAt.Before(a.LastSelectedAt)
+			})
+		})
+		t.Run("sort by team member last selected at desc", func(t *testing.T) {
+			members := FindAndPopulateTeamMembers(t, ctx, adapter, &stores.TeamMemberFilter{
+				SortParams: stores.SortParams{
+					SortBy:    "last_selected_at",
+					SortOrder: "DESC",
+				},
+			})
+			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
+				return b.LastSelectedAt.Before(a.LastSelectedAt)
+			})
+		})
 	})
+}
+
+func FindAndPopulateTeamMembers(t *testing.T, ctx context.Context, adapter *stores.StorageAdapter, filter *stores.TeamMemberFilter) []*models.TeamMember {
+	pop := populator.NewPopulator(adapter)
+	res, err := adapter.TeamMember().FindTeamMembers(ctx, filter)
+	assert.NoError(t, err)
+	for _, r := range res {
+		err := populator.PopulateTeamMember(ctx, pop, r)
+		assert.NoError(t, err)
+	}
+	return res
 }

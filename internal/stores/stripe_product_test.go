@@ -89,7 +89,6 @@ func TestStripeStore_ProductAndPrice(t *testing.T) {
 		if len(prices) == 0 {
 			t.Errorf("ListPrices() = %v, want at least 1", prices)
 		}
-
 	})
 }
 
@@ -132,6 +131,5 @@ func TestStripeStore_UpsertProductAndPrice(t *testing.T) {
 		if err != nil {
 			t.Fatalf("UpsertPrice() error = %v", err)
 		}
-
 	})
 }

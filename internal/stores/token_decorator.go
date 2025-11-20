@@ -39,7 +39,6 @@ func (t *TokenStoreDecorator) Cleanup() {
 	t.GetTokenFunc = nil
 	t.SaveTokenFunc = nil
 	t.VerifyTokenStorageFunc = nil
-
 }
 
 func (t *TokenStoreDecorator) WithTx(dbx database.Dbx) *TokenStoreDecorator {
@@ -57,7 +56,6 @@ func (t *TokenStoreDecorator) DeleteToken(ctx context.Context, token string) err
 		return t.DeleteTokenFunc(ctx, token)
 	}
 	return t.Delegate.DeleteToken(ctx, token)
-
 }
 
 // GetToken implements DbTokenStoreInterface.

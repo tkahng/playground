@@ -16,7 +16,6 @@ func (api *Api) AdminUserPermissionsDelete(ctx context.Context, input *struct {
 	UserId       string `path:"user-id" format:"uuid" required:"true"`
 	PermissionId string `path:"permission-id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
-
 	id, err := uuid.Parse(input.UserId)
 	if err != nil {
 		return nil, err
@@ -184,7 +183,6 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
-
 }
 
 type PermissionCreateInput struct {
@@ -199,7 +197,6 @@ func (api *Api) AdminPermissionsCreate(ctx context.Context, input *struct {
 	permission, err := store.FindPermissionByName(ctx, input.Body.Name)
 	if err != nil {
 		return nil, err
-
 	}
 	if permission != nil {
 		return nil, huma.Error409Conflict("Permission already exists")

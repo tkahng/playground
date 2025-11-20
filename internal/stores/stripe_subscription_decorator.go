@@ -33,7 +33,6 @@ func (s *StripeSubscriptionStoreDecorator) Cleanup() {
 	s.ListSubscriptionsFunc = nil
 	s.UpsertSubscriptionFunc = nil
 	s.UpsertSubscriptionFromStripeFunc = nil
-
 }
 
 // CountSubscriptions implements DbSubscriptionStoreInterface.

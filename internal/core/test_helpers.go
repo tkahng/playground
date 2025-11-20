@@ -372,7 +372,6 @@ func CreateUserWithOptions(t testing.TB, app App, options ...UserOptionFunc) *mo
 	return &models.UserInfo{
 		User: *user,
 	}
-
 }
 
 func CreateProductsAndPrices(t testing.TB, app *BaseApp) {

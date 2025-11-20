@@ -19,7 +19,7 @@ func HumaChiMiddleware(mw func(http.Handler) http.Handler) func(ctx huma.Context
 }
 
 func HumaChiMiddlewares(mws ...func(http.Handler) http.Handler) []func(ctx huma.Context, next func(huma.Context)) {
-	var middlewares []func(ctx huma.Context, next func(huma.Context))
+	middlewares := []func(ctx huma.Context, next func(huma.Context)){}
 	for _, mw := range mws {
 		middlewares = append(middlewares, HumaChiMiddleware(mw))
 	}

@@ -87,5 +87,71 @@ func TestPopulateTask(t *testing.T) {
 		assert.Equal(t, parent.ID, task.Parent.ID)
 		assert.Equal(t, 7, testPopulator.Recorder.Called())
 	})
+}
+func TestPopulateMember(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		team := repository.MustCreateOneCtx(t, ctx, repository.Team, db, &models.Team{
+			Name: "team1",
+			Slug: "team1",
+		})
+		owner := repository.MustCreateOneCtx(t, ctx, repository.User, db, &models.User{
+			Email:           "owner@example.com",
+			EmailVerifiedAt: types.Pointer(time.Now()),
+		})
+		ownerMember := repository.MustCreateOneCtx(t, ctx, repository.TeamMember, db, &models.TeamMember{
+			UserID:           &owner.ID,
+			TeamID:           team.ID,
+			Role:             models.TeamMemberRoleOwner,
+			Active:           true,
+			HasBillingAccess: true,
+		})
+		ownerMember.User = owner
+		ownerMember.Team = team
 
+		user1 := repository.MustCreateOneCtx(t, ctx, repository.User, db, &models.User{
+			Email: "user1@example.com",
+		})
+		user1Member := repository.MustCreateOneCtx(t, ctx, repository.TeamMember, db, &models.TeamMember{
+			UserID: &user1.ID,
+			TeamID: team.ID,
+			Role:   models.TeamMemberRoleMember,
+			Active: true,
+		})
+		user1Member.User = user1
+		user1Member.Team = team
+
+		members := repository.MustFindWithOptionsCtx(t, ctx, repository.TeamMember, db)
+		assert.Len(t, members, 2)
+		adapter := stores.NewDbAdapterDecorators(db)
+		testPopulator := NewTestPopulator(adapter)
+		for _, member := range members {
+			err := PopulateTeamMember(ctx, testPopulator, member)
+			assert.NoError(t, err)
+		}
+		for _, member := range members {
+			var existingMember *models.TeamMember
+			if member.ID == ownerMember.ID {
+				existingMember = ownerMember
+				existingMember.User = owner
+			} else if member.ID == user1Member.ID {
+				existingMember = user1Member
+				existingMember.User = user1
+			} else {
+				assert.Fail(t, "member not found")
+			}
+			assert.Equal(t, existingMember.ID, member.ID)
+			assert.Equal(t, existingMember.UserID, member.UserID)
+			assert.Equal(t, existingMember.TeamID, member.TeamID)
+			assert.Equal(t, existingMember.Role, member.Role)
+			assert.Equal(t, existingMember.Active, member.Active)
+			assert.Equal(t, existingMember.HasBillingAccess, member.HasBillingAccess)
+			assert.Equal(t, existingMember.User.ID, member.User.ID)
+			assert.Equal(t, existingMember.User.Email, member.User.Email)
+			assert.Equal(t, existingMember.User.EmailVerifiedAt, member.User.EmailVerifiedAt)
+			assert.Equal(t, existingMember.User.CreatedAt, member.User.CreatedAt)
+			assert.Equal(t, existingMember.Team.ID, member.Team.ID)
+			assert.Equal(t, existingMember.Team.Name, member.Team.Name)
+			assert.Equal(t, existingMember.Team.Slug, member.Team.Slug)
+		}
+	})
 }

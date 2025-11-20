@@ -108,7 +108,6 @@ func TestListUserPermissionsSource(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -196,7 +195,6 @@ func TestCountUserPermissionSource(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 func TestListUserNotPermissionsSource(t *testing.T) {
@@ -312,7 +310,6 @@ func TestListUserNotPermissionsSource(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 func TestCountNotUserPermissionSource(t *testing.T) {
@@ -405,7 +402,6 @@ func TestCountNotUserPermissionSource(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -457,7 +453,6 @@ func TestCreateUserRoles(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -529,6 +524,5 @@ func TestGetUserRoles(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }

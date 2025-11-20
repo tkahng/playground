@@ -82,7 +82,6 @@ func (api *Api) bindCreateUserReaction(aapi huma.API) {
 			return nil, nil
 		},
 	)
-
 }
 
 func (api *Api) bindGetLatestUserReactionStats(aapi huma.API) {
@@ -127,14 +126,13 @@ func (api *Api) bindGetLatestUserReactionStats(aapi huma.API) {
 			return &ApiOutput[*userreaction.UserReactionStats]{Body: stats}, nil
 		},
 	)
-
 }
 
 type UserReactionSseInput struct {
 }
 
 func (api *Api) bindUserReactionSse(humapi huma.API) {
-	hanlder := sse.ServeSSE(
+	handler := sse.ServeSSE(
 		func(ctx context.Context, f func(any) error, input *UserReactionSseInput) sse.Client {
 			return sse.NewClient(sse.UserReactionsChannel, f, slog.Default(), func() any {
 				return &PingMessage{
@@ -166,7 +164,6 @@ func (api *Api) bindUserReactionSse(humapi huma.API) {
 			"latest_user_reaction_stats": &userreaction.LatestUserReactionStatsSseEvent{},
 			"ping":                       &PingMessage{},
 		},
-		hanlder,
+		handler,
 	)
-
 }

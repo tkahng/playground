@@ -91,7 +91,6 @@ func (c *StripeClient) FindAllProducts() ([]*stripe.Product, error) {
 		if prod != nil {
 			data = append(data, prod)
 		}
-
 	}
 
 	return data, nil
@@ -106,7 +105,6 @@ func (c *StripeClient) FindAllPrices() ([]*stripe.Price, error) {
 		if prod != nil {
 			data = append(data, prod)
 		}
-
 	}
 
 	return data, nil
@@ -164,7 +162,7 @@ func (c *StripeClient) CreateCheckoutSession(customerId, priceId string, quantit
 }
 
 func (c *StripeClient) CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error) {
-	var prods []*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams
+	prods := []*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams{}
 	for _, i := range input {
 		prods = append(prods, &stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams{
 			Product: i.Product,

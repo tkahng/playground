@@ -106,7 +106,6 @@ func TestFindPermissionsByIds(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -168,7 +167,6 @@ func TestListPermissions(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -235,7 +233,6 @@ func TestCountPermissions(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -315,7 +312,6 @@ func TestDeleteRolePermissions(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -367,7 +363,6 @@ func TestFindOrCreatePermission(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -429,7 +424,6 @@ func TestCreatePermission(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 func TestFindPermissionById(t *testing.T) {
@@ -491,7 +485,6 @@ func TestFindPermissionById(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -574,7 +567,6 @@ func TestUpdatePermission(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 func TestCreateRolePermissions(t *testing.T) {
@@ -621,7 +613,6 @@ func TestCreateRolePermissions(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 

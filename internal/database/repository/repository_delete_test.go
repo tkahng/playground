@@ -179,7 +179,6 @@ func TestRepositoryDelete_UserAccount(t *testing.T) {
 				dbx := scenario.Dbx
 				var userArgs []models.User
 				for i := range 10 {
-
 					userArgs = append(userArgs, models.User{
 						Name:  types.Pointer("Name:" + fmt.Sprint(i)),
 						Email: fmt.Sprint(i) + "@email.com",
@@ -292,7 +291,6 @@ func TestRepositoryDelete_TeamMember(t *testing.T) {
 				dbx := scenario.Dbx
 				var userArgs []models.User
 				for i := range 10 {
-
 					userArgs = append(userArgs, models.User{
 						Name:  types.Pointer("Name:" + fmt.Sprint(i)),
 						Email: fmt.Sprint(i) + "@email.com",
@@ -301,7 +299,6 @@ func TestRepositoryDelete_TeamMember(t *testing.T) {
 				users := MustCreateManyCtx(t, ctx, User, dbx, userArgs)
 				var teamArgs []models.Team
 				for i := range 10 {
-
 					teamArgs = append(teamArgs, models.Team{
 						Name: "name:" + fmt.Sprint(i),
 						Slug: "slug:" + fmt.Sprint(i),
@@ -311,7 +308,6 @@ func TestRepositoryDelete_TeamMember(t *testing.T) {
 				var teamMemberArgs []models.TeamMember
 
 				for i := range 10 {
-
 					teamMemberArgs = append(teamMemberArgs, models.TeamMember{
 						TeamID: teams[i].ID,
 						UserID: &users[i].ID,
@@ -348,7 +344,6 @@ func TestRepositoryDelete_TeamMember(t *testing.T) {
 				dbx := scenario.Dbx
 				var userArgs []models.User
 				for i := range 10 {
-
 					userArgs = append(userArgs, models.User{
 						Name:  types.Pointer("Name:" + fmt.Sprint(i)),
 						Email: fmt.Sprint(i) + "@email.com",
@@ -357,7 +352,6 @@ func TestRepositoryDelete_TeamMember(t *testing.T) {
 				users := MustCreateManyCtx(t, ctx, User, dbx, userArgs)
 				var teamArgs []models.Team
 				for i := range 10 {
-
 					teamArgs = append(teamArgs, models.Team{
 						Name: "name:" + fmt.Sprint(i),
 						Slug: "slug:" + fmt.Sprint(i),
@@ -367,7 +361,6 @@ func TestRepositoryDelete_TeamMember(t *testing.T) {
 				var teamMemberArgs []models.TeamMember
 
 				for i := range 10 {
-
 					teamMemberArgs = append(teamMemberArgs, models.TeamMember{
 						TeamID: teams[i].ID,
 						UserID: &users[i].ID,

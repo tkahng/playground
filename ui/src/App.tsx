@@ -142,6 +142,7 @@ function App() {
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/about" element={<LandingAboutPage />} />
               <Route path="/contact" element={<LandingContactPage />} />
+              <Route path="/say-hello" element={<SayHelloPage />} />
             </Route>
             {/* auth routes */}
             <Route element={<PublicLayout />}>
@@ -149,7 +150,7 @@ function App() {
               <Route path="/signup" element={<SignupPage />} />
               <Route path="/not-authorized" element={<NotAuthorizedPage />} />
               <Route path="/auth/callback" element={<CallbackComponent />} />
-              <Route path="/say-hello" element={<SayHelloPage />} />
+
               <Route
                 path="/confirm-verification"
                 element={<ConfirmVerification />}

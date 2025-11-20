@@ -91,7 +91,6 @@ func TestListRoles(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -165,7 +164,6 @@ func TestCountRoles(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -219,7 +217,6 @@ func TestLoadRolePermissions(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -271,7 +268,6 @@ func TestFindOrCreateRole(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 func TestCreateRole(t *testing.T) {
@@ -326,7 +322,6 @@ func TestCreateRole(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -411,7 +406,6 @@ func TestUpdateRole(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -482,7 +476,6 @@ func TestDeleteRole(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -542,6 +535,5 @@ func TestDeletePermission(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }

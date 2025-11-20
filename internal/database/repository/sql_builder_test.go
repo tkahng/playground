@@ -15,7 +15,6 @@ func TestNewSQLBuilder_Success(t *testing.T) {
 			t.Errorf("expected builder to not be nil")
 		}
 	})
-
 }
 
 func TestNewSQLBuilder_Fail(t *testing.T) {
@@ -171,7 +170,6 @@ type builderWhereTest[T any] struct {
 }
 
 func TestSQLBuilder_Models_WhereError(t *testing.T) {
-
 	tests := []builderWhereTest[A]{
 		{
 			name:    "a: where id_eq_hello",

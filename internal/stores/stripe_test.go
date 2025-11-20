@@ -94,7 +94,6 @@ func TestStripeStore_FindSubscriptionsWithPriceProductByIds(t *testing.T) {
 		if withPrice.StripeCustomer == nil || withPrice.StripeCustomer.ID != customer.ID {
 			t.Errorf("FindSubscriptionWithPriceById() StripeCustomer = %v, want %v", withPrice.StripeCustomer, customer.ID)
 		}
-
 	})
 }
 
@@ -200,7 +199,6 @@ func TestStripeStore_FindActiveSubscriptionsByTeamIds(t *testing.T) {
 		if withPrice.Price.Product == nil || withPrice.Price.Product.ID != product.ID {
 			t.Errorf("FindSubscriptionWithPriceById() Product = %v, want %v", withPrice.Price.Product, product.ID)
 		}
-
 	})
 }
 
@@ -325,7 +323,6 @@ func TestStripeStore_FindActiveSubscriptionsByCustomerIds(t *testing.T) {
 		if withPrice.Price.Product == nil || withPrice.Price.Product.ID != product.ID {
 			t.Errorf("FindSubscriptionWithPriceById() Product = %v, want %v", withPrice.Price.Product, product.ID)
 		}
-
 	})
 }
 func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
@@ -428,7 +425,6 @@ func TestStripeStore_FindActiveSubscriptionsByUserIds(t *testing.T) {
 		if withPrice.Price.Product == nil || withPrice.Price.Product.ID != product.ID {
 			t.Errorf("FindSubscriptionWithPriceById() Product = %v, want %v", withPrice.Price.Product, product.ID)
 		}
-
 	})
 }
 
@@ -496,7 +492,6 @@ func TestStripeStore_UpsertSubscriptionFromStripe(t *testing.T) {
 		if err != nil {
 			t.Fatalf("UpsertSubscriptionFromStripe() error = %v", err)
 		}
-
 	})
 }
 func TestSelectStripePriceColumns(t *testing.T) {

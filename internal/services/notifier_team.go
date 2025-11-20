@@ -202,7 +202,7 @@ func (d *DbNotifier) NotifyMembersOfNewMember(ctx context.Context, teamMemberID 
 	if err != nil {
 		return err
 	}
-	var notifications []models.Notification
+	notifications := []models.Notification{}
 	for _, member := range members {
 		if member.ID == teamMemberID {
 			continue
@@ -416,7 +416,7 @@ func (d *DbNotifier) NotifyTaskCompleted(ctx context.Context, taskID uuid.UUID, 
 	if err != nil {
 		return err
 	}
-	var notifications []models.Notification
+	notifications := []models.Notification{}
 	for _, member := range notifyMembers {
 		notification := models.Notification{
 			TeamMemberID: &member.ID,

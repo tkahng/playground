@@ -156,6 +156,12 @@
       "**/.vscode/**": true,
       "**/dist/**": true,
       "**/tmp/**": true
+    },
+    "workbench.colorCustomizations": {
+      "terminal.findMatchBackground": "#ff00ffca", // Active match background (magenta)
+      "terminal.findMatchBorder": "#ff00e1", // Active match border (white)
+      "terminal.findMatchHighlightBackground": "#ff00fbbb", // Inactive matches background (green)
+      "terminal.overviewRuler.findMatchForeground": "#FF0000" // Overview ruler color (red)
     }
   }
 }

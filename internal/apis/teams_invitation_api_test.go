@@ -485,7 +485,6 @@ func TestApi_RejectInvitation(t *testing.T) {
 				assert.Equal(t, int64(1), count)
 				invitationCount := repository.MustFindOneCtx(t, ctx, repository.TeamInvitation, app.Db(), nil)
 				assert.Nil(t, invitationCount)
-
 			},
 		},
 		{
@@ -597,7 +596,6 @@ func TestApi_FindUserInvitations(t *testing.T) {
 				assert.NoError(t, err)
 				assert.Len(t, resp.Data, 1)
 				assert.Equal(t, apis.TeamInvitationStatusPending, resp.Data[0].Status)
-
 			},
 		},
 	}

@@ -27,9 +27,11 @@ type TeamMemberFilter struct {
 	SortParams
 	Q                string                    `query:"q"`
 	Ids              []uuid.UUID               `query:"ids"`
-	Roles            []models.TeamMemberRole   `query:"roles"`
+	Roles            []models.TeamMemberRole   `query:"roles" enum:"owner,member,guest"`
 	UserIds          []uuid.UUID               `query:"user_ids"`
 	TeamIds          []uuid.UUID               `query:"team_ids"`
+	TeamNames        []string                  `query:"team_names,omitempty" required:"false" json:"team_names,omitempty"`
+	UserEmails       []string                  `query:"user_emails,omitempty" required:"false" json:"user_emails,omitempty"`
 	Active           types.OptionalParam[bool] `query:"active"`
 	HasBillingAccess types.OptionalParam[bool] `query:"has_billing_access"`
 }
@@ -127,6 +129,7 @@ func (s *DbTeamMemberStore) LoadTeamMembersByUserAndTeamIds(ctx context.Context,
 }
 func (s *DbTeamMemberStore) CountTeamMembers(ctx context.Context, filter *TeamMemberFilter) (int64, error) {
 	qs := squirrel.Select("COUNT(org.team_members.*)").From("org.team_members")
+	qs = s.setJoin(qs, filter)
 	qs = s.filterQuery(qs, filter)
 	c, err := database.QueryWithBuilder[database.CountOutput](
 		ctx,
@@ -147,8 +150,28 @@ func (s *DbTeamMemberStore) CountTeamMembers(ctx context.Context, filter *TeamMe
 	}
 	return c[0].Count, nil
 }
+
+func (s *DbTeamMemberStore) FindTeamMember(ctx context.Context, filter *TeamMemberFilter) (*models.TeamMember, error) {
+	if filter != nil {
+		filter.PaginatedInput = PaginatedInput{
+			Page:    0,
+			PerPage: 1,
+		}
+	}
+	result, err := s.FindTeamMembers(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	if len(result) == 0 {
+		return nil, nil
+	}
+	re := result[0]
+	return re, nil
+}
+
 func (s *DbTeamMemberStore) FindTeamMembers(ctx context.Context, filter *TeamMemberFilter) ([]*models.TeamMember, error) {
 	qs := squirrel.Select("org.team_members.*").From("org.team_members")
+	qs = s.setJoin(qs, filter)
 	qs = s.filterQuery(qs, filter)
 	qs = s.sortQuery(qs, filter)
 	qs = queryPagination(qs, filter)
@@ -157,66 +180,64 @@ func (s *DbTeamMemberStore) FindTeamMembers(ctx context.Context, filter *TeamMem
 		s.db,
 		qs.PlaceholderFormat(squirrel.Dollar),
 	)
-	// where := s.filter(filter)
-	// sort := s.sort(filter)
-	// limit, offset := filter.LimitOffset()
-	// members, err := repository.TeamMember.Get(
-	// 	ctx,
-	// 	s.db,
-	// 	where,
-	// 	sort,
-	// 	&limit,
-	// 	&offset,
-	// )
 	if err != nil {
+		slog.ErrorContext(
+			ctx,
+			"error while finding team members",
+			slog.Any("error", err),
+			slog.Any("filter", filter),
+		)
 		return nil, err
 	}
 	return members, nil
 }
 
-func (s *DbTeamMemberStore) filter(filter *TeamMemberFilter) *map[string]any {
+// enum:"team.name,team.slug,team.created_at,team.updated_at,user.email,user.name,user.created_at,user.updated_at"
+var joinSortCols = []string{
+	"team.name",
+	"team.slug",
+	"team.created_at",
+	"team.updated_at",
+	"user.email",
+	"user.name",
+	"user.created_at",
+	"user.updated_at",
+}
+
+func needsJoin(filter *TeamMemberFilter) bool {
 	if filter == nil {
-		return nil
+		return false
 	}
-	where := make(map[string]any)
-	if len(filter.Ids) > 0 {
-		where[models.TeamMemberTable.ID] = map[string]any{
-			"_in": filter.Ids,
+	// check filters
+	if filter.Q != "" {
+		return true
+	}
+	if len(filter.TeamNames) > 0 {
+		return true
+	}
+	if len(filter.UserEmails) > 0 {
+		return true
+	}
+	// check sorts
+	if filter.SortBy != "" {
+		if slices.Contains(joinSortCols, filter.SortBy) {
+			return true
 		}
 	}
-	if len(filter.Roles) > 0 {
-		where[models.TeamMemberTable.Role] = map[string]any{
-			"_in": filter.Roles,
-		}
+
+	return false
+}
+func (s *DbTeamMemberStore) setJoin(qs squirrel.SelectBuilder, filter *TeamMemberFilter) squirrel.SelectBuilder {
+	if needsJoin(filter) {
+		qs = qs.Join("org.teams on org.team_members.team_id = org.teams.id").Join("auth.users on org.team_members.user_id = auth.users.id")
 	}
-	if len(filter.TeamIds) > 0 {
-		where[models.TeamMemberTable.TeamID] = map[string]any{
-			"_in": filter.TeamIds,
-		}
-	}
-	if len(filter.UserIds) > 0 {
-		where[models.TeamMemberTable.UserID] = map[string]any{
-			"_in": filter.UserIds,
-		}
-	}
-	if filter.Active.IsSet {
-		where[models.TeamMemberTable.Active] = map[string]any{
-			"_eq": filter.Active.Value,
-		}
-	}
-	if filter.HasBillingAccess.IsSet {
-		where[models.TeamMemberTable.HasBillingAccess] = map[string]any{
-			"_eq": filter.HasBillingAccess.Value,
-		}
-	}
-	return &where
+	return qs
 }
 func (s *DbTeamMemberStore) filterQuery(qs squirrel.SelectBuilder, filter *TeamMemberFilter) squirrel.SelectBuilder {
 	if filter == nil {
 		return qs
 	}
 	if filter.Q != "" {
-		qs = qs.Join("org.teams on org.team_members.team_id = org.teams.id").Join("auth.users on org.team_members.user_id = auth.users.id")
 		qs = qs.Where(squirrel.Or{
 			squirrel.ILike{"org.teams.name": "%" + filter.Q + "%"},
 			squirrel.ILike{"auth.users.email": "%" + filter.Q + "%"},
@@ -224,58 +245,64 @@ func (s *DbTeamMemberStore) filterQuery(qs squirrel.SelectBuilder, filter *TeamM
 	}
 	if len(filter.Ids) > 0 {
 		qs = qs.Where(squirrel.Eq{"org.team_members.id": filter.Ids})
-
 	}
 	if len(filter.Roles) > 0 {
 		qs = qs.Where(
 			squirrel.Eq{
-				models.TeamMemberTable.Role: filter.Roles,
-			},
-		)
-
-	}
-	if len(filter.TeamIds) > 0 {
-		qs = qs.Where(
-			squirrel.Eq{
-				models.TeamMemberTable.TeamID: filter.TeamIds,
+				"org.team_members.role": filter.Roles,
 			},
 		)
 	}
 	if len(filter.UserIds) > 0 {
 		qs = qs.Where(
 			squirrel.Eq{
-				models.TeamMemberTable.UserID: filter.UserIds,
+				"org.team_members.user_id": filter.UserIds,
+			},
+		)
+	}
+	if len(filter.TeamIds) > 0 {
+		qs = qs.Where(
+			squirrel.Eq{
+				"org.team_members.team_id": filter.TeamIds,
+			},
+		)
+	}
+	if len(filter.TeamNames) > 0 {
+		qs = qs.Where(
+			squirrel.Eq{
+				"org.teams.name": filter.TeamNames,
+			},
+		)
+	}
+	if len(filter.UserEmails) > 0 {
+		qs = qs.Where(
+			squirrel.Eq{
+				"auth.users.email": filter.UserEmails,
 			},
 		)
 	}
 	if filter.Active.IsSet {
 		qs = qs.Where(
 			squirrel.Eq{
-				models.TeamMemberTable.Active: filter.Active.Value,
+				"org.team_members.active": filter.Active.Value,
 			},
 		)
 	}
-	return qs
-}
-
-func (s *DbTeamMemberStore) FindTeamMember(ctx context.Context, filter *TeamMemberFilter) (*models.TeamMember, error) {
-	where := s.filter(filter)
-	member, err := repository.TeamMember.GetOne(
-		ctx,
-		s.db,
-		where,
-	)
-	if err != nil {
-		return nil, err
+	if filter.HasBillingAccess.IsSet {
+		qs = qs.Where(
+			squirrel.Eq{
+				"org.team_members.has_billing_access": filter.HasBillingAccess.Value,
+			},
+		)
 	}
-	return member, nil
+
+	return qs
 }
 
 func (s *DbTeamMemberStore) sortQuery(qs squirrel.SelectBuilder, filter Sortable) squirrel.SelectBuilder {
 	if filter == nil {
 		return qs // return original query if no filter is provided
 	}
-
 	sortBy, sortOrder := filter.Sort()
 	if sortBy == "" {
 		return qs
@@ -283,34 +310,23 @@ func (s *DbTeamMemberStore) sortQuery(qs squirrel.SelectBuilder, filter Sortable
 	if sortOrder == "" {
 		sortOrder = "ASC"
 	}
+	// if sortBy is in the registered fieldnames, it is a scalar field. direct sort.
 	if slices.Contains(repository.TeamMemberBuilder.FieldNames(), sortBy) {
 		qs = qs.OrderBy(sortBy + " " + strings.ToUpper(sortOrder))
-	} else if sortBy == "team.name" {
-		qs = qs.OrderBy("org.teams.name " + strings.ToUpper(sortOrder))
-	} else if sortBy == "user.email" {
-		qs = qs.OrderBy("auth.users.email " + strings.ToUpper(sortOrder))
+	} else if slices.Contains(joinSortCols, sortBy) {
+		// if the sort by field is a joined field, we need to prefix it with the table name.
+		// if `team.` is a prefix for team fields, `user.` is a prefix for user fields.
+		if strings.HasPrefix(sortBy, "team.") {
+			sortBy = "org." + strings.ReplaceAll(sortBy, "team.", "teams.")
+		} else if strings.HasPrefix(sortBy, "user.") {
+			sortBy = "auth." + strings.ReplaceAll(sortBy, "user.", "users.")
+		}
+		qs = qs.OrderBy(sortBy + " " + strings.ToUpper(sortOrder))
 	} else {
-		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.TeamMemberBuilder.FieldNames())
+		slog.Warn("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder)
 	}
 	return qs
 }
-
-// func (s *DbTeamMemberStore) sort(filter Sortable) *map[string]string {
-// 	if filter == nil {
-// 		return nil // return nil if no filter is provided
-// 	}
-
-// 	sortBy, sortOrder := filter.Sort()
-// 	if sortBy != "" && slices.Contains(repository.TeamMemberBuilder.FieldNames(), sortBy) {
-// 		return &map[string]string{
-// 			sortBy: sortOrder,
-// 		}
-// 	} else {
-// 		slog.Info("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", repository.UserBuilder.FieldNames())
-// 	}
-
-// 	return nil // default no sorting
-// }
 
 func (s *DbTeamMemberStore) CreateTeamFromUser(ctx context.Context, user *models.User) (*models.TeamMember, error) {
 	team, err := repository.Team.PostOne(

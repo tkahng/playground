@@ -13,7 +13,6 @@ import (
 )
 
 func TestNotificationStore_CreateNotification(t *testing.T) {
-
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		store := stores.NewDbNotificationStore(db)
 
@@ -32,7 +31,6 @@ func TestNotificationStore_CreateNotification(t *testing.T) {
 }
 
 func TestNotificationStore_CreateManyNotifications(t *testing.T) {
-
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		store := stores.NewDbNotificationStore(db)
 
@@ -58,6 +56,5 @@ func TestNotificationStore_CreateManyNotifications(t *testing.T) {
 		got, err := store.InsertManyNotifications(ctx, notifications)
 		assert.NoError(t, err)
 		assert.Equal(t, len(notifications), int(got))
-
 	})
 }

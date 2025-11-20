@@ -283,7 +283,6 @@ func (t *TeamServiceImpl) FindTeamInfoBySlug(ctx context.Context, slug string, u
 }
 
 func (t *TeamServiceImpl) FindLatestTeamInfo(ctx context.Context, userId uuid.UUID) (*models.TeamInfoModel, error) {
-
 	// user, err := t.teamStore.FindUserByID(ctx, userId)
 	user, err := t.adapter.User().FindUserByID(ctx, userId)
 	if err != nil {

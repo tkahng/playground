@@ -65,5 +65,4 @@ func NewTestPopulator(adapter stores.StorageAdapterInterface) *TestPopulator {
 			}),
 		},
 	}
-
 }

@@ -263,7 +263,6 @@ func TestLoadTaskProjectsTasks(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 func TestFindTaskByID(t *testing.T) {
@@ -359,7 +358,6 @@ func TestFindTaskByID(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -454,7 +452,6 @@ func TestFindLastTaskOrder(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 func TestDeleteTask(t *testing.T) {
@@ -530,7 +527,6 @@ func TestDeleteTask(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 func TestFindTaskProjectByID(t *testing.T) {
@@ -614,7 +610,6 @@ func TestFindTaskProjectByID(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 func TestDeleteTaskProject(t *testing.T) {
@@ -681,7 +676,6 @@ func TestDeleteTaskProject(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 func TestListTasks(t *testing.T) {
@@ -792,7 +786,6 @@ func TestListTasks(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 func TestCountTasks(t *testing.T) {
@@ -881,7 +874,6 @@ func TestCountTasks(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 func TestListTaskProjects(t *testing.T) {
@@ -980,7 +972,6 @@ func TestListTaskProjects(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 func TestCountTaskProjects(t *testing.T) {
@@ -1057,7 +1048,6 @@ func TestCountTaskProjects(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 func TestCreateTaskProject(t *testing.T) {
@@ -1137,7 +1127,6 @@ func TestCreateTaskProject(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 func TestCreateTaskProjectWithTasks(t *testing.T) {
@@ -1260,7 +1249,6 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -1349,11 +1337,9 @@ func TestCreateTaskFromInput(t *testing.T) {
 					assert.Equal(t, tt.want.Description, got.Description)
 					assert.Equal(t, tt.want.Status, got.Status)
 					assert.Equal(t, tt.want.Rank, got.Rank)
-
 				}
 			})
 		}
-
 	})
 }
 
@@ -1741,7 +1727,7 @@ func TestUpdateTaskPositionStatus(t *testing.T) {
 					// Get task project to verify update date
 
 					if !newTaskProject.UpdatedAt.After(taskProject.UpdatedAt) {
-						t.Errorf("Task project update date not updated. original = %v, udpated %v", taskProject.UpdatedAt, newTaskProject.UpdatedAt)
+						t.Errorf("Task project update date not updated. original = %v, updated %v", taskProject.UpdatedAt, newTaskProject.UpdatedAt)
 					}
 				}
 			})

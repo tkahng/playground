@@ -11,7 +11,7 @@ import (
 )
 
 func CreateStripeProductPrices(ctx context.Context, dbx database.Dbx, count int) ([]*models.StripeProduct, error) {
-	var products []models.StripeProduct
+	products := []models.StripeProduct{}
 	for range count {
 		uid := uuid.NewString()
 		product := models.StripeProduct{
@@ -26,7 +26,7 @@ func CreateStripeProductPrices(ctx context.Context, dbx database.Dbx, count int)
 	if err != nil {
 		return nil, err
 	}
-	var prices []models.StripePrice
+	prices := []models.StripePrice{}
 	for _, product := range res {
 		price := models.StripePrice{
 			ID:         uuid.NewString(),

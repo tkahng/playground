@@ -102,7 +102,6 @@ func (t *TeamMemberStoreDecorator) Cleanup() {
 	t.FindTeamMembersByUserIDFunc = nil
 	t.UpdateTeamMemberFunc = nil
 	t.UpdateTeamMemberSelectedAtFunc = nil
-
 }
 
 // CountTeamMembers implements DbTeamMemberStoreInterface.
