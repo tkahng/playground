@@ -3,11 +3,9 @@ import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { getUserTeamMembers } from "@/lib/team-queries";
-import { Team } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
-import { NavLink, useSearchParams } from "react-router";
-import { toast } from "sonner";
+import { Link, useSearchParams } from "react-router";
 
 export default function TeamListPage() {
   const { user } = useAuthProvider();
@@ -57,10 +55,6 @@ export default function TeamListPage() {
     return <div>Error: {error?.message}</div>;
   }
 
-  const handleSelectTeam = (team: Team) => {
-    toast.success(`Selected team: ${team.name}`);
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -75,13 +69,12 @@ export default function TeamListPage() {
             header: "Name",
             cell: ({ row }) => {
               return (
-                <NavLink
+                <Link
                   to={`${RouteMap.TEAM_LIST}/${row.original.team?.slug}/dashboard`}
                   className="hover:underline text-blue-500"
-                  onClick={() => handleSelectTeam(row.original.team!)}
                 >
                   {row.original.team?.name}
-                </NavLink>
+                </Link>
               );
             },
           },

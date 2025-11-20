@@ -14,6 +14,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
 import { useUserTeamMembers } from "@/hooks/use-user-team-members";
 import { Team } from "@/schema.types";
@@ -25,26 +31,26 @@ import { CreateTeamDialog } from "./create-team-dialog";
 export default function TeamSwitcher() {
   const { teamSlug } = useParams<{ teamSlug: string }>();
   const navigate = useNavigate();
+  const { user } = useAuthProvider();
   const [open, setOpen] = useState(false);
   const {
     data,
     error: teamsError,
+    isError: teamsIsError,
     isLoading: teamsLoading,
   } = useUserTeamMembers({ sort_by: "last_selected_at", sort_order: "desc" });
-  const { team, setTeam } = useTeam();
+  const { team } = useTeam();
 
   if (teamsLoading) {
     return <div>Loading...</div>;
   }
-  if (teamsError) {
+  if (teamsIsError) {
     return <div>Error: {teamsError?.message}</div>;
   }
-  if (!data || data.data.length === 0) {
-    return <div>No teams available.</div>;
-  }
+
   function handleSelectTeam(team: Team) {
+    console.log("handleSelectTeam", team);
     setOpen(false);
-    setTeam(team);
     navigate(`/teams/${team.slug}/dashboard`);
   }
   return (
@@ -79,7 +85,7 @@ export default function TeamSwitcher() {
               <CommandInput placeholder="Search team..." />
               <CommandEmpty>No team found.</CommandEmpty>
               <CommandGroup heading="Teams">
-                {data.data.map((te) => (
+                {data?.data.map((te) => (
                   <CommandItem
                     key={te.id}
                     onSelect={() => {
@@ -100,7 +106,7 @@ export default function TeamSwitcher() {
                     </div>
                     <Check
                       className={`ml-auto h-4 w-4 ${
-                        te?.id === team?.id ? "opacity-100" : "opacity-0"
+                        te?.team_id === team?.id ? "opacity-100" : "opacity-0"
                       }`}
                     />
                   </CommandItem>
@@ -110,8 +116,21 @@ export default function TeamSwitcher() {
             <CommandSeparator />
             <CommandList>
               <CommandGroup>
-                <CommandItem>
-                  <CreateTeamDialog />
+                <CommandItem className="items-center justify-center">
+                  {user?.user.email_verified_at ? (
+                    <CreateTeamDialog />
+                  ) : (
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <Button disabled variant="outline">
+                          Create Team
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>You must verify your email to create a team.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
                 </CommandItem>
               </CommandGroup>
             </CommandList>

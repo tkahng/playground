@@ -5,17 +5,13 @@ import { DataTable } from "@/components/data-table";
 import { accountSidebarLinks } from "@/components/links";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useTeam } from "@/hooks/use-team";
 import { GetError } from "@/lib/error";
 import { getUserTeamMembers } from "@/lib/team-queries";
-import { Team } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
-import { NavLink, useNavigate, useSearchParams } from "react-router";
-import { toast } from "sonner";
+import { NavLink, useSearchParams } from "react-router";
 
 export default function AccountTeamsPage() {
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
@@ -57,13 +53,6 @@ export default function AccountTeamsPage() {
     },
   });
 
-  const { setTeam } = useTeam();
-  const handleSelectTeam = (team: Team) => {
-    toast.success(`Selected team: ${team.name}`);
-    setTeam(team);
-    navigate(`/teams/${team.slug}/dashboard`);
-  };
-
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -98,7 +87,6 @@ export default function AccountTeamsPage() {
                     <NavLink
                       to={`${RouteMap.TEAM_LIST}/${row.original.team?.slug}/dashboard`}
                       className="hover:underline text-blue-500"
-                      onClick={() => handleSelectTeam(row.original.team!)}
                     >
                       {row.original.team?.name}
                     </NavLink>
