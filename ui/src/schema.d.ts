@@ -7094,6 +7094,7 @@ export interface operations {
                 q?: string;
                 sort_by?: "last_selected_at" | "team.name" | "team.created_at" | "team.updated_at" | "user.email" | "user.name" | "user.created_at" | "user.updated_at";
                 sort_order?: "asc" | "desc";
+                roles?: ("owner" | "member" | "guest")[] | null;
                 active?: boolean;
                 has_billing_access?: boolean;
             };
