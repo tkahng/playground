@@ -22,6 +22,7 @@ import {
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
 import { useUserTeamMembers } from "@/hooks/use-user-team-members";
+import { useUpdateMemberLastSelectedAt } from "@/lib/mutation";
 import { Team } from "@/schema.types";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
@@ -39,8 +40,11 @@ export default function TeamSwitcher() {
     isError: teamsIsError,
     isLoading: teamsLoading,
   } = useUserTeamMembers({ sort_by: "last_selected_at", sort_order: "desc" });
+  const mutation = useUpdateMemberLastSelectedAt();
   const { team } = useTeam();
-
+  if (!user) {
+    return <></>;
+  }
   if (teamsLoading) {
     return <div>Loading...</div>;
   }
@@ -49,7 +53,7 @@ export default function TeamSwitcher() {
   }
 
   function handleSelectTeam(team: Team) {
-    console.log("handleSelectTeam", team);
+    mutation.mutate({ teamId: team.id });
     setOpen(false);
     navigate(`/teams/${team.slug}/dashboard`);
   }

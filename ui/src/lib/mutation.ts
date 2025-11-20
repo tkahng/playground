@@ -1,4 +1,6 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { ApiError } from "@/lib/error";
+import { updateTeamMemberLastSelectedAt } from "@/lib/team-queries";
 import { TaskCreateParams } from "@/schema.types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -58,6 +60,40 @@ export function useCreateProjectTask(projectId: string, onSuccess: () => void) {
     },
     onError: (error) => {
       toast.error(`Failed to create task: ${error.message}`);
+    },
+  });
+}
+
+export function useUpdateMemberLastSelectedAt() {
+  const { user } = useAuthProvider();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ teamId }: { teamId: string }) => {
+      if (!user?.tokens.access_token) {
+        throw new ApiError("Missing access token");
+      }
+      await updateTeamMemberLastSelectedAt({
+        token: user.tokens.access_token,
+        teamId,
+      });
+    },
+    onSuccess: async () => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          { key: "get-user-team-members", sort_by: "last_selected_at" },
+        ],
+      });
+      toast.success("Member last selected at updated");
+    },
+    onError: (error) => {
+      queryClient.invalidateQueries({
+        queryKey: [
+          { key: "get-user-team-members", sort_by: "last_selected_at" },
+        ],
+      });
+      toast.error("Failed to update member last selected at", {
+        description: error.message,
+      });
     },
   });
 }
