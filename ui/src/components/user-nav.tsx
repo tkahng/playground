@@ -64,12 +64,6 @@ export function UserNav() {
     await logout();
     navigate(RouteMap.HOME);
   };
-  if (teamsLoading) {
-    return <div>Loading...</div>;
-  }
-  if (teamsIsError) {
-    return <div>Error: {teamsError?.message}</div>;
-  }
   if (!auth) {
     return (
       <>
@@ -79,6 +73,13 @@ export function UserNav() {
       </>
     );
   }
+  if (teamsLoading) {
+    return <div>Loading...</div>;
+  }
+  if (teamsIsError) {
+    return <div>Error: {teamsError?.message}</div>;
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
