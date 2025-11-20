@@ -32,7 +32,7 @@ export function TeamSelect({ onTeamSelect, props }: TeamSelectProps) {
     data,
     error: teamsError,
     isLoading: teamsLoading,
-  } = useUserTeamMembers();
+  } = useUserTeamMembers({ sort_by: "last_selected_at", sort_order: "desc" });
 
   if (teamsLoading) {
     return <div>Loading...</div>;
