@@ -42,9 +42,9 @@ type TeamMemberOutput struct {
 type UserTeamMembersParams struct {
 	PaginatedInput
 	Q                string                    `query:"q"`
-	SortBy           string                    `query:"sort_by,omitempty" required:"false" enum:"last_selected_at,team.name,team.created_at,team.updated_at,user.email,user.name,user.created_at,user.updated_at" default:"last_selected_at"`
-	SortOrder        string                    `query:"sort_order,omitempty" required:"false" enum:"asc,desc" default:"asc"`
-	Roles            []TeamMemberRole          `json:"roles,omitempty" minimum:"1" maximum:"3" enum:"owner,member,guest"`
+	SortBy           string                    `query:"sort_by,omitempty" default:"last_selected_at" required:"false" enum:"last_selected_at,team.name,team.created_at,team.updated_at,user.email,user.name,user.created_at,user.updated_at"`
+	SortOrder        string                    `query:"sort_order,omitempty" default:"asc" required:"false" enum:"asc,desc"`
+	Roles            []TeamMemberRole          `query:"roles,omitempty" minimum:"1" maximum:"3" enum:"owner,member,guest"`
 	Active           types.OptionalParam[bool] `query:"active" required:"false"`
 	HasBillingAccess types.OptionalParam[bool] `query:"has_billing_access" required:"false"`
 }
@@ -64,7 +64,7 @@ func (api *Api) GetUserTeamMembersBind(humaApi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 		},
-		func(ctx context.Context, input *UserListTeamsParams) (*ApiPaginatedOutput[*TeamMember], error) {
+		func(ctx context.Context, input *UserTeamMembersParams) (*ApiPaginatedOutput[*TeamMember], error) {
 			info := contextstore.GetContextUserInfo(ctx)
 			if info == nil {
 				return nil, huma.Error401Unauthorized("unauthorized")
