@@ -4,7 +4,7 @@ import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { GetError } from "@/lib/error";
-import { getUserTeams } from "@/lib/team-queries";
+import { getUserTeamMembers } from "@/lib/team-queries";
 import { Team } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
@@ -31,7 +31,7 @@ export default function TeamSelect() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: [
       {
-        key: "get-user-teams",
+        key: "get-user-team-members",
         user_id: user?.user.id,
         page: pageIndex,
         per_page: pageSize,
@@ -41,10 +41,10 @@ export default function TeamSelect() {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
       }
-      const { data, meta } = await getUserTeams({
+      const { data, meta } = await getUserTeamMembers({
         token: user.tokens.access_token,
         page: pageIndex,
-        perPage: pageSize,
+        per_page: pageSize,
       });
       return { data: data, meta };
     },
@@ -83,11 +83,11 @@ export default function TeamSelect() {
             cell: ({ row }) => {
               return (
                 <NavLink
-                  to={`${RouteMap.TEAM_LIST}/${row.original.slug}/dashboard`}
+                  to={`${RouteMap.TEAM_LIST}/${row.original.team?.slug}/dashboard`}
                   className="hover:underline text-blue-500"
-                  onClick={() => handleSelectTeam(row.original)}
+                  onClick={() => handleSelectTeam(row.original.team!)}
                 >
-                  {row.original.name}
+                  {row.original.team?.name}
                 </NavLink>
               );
             },
@@ -96,15 +96,7 @@ export default function TeamSelect() {
             accessorKey: "role",
             header: "Member Role",
             cell: ({ row }) => {
-              const members = row.original.member;
-              if (!members) {
-                return <span className="text-gray-500">No members</span>;
-              }
-              return (
-                <span className="text-gray-500">
-                  {members.role || "Member"}
-                </span>
-              );
+              return <span className="text-gray-500">{row.original.role}</span>;
             },
           },
         ]}

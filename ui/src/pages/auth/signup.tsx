@@ -28,6 +28,7 @@ import {
 import { toast } from "sonner";
 
 export default function SignupPage() {
+  const { user } = useAuthProvider();
   const [input, setInput] = useState<SignupInput>({
     email: "",
     password: "",
@@ -87,6 +88,26 @@ export default function SignupPage() {
       ...values,
       [key]: value,
     }));
+  }
+  if (user) {
+    return (
+      <div className="flex min-h-screen flex-col">
+        <div className="flex flex-1 items-center justify-center ">
+          <Card className="w-full max-w-md">
+            <CardHeader className="">
+              <CardTitle className="text-center text-2xl font-bold">
+                You are already logged in
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col">
+              <Button asChild>
+                <Link to={RouteMap.ACCOUNT_DASHBOARD}>Go to Dashboard</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
   return (
     <div className="flex min-h-screen flex-col">

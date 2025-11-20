@@ -240,7 +240,6 @@ func TestOAuth2Signin_Success_Existing_Credential_Unverified(t *testing.T) {
 			t.Errorf("Expected reset password email to be sent, got %s", mail.Body)
 		}
 	})
-
 }
 func TestOAuth2Signin_Failed_Existing_Credential_Unverified_unknown_error(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
@@ -284,7 +283,6 @@ func TestOAuth2Signin_Failed_Existing_Credential_Unverified_unknown_error(t *tes
 		assert.Nil(t, customer)
 		assert.Empty(t, mailer.Messages)
 	})
-
 }
 func TestOAuth2Signin_Success_Existing_Credential_Verified(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
@@ -372,5 +370,4 @@ func TestOAuth2Signin_Success_Existing_Credential_Verified(t *testing.T) {
 			t.Errorf("AuthServiceImpl.OAuth2Signin() signInRes = %v", signInRes)
 		}
 	})
-
 }

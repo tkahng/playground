@@ -50,7 +50,6 @@ func TestTeamSlug(t *testing.T) {
 		},
 		)
 		t.Log("response code", resp.Code)
-
 	})
 }
 
@@ -88,7 +87,6 @@ func TestGetTeam_invalidID(t *testing.T) {
 		assert.Contains(t, resp.Body.String(), "invalid UUID format")
 	},
 	)
-
 }
 
 func TestGetTeam_success(t *testing.T) {
@@ -114,7 +112,6 @@ func TestGetTeam_success(t *testing.T) {
 		}
 	},
 	)
-
 }
 
 func TestCreateTeam_Failed(t *testing.T) {
@@ -212,7 +209,6 @@ func TestCreateTeam_Success(t *testing.T) {
 			assert.Equal(t, models.TeamMemberRoleOwner, teamMembers[0].Role)
 		})
 	})
-
 }
 
 func TestUpdateTeam_failedNotOwner(t *testing.T) {

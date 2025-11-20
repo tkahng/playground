@@ -32,5 +32,4 @@ func verify(api *Api, ctx context.Context, input *OtpInput) (*struct{}, error) {
 	default:
 		return nil, huma.Error400BadRequest("Invalid token type")
 	}
-
 }

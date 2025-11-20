@@ -154,7 +154,6 @@ func (p *DbPoller) PollOnce(ctx context.Context) error {
 				}
 
 				return js.MarkDone(jobTimeoutCtx, job.ID)
-
 			})
 			if markErr != nil {
 				slog.ErrorContext(jobTimeoutCtx, "error updating job status", "error", markErr, "job_id", job.ID.String())

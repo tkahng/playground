@@ -1,6 +1,6 @@
-import AuthButton from "@/components/auth-button";
 import { LinkDto } from "@/components/links";
 import PlaygroundLogo from "@/components/playground-logo";
+import { UserNav } from "@/components/user-nav";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router";
 
@@ -38,6 +38,7 @@ export function PlaygroundLandingHeader({
               ))
             : null}
         </div>
+
         <div className="flex shrink items-center space-x-4">
           {rightLinks?.length && rightLinks.length > 0
             ? rightLinks.map(({ to, title, current }) => (
@@ -59,7 +60,7 @@ export function PlaygroundLandingHeader({
                 </Link>
               ))
             : null}
-          <AuthButton />
+          <UserNav />
         </div>
       </nav>
     </header>

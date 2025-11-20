@@ -98,5 +98,4 @@ func NewUserRepositoryResource(
 		nil,
 		nil,
 	)
-
 }

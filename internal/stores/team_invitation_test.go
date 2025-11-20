@@ -125,7 +125,6 @@ func TestTeamStore_InvitationCRUD(t *testing.T) {
 		if err != nil || found == nil {
 			t.Errorf("FindInvitationByID (expired) = %v, err = %v", found, err)
 		}
-
 	})
 }
 
@@ -231,7 +230,6 @@ func TestInvitationStore_CRUD(t *testing.T) {
 		if deleted != nil {
 			t.Errorf("Expected invitation to be deleted, but found: %v", deleted)
 		}
-
 	})
 }
 func TestTeamStore_FindPendingInvitation(t *testing.T) {
@@ -334,6 +332,5 @@ func TestTeamStore_FindPendingInvitation(t *testing.T) {
 		if other != nil {
 			t.Errorf("Expected nil for other team, got %v", other)
 		}
-
 	})
 }

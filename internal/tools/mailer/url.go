@@ -15,5 +15,4 @@ func BuildUrl(origin string, params map[string]string) string {
 	}
 	uri.RawQuery = val.Encode()
 	return uri.String()
-
 }

@@ -48,7 +48,6 @@ func TestUpdateTeam(t *testing.T) {
 		if updated.Name != newName {
 			t.Errorf("UpdateTeam() = %v, want name %v", updated, newName)
 		}
-
 	})
 }
 
@@ -66,7 +65,6 @@ func TestDeleteTeam(t *testing.T) {
 		if err != nil {
 			t.Errorf("DeleteTeam() error = %v", err)
 		}
-
 	})
 }
 
@@ -87,7 +85,6 @@ func TestFindTeamByID(t *testing.T) {
 		if found == nil || found.ID != team.ID {
 			t.Errorf("FindTeamByID() = %v, want %v", found, team.ID)
 		}
-
 	})
 }
 
@@ -153,7 +150,6 @@ func TestTeamStore_FindTeamByStripeCustomerId(t *testing.T) {
 		if found == nil || found.ID != team.ID {
 			t.Errorf("FindTeamByStripeCustomerId() = %v, want %v", found, team.ID)
 		}
-
 	})
 }
 
@@ -398,7 +394,6 @@ func TestTeamStore_CountTeams(t *testing.T) {
 		if noneCount != 0 {
 			t.Errorf("CountTeams(no match) = %d, want 0", noneCount)
 		}
-
 	})
 }
 func TestTeamStore_FindTeamBySlug(t *testing.T) {
@@ -431,6 +426,5 @@ func TestTeamStore_FindTeamBySlug(t *testing.T) {
 		if notFound != nil {
 			t.Errorf("FindTeamBySlug(non-existent) = %v, want nil", notFound)
 		}
-
 	})
 }

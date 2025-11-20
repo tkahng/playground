@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { DialogProps } from "@/hooks/use-dialog";
-import { useUserTeams } from "@/hooks/use-user-teams";
+import { useUserTeamMembers } from "@/hooks/use-user-team-members";
 import { Team } from "@/schema.types";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
@@ -28,7 +28,11 @@ export type TeamSelectProps = {
 export function TeamSelect({ onTeamSelect, props }: TeamSelectProps) {
   // const navigate = useNavigate();
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-  const { data, error: teamsError, isLoading: teamsLoading } = useUserTeams();
+  const {
+    data,
+    error: teamsError,
+    isLoading: teamsLoading,
+  } = useUserTeamMembers({ sort_by: "last_selected_at", sort_order: "desc" });
 
   if (teamsLoading) {
     return <div>Loading...</div>;
@@ -67,20 +71,20 @@ export function TeamSelect({ onTeamSelect, props }: TeamSelectProps) {
               <CommandGroup heading="Teams">
                 {data.data.map((te) => (
                   <CommandItem
-                    key={te.id}
+                    key={te.team?.id}
                     onSelect={() => {
-                      handleSelectTeam(te);
+                      handleSelectTeam(te.team!);
                     }}
-                    disabled={te.member?.role !== "owner"}
+                    disabled={te?.role !== "owner"}
                     className="text-sm"
                   >
                     <Avatar className="mr-2 h-5 w-5">
                       <AvatarFallback>
-                        {te.name.slice(0, 2).toUpperCase()}
+                        {te.team?.name.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <div className="font-medium">{te.name}</div>
+                      <div className="font-medium">{te.team?.name}</div>
                       {/* <div className="text-xs text-muted-foreground">
                         {team.plan} • {team.role}
                       </div> */}

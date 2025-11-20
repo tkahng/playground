@@ -151,6 +151,5 @@ func TestDefineTaskOrderNumberByStatus(t *testing.T) {
 				}
 			})
 		}
-		
 	})
 }

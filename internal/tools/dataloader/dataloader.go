@@ -28,8 +28,8 @@ func (d *Dataloader[T, K]) Load(ctx context.Context, key K) (T, error) {
 }
 
 func (d *Dataloader[T, K]) Wait(ctx context.Context) error {
-	var resKeys []KeyResult[T, K]
-	var keys []K
+	resKeys := make([]KeyResult[T, K], 0)
+	keys := make([]K, 0)
 	for resK := range d.keyChan {
 		resKeys = append(resKeys, resK)
 		keys = append(keys, resK.Key)

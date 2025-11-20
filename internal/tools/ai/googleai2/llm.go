@@ -1,6 +1,6 @@
 package googleai2
 
-// nolint:exhaustruct
+//nolint:exhaustruct
 
 import (
 	"context"

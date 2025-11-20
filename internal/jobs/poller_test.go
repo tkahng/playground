@@ -73,9 +73,7 @@ func TestPoller_Run(t *testing.T) {
 		case <-time.After(2 * time.Second):
 			t.Errorf("poller did not shut down")
 		}
-
 	})
-
 }
 
 type TestJobService struct {

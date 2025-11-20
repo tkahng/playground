@@ -10,7 +10,7 @@ import (
 )
 
 // InitContextAttrsMiddleware is a middleware that adds a pointer to a slice of slog.Attr
-// to the context. Whenever the logger hanlder is called, it will add the
+// to the context. Whenever the logger handler is called, it will add the
 // attributes to the slog.Record. This middleware should be called early in the
 // middleware chain.
 func InitContextAttrsMiddleware(next http.Handler) http.Handler {

@@ -155,7 +155,6 @@ func (api *Api) AdminStripeProductsGet(ctx context.Context,
 ) (*struct {
 	Body *StripeProduct
 }, error) {
-
 	if input == nil || input.ProductID == "" {
 		return nil, huma.Error400BadRequest("product_id is required")
 	}
@@ -196,7 +195,6 @@ func (api *Api) AdminStripeProductsPermissionsCreate(ctx context.Context, input 
 	ProductID string `path:"product-id" required:"true"`
 	Body      PermissionIdsInput
 }) (*struct{}, error) {
-
 	id := input.ProductID
 	user, err := api.App().Adapter().Product().FindProductById(ctx, id)
 	if err != nil {

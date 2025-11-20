@@ -12,7 +12,7 @@ import (
 )
 
 func (s *DbRbacStore) CreateProductRoles(ctx context.Context, productId string, roleIds ...uuid.UUID) error {
-	var roles []models.ProductRole
+	roles := make([]models.ProductRole, 0)
 	for _, role := range roleIds {
 		roles = append(roles, models.ProductRole{
 			ProductID: productId,
@@ -24,13 +24,12 @@ func (s *DbRbacStore) CreateProductRoles(ctx context.Context, productId string, 
 		return err
 	}
 	return nil
-
 }
 
 // CreateProductPermissions implements RBACStore.
 func (p *DbRbacStore) CreateProductPermissions(ctx context.Context, productId string, permissionIds ...uuid.UUID) error {
 	db := p.db
-	var permissions []models.ProductPermission
+	permissions := make([]models.ProductPermission, 0)
 	for _, permissionId := range permissionIds {
 		permissions = append(permissions, models.ProductPermission{
 			ProductID:    productId,

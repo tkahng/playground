@@ -230,7 +230,7 @@ func (b *SQLBuilder[Model]) Fields() []*Field {
 
 // FieldNames returns the names of the fields, not the qualified column names.
 func (b *SQLBuilder[Model]) FieldNames() []string {
-	var fieldNames []string
+	fieldNames := []string{}
 	for _, field := range b.fields {
 		fieldNames = append(fieldNames, field.Name)
 	}
@@ -239,7 +239,7 @@ func (b *SQLBuilder[Model]) FieldNames() []string {
 
 // ColumnNames returns the names of the columns, not the qualified column names.
 func (b *SQLBuilder[Model]) ColumnNames() []string {
-	var fieldNames []string
+	fieldNames := []string{}
 	for _, field := range b.fields {
 		fieldNames = append(fieldNames, field.ColumnName)
 	}
@@ -254,7 +254,7 @@ func (b *SQLBuilder[Model]) ColumnNamesJoined() string {
 // QualifiedColumnNames returns the formatted column names with the table prefix.
 func (b *SQLBuilder[Model]) QualifiedColumnNames() []string {
 	// Returns the column names with the table prefix
-	var fieldNames []string
+	fieldNames := []string{}
 	for _, field := range b.fields {
 		fieldNames = append(fieldNames, field.QualifiedColumnName)
 	}
@@ -317,7 +317,6 @@ func InsertID[Model any](builder *SQLBuilder[Model]) error {
 }
 
 func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Model] {
-
 	// Reflect on the Model type to extract metadata
 	var _type = reflect.TypeFor[Model]()
 
@@ -338,7 +337,6 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 
 		// first field is the info field _ struct{}
 		if idx == 0 {
-
 			if _field.Name == "_" {
 				// tag should be db with table name
 				// or else panic
@@ -361,7 +359,6 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 			} else {
 				panic("first field must be info field")
 			}
-
 		} else {
 			// Other fields are model attributes
 			if dbTagValue := _field.Tag.Get("db"); dbTagValue != "" {
@@ -421,7 +418,6 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 					}
 
 					modelRelations[relation.fieldName] = &relation
-
 				} else {
 					// Primitive fields detected.
 					// This are selectable columns of the table
@@ -440,7 +436,6 @@ func NewSQLBuilder[Model any](opts ...SQLBuilderOptions[Model]) *SQLBuilder[Mode
 					for key, value := range operatorFuncMap {
 						modelOperations[fieldName+key] = value
 					}
-
 				}
 			}
 		}
@@ -554,7 +549,7 @@ func (b *SQLBuilder[Model]) getSortedFields(where *map[string]any) []*fieldIdx {
 
 func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) (ret string, retErr error) {
 	if where == nil {
-		return
+		return ret, retErr
 	}
 
 	// Check for special conditions
@@ -567,7 +562,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) (ret strin
 				return "", err
 			}
 			ret = "NOT (" + notExpr + ")"
-			return
+			return ret, retErr
 		}
 	} else if items, ok := (*where)["_and"]; ok {
 		// in case of _and, the value is a []map[string]any
@@ -584,7 +579,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) (ret strin
 		}
 
 		ret = "(" + strings.Join(result, " AND ") + ")"
-		return
+		return ret, retErr
 	} else if ors, ok := (*where)["_or"]; ok {
 		// in case of _and, the value is a []map[string]any
 		result := []string{}
@@ -601,7 +596,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) (ret strin
 		}
 
 		ret = "(" + strings.Join(result, " OR ") + ")"
-		return
+		return ret, retErr
 	}
 
 	// Otherwise, construct the WHERE clause based on the field names and operations
@@ -657,12 +652,10 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) (ret strin
 								items = append(items, GenerateParameterPlaceholder(reflect.ValueOf(item), args))
 							}
 							result = append(result, opFunc(whereField.QualifiedColumnName, items...))
-
 						} else {
 							item := convert(_value)
 							result = append(result, opFunc(whereField.QualifiedColumnName, GenerateParameterPlaceholder(reflect.ValueOf(item), args)))
 						}
-
 					} else {
 						// this field name and opation is not registered.
 						// Relation field condition detected
@@ -745,7 +738,7 @@ func (b *SQLBuilder[Model]) Where(where *map[string]any, args *[]any) (ret strin
 	}
 
 	ret = strings.Join(result, " AND ")
-	return
+	return ret, retErr
 }
 
 func (b *SQLBuilder[Model]) ValuesError(values *[]Model, args *[]any, keys *[]any) (fields string, vals string, err error) {
@@ -768,13 +761,12 @@ func (b *SQLBuilder[Model]) ValuesError(values *[]Model, args *[]any, keys *[]an
 func (b *SQLBuilder[Model]) Values(values *[]Model, args *[]any, keys *[]any) (fields string, vals string, err error) {
 	if values == nil {
 		err = fmt.Errorf("values cannot be nil")
-		return
+		return fields, vals, err
 	}
 
 	// Generate the field names for the VALUES clause
 	var fieldsArray []string
 	for idx, field := range b.fields {
-
 		// first item is the primary key.
 		if idx == 0 {
 			// primary keys are often database generated,
@@ -966,7 +958,6 @@ func (b *SQLBuilder[Model]) Sort(filter Sortable) *map[string]string {
 	}
 	slog.Warn("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder, "columns", b.FieldNames())
 	return nil // Return nil if the sortBy field is not found in the repository columns
-
 }
 
 // OrderError is a wrapper around Order that recovers from panics

@@ -60,7 +60,6 @@ func (p *DbRbacStore) CountPermissions(ctx context.Context, filter *PermissionFi
 	return data[0].Count, nil
 }
 func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *PermissionFilter) squirrel.SelectBuilder {
-
 	if filter == nil {
 		return sq
 	}
@@ -71,7 +70,6 @@ func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *PermissionFilt
 				squirrel.ILike{"auth.permissions.description": "%" + filter.Q + "%"},
 			},
 		)
-
 	}
 	if len(filter.Names) > 0 {
 		sq = sq.Where(squirrel.Eq{"auth.permissions.name": filter.Names})
@@ -87,11 +85,9 @@ func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *PermissionFilt
 				filter.RoleId,
 			)
 			sq = sq.Where("auth.role_permissions.permission_id is null")
-
 		} else {
 			sq = sq.Join("auth.role_permissions on auth.permissions.id = auth.role_permissions.permission_id and auth.role_permissions.role_id = ?", filter.RoleId).
 				Where(squirrel.Eq{"auth.role_permissions.role_id": filter.RoleId})
-
 		}
 	}
 	if filter.ProductID != "" {
@@ -101,11 +97,9 @@ func ListPermissionsFilterFunc(sq squirrel.SelectBuilder, filter *PermissionFilt
 				filter.ProductID,
 			)
 			sq = sq.Where("billing.product_permissions.permission_id is null")
-
 		} else {
 			sq = sq.Join("billing.product_permissions on auth.permissions.id = billing.product_permissions.permission_id and billing.product_permissions.product_id = ?", filter.ProductID).
 				Where(squirrel.Eq{"billing.product_permissions.product_id": filter.ProductID})
-
 		}
 	}
 	return sq
@@ -253,16 +247,15 @@ func (p *DbRbacStore) FindRolePermissionIds(ctx context.Context, roleId uuid.UUI
 	if err != nil {
 		return nil, err
 	}
-	var ids []uuid.UUID
+	ids := []uuid.UUID{}
 	for _, rp := range data {
 		ids = append(ids, rp.PermissionID)
 	}
 	return ids, nil
-
 }
 
 func (p *DbRbacStore) CreateRolePermissions(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error {
-	var permissions []models.RolePermission
+	permissions := []models.RolePermission{}
 	for _, perm := range permissionIds {
 		permissions = append(permissions, models.RolePermission{
 			RoleID:       roleId,
@@ -346,7 +339,7 @@ func (p *DbRbacStore) DeleteRolePermissions(ctx context.Context, roleId uuid.UUI
 	if len(permissionIds) == 0 {
 		return nil
 	}
-	var ids []string
+	ids := []string{}
 	for _, id := range permissionIds {
 		ids = append(ids, id.String())
 	}

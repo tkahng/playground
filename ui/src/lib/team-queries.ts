@@ -1,6 +1,6 @@
 import { client } from "@/lib/client";
 import { ApiError } from "@/lib/error";
-import { components } from "@/schema";
+import { components, operations } from "@/schema";
 
 export const createTeam = async (
   accessToken: string,
@@ -17,29 +17,28 @@ export const createTeam = async (
   }
   return data;
 };
-export const getUserTeams = async ({
+
+export const getUserTeamMembers = async ({
   token,
   page = 0,
-  perPage = 10,
-  sortBy = "name",
-  sortOrder = "asc",
+  per_page = 10,
+  sort_by = "team.name",
+  sort_order = "asc",
+  ...rest
 }: {
   token: string;
-  page?: number;
-  perPage?: number;
-  sortBy?: string;
-  sortOrder?: "asc" | "desc" | undefined;
-}) => {
-  const { data, error } = await client.GET("/api/teams", {
+} & operations["get-user-team-members"]["parameters"]["query"]) => {
+  const { data, error } = await client.GET("/api/team-members", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
     params: {
       query: {
         page,
-        per_page: perPage,
-        sort_by: sortBy,
-        sort_order: sortOrder,
+        per_page,
+        sort_by,
+        sort_order,
+        ...rest,
       },
     },
   });
@@ -48,7 +47,6 @@ export const getUserTeams = async ({
   }
   return data;
 };
-
 export const getTeamBySlug = async (token: string, slug: string) => {
   const { data, error } = await client.GET("/api/teams/slug/{team-slug}", {
     headers: {
@@ -59,11 +57,10 @@ export const getTeamBySlug = async (token: string, slug: string) => {
     },
   });
   if (error) {
-    throw ApiError.fromErrorModel(error);
+    throw error;
   }
   return data;
 };
-
 export const getTeamTeamMembers = async ({
   token,
   teamId,
@@ -96,11 +93,10 @@ export const getTeamTeamMembers = async ({
     },
   });
   if (error) {
-    throw ApiError.fromErrorModel(error);
+    throw error;
   }
   return data;
 };
-
 export const updateTeam = async (
   token: string,
   teamId: string,
@@ -172,7 +168,6 @@ export const deleteMember = async ({
   }
   return data;
 };
-
 export const inviteTeamMember = async (
   token: string,
   teamId: string,
@@ -192,7 +187,6 @@ export const inviteTeamMember = async (
   }
   return true;
 };
-
 export const getTeamInvitations = async (
   token: string,
   teamId: string,
@@ -216,7 +210,6 @@ export const getTeamInvitations = async (
   }
   return data;
 };
-
 export const cancelTeamInvitation = async (
   token: string,
   teamId: string,
@@ -241,7 +234,6 @@ export const cancelTeamInvitation = async (
   }
   return true;
 };
-
 export const verifyTeamInvitation = async (
   // token: string,
   invitationToken: string
@@ -259,7 +251,6 @@ export const verifyTeamInvitation = async (
   }
   return true;
 };
-
 export const acceptInvitation = async (
   token: string,
   invitationToken: string
@@ -277,7 +268,6 @@ export const acceptInvitation = async (
   }
   return true;
 };
-
 export const declineInvitation = async (
   token: string,
   invitationToken: string
@@ -317,7 +307,6 @@ export const getUserTeamInvitations = async (
   }
   return data;
 };
-
 export const getTeamInvitationByToken = async (invitationToken: string) => {
   const { data, error } = await client.GET(
     "/api/team-invitations/token/{token}",
@@ -337,7 +326,6 @@ export const getTeamInvitationByToken = async (invitationToken: string) => {
   }
   return data;
 };
-
 export const getTeamMemberNotifications = async (
   token: string,
   teamMemberId: string,

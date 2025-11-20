@@ -103,5 +103,4 @@ func SelectCustomerFromUser(app core.App) HttpMiddelwareFunc {
 			next.ServeHTTP(w, r)
 		})
 	}
-
 }

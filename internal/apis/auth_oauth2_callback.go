@@ -90,7 +90,6 @@ func (a *Api) bindOath2CallbackGet(api huma.API) {
 				Status: http.StatusTemporaryRedirect,
 				Url:    uri.String(),
 			}, nil
-
 		},
 	)
 }
@@ -149,7 +148,6 @@ func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (
 	user, err := OAuth2Signin(ctx, api.App(), params)
 	if err != nil {
 		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
-
 	}
 	return &CallbackOutput{
 		ApiUserInfoTokens: *ToApiUserInfoTokens(user),

@@ -1,4 +1,4 @@
-import { TeamSelectDialog } from "@/components/pricing/team-select-dialog";
+import { OwnerTeamSelectDialog } from "@/components/pricing/owner-team-select-dialog";
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTabs } from "@/hooks/use-tabs";
@@ -74,8 +74,22 @@ export default function PricingTeam({ products, subscription }: Props) {
             Pricing Plans
           </h1>
           <p className="max-w-2xl m-auto mt-5 text-xl text-secondary-foreground sm:text-center sm:text-2xl">
-            Start building for free, then add a site plan to go live. Account
-            plans unlock additional features.
+            {/* <h2 className="font-extrabold">
+              Upgrade your team by subscribing to one of our pricing plans.
+            </h2> */}
+            <br />
+            <div className="">
+              These are Stripe sandboxes,{" "}
+              <span className="italic font-bold"> no real money </span>
+              is involved.
+            </div>
+            <a
+              className="underline text-lg"
+              href="https://docs.stripe.com/testing?testing-method=card-numbers#visa"
+            >
+              Click here to learn how to use test credit cards.
+            </a>
+            <br />
           </p>
           <div className="relative self-center mt-6 bg-primary-foreground rounded-lg p-0.5 flex sm:mt-8 border">
             {intervals.includes("month") && (
@@ -148,11 +162,11 @@ export default function PricingTeam({ products, subscription }: Props) {
                     </span>
                   </p>
                   {user && (
-                    <TeamSelectDialog>
+                    <OwnerTeamSelectDialog>
                       <Button className="block w-full py-2 mt-8 text-sm font-semibold text-center rounded-md">
                         Subscribe
                       </Button>
-                    </TeamSelectDialog>
+                    </OwnerTeamSelectDialog>
                   )}
                   {!user && (
                     <Button

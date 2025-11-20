@@ -24,13 +24,13 @@ package services
 // 	// adapter := new(MockAuthStore)
 // 	adapter := stores.NewAdapterDecorators()
 // 	tokenService := token.NewTokenService(&cfg, adapter.Token())
-// 	// adatper := resource.NewResourceDecoratorAdapter()
+// 	// adapter := resource.NewResourceDecoratorAdapter()
 // 	mockToken := NewJwtServiceDecorator()
 // 	app := &BaseAuthService{
 // 		jwt:     mockToken,
 // 		adapter: adapter,
 // 		token:   tokenService,
-// 		// adapter:   adatper,
+// 		// adapter:   adapter,
 // 		config: &conf.EnvConfig{
 // 			AuthOptions: conf.AuthOptions{
 // 				RefreshToken: conf.TokenOption{

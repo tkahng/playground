@@ -29,9 +29,6 @@ func bindTeamsApi(appApi *Api) {
 	// check team slug
 	appApi.CheckTeamSlugBind(teamsGroup)
 
-	// get user teams
-	appApi.GetUserTeamsBind(teamsGroup)
-
 	// create team
 	appApi.CreateTeamBind(teamsGroup)
 
@@ -45,6 +42,9 @@ func bindTeamsApi(appApi *Api) {
 
 	// delete team
 	appApi.DeleteTeamBind(teamsGroup)
+
+	// update last selected team
+	appApi.UpdateLastSelectedTeam(teamsGroup)
 
 	// team invitations -----------------------------------------------------------------------------------------------------------
 
@@ -201,6 +201,8 @@ func bindTeamsApi(appApi *Api) {
 	appApi.DeleteTeamMembersNotificationsBind(teamsGroup)
 
 	appApi.FindTeamMemberByIDBind(teamsGroup)
+
+	appApi.GetUserTeamMembersBind(teamsGroup)
 
 	appApi.UpdateTeamMemberBind(teamsGroup)
 

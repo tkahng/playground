@@ -71,7 +71,6 @@ func TestAccountStore_CRUD(t *testing.T) {
 			assert.Error(t, err)
 			assert.Nil(t, linkedAccount)
 		})
-
 	})
 }
 
@@ -97,7 +96,6 @@ func TestAccountStore_GetUserAccounts(t *testing.T) {
 		assert.Len(t, results, 2)
 		assert.Equal(t, user1.ID, results[0][0].UserID)
 		assert.Equal(t, user2.ID, results[1][0].UserID)
-
 	})
 }
 
@@ -119,6 +117,5 @@ func TestAccountStore_UpdateUserPassword(t *testing.T) {
 		updated, err := store.FindUserAccountByUserIdAndProvider(ctx, user.ID, models.ProvidersCredentials)
 		assert.NoError(t, err)
 		assert.NotNil(t, updated.Password)
-
 	})
 }

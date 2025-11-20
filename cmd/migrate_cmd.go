@@ -16,10 +16,9 @@ func NewMigrateCmd() *cobra.Command {
 	migrateCmd.AddCommand(rollBack)
 	migrateCmd.AddCommand(newMigrations)
 	return migrateCmd
-
 }
 
-// nolint:exhaustruct
+//nolint:exhaustruct
 var migrateCmd = &cobra.Command{
 	Use:   "migrate",
 	Short: "migrate",

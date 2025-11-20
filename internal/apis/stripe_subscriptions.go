@@ -164,7 +164,6 @@ func (a *Api) bindGetStripeSubscriptions(api huma.API) {
 func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*struct {
 	Body *StripeSubscription `json:"body,omitempty" required:"false"`
 }, error) {
-
 	customer := contextstore.GetContextCurrentCustomer(ctx)
 	if customer == nil {
 		return nil, huma.Error403Forbidden("no customer found")
@@ -182,7 +181,6 @@ func (api *Api) GetStripeSubscriptions(ctx context.Context, input *struct{}) (*s
 	}
 
 	return output, nil
-
 }
 func (a *Api) bindGetTeamStripeSubscriptions(stripeGroup huma.API) {
 	huma.Register(
@@ -211,7 +209,6 @@ func (api *Api) GetTeamStripeSubscriptions(ctx context.Context, input *struct {
 }) (*struct {
 	Body *StripeSubscription `json:"body,omitempty" required:"false"`
 }, error) {
-
 	customer := contextstore.GetContextCurrentCustomer(ctx)
 	if customer == nil {
 		return nil, huma.Error403Forbidden("no customer found")
@@ -229,5 +226,4 @@ func (api *Api) GetTeamStripeSubscriptions(ctx context.Context, input *struct {
 	}
 
 	return output, nil
-
 }

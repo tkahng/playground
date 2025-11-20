@@ -2,12 +2,10 @@ import { CreateTeamDialog } from "@/components/create-team-dialog";
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { getUserTeams } from "@/lib/team-queries";
-import { Team } from "@/schema.types";
+import { getUserTeamMembers } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
-import { NavLink, useSearchParams } from "react-router";
-import { toast } from "sonner";
+import { Link, useSearchParams } from "react-router";
 
 export default function TeamListPage() {
   const { user } = useAuthProvider();
@@ -28,7 +26,7 @@ export default function TeamListPage() {
   const { data, error, isError, isLoading } = useQuery({
     queryKey: [
       {
-        key: "get-user-teams",
+        key: "get-user-team-members",
         user_id: user?.user.id,
         page: pageIndex,
         per_page: pageSize,
@@ -40,10 +38,10 @@ export default function TeamListPage() {
       }
 
       // const stats = await getStats(user.tokens.access_token);
-      const teams = await getUserTeams({
+      const teams = await getUserTeamMembers({
         token: user.tokens.access_token,
         page: pageIndex,
-        perPage: pageSize,
+        per_page: pageSize,
       });
       console.log({ teams });
       return teams;
@@ -56,10 +54,6 @@ export default function TeamListPage() {
   if (isError) {
     return <div>Error: {error?.message}</div>;
   }
-
-  const handleSelectTeam = (team: Team) => {
-    toast.success(`Selected team: ${team.name}`);
-  };
 
   return (
     <div className="space-y-6">
@@ -75,13 +69,12 @@ export default function TeamListPage() {
             header: "Name",
             cell: ({ row }) => {
               return (
-                <NavLink
-                  to={`${RouteMap.TEAM_LIST}/${row.original.slug}/dashboard`}
+                <Link
+                  to={`${RouteMap.TEAM_LIST}/${row.original.team?.slug}/dashboard`}
                   className="hover:underline text-blue-500"
-                  onClick={() => handleSelectTeam(row.original)}
                 >
-                  {row.original.name}
-                </NavLink>
+                  {row.original.team?.name}
+                </Link>
               );
             },
           },
@@ -89,15 +82,7 @@ export default function TeamListPage() {
             accessorKey: "role",
             header: "Member Role",
             cell: ({ row }) => {
-              const members = row.original.members;
-              if (!members || members.length === 0) {
-                return <span className="text-gray-500">No members</span>;
-              }
-              return (
-                <span className="text-gray-500">
-                  {members[0]?.role || "Member"}
-                </span>
-              );
+              return <span className="text-gray-500">{row.original.role}</span>;
             },
           },
         ]}

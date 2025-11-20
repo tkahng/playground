@@ -54,7 +54,7 @@ func (a *Api) RequestVerificationBind(api huma.API) {
 //
 // If the user has been verified, it will do the following operations:
 //
-// 1. Validate the verificaiton token, then delete it.
+// 1. Validate the verification token, then delete it.
 //
 // 1. Create a stripe customer for the user
 //
@@ -73,7 +73,7 @@ func (api *Api) VerifyEmailBind(humaAPI huma.API) {
 			Summary:     "Confirm Email verification request",
 			Description: "Confirm Request email verification",
 			Tags:        []string{"Auth", "Verify"},
-			Errors:      []int{http.StatusNotFound},
+			Errors:      []int{http.StatusNotFound, http.StatusConflict},
 		},
 		func(ctx context.Context, input *struct{ Body EmailVerificationPostInput }) (*struct{}, error) {
 			runInTxErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {

@@ -1,11 +1,10 @@
-import AuthButton from "@/components/auth-button";
 import { LinkDto } from "@/components/links";
 import PlaygroundLogo from "@/components/playground-logo";
+import { UserNav } from "@/components/user-nav";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router";
 import { NotificationDropdown } from "./notification-dropdown";
 import TeamNotification from "./team-notification";
-import TeamSwitcher from "./team-switcher";
 
 export function TeamHeader({
   leftLinks,
@@ -20,7 +19,6 @@ export function TeamHeader({
       <nav className={cn("flex h-14 items-center box-border")}>
         <div className="flex flex-grow items-center space-x-4">
           <PlaygroundLogo />
-          <TeamSwitcher />
           <TeamNotification />
           {leftLinks?.length
             ? leftLinks.map(({ to, title, current }) => (
@@ -65,7 +63,7 @@ export function TeamHeader({
               ))
             : null}
           <NotificationDropdown />
-          <AuthButton />
+          <UserNav />
         </div>
       </nav>
     </header>

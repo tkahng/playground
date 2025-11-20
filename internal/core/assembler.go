@@ -144,5 +144,4 @@ func (a *Assembler) setIntegrationServices(app *BaseApp) {
 	app.teamInvitation = services.NewInvitationService(adapter, *cfg, jobService, app.payment)
 
 	app.auth = auth.NewAuthService(cfg, logger, adapter, hashService, jwtService, tokenService, jobService, enc)
-
 }

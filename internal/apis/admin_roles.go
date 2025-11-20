@@ -147,7 +147,6 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 		for idx, role := range roles {
 			role.Permissions = data[idx]
 		}
-
 	}
 	count, err := store.CountRoles(ctx, filter)
 	if err != nil {
@@ -159,7 +158,6 @@ func (api *Api) AdminRolesList(ctx context.Context, input *struct {
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
-
 }
 
 type RoleCreateInput struct {

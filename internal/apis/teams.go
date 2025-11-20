@@ -14,7 +14,6 @@ import (
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
-	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
 )
 
@@ -107,9 +106,9 @@ func (api *Api) CreateTeamBind(humaApi huma.API) {
 				if err != nil {
 					slog.ErrorContext(
 						ctx,
-						"error ocurred while checking slug",
+						"error occurred while checking slug",
 					)
-					return nil, fmt.Errorf("error ocurred while checking slug")
+					return nil, fmt.Errorf("error occurred while checking slug")
 				}
 				return nil, huma.Error400BadRequest("slug already exists")
 			}
@@ -215,87 +214,6 @@ func (api *Api) CheckTeamSlug(
 type TeamMemberListInput struct {
 	PaginatedInput
 	SortParams
-}
-
-type UserListTeamsParams struct {
-	PaginatedInput
-	SortParams
-}
-
-func (api *Api) GetUserTeamsBind(humaApi huma.API) {
-	huma.Register(
-		humaApi,
-		huma.Operation{
-			OperationID: "get-user-teams",
-			Method:      http.MethodGet,
-			Path:        "/teams",
-			Summary:     "get-user-teams",
-			Description: "get all teams for a user",
-			Tags:        []string{"Teams"},
-			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
-			Security: []map[string][]string{{
-				shared.BearerAuthSecurityKey: {},
-			}},
-		},
-		api.GetUserTeams,
-	)
-}
-
-func (api *Api) GetUserTeams(
-	ctx context.Context,
-	input *UserListTeamsParams,
-) (
-	*ApiPaginatedOutput[*TeamWithMember],
-	error,
-) {
-	info := contextstore.GetContextUserInfo(ctx)
-	if info == nil {
-		return nil, huma.Error401Unauthorized("unauthorized")
-	}
-	params := &stores.TeamFilter{
-		UserIds: []uuid.UUID{info.User.ID},
-	}
-	if input != nil {
-		params.Page = input.Page
-		params.PerPage = input.PerPage
-		params.SortBy = input.SortBy
-		params.SortOrder = input.SortOrder
-	}
-
-	teams, err := api.App().Adapter().TeamGroup().ListTeams(ctx, params)
-	if err != nil {
-		return nil, err
-	}
-	var teamsWithMember []*TeamWithMember
-	if len(teams) > 0 {
-		teamIds := mapper.Map(teams, func(t *models.Team) uuid.UUID {
-			return t.ID
-		})
-		members, err := api.App().Adapter().TeamMember().LoadTeamMembersByUserAndTeamIds(ctx, info.User.ID, teamIds...)
-		if err != nil {
-			return nil, err
-		}
-		for idx := range teamIds {
-			team := teams[idx]
-			member := members[idx]
-			member.User = &info.User
-			teamWithMember := &TeamWithMember{
-				Team:   *fromTeamModel(team),
-				Member: fromTeamMemberModel(member),
-			}
-			teamsWithMember = append(teamsWithMember, teamWithMember)
-		}
-	}
-	count, err := api.App().Adapter().TeamGroup().CountTeams(ctx, params)
-	if err != nil {
-		return nil, err
-	}
-	return &ApiPaginatedOutput[*TeamWithMember]{
-		Body: ApiPaginatedResponse[*TeamWithMember]{
-			Data: teamsWithMember,
-			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
-		},
-	}, nil
 }
 
 func (api *Api) FindTeamInfoBySlugBind(humaApi huma.API) {
@@ -453,6 +371,41 @@ func (api *Api) GetTeamBind(humaApi huma.API) {
 			return &TeamOutput{
 				Body: fromTeamModel(team),
 			}, nil
+		},
+	)
+}
+
+func (api *Api) UpdateLastSelectedTeam(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "update-select-team",
+			Method:      http.MethodPut,
+			Path:        "/teams/{team-id}/select",
+			Summary:     "update-selected-team",
+			Description: "updates the last selected team for a user",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
+		},
+		func(ctx context.Context, input *struct {
+			TeamID string `path:"team-id" required:"true"`
+		}) (*struct{}, error) {
+			info := contextstore.GetContextTeamInfo(ctx)
+			if info == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			err := api.App().Adapter().TeamMember().UpdateTeamMemberSelectedAt(ctx, info.Team.ID, info.User.ID)
+			if err != nil {
+				slog.ErrorContext(ctx, "error deleting team", "teamId", info.Team.ID.String(), "userId", info.User.ID.String(), "error", err)
+				return nil, err
+			}
+			return nil, nil
 		},
 	)
 }

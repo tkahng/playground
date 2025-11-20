@@ -70,7 +70,6 @@ type Queries struct {
 func (v *Queries) Close() {
 	slog.Debug("close called on Queries. calling close on pool.")
 	v.db.Close()
-
 }
 
 func (v *Queries) QueryRow(ctx context.Context, sql string, args ...any) pgx.Row {
@@ -170,7 +169,7 @@ func WithTx(ctx context.Context, dbx Dbx, fn func(tx Dbx) error) (returnErr erro
 	if beginErr != nil {
 		slog.Error("error starting transaction", slog.Any("error", beginErr))
 		returnErr = errors.New("there was an error starting a transaction")
-		return
+		return returnErr
 	}
 
 	defer func() {
@@ -191,18 +190,18 @@ func WithTx(ctx context.Context, dbx Dbx, fn func(tx Dbx) error) (returnErr erro
 		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 			slog.ErrorContext(ctx, "error rolling back transaction", slog.Any("error", rollbackErr))
 			returnErr = errors.New("there was an error while recovering from a failure")
-			return
+			return returnErr
 		}
 		returnErr = fnErr
-		return
+		return returnErr
 	} else {
 		if commitErr := tx.Commit(ctx); commitErr != nil {
 			slog.ErrorContext(ctx, "error committing transaction", slog.Any("error", commitErr))
 			returnErr = errors.New("there was an error while committing a transaction")
-			return
+			return returnErr
 		}
 	}
-	return
+	return returnErr
 }
 
 // WithCtxTx
@@ -216,7 +215,7 @@ func WithCtxTx(ctx context.Context, dbx Dbx, fn func(context.Context) error, opt
 	if beginErr != nil {
 		slog.Error("error starting transaction", slog.Any("error", beginErr))
 		returnErr = errors.New("there was an error starting a transaction")
-		return
+		return returnErr
 	}
 
 	defer func() {
@@ -237,16 +236,16 @@ func WithCtxTx(ctx context.Context, dbx Dbx, fn func(context.Context) error, opt
 		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 			slog.ErrorContext(ctx, "error rolling back transaction", slog.Any("error", rollbackErr))
 			returnErr = errors.New("there was an error while recovering from a failure")
-			return
+			return returnErr
 		}
 		returnErr = fnErr
-		return
+		return returnErr
 	} else {
 		if commitErr := tx.Commit(ctx); commitErr != nil {
 			slog.ErrorContext(ctx, "error committing transaction", slog.Any("error", commitErr))
 			returnErr = errors.New("there was an error while committing a transaction")
-			return
+			return returnErr
 		}
 	}
-	return
+	return returnErr
 }

@@ -97,7 +97,6 @@ func TestCreateMedia(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -183,6 +182,5 @@ func TestFindMediaByID(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }

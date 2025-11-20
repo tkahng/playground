@@ -1,4 +1,4 @@
-// nolint:errcheck
+//nolint:errcheck
 package websocket_test
 
 import (
@@ -15,7 +15,6 @@ import (
 )
 
 func TestWSHandler(t *testing.T) {
-
 	testBytes := []byte("testing")
 
 	upgrader := gwebsocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}

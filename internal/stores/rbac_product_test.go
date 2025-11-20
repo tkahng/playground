@@ -60,7 +60,6 @@ func TestCreateProductPermissions(t *testing.T) {
 				}
 			})
 		}
-		
 	})
 }
 
@@ -112,6 +111,5 @@ func TestCreateProductRoles(t *testing.T) {
 				}
 			})
 		}
-		
 	})
 }

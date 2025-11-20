@@ -1,14 +1,13 @@
-import { LinkDto, teamLinks } from "@/components/links";
+import { teamLinks } from "@/components/links";
 import { MainNav } from "@/components/main-nav";
 import { PlaygroundMinimalFooter } from "@/components/playground-minimal-footer";
-import { RouteMap } from "@/components/route-map";
 import { TeamHeader } from "@/components/team-header";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
 import { isErrorModel } from "@/lib/error";
 import { getTeamBySlug } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { Navigate, Outlet, useLocation, useParams } from "react-router";
 import { toast } from "sonner";
 
@@ -33,28 +32,15 @@ export default function TeamDashboardLayout() {
     },
     enabled: false,
   });
-  const isMounted = useRef(false);
+  // const isMounted = useRef(false);
   useEffect(() => {
-    if (!isMounted.current) {
-      isMounted.current = true;
-      refetch().then(() => {});
-    }
+    // if (!isMounted.current) {
+    //   isMounted.current = true;
+    //   refetch().then(() => {});
+    // }
+    refetch().then(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamSlug]);
-  const isAdmin = user?.roles?.includes("superuser");
-  const admin: LinkDto[] = isAdmin
-    ? [
-        {
-          to: RouteMap.ADMIN,
-          title: "Admin",
-          current: () => false,
-        },
-      ]
-    : [];
-  const links = [
-    { to: RouteMap.DASHBOARD, title: "Dashboard", current: () => false },
-    ...admin,
-  ] as LinkDto[];
 
   const isNotUserTeam = teamMember?.user_id !== user?.user.id;
 
@@ -106,7 +92,7 @@ export default function TeamDashboardLayout() {
   return (
     <div className="min-h-screen flex flex-col">
       <div className="px-4 md:px-6 lg:px-8 py-2 items-center sticky top-0 z-50 w-full bg-background shadow-sm border-b">
-        <TeamHeader rightLinks={links} />
+        <TeamHeader />
         <MainNav links={teamLinks(team.slug)} />
       </div>
       <main className="flex-1">
