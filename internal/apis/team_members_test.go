@@ -116,7 +116,6 @@ func TestApi_FindTeamMemberByID(t *testing.T) {
 			tt.Test(t)
 		}
 	})
-
 }
 func TestApi_FindTeamTeamMembers(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
@@ -643,7 +642,6 @@ func TestApi_DeactivateTeamMember(t *testing.T) {
 				})
 				assert.Equal(t, true, member.Active)
 				assert.NotNil(t, member.UserID)
-
 			},
 		},
 		{
@@ -694,7 +692,6 @@ func TestApi_DeactivateTeamMember(t *testing.T) {
 				assert.Equal(t, false, member.Active)
 				assert.Equal(t, team1Member1.Member.ID, member.ID)
 				assert.Nil(t, member.UserID)
-
 			},
 		},
 		{
@@ -751,7 +748,6 @@ func TestApi_DeactivateTeamMember(t *testing.T) {
 			tt.Test(t)
 		})
 	}
-
 }
 func TestApi_LeaveTeam(t *testing.T) {
 	tests := []ApiScenario{
@@ -808,7 +804,6 @@ func TestApi_LeaveTeam(t *testing.T) {
 				})
 				assert.Equal(t, true, member.Active)
 				assert.NotNil(t, member.UserID)
-
 			},
 		},
 		{
@@ -859,7 +854,6 @@ func TestApi_LeaveTeam(t *testing.T) {
 				assert.Equal(t, false, member.Active)
 				assert.Equal(t, team1Member1.Member.ID, member.ID)
 				assert.Nil(t, member.UserID)
-
 			},
 		},
 		{
@@ -891,5 +885,4 @@ func TestApi_LeaveTeam(t *testing.T) {
 			tt.Test(t)
 		})
 	}
-
 }

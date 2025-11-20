@@ -67,7 +67,6 @@ func (api *Api) CreateTeamCheckoutSession(ctx context.Context, input *StripeTeam
 			Url: url,
 		},
 	}, nil
-
 }
 func (a *Api) bindCreateUserCheckoutSession(stripeGroup huma.API) {
 	huma.Register(
@@ -108,7 +107,6 @@ func (api *Api) CreateUserCheckoutSession(ctx context.Context, input *StripeUser
 			Url: url,
 		},
 	}, nil
-
 }
 func (a *Api) bindStripeBillingPortal(stripeGroup huma.API) {
 	huma.Register(
@@ -145,7 +143,6 @@ func (api *Api) StripeBillingPortal(ctx context.Context, input *struct{}) (*Stri
 			Url: url,
 		},
 	}, nil
-
 }
 
 func (a *Api) bindStripeTeamBillingPortal(stripeGroup huma.API) {
@@ -186,7 +183,6 @@ func (api *Api) StripeTeamBillingPortal(ctx context.Context, input *struct {
 			Url: url,
 		},
 	}, nil
-
 }
 
 func (a *Api) bindStripeCheckoutSessionGet(api huma.API) {
@@ -246,7 +242,6 @@ func (api *Api) StripeCheckoutSessionGet(ctx context.Context, input *StripeCheck
 			}
 			cs.StripeCustomer.User = &info.User
 		}
-
 	}
 	return &CheckoutSessionOutput{
 		Body: *fromModelSubscription(cs),

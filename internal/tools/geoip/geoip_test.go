@@ -14,5 +14,4 @@ func TestOpen(t *testing.T) {
 		t.Fatal("expected record to have data")
 		return
 	}
-
 }

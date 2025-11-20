@@ -245,7 +245,6 @@ func (s *DbTeamMemberStore) filterQuery(qs squirrel.SelectBuilder, filter *TeamM
 	}
 	if len(filter.Ids) > 0 {
 		qs = qs.Where(squirrel.Eq{"org.team_members.id": filter.Ids})
-
 	}
 	if len(filter.Roles) > 0 {
 		qs = qs.Where(
@@ -314,7 +313,6 @@ func (s *DbTeamMemberStore) sortQuery(qs squirrel.SelectBuilder, filter Sortable
 	// if sortBy is in the registered fieldnames, it is a scalar field. direct sort.
 	if slices.Contains(repository.TeamMemberBuilder.FieldNames(), sortBy) {
 		qs = qs.OrderBy(sortBy + " " + strings.ToUpper(sortOrder))
-
 	} else if slices.Contains(joinSortCols, sortBy) {
 		// if the sort by field is a joined field, we need to prefix it with the table name.
 		// if `team.` is a prefix for team fields, `user.` is a prefix for user fields.

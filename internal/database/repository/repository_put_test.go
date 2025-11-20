@@ -234,7 +234,6 @@ func TestRepositoryPut_Team(t *testing.T) {
 		{
 			Name: "creating 10 unique teams from numbers",
 			ArgsFunc: func(t testing.TB, ctx context.Context, scenario *PutScenario[models.Team]) []models.Team {
-
 				var teamArgs []models.Team
 				for i := range 10 {
 					teamArgs = append(teamArgs, models.Team{

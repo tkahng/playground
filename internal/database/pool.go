@@ -54,7 +54,6 @@ func getDbPool(ctx context.Context, connString string) (*pgxpool.Pool, error) {
 		// 	return err
 		// }
 		return nil
-
 	}
 	// Immediately close the old pool and open a new one with the new config.
 	dbpool.Close()
@@ -80,7 +79,7 @@ func getCustomDataTypes(ctx context.Context, pool *pgxpool.Pool) ([]*pgtype.Type
 		"auth._providers",
 	}
 
-	var typesToRegister []*pgtype.Type
+	typesToRegister := []*pgtype.Type{}
 	for _, typeName := range dataTypeNames {
 		dataType, err := conn.Conn().LoadType(ctx, typeName)
 		if err != nil {

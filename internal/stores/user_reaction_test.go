@@ -76,7 +76,6 @@ func TestDbUserReactionStore_CreateUserReaction(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Failed to count user reactions: %v", err)
 		}
-
 	})
 }
 
@@ -153,7 +152,6 @@ func TestDbUserReactionStore_CountByCountry(t *testing.T) {
 				if c.TotalReactions != 3 {
 					t.Fatalf("Expected 3 user reactions, got %d", c.TotalReactions)
 				}
-
 			}
 		}
 	})

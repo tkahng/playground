@@ -173,11 +173,11 @@ func AssignRoleToUser(t testing.TB, ctx context.Context, db database.Dbx, userId
 			"_eq": userId,
 		},
 	}))
-	var userRoleIds []uuid.UUID
+	userRoleIds := []uuid.UUID{}
 	for _, userRole := range userRoles {
 		userRoleIds = append(userRoleIds, userRole.RoleID)
 	}
-	var userRoleArgs []models.UserRole
+	userRoleArgs := []models.UserRole{}
 	for _, roleName := range roleNames {
 		role := MustFindRoleByName(t, ctx, db, roleName)
 		if slices.Contains(userRoleIds, role.ID) {

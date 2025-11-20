@@ -159,7 +159,6 @@ func TestStripeStore_CreateCustomer(t *testing.T) {
 				}
 			})
 		}
-
 	})
 }
 
@@ -187,6 +186,5 @@ func TestStripeStore_FindCustomer(t *testing.T) {
 		if err != nil || found == nil || found.ID != "cus_find_1" {
 			t.Errorf("FindCustomer() = %v, err = %v", found, err)
 		}
-
 	})
 }

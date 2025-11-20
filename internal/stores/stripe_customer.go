@@ -71,7 +71,6 @@ func (s *DbCustomerStore) WithTx(tx database.Dbx) *DbCustomerStore {
 }
 
 func (s *DbCustomerStore) ListCustomers(ctx context.Context, input *StripeCustomerFilter) ([]*models.StripeCustomer, error) {
-
 	limit, offset := pagination(input)
 	where := s.filter(input)
 	order := s.stripeCustomerOrderByFunc(input)

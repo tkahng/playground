@@ -86,7 +86,6 @@ type StripeProductsWithPricesInput struct {
 }
 
 func (api *Api) StripeProductsWithPrices(ctx context.Context, input *StripeProductsWithPricesInput) (*ApiPaginatedOutput[*StripeProduct], error) {
-
 	filter := &stores.StripeProductFilter{}
 	filter.Page = input.Page
 	filter.PerPage = input.PerPage
@@ -99,7 +98,7 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, input *StripeProdu
 	if err != nil {
 		return nil, err
 	}
-	var ids []string
+	ids := []string{}
 	for _, u := range products {
 		ids = append(ids, u.ID)
 	}

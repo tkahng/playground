@@ -43,7 +43,6 @@ func OAuth2ConfigFromEnv(cfg conf.EnvConfig) {
 				},
 			}
 		})
-
 	}
 	if cfg.GoogleClientId != "" && cfg.GoogleClientSecret != "" {
 		Providers[NameGoogle] = wrapFactory(func() ProviderConfig {

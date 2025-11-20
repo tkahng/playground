@@ -69,7 +69,7 @@ func (s *DbTeamGroupStore) FindTeam(ctx context.Context, filter *TeamFilter) (*m
 }
 
 func (s *DbTeamGroupStore) LoadTeamsByIds(ctx context.Context, teamIds ...uuid.UUID) ([]*models.Team, error) {
-	var ids []string
+	ids := []string{}
 	for _, id := range teamIds {
 		ids = append(ids, id.String())
 	}

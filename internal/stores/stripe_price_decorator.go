@@ -47,7 +47,6 @@ func (s *StripePriceStoreDecorator) Cleanup() {
 	s.ListPricesFunc = nil
 	s.UpsertPriceFunc = nil
 	s.UpsertPriceFromStripeFunc = nil
-
 }
 
 // CountPrices implements DbPriceStoreInterface.

@@ -35,7 +35,7 @@ func WithSingletonTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// nolint:errcheck
+	//nolint:errcheck
 	defer tx.Rollback(ctx)
 	// panic handle
 	defer func() {
@@ -52,7 +52,7 @@ func WithSingletonTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	fn(ctx, NewTxQueries(tx))
 }
 
-// WithNewTestTx creates a new pool connection, runs the test within that transaciton, rolls back, and closes the pool.
+// WithNewTestTx creates a new pool connection, runs the test within that transactions, rolls back, and closes the pool.
 func WithNewTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	t.Helper()
 	// TODO: add context timeout
@@ -68,7 +68,7 @@ func WithNewTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 		t.Fatal(beginErr)
 	}
 	defer dbx.Close()
-	// nolint:errcheck
+	//nolint:errcheck
 	defer tx.Rollback(ctx)
 	// panic handle
 	defer func() {

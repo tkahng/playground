@@ -160,7 +160,6 @@ func (s *DbPriceStore) FindPrice(ctx context.Context, filter *StripePriceFilter)
 }
 
 func (s *DbPriceStore) LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error) {
-
 	prices, err := repository.StripePrice.Get(
 		ctx,
 		s.db,

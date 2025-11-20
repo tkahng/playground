@@ -280,7 +280,6 @@ type TaskResponse struct {
 }
 
 func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositionStatusInput) (*struct{}, error) {
-
 	if input == nil {
 		return nil, huma.Error400BadRequest("Invalid input")
 	}
@@ -323,7 +322,6 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 func (api *Api) TaskDelete(ctx context.Context, input *struct {
 	TaskID string `path:"task-id"`
 }) (*struct{}, error) {
-
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")
@@ -342,7 +340,6 @@ func (api *Api) TaskDelete(ctx context.Context, input *struct {
 func (api *Api) TaskGet(ctx context.Context, input *struct {
 	TaskID string `path:"task-id"`
 }) (*TaskResponse, error) {
-
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	if userInfo == nil {
 		return nil, huma.Error401Unauthorized("Unauthorized")

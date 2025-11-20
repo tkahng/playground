@@ -69,7 +69,6 @@ func NewPopulator(adapter stores.StorageAdapterInterface) Populator {
 			return adapter.Task().FindTaskProjectByID(ctx, key)
 		}),
 	}
-
 }
 
 func getMember(ctx context.Context, populator Populator, memberId uuid.UUID) (*models.TeamMember, error) {
@@ -153,5 +152,4 @@ func PopulateTeamMember(ctx context.Context, populator Populator, member *models
 		member.Team = team
 	}
 	return nil
-
 }

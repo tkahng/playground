@@ -131,7 +131,6 @@ func TestRepositoryPost_User(t *testing.T) {
 			ArgsFunc: func(t testing.TB, ctx context.Context, scenario *PostScenario[models.User]) []models.User {
 				var args []models.User
 				for i := range 10 {
-
 					args = append(args, models.User{
 						Name:  types.Pointer("Name:" + fmt.Sprint(i)),
 						Email: fmt.Sprint(i) + "@email.com",
@@ -167,7 +166,6 @@ func TestRepositoryPost_UserAccount(t *testing.T) {
 				dbx := scenario.Dbx
 				var userArgs []models.User
 				for i := range 10 {
-
 					userArgs = append(userArgs, models.User{
 						Name:  types.Pointer("Name:" + fmt.Sprint(i)),
 						Email: fmt.Sprint(i) + "@email.com",
@@ -176,7 +174,6 @@ func TestRepositoryPost_UserAccount(t *testing.T) {
 				users := MustCreateManyCtx(t, ctx, User, dbx, userArgs)
 				var userAccountArgs []models.UserAccount
 				for i := range 10 {
-
 					user := users[i]
 					userAccountArgs = append(userAccountArgs, models.UserAccount{
 						UserID:            user.ID,
@@ -219,7 +216,6 @@ func TestRepositoryPost_Team(t *testing.T) {
 				var teamArgs []models.Team
 
 				for i := range 10 {
-
 					teamArgs = append(teamArgs, models.Team{
 						Name: "name:" + fmt.Sprint(i),
 						Slug: "slug:" + fmt.Sprint(i),
@@ -256,7 +252,6 @@ func TestRepositoryPost_TeamMember(t *testing.T) {
 				dbx := scenario.Dbx
 				var userArgs []models.User
 				for i := range 10 {
-
 					userArgs = append(userArgs, models.User{
 						Name:  types.Pointer("Name:" + fmt.Sprint(i)),
 						Email: fmt.Sprint(i) + "@email.com",
@@ -265,7 +260,6 @@ func TestRepositoryPost_TeamMember(t *testing.T) {
 				users := MustCreateManyCtx(t, ctx, User, dbx, userArgs)
 				var teamArgs []models.Team
 				for i := range 10 {
-
 					teamArgs = append(teamArgs, models.Team{
 						Name: "name:" + fmt.Sprint(i),
 						Slug: "slug:" + fmt.Sprint(i),
@@ -275,7 +269,6 @@ func TestRepositoryPost_TeamMember(t *testing.T) {
 				var teamMemberArgs []models.TeamMember
 
 				for i := range 10 {
-
 					teamMemberArgs = append(teamMemberArgs, models.TeamMember{
 						TeamID: teams[i].ID,
 						UserID: &users[i].ID,

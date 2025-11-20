@@ -126,7 +126,6 @@ func (api *Api) AdminUsersCreate(ctx context.Context, input *struct {
 	}{
 		Body: fromUserModel(&user.User),
 	}, nil
-
 }
 
 func (api *Api) AdminUsersDelete(ctx context.Context, input *struct {

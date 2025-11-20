@@ -66,7 +66,6 @@ func TestApi_SignUp(t *testing.T) {
 					if token == "" {
 						t.Fatalf("No token found in email. Body: %s", message.Body)
 					}
-
 				},
 			},
 		}

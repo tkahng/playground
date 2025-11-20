@@ -23,7 +23,7 @@ type AccountStoreDecorator struct {
 }
 
 func NewAccountStoreDecorator(db database.Dbx) *AccountStoreDecorator {
-	// nolint:exhaustruct
+	//nolint:exhaustruct
 	return &AccountStoreDecorator{
 		Delegate: NewDbAccountStore(db),
 	}

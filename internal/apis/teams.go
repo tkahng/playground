@@ -107,9 +107,9 @@ func (api *Api) CreateTeamBind(humaApi huma.API) {
 				if err != nil {
 					slog.ErrorContext(
 						ctx,
-						"error ocurred while checking slug",
+						"error occurred while checking slug",
 					)
-					return nil, fmt.Errorf("error ocurred while checking slug")
+					return nil, fmt.Errorf("error occurred while checking slug")
 				}
 				return nil, huma.Error400BadRequest("slug already exists")
 			}

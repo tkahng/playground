@@ -54,7 +54,7 @@ func (a *Api) RequestVerificationBind(api huma.API) {
 //
 // If the user has been verified, it will do the following operations:
 //
-// 1. Validate the verificaiton token, then delete it.
+// 1. Validate the verification token, then delete it.
 //
 // 1. Create a stripe customer for the user
 //

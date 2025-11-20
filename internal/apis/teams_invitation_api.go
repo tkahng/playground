@@ -230,7 +230,6 @@ func (api *Api) FindInvitations(ctx context.Context, input *FindInvitationsInput
 			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 		},
 	}, nil
-
 }
 
 func (api *Api) LoadTeamInvitationRelations(ctx context.Context, invitations []*models.TeamInvitation) error {

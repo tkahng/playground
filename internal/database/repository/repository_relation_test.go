@@ -24,7 +24,6 @@ var (
 func TestAuth_UserAccountRbac(t *testing.T) {
 	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, dbx database.Dbx) {
-
 		var (
 			roles             *[]*models.Role                = &[]*models.Role{}
 			permissions       *[]*models.Permission          = &[]*models.Permission{}
@@ -149,7 +148,6 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 			test.TestSliceEveryUniqueFunc(t, "all role names should be unique", rolesWithBasicPermission, func(role *models.Role) string {
 				return role.Name
 			})
-
 		})
 		t.Run("roles with advanced permission or with names basic and pro", func(t *testing.T) {
 			// roles with advanced permission and with names in basic and pro

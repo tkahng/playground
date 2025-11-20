@@ -131,7 +131,6 @@ func CreateUserWithOptions(t testing.TB, adapter stores.StorageAdapterInterface,
 	return &models.UserInfo{
 		User: *user,
 	}
-
 }
 
 type TeamOptionFunc func(opt *CreateTeamOptions)

@@ -2,7 +2,8 @@
 // Author: Jon Brown
 // Date: Mar 30, 2024
 // URL: https://github.com/brojonat/websocket
-// nolint:errcheck,exhaustruct
+//
+//nolint:errcheck,exhaustruct
 package websocket
 
 import (

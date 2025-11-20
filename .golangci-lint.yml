@@ -13,9 +13,22 @@ linters:
 
   default: none
   enable:
-    - errcheck
+    - asasalint
+    - asciicheck
+    - gomodguard
+    - goprintffuncname
     - govet
     - ineffassign
+    - misspell
+    - nakedret
+    - nolintlint
+    - prealloc
+    - reassign
     - staticcheck
+    - unconvert
     - unused
-    - exhaustruct
+    - whitespace
+formatters:
+  enable:
+    - gofmt
+    - goimports

@@ -88,7 +88,6 @@ func (api *Api) Me(ctx context.Context, input *struct{}) (*MeOutput, error) {
 			Accounts: mapper.Map(acc, fromModelUserAccountOutput),
 		},
 	}, nil
-
 }
 
 type UpdateMeInput struct {
@@ -113,7 +112,6 @@ func (a *Api) bindMeUpdate(api huma.API) {
 		},
 		a.MeUpdate,
 	)
-
 }
 func (api *Api) MeUpdate(ctx context.Context, input *struct {
 	Body UpdateMeInput

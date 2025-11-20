@@ -1,4 +1,4 @@
-// nolint:exhaustruct
+//nolint:exhaustruct
 package resource
 
 import (
@@ -14,7 +14,6 @@ import (
 )
 
 func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
-
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		repo := NewPermissionQueryResource(db)
 
@@ -120,5 +119,4 @@ func TestNewPermissionQueryResource_FilterFunc(t *testing.T) {
 			assert.Equal(t, expected, sql)
 		})
 	})
-
 }
