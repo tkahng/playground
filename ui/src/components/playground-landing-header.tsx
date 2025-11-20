@@ -1,8 +1,6 @@
 import { LinkDto } from "@/components/links";
 import PlaygroundLogo from "@/components/playground-logo";
-import TeamSwitcher from "@/components/team-switcher";
 import { UserNav } from "@/components/user-nav";
-import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router";
 
@@ -13,7 +11,6 @@ export function PlaygroundLandingHeader({
   leftLinks?: LinkDto[];
   rightLinks?: LinkDto[];
 }) {
-  const { user } = useAuthProvider();
   const { pathname } = useLocation();
   return (
     <header>
@@ -41,7 +38,7 @@ export function PlaygroundLandingHeader({
               ))
             : null}
         </div>
-        {user && <TeamSwitcher />}
+
         <div className="flex shrink items-center space-x-4">
           {rightLinks?.length && rightLinks.length > 0
             ? rightLinks.map(({ to, title, current }) => (

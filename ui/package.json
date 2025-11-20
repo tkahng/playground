@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build && touch ./dist/.gitignore",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "generate:schema": "openapi-typescript http://localhost:8080/openapi.yaml -o ./src/schema.d.ts",
     "ui:add": "npx shadcn@latest add"
