@@ -222,7 +222,7 @@ type UserListTeamsParams struct {
 	Q                string                    `query:"q"`
 	SortBy           string                    `query:"sort_by,omitempty" required:"false" enum:"last_selected_at,team.name,team.created_at,team.updated_at,user.email,user.name,user.created_at,user.updated_at"`
 	SortOrder        string                    `query:"sort_order,omitempty" required:"false" enum:"asc,desc"`
-	Roles            []TeamMemberRole          `json:"roles,omitempty" minimum:"1" maximum:"3" enum:"owner,member,guest"`
+	Roles            []TeamMemberRole          `query:"roles,omitempty" minimum:"1" maximum:"3" enum:"owner,member,guest"`
 	Active           types.OptionalParam[bool] `query:"active" required:"false"`
 	HasBillingAccess types.OptionalParam[bool] `query:"has_billing_access" required:"false"`
 }

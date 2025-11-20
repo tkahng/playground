@@ -78,6 +78,7 @@ func (api *Api) GetUserTeamMembersBind(humaApi huma.API) {
 				params.SortBy = input.SortBy
 				params.SortOrder = input.SortOrder
 				params.Active = input.Active
+				params.Roles = mapper.Map(input.Roles, func(role TeamMemberRole) models.TeamMemberRole { return models.TeamMemberRole(role) })
 				params.HasBillingAccess = input.HasBillingAccess
 				params.Q = input.Q
 			}

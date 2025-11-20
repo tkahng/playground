@@ -304,7 +304,7 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 		// testMailer := ExtractTestMailer(t, testApi.App)
 		tests := []ApiScenario{
 			{
-				Name:           "success: user1 find its teamMembers sorted by team name asc",
+				Name:           "user1 teamMembers by team name asc",
 				Method:         http.MethodGet,
 				URL:            "/team-members",
 				ExpectedStatus: http.StatusOK,
@@ -336,7 +336,7 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 				},
 			},
 			{
-				Name:           "success: user1 find its teamMembers sorted by team name desc",
+				Name:           "user1 teamMembers by team name desc",
 				Method:         http.MethodGet,
 				URL:            "/team-members",
 				ExpectedStatus: http.StatusOK,
@@ -369,7 +369,7 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 				},
 			},
 			{
-				Name:           "success: user1 find its teamMembers sorted by member last selected at asc",
+				Name:           "user1 teamMembers by member last selected at asc",
 				Method:         http.MethodGet,
 				URL:            "/team-members",
 				ExpectedStatus: http.StatusOK,
@@ -401,7 +401,7 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 				},
 			},
 			{
-				Name:           "success: user1 find its teamMembers sorted by member last selected at desc",
+				Name:           "user1 teamMembers by member last selected at desc",
 				Method:         http.MethodGet,
 				URL:            "/team-members",
 				ExpectedStatus: http.StatusOK,
@@ -431,6 +431,59 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 					test.TestSliceItemsOrderByFunc(t, members, func(a, b *apis.TeamMember) bool {
 						return a.LastSelectedAt.After(b.LastSelectedAt)
 					})
+				},
+			},
+			{
+				Name:           "user1 teamMembers by owner role",
+				Method:         http.MethodGet,
+				URL:            "/team-members",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user1.Email)
+					scenario.Headers = []string{tokenHeader}
+					u, err := url.Parse("/team-members")
+					assert.NoError(t, err)
+					q := u.Query()
+					q.Add("roles", "owner")
+					u.RawQuery = q.Encode()
+					scenario.URL = u.RequestURI()
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
+					members := result.Data
+					assert.Equal(t, 1, len(members))
+					member := members[0]
+					assert.Equal(t, member.Role, apis.TeamMemberRoleOwner)
+				},
+			},
+			{
+				Name:           "user1 teamMembers by member and guest role",
+				Method:         http.MethodGet,
+				URL:            "/team-members",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user1.Email)
+					scenario.Headers = []string{tokenHeader}
+					u, err := url.Parse("/team-members")
+					assert.NoError(t, err)
+					q := u.Query()
+					q.Add("roles", "member,guest")
+					u.RawQuery = q.Encode()
+					scenario.URL = u.RequestURI()
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
+					members := result.Data
+					assert.Equal(t, 2, len(members))
+					for _, m := range members {
+						assert.Contains(t, []apis.TeamMemberRole{apis.TeamMemberRoleMember, apis.TeamMemberRoleGuest}, m.Role)
+					}
 				},
 			},
 		}
