@@ -73,7 +73,7 @@ func (api *Api) VerifyEmailBind(humaAPI huma.API) {
 			Summary:     "Confirm Email verification request",
 			Description: "Confirm Request email verification",
 			Tags:        []string{"Auth", "Verify"},
-			Errors:      []int{http.StatusNotFound},
+			Errors:      []int{http.StatusNotFound, http.StatusConflict},
 		},
 		func(ctx context.Context, input *struct{ Body EmailVerificationPostInput }) (*struct{}, error) {
 			runInTxErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
