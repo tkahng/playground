@@ -1,3 +1,4 @@
+import { CreateTeamDialog } from "@/components/create-team-dialog";
 import { NavbarLink } from "@/components/link/nav-link";
 import { RouteLinks, userDropdownLinks } from "@/components/links";
 import { ModeToggle } from "@/components/mode-toggle";
@@ -5,6 +6,14 @@ import { RouteMap } from "@/components/route-map";
 import { themes } from "@/components/themes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,23 +35,41 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { CheckCircle, CircleX } from "lucide-react";
+import { useTeam } from "@/hooks/use-team";
+import { useUserTeamMembers } from "@/hooks/use-user-team-members";
+import { Team } from "@/schema.types";
+import { Check, CheckCircle, CircleX } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Link, useNavigate } from "react-router";
 
 export function UserNav() {
   const { theme, setTheme } = useTheme();
   const { user: auth, logout } = useAuthProvider();
+  const navigate = useNavigate();
+  const {
+    data,
+    error: teamsError,
+    isError: teamsIsError,
+    isLoading: teamsLoading,
+  } = useUserTeamMembers({ sort_by: "last_selected_at", sort_order: "desc" });
+  const { team } = useTeam();
   const user = auth?.user;
   const isAdmin = auth?.roles?.includes("superuser");
   const links2 = [...userDropdownLinks, ...(isAdmin ? [RouteLinks.ADMIN] : [])];
-  const navigate = useNavigate();
-
+  function handleSelectTeam(team: Team) {
+    navigate(`/teams/${team.slug}/dashboard`);
+  }
   const handleLogout = async (event: React.FormEvent) => {
     event.preventDefault();
     await logout();
     navigate(RouteMap.HOME);
   };
+  if (teamsLoading) {
+    return <div>Loading...</div>;
+  }
+  if (teamsIsError) {
+    return <div>Error: {teamsError?.message}</div>;
+  }
   if (!auth) {
     return (
       <>
@@ -88,6 +115,72 @@ export function UserNav() {
             </TooltipContent>
           </Tooltip>
         </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuGroup>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>Teams</DropdownMenuSubTrigger>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent>
+                <Command>
+                  <CommandList>
+                    <CommandInput placeholder="Search team..." />
+                    <CommandEmpty>No team found.</CommandEmpty>
+                    <CommandGroup key={"teams"} heading="Teams">
+                      {data?.data.map((te) => (
+                        <CommandItem
+                          key={te.id}
+                          onSelect={() => {
+                            handleSelectTeam(te.team!);
+                          }}
+                          className="text-sm"
+                        >
+                          <Avatar className="mr-2 h-5 w-5">
+                            <AvatarFallback>
+                              {te.team?.name.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
+                            <div className="font-medium">{te.team?.name}</div>
+                            {/* <div className="text-xs text-muted-foreground">
+                        {team.plan} • {team.role}
+                      </div> */}
+                          </div>
+                          <Check
+                            className={`ml-auto h-4 w-4 ${
+                              te?.team_id === team?.id
+                                ? "opacity-100"
+                                : "opacity-0"
+                            }`}
+                          />
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                    <CommandGroup key={"create-team"}>
+                      <CommandItem className="items-center justify-center">
+                        {user?.email_verified_at ? (
+                          <CreateTeamDialog />
+                        ) : (
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <Button disabled variant="outline">
+                                Create Team
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>
+                                You must verify your email to create a team.
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                      </CommandItem>
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
+          </DropdownMenuSub>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           {links2.map((link) => (
