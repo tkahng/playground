@@ -132,9 +132,11 @@ const DefaultTeamInviteMail = `<h2>You have been invited</h2>
 
 const DefaultConfirmationMail = `<h2>Confirm your email</h2>
 
-<p>Follow this link to confirm your email:</p>
+<p>Enter the code:</p>
+<h3>{{ .Token }}</h3>
+
+<p>Or follow this link to confirm your email:</p>
 <p><a href="{{ .ConfirmationURL }}">Confirm your email address</a></p>
-<p>Alternatively, enter the code: {{ .Token }}</p>
 `
 
 const DefaultSecurityPasswordResetMail = `<h2>Your password has been reset due to security concerns</h2>
