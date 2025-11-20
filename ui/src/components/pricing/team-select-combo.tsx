@@ -16,7 +16,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { DialogProps } from "@/hooks/use-dialog";
-import { useUserTeams } from "@/hooks/use-user-teams";
+import { useUserTeamMembers } from "@/hooks/use-user-team-members";
 import { Team } from "@/schema.types";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
@@ -28,7 +28,11 @@ export type TeamSelectProps = {
 export function TeamSelect({ onTeamSelect, props }: TeamSelectProps) {
   // const navigate = useNavigate();
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
-  const { data, error: teamsError, isLoading: teamsLoading } = useUserTeams();
+  const {
+    data,
+    error: teamsError,
+    isLoading: teamsLoading,
+  } = useUserTeamMembers();
 
   if (teamsLoading) {
     return <div>Loading...</div>;
@@ -67,7 +71,7 @@ export function TeamSelect({ onTeamSelect, props }: TeamSelectProps) {
               <CommandGroup heading="Teams">
                 {data.data.map((te) => (
                   <CommandItem
-                    key={te.id}
+                    key={te.team?.id}
                     onSelect={() => {
                       handleSelectTeam(te.team!);
                     }}

@@ -29,7 +29,7 @@ import {
 import { Popover, PopoverTrigger } from "@/components/ui/popover";
 import { PopoverContentNoPortal } from "@/components/ui/popover-noportal";
 import { useDialog } from "@/hooks/use-dialog";
-import { useUserTeams } from "@/hooks/use-user-teams";
+import { useUserTeamMembers } from "@/hooks/use-user-team-members";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, ChevronsUpDown } from "lucide-react";
@@ -47,7 +47,7 @@ export function TeamSelectDialog({ children }: PropsWithChildren<unknown>) {
     data: teamsData,
     error: teamsError,
     isLoading: teamsLoading,
-  } = useUserTeams();
+  } = useUserTeamMembers();
   const teamDialog = useDialog();
 
   const form = useForm<z.infer<typeof formSchema>>({

@@ -1,8 +1,11 @@
 import { getUserTeamMembers } from "@/lib/team-queries";
+import { operations } from "@/schema";
 import { useQuery } from "@tanstack/react-query";
 import { useAuthProvider } from "./use-auth-provider";
 
-export const useUserTeams = () => {
+export const useUserTeamMembers = (
+  props?: operations["get-user-team-members"]["parameters"]["query"]
+) => {
   const { user } = useAuthProvider();
   const { data, isLoading, error, isError } = useQuery({
     queryKey: [
@@ -11,6 +14,7 @@ export const useUserTeams = () => {
         user_id: user?.user.id,
         page: 0,
         per_page: 20,
+        ...props,
       },
     ] as const,
     queryFn: async () => {
