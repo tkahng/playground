@@ -30,7 +30,7 @@ export default function TeamSwitcher() {
     data,
     error: teamsError,
     isLoading: teamsLoading,
-  } = useUserTeamMembers();
+  } = useUserTeamMembers({ sort_by: "last_selected_at", sort_order: "desc" });
   const { team, setTeam } = useTeam();
 
   if (teamsLoading) {
