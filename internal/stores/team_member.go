@@ -27,7 +27,7 @@ type TeamMemberFilter struct {
 	SortParams
 	Q                string                    `query:"q"`
 	Ids              []uuid.UUID               `query:"ids"`
-	Roles            []models.TeamMemberRole   `query:"roles"`
+	Roles            []models.TeamMemberRole   `query:"roles" enum:"owner,member,guest"`
 	UserIds          []uuid.UUID               `query:"user_ids"`
 	TeamIds          []uuid.UUID               `query:"team_ids"`
 	TeamNames        []string                  `query:"team_names,omitempty" required:"false" json:"team_names,omitempty"`
