@@ -145,24 +145,21 @@ export const updateTeamMember = async ({
   }
   return data;
 };
-export const deleteMember = async ({
-  memberId,
+export const updateTeamMemberLastSelectedAt = async ({
+  teamId,
   token,
 }: {
   token: string;
-  memberId: string;
+  teamId: string;
 }) => {
-  const { data, error } = await client.DELETE(
-    "/api/team-members/{team-member-id}",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        path: { "team-member-id": memberId },
-      },
-    }
-  );
+  const { data, error } = await client.PUT("/api/teams/{team-id}/select", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: { "team-id": teamId },
+    },
+  });
   if (error) {
     throw ApiError.fromErrorModel(error);
   }
@@ -186,29 +183,6 @@ export const inviteTeamMember = async (
     throw ApiError.fromErrorModel(error);
   }
   return true;
-};
-export const getTeamInvitations = async (
-  token: string,
-  teamId: string,
-  page: number = 0,
-  perPage: number = 10
-) => {
-  const { data, error } = await client.GET("/api/teams/{team-id}/invitations", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    params: {
-      path: { "team-id": teamId },
-      query: {
-        page,
-        per_page: perPage,
-      },
-    },
-  });
-  if (error) {
-    throw ApiError.fromErrorModel(error);
-  }
-  return data;
 };
 export const cancelTeamInvitation = async (
   token: string,
@@ -234,45 +208,11 @@ export const cancelTeamInvitation = async (
   }
   return true;
 };
-export const verifyTeamInvitation = async (
-  // token: string,
-  invitationToken: string
-) => {
-  const { error } = await client.POST("/api/team-invitations/check", {
-    // headers: {
-    //   Authorization: `Bearer ${token}`,
-    // },
-    body: {
-      token: invitationToken,
-    },
-  });
-  if (error) {
-    throw ApiError.fromErrorModel(error);
-  }
-  return true;
-};
 export const acceptInvitation = async (
   token: string,
   invitationToken: string
 ) => {
   const { error } = await client.POST("/api/team-invitations/accept", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: {
-      token: invitationToken,
-    },
-  });
-  if (error) {
-    throw ApiError.fromErrorModel(error);
-  }
-  return true;
-};
-export const declineInvitation = async (
-  token: string,
-  invitationToken: string
-) => {
-  const { error } = await client.POST("/api/team-invitations/decline", {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -302,25 +242,6 @@ export const getUserTeamInvitations = async (
       },
     },
   });
-  if (error) {
-    throw ApiError.fromErrorModel(error);
-  }
-  return data;
-};
-export const getTeamInvitationByToken = async (invitationToken: string) => {
-  const { data, error } = await client.GET(
-    "/api/team-invitations/token/{token}",
-    {
-      // headers: {
-      //   Authorization: `Bearer ${token}`,
-      // },
-      params: {
-        path: {
-          token: invitationToken,
-        },
-      },
-    }
-  );
   if (error) {
     throw ApiError.fromErrorModel(error);
   }
@@ -357,29 +278,4 @@ export const getTeamMemberNotifications = async (
     throw ApiError.fromErrorModel(error);
   }
   return data;
-};
-
-export const readTeamMemberNotification = async (
-  token: string,
-  teamMemberId: string,
-  notiticationId: string
-) => {
-  const { error } = await client.POST(
-    "/api/team-members/{team-member-id}/notifications/{notification-id}/read",
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: {
-        path: {
-          "team-member-id": teamMemberId,
-          "notification-id": notiticationId,
-        },
-      },
-    }
-  );
-  if (error) {
-    throw ApiError.fromErrorModel(error);
-  }
-  return true;
 };

@@ -1,4 +1,5 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { updateTeamMemberLastSelectedAt } from "@/lib/team-queries";
 import { TaskCreateParams } from "@/schema.types";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -59,5 +60,29 @@ export function useCreateProjectTask(projectId: string, onSuccess: () => void) {
     onError: (error) => {
       toast.error(`Failed to create task: ${error.message}`);
     },
+  });
+}
+
+export function useUpdateMemberLastSelectedAt() {
+  return useMutation({
+    mutationFn: async ({
+      token,
+      teamId,
+    }: {
+      token: string;
+      teamId: string;
+    }) => {
+      await updateTeamMemberLastSelectedAt({
+        token,
+        teamId,
+      });
+    },
+    onError: (error) => {
+      toast.error("Failed to update last selected at", {
+        description: error.message,
+      });
+    },
+    onSuccess: () =>
+      toast.success("Last selected at updated", { description: "Success" }),
   });
 }
