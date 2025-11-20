@@ -145,6 +145,26 @@ export const updateTeamMember = async ({
   }
   return data;
 };
+export const updateTeamMemberLastSelectedAt = async ({
+  teamId: teamId,
+  token,
+}: {
+  token: string;
+  teamId: string;
+}) => {
+  const { data, error } = await client.PUT("/api/teams/{team-id}/select", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      path: { "team-id": teamId },
+    },
+  });
+  if (error) {
+    throw ApiError.fromErrorModel(error);
+  }
+  return data;
+};
 export const deleteMember = async ({
   memberId,
   token,

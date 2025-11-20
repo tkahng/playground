@@ -25,6 +25,7 @@ export const useUserTeamMembers = (
         token: user.tokens.access_token,
         page: 0,
         per_page: 20,
+        ...props,
       });
 
       return { data: data || [], meta };
