@@ -31,7 +31,7 @@ export default function TeamSelect() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: [
       {
-        key: "get-user-teams",
+        key: "get-user-team-members",
         user_id: user?.user.id,
         page: pageIndex,
         per_page: pageSize,
