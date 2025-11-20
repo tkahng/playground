@@ -106,7 +106,7 @@ export function TeamSelectDialog({ children }: PropsWithChildren<unknown>) {
                               {field.value
                                 ? teamsData.data.find((team) => {
                                     return team.id === field.value;
-                                  })?.name
+                                  })?.team!.name
                                 : "Select team"}
                               <ChevronsUpDown className="opacity-50" />
                             </Button>
@@ -130,14 +130,14 @@ export function TeamSelectDialog({ children }: PropsWithChildren<unknown>) {
                                     value={te.id}
                                     key={te.id}
                                     onSelect={() => {
-                                      setSelectedSLug(te.slug);
+                                      setSelectedSLug(te.team!.slug);
                                       form.setValue(field.name, te.id, {
                                         shouldDirty: true,
                                       });
                                       teamDialog.props.onOpenChange(false);
                                     }}
                                   >
-                                    {te.name}
+                                    {te.team?.name}
                                     <Check
                                       className={cn(
                                         "ml-auto",
