@@ -37,6 +37,8 @@ import {
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
 import { useUserTeamMembers } from "@/hooks/use-user-team-members";
+import { ApiError } from "@/lib/error";
+import { useUpdateMemberLastSelectedAt } from "@/lib/mutation";
 import { Team } from "@/schema.types";
 import { Check, CheckCircle, CircleX } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -44,7 +46,7 @@ import { Link, useNavigate } from "react-router";
 
 export function UserNav() {
   const { theme, setTheme } = useTheme();
-  const { user: auth, logout } = useAuthProvider();
+  const { user: auth, logout, checkAuth } = useAuthProvider();
   const navigate = useNavigate();
   const {
     data,
@@ -52,12 +54,13 @@ export function UserNav() {
     isError: teamsIsError,
     isLoading: teamsLoading,
   } = useUserTeamMembers({ sort_by: "last_selected_at", sort_order: "desc" });
+  const mutation = useUpdateMemberLastSelectedAt();
   const { team } = useTeam();
   const user = auth?.user;
   const isAdmin = auth?.roles?.includes("superuser");
   const links2 = [...userDropdownLinks, ...(isAdmin ? [RouteLinks.ADMIN] : [])];
   function handleSelectTeam(team: Team) {
-    navigate(`/teams/${team.slug}/dashboard`);
+    navigate(`/teams/${team.slug}/dashboard`, { flushSync: true });
   }
   const handleLogout = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -77,6 +80,11 @@ export function UserNav() {
     return <div>Loading...</div>;
   }
   if (teamsIsError) {
+    if (ApiError.isApiError(teamsError)) {
+      if (teamsError.status === 401) {
+        checkAuth();
+      }
+    }
     return <div>Error: {teamsError?.message}</div>;
   }
 
@@ -131,6 +139,7 @@ export function UserNav() {
                         <CommandItem
                           key={te.id}
                           onSelect={() => {
+                            mutation.mutate({ teamId: te.team_id });
                             handleSelectTeam(te.team!);
                           }}
                           className="text-sm"

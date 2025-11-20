@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/popover";
 import { DialogProps } from "@/hooks/use-dialog";
 import { useUserTeamMembers } from "@/hooks/use-user-team-members";
+import { useUpdateMemberLastSelectedAt } from "@/lib/mutation";
 import { Team } from "@/schema.types";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
@@ -33,7 +34,7 @@ export function TeamSelect({ onTeamSelect, props }: TeamSelectProps) {
     error: teamsError,
     isLoading: teamsLoading,
   } = useUserTeamMembers({ sort_by: "last_selected_at", sort_order: "desc" });
-
+  const mutation = useUpdateMemberLastSelectedAt();
   if (teamsLoading) {
     return <div>Loading...</div>;
   }
@@ -44,6 +45,7 @@ export function TeamSelect({ onTeamSelect, props }: TeamSelectProps) {
     return <div>No teams available.</div>;
   }
   function handleSelectTeam(team: Team) {
+    mutation.mutate({ teamId: team.id });
     setSelectedTeam(team);
     onTeamSelect(team);
     props.onOpenChange(false);
