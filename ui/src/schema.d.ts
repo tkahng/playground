@@ -1398,11 +1398,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * get-user-teams
-         * @description get all teams for a user
-         */
-        get: operations["get-user-teams"];
+        get?: never;
         put?: never;
         /**
          * create-team
@@ -1893,16 +1889,6 @@ export interface components {
              */
             readonly $schema?: string;
             data: components["schemas"]["TeamMember"][] | null;
-            meta: components["schemas"]["Meta"];
-        };
-        ApiPaginatedResponseTeamWithMember: {
-            /**
-             * Format: uri
-             * @description A URL to the JSON Schema for this object.
-             * @example http://localhost:8080/schemas/ApiPaginatedResponseTeamWithMember.json
-             */
-            readonly $schema?: string;
-            data: components["schemas"]["TeamWithMember"][] | null;
             meta: components["schemas"]["Meta"];
         };
         ApiPaginatedResponseUserAccountOutput: {
@@ -7526,61 +7512,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Unprocessable Entity */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "get-user-teams": {
-        parameters: {
-            query?: {
-                page?: number;
-                per_page?: number;
-                q?: string;
-                sort_by?: "last_selected_at" | "team.name" | "team.created_at" | "team.updated_at" | "user.email" | "user.name" | "user.created_at" | "user.updated_at";
-                sort_order?: "asc" | "desc";
-                active?: boolean;
-                has_billing_access?: boolean;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiPaginatedResponseTeamWithMember"];
-                };
             };
             /** @description Bad Request */
             400: {

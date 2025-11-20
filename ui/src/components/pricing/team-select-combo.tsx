@@ -69,18 +69,18 @@ export function TeamSelect({ onTeamSelect, props }: TeamSelectProps) {
                   <CommandItem
                     key={te.id}
                     onSelect={() => {
-                      handleSelectTeam(te);
+                      handleSelectTeam(te.team!);
                     }}
-                    disabled={te.member?.role !== "owner"}
+                    disabled={te?.role !== "owner"}
                     className="text-sm"
                   >
                     <Avatar className="mr-2 h-5 w-5">
                       <AvatarFallback>
-                        {te.name.slice(0, 2).toUpperCase()}
+                        {te.team?.name.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
-                      <div className="font-medium">{te.name}</div>
+                      <div className="font-medium">{te.team?.name}</div>
                       {/* <div className="text-xs text-muted-foreground">
                         {team.plan} • {team.role}
                       </div> */}
