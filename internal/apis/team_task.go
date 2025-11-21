@@ -157,7 +157,7 @@ func (api *Api) TeamTaskListBind(humaApi huma.API) {
 			if err != nil {
 				return nil, huma.Error500InternalServerError("error listing tasks", err)
 			}
-			pop := populator.NewPopulator(api.App().Adapter())
+			pop := populator.New(api.App().Adapter())
 			for _, task := range tasks {
 				err := populator.PopulateTask(ctx, pop, task)
 				if err != nil {
@@ -348,7 +348,7 @@ func (api *Api) TaskGet(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task ID")
 	}
-	pop := populator.NewPopulator(api.App().Adapter())
+	pop := populator.New(api.App().Adapter())
 
 	task, err := pop.GetTaskByID(ctx, id)
 	if err != nil {
