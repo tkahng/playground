@@ -2024,7 +2024,7 @@ export interface components {
              */
             readonly $schema?: string;
             name: string;
-            slug: string;
+            slug?: string;
         };
         EmailVerificationPostInput: {
             /**
