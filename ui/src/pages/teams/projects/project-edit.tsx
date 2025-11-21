@@ -91,10 +91,7 @@ export default function ProjectEdit() {
           className="h-8 w-[150px] lg:w-[250px]"
         />
       </div>
-      <p>
-        Create and manage Roles for your applications. Roles contain collections
-        of Permissions and can be assigned to Users.
-      </p>
+      <p>Manage your tasks.</p>
       <KanbanBoard cards={tasks?.data || []} projectId={project.id!} />
 
       {/* <KanbanBoardProvider>
