@@ -1,7 +1,15 @@
+import AdminDark from "@/assets/admin-dark.png";
+import AdminLight from "@/assets/admin-light.png";
 import AuthenticationDark from "@/assets/authentication-dark.png";
 import AuthenticationLight from "@/assets/authentication-light.png";
+import PaymentDark from "@/assets/payment-dark.png";
+import PaymentLight from "@/assets/payment-light.png";
+import ProjectsDark from "@/assets/project-dark-2.png";
+import ProjectsLight from "@/assets/project-light-2.png";
 import SayHelloDark from "@/assets/say-hello-preview-dark.png";
 import SayHelloLight from "@/assets/say-hello-preview-light.png";
+import TeamDark from "@/assets/team-dark.png";
+import TeamLight from "@/assets/team-light.png";
 import { ThemedImage } from "@/components/themed-image";
 import {
   Banknote,
@@ -81,6 +89,9 @@ export const features: Feature[] = [
     fragment: "teams",
     path: "/features",
     landingLink: "/features#teams",
+    featureImageComponent: (
+      <ThemedImage dark={TeamDark} light={TeamLight} className="max-h-100" />
+    ),
   },
   {
     title: "Projects & Tasks",
@@ -94,6 +105,13 @@ export const features: Feature[] = [
       `Break down your work into manageable projects and tasks. Assign tasks to team members, set deadlines, and monitor progress to ensure timely completion.`,
     ],
     landingLink: "/features#projects-and-tasks",
+    featureImageComponent: (
+      <ThemedImage
+        dark={ProjectsDark}
+        light={ProjectsLight}
+        className="max-h-100"
+      />
+    ),
   },
   {
     title: "Payment Integration",
@@ -107,6 +125,13 @@ export const features: Feature[] = [
       `Integrate with Stripe to manage subscriptions and products. Offer various plans to your teams and handle billing with confidence.`,
     ],
     landingLink: "/features#payment-integration",
+    featureImageComponent: (
+      <ThemedImage
+        dark={PaymentDark}
+        light={PaymentLight}
+        className="max-h-100"
+      />
+    ),
   },
   {
     title: "Admin",
@@ -120,5 +145,8 @@ export const features: Feature[] = [
       `Gain full control over your platform with robust admin features. Manage users, roles, permissions, products, and subscriptions from a centralized dashboard.`,
     ],
     landingLink: "/features#admin",
+    featureImageComponent: (
+      <ThemedImage dark={AdminDark} light={AdminLight} className="max-h-100" />
+    ),
   },
 ];
