@@ -4,15 +4,22 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"regexp"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
+	"github.com/tkahng/playground/internal/tools/slug"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
+var (
+	IsAlphaNumericAndDash *regexp.Regexp = regexp.MustCompile("^[A-Za-z0-9-]+$")
+)
+
 type TeamService interface {
+	ProcessSlug(ctx context.Context, teamSlug string, teamName string) (string, error)
 	FindTeamMemberWithUserAndTeam(ctx context.Context, teamMemberID uuid.UUID) (*models.TeamMember, error)
 	FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamInfoModel, error)
 	FindTeamInfoBySlug(ctx context.Context, slug string, userId uuid.UUID) (*models.TeamInfoModel, error)
@@ -24,6 +31,48 @@ type TeamService interface {
 
 type TeamServiceImpl struct {
 	adapter stores.StorageAdapterInterface
+}
+
+// ProcessSlug implements [TeamService].
+func (t *TeamServiceImpl) ProcessSlug(ctx context.Context, teamSlug string, teamName string) (string, error) {
+	// if teamSlug is not empty
+	if teamSlug != "" {
+		// and if teamSlug is valid
+		if IsAlphaNumericAndDash.MatchString(teamSlug) {
+			existingTeam, err := t.adapter.TeamGroup().FindTeamBySlug(ctx, teamSlug)
+			if err != nil {
+				return "", err
+			}
+			// and if teamSlug is not taken return teamSlug
+			if existingTeam != nil {
+				return teamSlug, nil
+			}
+		}
+	}
+	// if teamName is valid
+	if IsAlphaNumericAndDash.MatchString(teamName) {
+		existingTeam, err := t.adapter.TeamGroup().FindTeamBySlug(ctx, teamName)
+		if err != nil {
+			return "", err
+		}
+		// and if teamName is not taken return teamName
+		if existingTeam == nil {
+			return teamName, nil
+		}
+	}
+	// create new valid slug from teamName
+	newSlug := slug.NewSlug(teamName)
+	// check if newSlug is taken
+	existingTeam, err := t.adapter.TeamGroup().FindTeamBySlug(ctx, newSlug)
+	if err != nil {
+		return "", err
+	}
+	// if not taken return it
+	if existingTeam == nil {
+		return newSlug, nil
+	}
+	// could not process slug
+	return "", errors.New("cannot process team slug")
 }
 
 // FindTeamMemberWithUserAndTeam implements TeamService.
