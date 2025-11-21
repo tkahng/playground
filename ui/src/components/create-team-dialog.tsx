@@ -30,8 +30,13 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 const formSchema = z.object({
-  name: z.string().min(1, "Team name is required"),
-  slug: z.string().min(1, "Team slug is required"),
+  name: z.string().min(3, "Team name is required"),
+  slug: z
+    .string()
+    .regex(/^[A-Za-z0-9-]+$/, {
+      message: "Only alphanumeric characters and dashes are allowed",
+    })
+    .optional(),
 });
 
 export function CreateTeamDialog() {
@@ -67,7 +72,7 @@ export function CreateTeamDialog() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      slug: "",
+      slug: undefined,
     },
   });
 
