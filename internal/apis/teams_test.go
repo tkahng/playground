@@ -17,6 +17,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
+	apphttp "github.com/tkahng/playground/internal/tools/http"
 	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/internal/tools/utils"
 )
@@ -49,7 +50,57 @@ func TestTeamSlug(t *testing.T) {
 			Slug: "public",
 		},
 		)
-		t.Log("response code", resp.Code)
+		type body struct {
+			Exists bool `json:"exists"`
+		}
+		res, err := utils.UnmarshalJSON[body](resp.Body.Bytes())
+		assert.NoError(t, err)
+		assert.False(t, res.Exists)
+		assert.Equal(t, 200, resp.Code)
+	})
+}
+func TestTeamSlug_FailRegex(t *testing.T) {
+	// t.Parallel()
+	test.SkipIfShort(t)
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := SetupApi(t, ctx, db)
+		api := testApi.TestApi
+		user := core.CreateUserWithOptions(t, testApi.App, core.UserWithVerified(time.Now()))
+		_ = core.CreateTeamAndMemberWithOptions(t, testApi.App, &user.User, core.TeamWithName("public"))
+		tokensVerifiedTokens := core.CreateTokenHeader(t, testApi.App, user.User.Email)
+
+		resp := api.Post("/teams/check-slug", tokensVerifiedTokens, struct {
+			Slug string `json:"slug" required:"true"`
+		}{
+			Slug: "_^&sdas9=",
+		},
+		)
+
+		res, err := utils.UnmarshalJSON[apphttp.ErrorModel](resp.Body.Bytes())
+		assert.NoError(t, err)
+		assert.Equal(t, 400, res.Status)
+	})
+}
+func TestTeamSlug_TooShort(t *testing.T) {
+	// t.Parallel()
+	test.SkipIfShort(t)
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := SetupApi(t, ctx, db)
+		api := testApi.TestApi
+		user := core.CreateUserWithOptions(t, testApi.App, core.UserWithVerified(time.Now()))
+		_ = core.CreateTeamAndMemberWithOptions(t, testApi.App, &user.User, core.TeamWithName("public"))
+		tokensVerifiedTokens := core.CreateTokenHeader(t, testApi.App, user.User.Email)
+
+		resp := api.Post("/teams/check-slug", tokensVerifiedTokens, struct {
+			Slug string `json:"slug" required:"true"`
+		}{
+			Slug: "9=",
+		},
+		)
+
+		res, err := utils.UnmarshalJSON[apphttp.ErrorModel](resp.Body.Bytes())
+		assert.NoError(t, err)
+		assert.Equal(t, 422, res.Status)
 	})
 }
 
