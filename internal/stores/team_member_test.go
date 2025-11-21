@@ -585,7 +585,7 @@ func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
 }
 
 func FindAndPopulateTeamMembers(t *testing.T, ctx context.Context, adapter *stores.StorageAdapter, filter *stores.TeamMemberFilter) []*models.TeamMember {
-	pop := populator.NewPopulator(adapter)
+	pop := populator.New(adapter)
 	res, err := adapter.TeamMember().FindTeamMembers(ctx, filter)
 	assert.NoError(t, err)
 	for _, r := range res {
