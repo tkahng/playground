@@ -31,7 +31,6 @@ import { z } from "zod";
 
 const formSchema = z.object({
   name: z.string().min(1).optional(),
-  image: z.string().nullable().optional(),
 });
 
 const resetPasswordSchema = z.object({
@@ -54,7 +53,7 @@ export default function AccountSettingsPage() {
       }
       await updateMe(user.tokens.access_token, {
         name: formData.name ?? null,
-        image: formData.image ?? null,
+        image: user.user.image,
       });
     },
     onSuccess: async () => {
@@ -160,7 +159,6 @@ export default function AccountSettingsPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: data?.name ?? undefined,
-      image: data?.image,
     },
   });
   const onResetPasswordSubmut = (
@@ -174,7 +172,6 @@ export default function AccountSettingsPage() {
   useEffect(() => {
     form.reset({
       name: data?.name || "",
-      image: data?.image || "",
     });
   }, [data, form]);
   if (isLoading) return <p>Loading...</p>;
@@ -218,24 +215,6 @@ export default function AccountSettingsPage() {
                   <FormLabel>Name</FormLabel>
                   <FormControl>
                     <Input {...field} placeholder="Name" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="image"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Image</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Image"
-                      type="url"
-                      value={field.value || ""}
-                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
