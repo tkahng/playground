@@ -87,7 +87,7 @@ func (api *Api) GetUserTeamMembersBind(humaApi huma.API) {
 			if err != nil {
 				return nil, err
 			}
-			pop := populator.NewPopulator(api.app.Adapter())
+			pop := populator.New(api.app.Adapter())
 			for _, r := range members {
 				err := populator.PopulateTeamMember(ctx, pop, r)
 				if err != nil {

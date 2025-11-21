@@ -130,13 +130,12 @@ func TestPopulateMember(t *testing.T) {
 		}
 		for _, member := range members {
 			var existingMember *models.TeamMember
-			if member.ID == ownerMember.ID {
+			switch member.ID {
+			case ownerMember.ID:
 				existingMember = ownerMember
-				existingMember.User = owner
-			} else if member.ID == user1Member.ID {
+			case user1Member.ID:
 				existingMember = user1Member
-				existingMember.User = user1
-			} else {
+			default:
 				assert.Fail(t, "member not found")
 			}
 			assert.Equal(t, existingMember.ID, member.ID)
@@ -153,5 +152,6 @@ func TestPopulateMember(t *testing.T) {
 			assert.Equal(t, existingMember.Team.Name, member.Team.Name)
 			assert.Equal(t, existingMember.Team.Slug, member.Team.Slug)
 		}
+		assert.Equal(t, 3, testPopulator.Recorder.called)
 	})
 }

@@ -49,7 +49,7 @@ func (s *DbPopulator) GetProjectByID(ctx context.Context, id uuid.UUID) (*models
 	return s.project.Get(ctx, id)
 }
 
-func NewPopulator(adapter stores.StorageAdapterInterface) Populator {
+func New(adapter stores.StorageAdapterInterface) Populator {
 	return &DbPopulator{
 		user: memo.NewMemoizedStore(func(ctx context.Context, key uuid.UUID) (*models.User, error) {
 			return adapter.User().FindUserByID(ctx, key)
