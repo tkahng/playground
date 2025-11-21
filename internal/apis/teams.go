@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -68,7 +69,7 @@ func fromTeamModel(team *models.Team) *Team {
 
 type CreateTeamInput struct {
 	Name string `json:"name" required:"true" minLength:"3"`
-	Slug string `json:"slug" required:"true" minLength:"3"`
+	Slug string `json:"slug" required:"false" minLength:"3" regex:"^[a-z0-9_-]+$"`
 }
 
 type TeamOutput struct {
@@ -179,11 +180,15 @@ func (api *Api) CheckTeamSlugBind(
 	)
 }
 
+var (
+	IsAlphaNumericAndDash *regexp.Regexp = regexp.MustCompile("^[A-Za-z0-9-]+$")
+)
+
 func (api *Api) CheckTeamSlug(
 	ctx context.Context,
 	input *struct {
 		Body struct {
-			Slug string `json:"slug" required:"true"`
+			Slug string `json:"slug" required:"true" minLength:"3" regex:"^[a-z0-9_-]+$"`
 		} `json:"body" required:"true"`
 	},
 ) (
@@ -194,6 +199,9 @@ func (api *Api) CheckTeamSlug(
 	},
 	error,
 ) {
+	if !IsAlphaNumericAndDash.MatchString(input.Body.Slug) {
+		return nil, huma.Error400BadRequest("invalid slug")
+	}
 	exists, err := api.App().Adapter().TeamGroup().CheckTeamSlug(ctx, input.Body.Slug)
 	if err != nil {
 		return nil, err
