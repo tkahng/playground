@@ -51,23 +51,93 @@ func (s *DbPopulator) GetProjectByID(ctx context.Context, id uuid.UUID) (*models
 
 func New(adapter stores.StorageAdapterInterface) Populator {
 	return &DbPopulator{
-		user: memo.NewMemoizedStore(func(ctx context.Context, key uuid.UUID) (*models.User, error) {
-			return adapter.User().FindUserByID(ctx, key)
-		}),
-		member: memo.NewMemoizedStore(func(ctx context.Context, key uuid.UUID) (*models.TeamMember, error) {
-			return adapter.TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
-				Ids: []uuid.UUID{key},
-			})
-		}),
-		team: memo.NewMemoizedStore(func(ctx context.Context, key uuid.UUID) (*models.Team, error) {
-			return adapter.TeamGroup().FindTeamByID(ctx, key)
-		}),
-		task: memo.NewMemoizedStore(func(ctx context.Context, key uuid.UUID) (*models.Task, error) {
-			return adapter.Task().FindTaskByID(ctx, key)
-		}),
-		project: memo.NewMemoizedStore(func(ctx context.Context, key uuid.UUID) (*models.TaskProject, error) {
-			return adapter.Task().FindTaskProjectByID(ctx, key)
-		}),
+		user: memo.New(
+			func(ctx context.Context, key uuid.UUID) (*models.User, error) {
+				return adapter.User().FindUserByID(ctx, key)
+			},
+			func(ctx context.Context, keys ...uuid.UUID) ([]*models.User, error) {
+				return adapter.User().FindUsers(ctx, &stores.UserFilter{
+					Ids: keys,
+					PaginatedInput: stores.PaginatedInput{
+						Page:    0,
+						PerPage: 50,
+					},
+				})
+			},
+			func(u *models.User) uuid.UUID {
+				return u.ID
+			},
+		),
+		member: memo.New(
+			func(ctx context.Context, key uuid.UUID) (*models.TeamMember, error) {
+				return adapter.TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
+					Ids: []uuid.UUID{key},
+				})
+			},
+			func(ctx context.Context, keys ...uuid.UUID) ([]*models.TeamMember, error) {
+				return adapter.TeamMember().FindTeamMembers(ctx, &stores.TeamMemberFilter{
+					Ids: keys,
+					PaginatedInput: stores.PaginatedInput{
+						Page:    0,
+						PerPage: 50,
+					},
+				})
+			},
+			func(m *models.TeamMember) uuid.UUID {
+				return m.ID
+			},
+		),
+		team: memo.New(
+			func(ctx context.Context, key uuid.UUID) (*models.Team, error) {
+				return adapter.TeamGroup().FindTeamByID(ctx, key)
+			},
+			func(ctx context.Context, keys ...uuid.UUID) ([]*models.Team, error) {
+				return adapter.TeamGroup().ListTeams(ctx, &stores.TeamFilter{
+					Ids: keys,
+					PaginatedInput: stores.PaginatedInput{
+						Page:    0,
+						PerPage: 50,
+					},
+				})
+			},
+			func(t *models.Team) uuid.UUID {
+				return t.ID
+			},
+		),
+		task: memo.New(
+			func(ctx context.Context, key uuid.UUID) (*models.Task, error) {
+				return adapter.Task().FindTaskByID(ctx, key)
+			},
+			func(ctx context.Context, keys ...uuid.UUID) ([]*models.Task, error) {
+				return adapter.Task().ListTasks(ctx, &stores.TaskFilter{
+					Ids: keys,
+					PaginatedInput: stores.PaginatedInput{
+						Page:    0,
+						PerPage: 50,
+					},
+				})
+			},
+			func(t *models.Task) uuid.UUID {
+				return t.ID
+			},
+		),
+		project: memo.New(
+			func(ctx context.Context, key uuid.UUID) (*models.TaskProject, error) {
+				return adapter.Task().FindTaskProjectByID(ctx, key)
+			},
+			func(ctx context.Context, keys ...uuid.UUID) ([]*models.TaskProject, error) {
+				return adapter.Task().ListTaskProjects(ctx, &stores.TaskProjectsFilter{
+					Ids: keys,
+					PaginatedInput: stores.PaginatedInput{
+						Page:    0,
+						PerPage: 50,
+					},
+				})
+			},
+			func(p *models.TaskProject) uuid.UUID {
+				return p.ID
+			},
+		),
 	}
 }
 
