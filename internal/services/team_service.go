@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
+	"github.com/tkahng/playground/internal/tools/security"
 	"github.com/tkahng/playground/internal/tools/slug"
 	"github.com/tkahng/playground/internal/tools/types"
 )
@@ -72,6 +73,15 @@ func (t *TeamServiceImpl) ProcessSlug(ctx context.Context, teamSlug string, team
 	// if not taken return it
 	if existingTeam == nil {
 		return newSlug, nil
+	}
+	randomSlug := security.RandomString(16)
+	randomSlugTeam, err := t.adapter.TeamGroup().FindTeamBySlug(ctx, randomSlug)
+	if err != nil {
+		return "", err
+	}
+	// if not taken return it
+	if randomSlugTeam == nil {
+		return randomSlug, nil
 	}
 	// could not process slug
 	return "", errors.New("cannot process team slug")
@@ -184,7 +194,6 @@ func (t *TeamServiceImpl) CreateTeamWithOwner(ctx context.Context, name string, 
 	if err != nil {
 		return nil, err
 	}
-	// check, err := t.adapter.TeamGroup().CheckTeamSlug(ctx, slug)
 	newSlug, err := t.ProcessSlug(ctx, slug, name)
 	if err != nil {
 		return nil, err
