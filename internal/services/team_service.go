@@ -201,7 +201,7 @@ func (t *TeamServiceImpl) CreateTeamWithOwner(ctx context.Context, name string, 
 	if newSlug == "" {
 		return nil, errors.New("error processing team slug.")
 	}
-	team, err := t.adapter.TeamGroup().CreateTeam(ctx, name, slug)
+	team, err := t.adapter.TeamGroup().CreateTeam(ctx, name, newSlug)
 	if err != nil {
 		return nil, err
 	}

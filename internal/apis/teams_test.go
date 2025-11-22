@@ -2,8 +2,11 @@ package apis_test
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
@@ -225,6 +228,45 @@ func TestCreateTeam_Failed(t *testing.T) {
 			teamMembers := repository.MustFindWithOptionsCtx(t, ctx, repository.TeamMember, db)
 			assert.Equal(t, 0, len(teamMembers))
 		})
+	})
+}
+func TestCreateTeam_Success_OptionalSlug_TeamNameIsUrlSafeAndUnique(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		appApi := SetupApi(t, ctx, db)
+		for i := range 10 {
+			scenario := ApiScenario{
+				Name:           fmt.Sprintf("test create team success optional slug %d", i),
+				Method:         http.MethodPost,
+				URL:            "/teams",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return appApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					userEmail := fmt.Sprintf("%d@gmail.com", i)
+					teamName := fmt.Sprintf("team%d", i)
+					user := core.CreateUserWithOptions(t, app, core.UserWithEmail(userEmail), core.UserWithVerifiedNow())
+					token, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user.User.Email)
+					scenario.Headers = []string{token}
+					input := apis.CreateTeamInput{
+						Name: teamName,
+					}
+					scenario.Body = strings.NewReader(`{"name":` + fmt.Sprintf(`"%s"`, input.Name) + `}`)
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					var body apis.TeamWithMember
+					err := json.NewDecoder(res.Body).Decode(&body)
+					if err != nil {
+						t.Errorf("Error decoding response: %v", err)
+					}
+					slug := fmt.Sprintf("team%d", i)
+					if body.Team.Slug != slug {
+						t.Errorf("Expected slug %s, got %s", slug, body.Team.Slug)
+					}
+				},
+			}
+			scenario.Test(t)
+		}
 	})
 }
 
