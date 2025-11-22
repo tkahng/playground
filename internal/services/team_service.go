@@ -44,9 +44,10 @@ func (t *TeamServiceImpl) ProcessSlug(ctx context.Context, teamSlug string, team
 				return "", err
 			}
 			// and if teamSlug is not taken return teamSlug
-			if existingTeam != nil {
+			if existingTeam == nil {
 				return teamSlug, nil
 			}
+			return "", errors.New("team slug already exists")
 		}
 	}
 	// if teamName is valid
@@ -59,6 +60,7 @@ func (t *TeamServiceImpl) ProcessSlug(ctx context.Context, teamSlug string, team
 		if existingTeam == nil {
 			return teamName, nil
 		}
+		return "", errors.New("team slug already exists")
 	}
 	// create new valid slug from teamName
 	newSlug := slug.NewSlug(teamName)
@@ -182,13 +184,13 @@ func (t *TeamServiceImpl) CreateTeamWithOwner(ctx context.Context, name string, 
 	if err != nil {
 		return nil, err
 	}
-	// check, err := t.teamStore.CheckTeamSlug(ctx, slug)
-	check, err := t.adapter.TeamGroup().CheckTeamSlug(ctx, slug)
+	// check, err := t.adapter.TeamGroup().CheckTeamSlug(ctx, slug)
+	newSlug, err := t.ProcessSlug(ctx, slug, name)
 	if err != nil {
 		return nil, err
 	}
-	if !check {
-		return nil, errors.New("team slug already exists")
+	if newSlug == "" {
+		return nil, errors.New("error processing team slug.")
 	}
 	team, err := t.adapter.TeamGroup().CreateTeam(ctx, name, slug)
 	if err != nil {

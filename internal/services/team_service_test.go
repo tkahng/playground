@@ -20,8 +20,14 @@ func TestTeamService_CreateTeam_SlugExists(t *testing.T) {
 	name := "Test Team"
 	slug := "existing-slug"
 	userID := uuid.New()
+	adapterDecorator.RunInTxCtxFunc = func(ctx context.Context, fn func(ctx context.Context) error) error {
+		return fn(ctx)
+	}
 	adapterDecorator.UserFunc.FindUserByIDFunc = func(ctx context.Context, userID uuid.UUID) (*models.User, error) {
 		return &models.User{ID: userID}, nil
+	}
+	adapterDecorator.TeamGroupFunc.FindTeamBySlugFunc = func(ctx context.Context, slug string) (*models.Team, error) {
+		return &models.Team{Slug: slug}, nil
 	}
 	// Team slug already exists
 	adapterDecorator.TeamGroupFunc.CheckTeamSlugFunc = func(ctx context.Context, slug string) (bool, error) {
@@ -47,8 +53,8 @@ func TestTeamService_CreateTeam_CheckTeamSlugError(t *testing.T) {
 	adapterDecorator.UserFunc.FindUserByIDFunc = func(ctx context.Context, userID uuid.UUID) (*models.User, error) {
 		return &models.User{ID: userID}, nil
 	}
-	adapterDecorator.TeamGroupFunc.CheckTeamSlugFunc = func(ctx context.Context, slug string) (bool, error) {
-		return false, expectedErr
+	adapterDecorator.TeamGroupFunc.FindTeamBySlugFunc = func(ctx context.Context, slug string) (*models.Team, error) {
+		return nil, expectedErr
 	}
 	// mockStore.On("CheckTeamSlug", ctx, slug).Return(false, expectedErr)
 
@@ -72,8 +78,8 @@ func TestTeamService_CreateTeam_CreateTeamWithOwnerMemberError(t *testing.T) {
 	adapterDecorator.UserFunc.FindUserByIDFunc = func(ctx context.Context, userID uuid.UUID) (*models.User, error) {
 		return &models.User{ID: userID}, nil
 	}
-	adapterDecorator.TeamGroupFunc.CheckTeamSlugFunc = func(ctx context.Context, slug string) (bool, error) {
-		return true, nil
+	adapterDecorator.TeamGroupFunc.FindTeamBySlugFunc = func(ctx context.Context, slug string) (*models.Team, error) {
+		return nil, nil
 	}
 	adapterDecorator.TeamGroupFunc.CreateTeamFunc = func(ctx context.Context, name, slug string) (*models.Team, error) {
 		return nil, expectedErr
