@@ -22,7 +22,7 @@ func RequireTeamInfo() HttpMiddelwareFunc {
 			rawCtx := r.Context()
 			teamInfo := contextstore.GetContextTeamInfo(rawCtx)
 			if teamInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "team info not found. you are not a member of the team related to this request")
+				_ = appHttp.WriteErr(w, r, http.StatusForbidden, "team info not found. you are not a member of the team related to this request")
 				return
 			}
 			next.ServeHTTP(w, r)
