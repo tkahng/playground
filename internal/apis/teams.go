@@ -67,6 +67,10 @@ func fromTeamModel(team *models.Team) *Team {
 	}
 }
 
+var (
+	IsAlphaNumericAndDash *regexp.Regexp = regexp.MustCompile("^[A-Za-z0-9-]+$")
+)
+
 type CreateTeamInput struct {
 	Name string `json:"name" required:"true" minLength:"3"`
 	Slug string `json:"slug" required:"false" minLength:"3" regex:"^[A-Za-z0-9-]+$"`
@@ -103,6 +107,11 @@ func (api *Api) CreateTeamBind(humaApi huma.API) {
 		func(ctx context.Context, input *struct {
 			Body CreateTeamInput `json:"body" required:"true"`
 		}) (*TeamWithMemberOutput, error) {
+			if input.Body.Slug != "" {
+				if !IsAlphaNumericAndDash.MatchString(input.Body.Slug) {
+					return nil, huma.Error400BadRequest("invalid slug")
+				}
+			}
 			if ok, err := api.App().Adapter().TeamGroup().CheckTeamSlug(ctx, input.Body.Slug); !ok {
 				if err != nil {
 					slog.ErrorContext(
@@ -179,10 +188,6 @@ func (api *Api) CheckTeamSlugBind(
 		api.CheckTeamSlug,
 	)
 }
-
-var (
-	IsAlphaNumericAndDash *regexp.Regexp = regexp.MustCompile("^[A-Za-z0-9-]+$")
-)
 
 func (api *Api) CheckTeamSlug(
 	ctx context.Context,
