@@ -162,6 +162,7 @@
       "terminal.findMatchBorder": "#ff00e1", // Active match border (white)
       "terminal.findMatchHighlightBackground": "#ff00fbbb", // Inactive matches background (green)
       "terminal.overviewRuler.findMatchForeground": "#FF0000" // Overview ruler color (red)
-    }
+    },
+    "conventionalCommits.scopes": ["api", "store", "service", "database"]
   }
 }
