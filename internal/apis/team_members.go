@@ -2,6 +2,7 @@ package apis
 
 import (
 	"context"
+	"errors"
 
 	"net/http"
 	"time"
@@ -35,6 +36,26 @@ type TeamMember struct {
 	Team             *Team          `db:"team" src:"team_id" dest:"id" table:"team" json:"team,omitempty"`
 	User             *ApiUser       `db:"user" src:"user_id" dest:"id" table:"users" json:"user,omitempty"`
 }
+
+func fromTeamMemberModel(member *models.TeamMember) *TeamMember {
+	if member == nil {
+		return nil
+	}
+	return &TeamMember{
+		ID:               member.ID,
+		TeamID:           member.TeamID,
+		UserID:           member.UserID,
+		Active:           member.Active,
+		Role:             TeamMemberRole(member.Role),
+		HasBillingAccess: member.HasBillingAccess,
+		LastSelectedAt:   member.LastSelectedAt,
+		CreatedAt:        member.CreatedAt,
+		UpdatedAt:        member.UpdatedAt,
+		Team:             fromTeamModel(member.Team),
+		User:             fromUserModel(member.User),
+	}
+}
+
 type TeamMemberOutput struct {
 	Body *TeamMember `json:"body"`
 }
@@ -435,21 +456,59 @@ func (api *Api) LeaveTeam(humaApi huma.API) {
 	)
 }
 
-func fromTeamMemberModel(member *models.TeamMember) *TeamMember {
-	if member == nil {
-		return nil
-	}
-	return &TeamMember{
-		ID:               member.ID,
-		TeamID:           member.TeamID,
-		UserID:           member.UserID,
-		Active:           member.Active,
-		Role:             TeamMemberRole(member.Role),
-		HasBillingAccess: member.HasBillingAccess,
-		LastSelectedAt:   member.LastSelectedAt,
-		CreatedAt:        member.CreatedAt,
-		UpdatedAt:        member.UpdatedAt,
-		Team:             fromTeamModel(member.Team),
-		User:             fromUserModel(member.User),
-	}
+func (api *Api) ReassignBillingAccess(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "reassign-billing-access",
+			Method:      http.MethodPut,
+			Path:        "/team-members/{team-member-id}/reassign-billing-access",
+			Summary:     "reassign-billing-access",
+			Description: "reassign billing access to a user. only owners with billing access can do this to other owners. the owner performing this action will lose billing access.",
+			Tags:        []string{"Team"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusUnauthorized, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+				middleware.RequireTeamMemberBillingAccessMiddleware(),
+			),
+		},
+		func(ctx context.Context, input *struct{}) (*struct{}, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error403Forbidden("team info not found. you are not a member of the team related to this request")
+			}
+			memberToAssign := contextstore.GetContextTeamMember(ctx)
+			if memberToAssign == nil {
+				return nil, huma.Error400BadRequest("member to assign not found")
+			}
+			// must be owner role
+			if memberToAssign.Role != models.TeamMemberRoleOwner {
+				return nil, huma.Error400BadRequest("member to assign is not an owner")
+			}
+			// must not have billing access
+			if memberToAssign.HasBillingAccess {
+				return nil, huma.Error403Forbidden("member to assign already has billing access")
+			}
+			// must be active
+			if !memberToAssign.Active {
+				return nil, huma.Error400BadRequest("member to assign is not active")
+			}
+			// must have userId
+			if memberToAssign.UserID == nil {
+				return nil, huma.Error400BadRequest("member to assign does not have a user ID")
+			}
+			// update member
+			txErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+				return errors.New("error")
+			})
+			if txErr != nil {
+				return nil, txErr
+			}
+			return nil, nil
+		},
+	)
 }

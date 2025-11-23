@@ -209,4 +209,6 @@ func bindTeamsApi(appApi *Api) {
 	appApi.DeactivateTeamMemberBind(teamsGroup)
 
 	appApi.LeaveTeam(teamsGroup)
+
+	appApi.ReassignBillingAccess(teamsGroup)
 }
