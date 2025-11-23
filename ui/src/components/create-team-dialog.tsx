@@ -95,7 +95,10 @@ export function CreateTeamDialog() {
           <DialogTitle>Create Team</DialogTitle>
           <DialogDescription>Create a new team.</DialogDescription>
         </DialogHeader>
-        <form id="form-rhf-demo" onSubmit={form.handleSubmit(onSubmit)}>
+        <form
+          id="form-create-team-dialog"
+          onSubmit={form.handleSubmit(onSubmit)}
+        >
           <FieldGroup>
             <div className="grid">
               <div className="space-y-4">
@@ -104,10 +107,12 @@ export function CreateTeamDialog() {
                   name="name"
                   render={({ field, fieldState }) => (
                     <Field>
-                      <FieldLabel htmlFor="form-rhf-demo-name">Name</FieldLabel>
+                      <FieldLabel htmlFor="form-create-team-dialog-name">
+                        Name
+                      </FieldLabel>
                       <Input
                         {...field}
-                        id="form-rhf-demo-name"
+                        id="form-create-team-dialog-name"
                         aria-invalid={fieldState.invalid}
                         placeholder="Name"
                       />
@@ -122,7 +127,7 @@ export function CreateTeamDialog() {
                   name="slug"
                   render={({ field, fieldState }) => (
                     <Field>
-                      <FieldLabel htmlFor="form-rhf-demo-slug">
+                      <FieldLabel htmlFor="form-create-team-dialog-slug">
                         Slug(optional)
                       </FieldLabel>
                       <FieldDescription>
@@ -131,7 +136,7 @@ export function CreateTeamDialog() {
                       </FieldDescription>
                       <Input
                         {...field}
-                        id="form-rhf-demo-slug"
+                        id="form-create-team-dialog-slug"
                         aria-invalid={fieldState.invalid}
                         placeholder="Slug"
                       />
@@ -143,7 +148,9 @@ export function CreateTeamDialog() {
                 />
 
                 <DialogFooter>
-                  <Button type="submit">Create Team</Button>
+                  <Button type="submit" form="form-create-team-dialog">
+                    Create Team
+                  </Button>
                 </DialogFooter>
               </div>
             </div>
