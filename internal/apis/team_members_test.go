@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -54,7 +55,7 @@ func TestApi_FindTeamMemberByID(t *testing.T) {
 				Name:           "failed: inactive team1member2 find team1owner",
 				Method:         http.MethodGet,
 				URL:            "/teams/{team-id}/team-members/{team-member-id}",
-				ExpectedStatus: http.StatusUnauthorized,
+				ExpectedStatus: http.StatusForbidden,
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
@@ -245,7 +246,7 @@ func TestApi_FindTeamTeamMembers(t *testing.T) {
 				Name:           "failure: inactive team1member2 find everyone",
 				Method:         http.MethodGet,
 				URL:            "/teams/{team-id}/members",
-				ExpectedStatus: http.StatusUnauthorized,
+				ExpectedStatus: http.StatusForbidden,
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
@@ -554,7 +555,7 @@ func TestApi_UpdateTeamMember(t *testing.T) {
 			Name:           "fail: does not belong to same team as member",
 			Method:         http.MethodPut,
 			URL:            "/team-members/{team-member-id}",
-			ExpectedStatus: http.StatusUnauthorized,
+			ExpectedStatus: http.StatusForbidden,
 			ExpectedContent: []string{
 				"team info not found. you are not a member of the team related to this request",
 			},
@@ -860,7 +861,7 @@ func TestApi_LeaveTeam(t *testing.T) {
 			Name:           "fail: deactivated team member leaves again",
 			Method:         http.MethodDelete,
 			URL:            "/team/{team-id}/leave",
-			ExpectedStatus: http.StatusUnauthorized,
+			ExpectedStatus: http.StatusForbidden,
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 				core.CreateProductsAndPrices(t, app)
 				team1Owner1 := CreateTeamAndOwner(t, app)
