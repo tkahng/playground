@@ -127,7 +127,6 @@
     },
     "explorer.fileNesting.enabled": true,
     "gitlens.views.repositories.pullRequests.enabled": false,
-    "gitlens.views.repositories.autoRefresh": true,
     "gitlens.views.remotes.pullRequests.enabled": false,
     "[yaml]": {
       "editor.defaultFormatter": "redhat.vscode-yaml",
