@@ -71,6 +71,7 @@ func CreateAccessHeaderAndRefreshToken(t testing.TB, app App, email string) (hea
 type TeamOptionFunc func(opt *CreateTeamOptions)
 
 type CreateTeamOptions struct {
+	slug     string
 	teamName string
 	active   bool
 	role     models.TeamMemberRole
@@ -85,6 +86,11 @@ func TeamWithActive(active bool) TeamOptionFunc {
 func TeamWithName(name string) TeamOptionFunc {
 	return func(opt *CreateTeamOptions) {
 		opt.teamName = name
+	}
+}
+func TeamWithSlug(slug string) TeamOptionFunc {
+	return func(opt *CreateTeamOptions) {
+		opt.slug = slug
 	}
 }
 
@@ -116,8 +122,8 @@ func CreateTeamAndMemberWithOptions(t testing.TB, app App, user *models.User, op
 	for _, optFunc := range optFunc {
 		optFunc(option)
 	}
-	teamName := option.teamName
-	team, err := app.Adapter().TeamGroup().CreateTeam(ctx, teamName, strings.TrimSpace(teamName))
+	option.slug = strings.TrimSpace(option.teamName)
+	team, err := app.Adapter().TeamGroup().CreateTeam(ctx, option.teamName, option.slug)
 	if err != nil {
 		t.Fatalf("Error creating team: %v", err)
 	}
