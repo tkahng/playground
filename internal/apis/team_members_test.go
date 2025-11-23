@@ -887,3 +887,132 @@ func TestApi_LeaveTeam(t *testing.T) {
 		})
 	}
 }
+
+func TestApi_ReassignBillingAccess_Fail_NoTeamInfoFound(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		appApi := SetupApi(t, ctx, db)
+		testScenario := &ApiScenario{
+			Name:           "Fail_NoTeamInfoFound",
+			Method:         http.MethodPut,
+			URL:            "/team-members/{team-member-id}/reassign-billing-access",
+			ExpectedStatus: http.StatusForbidden,
+			TestAppFactory: func(t testing.TB) *TestApi {
+				return appApi
+			},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				// init stripe
+				core.CreateProductsAndPrices(t, app)
+				// team1 owner1
+				team1Owner1 := CreateTeamAndOwner(t, app)
+				// team1 member1
+				team1Member1 := CreateTeamMember(t, app, &team1Owner1.Team)
+				// team2 owner2
+				team2Owner1 := CreateTeamAndOwner(t, app)
+				// set team1 Member1 id into url
+				scenario.URL = strings.ReplaceAll(scenario.URL, "{team-member-id}", team1Member1.Member.ID.String())
+				// set team2 owner1 to make request
+				header := core.CreateTokenHeader(t, app, team2Owner1.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			ExpectedContent: []string{
+				"team info not found. you are not a member of the team related to this request",
+			},
+		}
+		testScenario.Test(t)
+	})
+}
+func TestApi_ReassignBillingAccess_Fail_NoBillingAccess(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		appApi := SetupApi(t, ctx, db)
+		testScenario := &ApiScenario{
+			Name:           "Fail_NoBillingAccess",
+			Method:         http.MethodPut,
+			URL:            "/team-members/{team-member-id}/reassign-billing-access",
+			ExpectedStatus: http.StatusForbidden,
+			TestAppFactory: func(t testing.TB) *TestApi {
+				return appApi
+			},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				// init stripe
+				core.CreateProductsAndPrices(t, app)
+				// team1 owner1
+				team1Owner1 := CreateTeamAndOwner(t, app)
+				// team1 member1
+				team1Member1 := CreateTeamMember(t, app, &team1Owner1.Team)
+				// team1 owner2
+				team1Owner2 := CreateTeamMember(t, app, &team1Owner1.Team, core.TeamWithRole(models.TeamMemberRoleOwner), core.TeamWithBilling(false))
+				// set team1 Member1 id into url
+				scenario.URL = strings.ReplaceAll(scenario.URL, "{team-member-id}", team1Member1.Member.ID.String())
+				// set team2 owner1 to make request
+				header := core.CreateTokenHeader(t, app, team1Owner2.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			ExpectedContent: []string{
+				"You do not have the required billing access",
+			},
+		}
+		testScenario.Test(t)
+	})
+}
+func TestApi_ReassignBillingAccess_Fail_AssignToNonOwner(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		appApi := SetupApi(t, ctx, db)
+		testScenario := &ApiScenario{
+			Name:           "Fail_AssignToNonOwner",
+			Method:         http.MethodPut,
+			URL:            "/team-members/{team-member-id}/reassign-billing-access",
+			ExpectedStatus: http.StatusBadRequest,
+			TestAppFactory: func(t testing.TB) *TestApi {
+				return appApi
+			},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				// init stripe
+				core.CreateProductsAndPrices(t, app)
+				// team1 owner1
+				team1Owner1 := CreateTeamAndOwner(t, app)
+				// team1 member1
+				team1Member1 := CreateTeamMember(t, app, &team1Owner1.Team)
+				// set team1 Member1 id into url
+				scenario.URL = strings.ReplaceAll(scenario.URL, "{team-member-id}", team1Member1.Member.ID.String())
+				// set team2 owner1 to make request
+				header := core.CreateTokenHeader(t, app, team1Owner1.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			ExpectedContent: []string{
+				"member to assign is not an owner",
+			},
+		}
+		testScenario.Test(t)
+	})
+}
+func TestApi_ReassignBillingAccess_Fail_AssignToDeactivated(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		appApi := SetupApi(t, ctx, db)
+		testScenario := &ApiScenario{
+			Name:           "Fail_AssignToNonOwner",
+			Method:         http.MethodPut,
+			URL:            "/team-members/{team-member-id}/reassign-billing-access",
+			ExpectedStatus: http.StatusBadRequest,
+			TestAppFactory: func(t testing.TB) *TestApi {
+				return appApi
+			},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				// init stripe
+				core.CreateProductsAndPrices(t, app)
+				// team1 owner1
+				team1Owner1 := CreateTeamAndOwner(t, app)
+				// team1 member1
+				team1Member1 := CreateTeamMember(t, app, &team1Owner1.Team, core.TeamWithActive(false), core.TeamWithRole(models.TeamMemberRoleOwner), core.TeamWithBilling(false))
+				// set team1 Member1 id into url
+				scenario.URL = strings.ReplaceAll(scenario.URL, "{team-member-id}", team1Member1.Member.ID.String())
+				// set team2 owner1 to make request
+				header := core.CreateTokenHeader(t, app, team1Owner1.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			ExpectedContent: []string{
+				"member to assign is not active",
+			},
+		}
+		testScenario.Test(t)
+	})
+}
