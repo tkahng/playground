@@ -270,7 +270,7 @@ func TestCreateTeam_Success_OptionalSlug_TeamNameIsUrlSafeAndUnique(t *testing.T
 func TestCreateTeam_Success_OptionalSlug_TeamNameIsTaken_Randome16Alphabetic(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		appApi := SetupApi(t, ctx, db)
-		for i := range 1 {
+		for i := range 10 {
 			scenario := ApiScenario{
 				Name:           fmt.Sprintf("test create team success optional slug %d team name slug exists", i),
 				Method:         http.MethodPost,
@@ -304,6 +304,66 @@ func TestCreateTeam_Success_OptionalSlug_TeamNameIsTaken_Randome16Alphabetic(t *
 					if body.Team.Slug == slug {
 						t.Errorf("Expected slug %s, got %s", slug, body.Team.Slug)
 					}
+				},
+			}
+			scenario.Test(t)
+		}
+	})
+}
+func TestCreateTeam_Fail_Slug_HasUnderscore(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		appApi := SetupApi(t, ctx, db)
+		for i := range 1 {
+			scenario := ApiScenario{
+				Name:           fmt.Sprintf("test create team fail slug has underscore %d", i),
+				Method:         http.MethodPost,
+				URL:            "/teams",
+				ExpectedStatus: http.StatusBadRequest,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return appApi
+				},
+				ExpectedContent: []string{
+					"invalid slug",
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					// create user
+					userEmail := fmt.Sprintf("%d@gmail.com", i)
+					teamName := fmt.Sprintf("team%d", i)
+					teamSlug := fmt.Sprintf("team_%d", i)
+					user := core.CreateUserWithOptions(t, app, core.UserWithEmail(userEmail), core.UserWithVerifiedNow())
+					token, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user.User.Email)
+					scenario.Headers = []string{token}
+					scenario.Body = strings.NewReader(`{"name":` + fmt.Sprintf(`"%s"`, teamName) + `, "slug":` + fmt.Sprintf(`"%s"`, teamSlug) + `}`)
+				},
+			}
+			scenario.Test(t)
+		}
+	})
+}
+func TestCreateTeam_Fail_Slug_HasExclamationpoint(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		appApi := SetupApi(t, ctx, db)
+		for i := range 1 {
+			scenario := ApiScenario{
+				Name:           fmt.Sprintf("test create team fail slug has exclamationpoint %d", i),
+				Method:         http.MethodPost,
+				URL:            "/teams",
+				ExpectedStatus: http.StatusBadRequest,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return appApi
+				},
+				ExpectedContent: []string{
+					"invalid slug",
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					// create user
+					userEmail := fmt.Sprintf("%d@gmail.com", i)
+					teamName := fmt.Sprintf("team%d", i)
+					teamSlug := fmt.Sprintf("team!%d", i)
+					user := core.CreateUserWithOptions(t, app, core.UserWithEmail(userEmail), core.UserWithVerifiedNow())
+					token, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user.User.Email)
+					scenario.Headers = []string{token}
+					scenario.Body = strings.NewReader(`{"name":` + fmt.Sprintf(`"%s"`, teamName) + `, "slug":` + fmt.Sprintf(`"%s"`, teamSlug) + `}`)
 				},
 			}
 			scenario.Test(t)
