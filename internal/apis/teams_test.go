@@ -248,10 +248,7 @@ func TestCreateTeam_Success_OptionalSlug_TeamNameIsUrlSafeAndUnique(t *testing.T
 					user := core.CreateUserWithOptions(t, app, core.UserWithEmail(userEmail), core.UserWithVerifiedNow())
 					token, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user.User.Email)
 					scenario.Headers = []string{token}
-					input := apis.CreateTeamInput{
-						Name: teamName,
-					}
-					scenario.Body = strings.NewReader(`{"name":` + fmt.Sprintf(`"%s"`, input.Name) + `}`)
+					scenario.Body = strings.NewReader(`{"name":` + fmt.Sprintf(`"%s"`, teamName) + `}`)
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.TeamWithMember
@@ -261,6 +258,50 @@ func TestCreateTeam_Success_OptionalSlug_TeamNameIsUrlSafeAndUnique(t *testing.T
 					}
 					slug := fmt.Sprintf("team%d", i)
 					if body.Team.Slug != slug {
+						t.Errorf("Expected slug %s, got %s", slug, body.Team.Slug)
+					}
+				},
+			}
+			scenario.Test(t)
+		}
+	})
+}
+
+func TestCreateTeam_Success_OptionalSlug_TeamNameIsTaken_Randome16Alphabetic(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		appApi := SetupApi(t, ctx, db)
+		for i := range 1 {
+			scenario := ApiScenario{
+				Name:           fmt.Sprintf("test create team success optional slug %d team name slug exists", i),
+				Method:         http.MethodPost,
+				URL:            "/teams",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return appApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					// create user
+					userEmail := fmt.Sprintf("%d@gmail.com", i)
+					otherUserEmail := fmt.Sprintf("%d+other@gmail.com", i)
+					teamName := fmt.Sprintf("team%d", i)
+					user := core.CreateUserWithOptions(t, app, core.UserWithEmail(userEmail), core.UserWithVerifiedNow())
+					otherUser := core.CreateUserWithOptions(t, app, core.UserWithEmail(otherUserEmail), core.UserWithVerifiedNow())
+					team := core.CreateTeamAndMemberWithOptions(t, app, &otherUser.User, core.TeamWithName(teamName), core.TeamWithSlug(teamName))
+					if team == nil {
+						t.Fatalf("Error creating team")
+					}
+					token, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user.User.Email)
+					scenario.Headers = []string{token}
+					scenario.Body = strings.NewReader(`{"name":` + fmt.Sprintf(`"%s"`, teamName) + `}`)
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					var body apis.TeamWithMember
+					err := json.NewDecoder(res.Body).Decode(&body)
+					if err != nil {
+						t.Errorf("Error decoding response: %v", err)
+					}
+					slug := fmt.Sprintf("team%d", i)
+					if body.Team.Slug == slug {
 						t.Errorf("Expected slug %s, got %s", slug, body.Team.Slug)
 					}
 				},
