@@ -69,7 +69,7 @@ func fromTeamModel(team *models.Team) *Team {
 
 type CreateTeamInput struct {
 	Name string `json:"name" required:"true" minLength:"3"`
-	Slug string `json:"slug" required:"false" minLength:"3" regex:"^[a-z0-9_-]+$"`
+	Slug string `json:"slug" required:"false" minLength:"3" regex:"^[A-Za-z0-9-]+$"`
 }
 
 type TeamOutput struct {
