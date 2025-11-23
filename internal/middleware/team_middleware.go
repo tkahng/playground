@@ -62,6 +62,34 @@ func RequireTeamMemberRolesMiddleware(roles ...models.TeamMemberRole) HttpMiddel
 	}
 }
 
+// RequireTeamMemberRolesMiddleware checks if the member has the required team member roles
+func RequireTeamMemberBillingAccessMiddleware() HttpMiddelwareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			rawCtx := r.Context()
+			if info := contextstore.GetContextTeamInfo(rawCtx); info != nil {
+				if info.Member.HasBillingAccess {
+					next.ServeHTTP(w, r)
+					return
+				}
+				_ = appHttp.WriteErr(
+					w,
+					r,
+					http.StatusForbidden,
+					"You do not have the required billing access",
+				)
+			} else {
+				_ = appHttp.WriteErr(
+					w,
+					r,
+					http.StatusForbidden,
+					"You do not have the required team info",
+				)
+			}
+		})
+	}
+}
+
 type GetTeamIdFunc func(ctx context.Context) (uuid.UUID, bool)
 
 var GetTeamIdFuncs []GetTeamIdFunc = []GetTeamIdFunc{
