@@ -51,20 +51,14 @@ func (t *TeamServiceImpl) ProcessSlug(ctx context.Context, teamSlug string, team
 			return "", errors.New("team slug already exists")
 		}
 	}
-	// if teamName is valid
-	if IsAlphaNumericAndDash.MatchString(teamName) {
-		existingTeam, err := t.adapter.TeamGroup().FindTeamBySlug(ctx, teamName)
-		if err != nil {
-			return "", err
-		}
-		// and if teamName is not taken return teamName
-		if existingTeam == nil {
-			return teamName, nil
-		}
-		return "", errors.New("team slug already exists")
-	}
+
 	// create new valid slug from teamName
-	newSlug := slug.NewSlug(teamName)
+	var newSlug string
+	if IsAlphaNumericAndDash.MatchString(teamName) {
+		newSlug = teamName
+	} else {
+		newSlug = slug.NewSlug(teamName)
+	}
 	// check if newSlug is taken
 	existingTeam, err := t.adapter.TeamGroup().FindTeamBySlug(ctx, newSlug)
 	if err != nil {
@@ -74,6 +68,7 @@ func (t *TeamServiceImpl) ProcessSlug(ctx context.Context, teamSlug string, team
 	if existingTeam == nil {
 		return newSlug, nil
 	}
+	// if taken generate a random string and use that slug
 	randomSlug := security.RandomString(16)
 	randomSlugTeam, err := t.adapter.TeamGroup().FindTeamBySlug(ctx, randomSlug)
 	if err != nil {
@@ -82,6 +77,14 @@ func (t *TeamServiceImpl) ProcessSlug(ctx context.Context, teamSlug string, team
 	// if not taken return it
 	if randomSlugTeam == nil {
 		return randomSlug, nil
+	}
+	uuidSlug := uuid.NewString()
+	uuidSlugTeam, err := t.adapter.TeamGroup().FindTeamBySlug(ctx, randomSlug)
+	if err != nil {
+		return "", err
+	}
+	if uuidSlugTeam == nil {
+		return uuidSlug, nil
 	}
 	// could not process slug
 	return "", errors.New("cannot process team slug")
