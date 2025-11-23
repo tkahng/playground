@@ -122,7 +122,9 @@ func CreateTeamAndMemberWithOptions(t testing.TB, app App, user *models.User, op
 	for _, optFunc := range optFunc {
 		optFunc(option)
 	}
-	option.slug = strings.TrimSpace(option.teamName)
+	if option.slug == "" {
+		option.slug = strings.TrimSpace(option.teamName)
+	}
 	team, err := app.Adapter().TeamGroup().CreateTeam(ctx, option.teamName, option.slug)
 	if err != nil {
 		t.Fatalf("Error creating team: %v", err)
