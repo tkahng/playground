@@ -3,6 +3,7 @@ package stores_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/database"
@@ -212,5 +213,57 @@ func TestDbCustomerStore_UpdateCustomer(t *testing.T) {
 		assert.NotNil(t, got)
 		assert.Equal(t, customer.Email, got.Email)
 		assert.Equal(t, *customer.Name, *got.Name)
+	})
+}
+func TestDbCustomerStore_UpsertCustomer_Existing(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewStorageAdapter(db)
+		user := testutils.CreateUserWithOptions(t, adapter)
+		fds := &models.StripeCustomer{
+			ID:           "cus_1",
+			UserID:       types.Pointer(user.User.ID),
+			Email:        user.User.Email,
+			Name:         types.Pointer("customer_name"),
+			CustomerType: models.StripeCustomerTypeUser,
+		}
+		customer, err := adapter.Customer().CreateCustomer(ctx, fds)
+		assert.NoError(t, err)
+		assert.NotNil(t, customer)
+		assert.Equal(t, "cus_1", customer.ID)
+		customer.Email = "new@email.com"
+		customer.Name = types.Pointer("new_customer_name")
+		err = adapter.Customer().UpsertCustomer(ctx, customer)
+		assert.NoError(t, err)
+		got, err := adapter.Customer().FindCustomer(ctx, &stores.StripeCustomerFilter{
+			Ids: []string{customer.ID},
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, got)
+		assert.Equal(t, customer.Email, got.Email)
+		assert.Equal(t, *customer.Name, *got.Name)
+	})
+}
+func TestDbCustomerStore_UpsertCustomer_New(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewStorageAdapter(db)
+		user := testutils.CreateUserWithOptions(t, adapter)
+		fds := &models.StripeCustomer{
+			ID:           "cus_1",
+			UserID:       types.Pointer(user.User.ID),
+			Email:        user.User.Email,
+			Name:         types.Pointer("customer_name"),
+			CustomerType: models.StripeCustomerTypeUser,
+			CreatedAt:    time.Now(),
+			UpdatedAt:    time.Now(),
+		}
+		err := adapter.Customer().UpsertCustomer(ctx, fds)
+		assert.NoError(t, err)
+		got, err := adapter.Customer().FindCustomer(ctx, &stores.StripeCustomerFilter{
+			Ids: []string{"cus_1"},
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, got)
+		assert.Equal(t, fds.Email, got.Email)
+		assert.Equal(t, *fds.Name, *got.Name)
 	})
 }
