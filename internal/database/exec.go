@@ -28,8 +28,6 @@ func ExecWithBuilder(ctx context.Context, db Dbx, query QueryBuilder) (int64, er
 	if err != nil {
 		return 0, err
 	}
-	// fmt.Println("query", sql, "args", args)
-
 	slog.DebugContext(ctx, "Exec With Builder:", slog.String("query", sql), slog.Any("args", args))
 	result, err := Exec(ctx, db, sql, args...)
 	return result, err
@@ -72,6 +70,7 @@ func PgxQueryRowsToStruct[T any](ctx context.Context, db Dbx, query QueryBuilder
 	if err != nil {
 		return nil, err
 	}
+	slog.DebugContext(ctx, "PgxQueryRowsToStruct:", slog.String("query", sql), slog.Any("args", args))
 	r, err := ctxDbx.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, err
@@ -85,9 +84,17 @@ func PgxQuerySingleScalar[T comparable](ctx context.Context, db Dbx, query Query
 	if err != nil {
 		return zero, err
 	}
+	slog.DebugContext(ctx, "PgxQuerySingleScalar:", slog.String("query", sql), slog.Any("args", args))
 	r, err := ctxDbx.Query(ctx, sql, args...)
 	if err != nil {
 		return zero, err
 	}
-	return pgx.CollectOneRow(r, pgx.RowTo[T])
+	res, err := pgx.CollectRows(r, pgx.RowTo[T])
+	if err != nil {
+		return zero, err
+	}
+	if len(res) == 0 {
+		return zero, nil
+	}
+	return res[0], nil
 }

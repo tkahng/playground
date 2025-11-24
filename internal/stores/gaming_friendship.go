@@ -3,11 +3,25 @@ package stores
 import (
 	"context"
 	"errors"
+	"log/slog"
+	"slices"
+	"strings"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
 )
+
+type GamingFriendshipStore interface {
+	FindFriendship(ctx context.Context, filter *FriendshipFilter) (*models.Frindship, error)
+	FindFriendships(ctx context.Context, filter *FriendshipFilter) ([]*models.Frindship, error)
+	CreateFriendship(ctx context.Context, friendship *models.Frindship) (*models.Frindship, error)
+	UpdateFriendship(ctx context.Context, player *models.Frindship) (*models.Frindship, error)
+	DeleteFriendships(ctx context.Context, filter *FriendshipFilter) (int64, error)
+	CountFriendships(ctx context.Context, filter *FriendshipFilter) (int64, error)
+}
 
 type FriendshipFilter struct {
 	repository.PaginatedInput
@@ -19,59 +33,79 @@ type FriendshipFilter struct {
 	Statuses                     []models.FriendshipStatus `query:"statuses,omitempty" required:"false" minimum:"1" maximum:"100" enum:"pending,accepted,declined"`
 }
 
-func (s *DBGamingStore) friendshipFilterWhere(filter *FriendshipFilter) *map[string]any {
+func (s *DBGamingStore) friendshipFilterSelect(sq squirrel.SelectBuilder, filter *FriendshipFilter) squirrel.SelectBuilder {
 	if filter == nil {
-		return nil
+		return sq
 	}
-	var setStatus bool
-	where := map[string]any{}
 	if filter.Ids != nil {
-		where["id"] = map[string]any{
-			"_in": filter.Ids,
-		}
+		sq = sq.Where(squirrel.Eq{"gaming.friendships.id": filter.Ids})
 	}
 	if len(filter.Statuses) > 0 {
-		setStatus = true
-		where["status"] = map[string]any{
-			"_in": filter.Statuses,
-		}
+		sq = sq.Where(squirrel.Eq{"gaming.friendships.status": filter.Statuses})
 	}
 	if filter.RequestingPlayerIds != nil {
-		where["requesting_player_id"] = map[string]any{
-			"_in": filter.RequestingPlayerIds,
-		}
+		sq = sq.Where(squirrel.Eq{"gaming.friendships.requesting_player_id": filter.RequestingPlayerIds})
 	}
 	if filter.InvitedPlayerIds != nil {
-		where["invited_player_id"] = map[string]any{
-			"_in": filter.InvitedPlayerIds,
-		}
+		sq = sq.Where(squirrel.Eq{"gaming.friendships.invited_player_id": filter.InvitedPlayerIds})
 	}
 	if filter.RequestingOrInvitedPlayerIds != nil {
-		var keys []string = []string{
-			"requesting_player_id",
-			"invited_player_id",
-		}
-		vars := []map[string]any{}
-		for _, v := range keys {
-			var arg map[string]any = map[string]any{}
-			if setStatus {
-				arg["status"] = map[string]any{
-					"_in": filter.Statuses,
-				}
-			}
-			arg[v] = map[string]any{
-				"_in": filter.RequestingOrInvitedPlayerIds,
-			}
-			vars = append(vars, arg)
-			if setStatus {
-
-			}
-		}
-
-		where["_or"] = vars
+		sq = sq.Where(
+			squirrel.Or{
+				squirrel.Eq{"gaming.friendships.requesting_player_id": filter.RequestingOrInvitedPlayerIds},
+				squirrel.Eq{"gaming.friendships.invited_player_id": filter.RequestingOrInvitedPlayerIds},
+			},
+		)
 	}
 
-	return &where
+	return sq
+}
+func (s *DBGamingStore) friendshipFilterDelete(sq squirrel.DeleteBuilder, filter *FriendshipFilter) squirrel.DeleteBuilder {
+	if filter == nil {
+		return sq
+	}
+	if filter.Ids != nil {
+		sq = sq.Where(squirrel.Eq{"gaming.friendships.id": filter.Ids})
+	}
+	if len(filter.Statuses) > 0 {
+		sq = sq.Where(squirrel.Eq{"gaming.friendships.status": filter.Statuses})
+	}
+	if filter.RequestingPlayerIds != nil {
+		sq = sq.Where(squirrel.Eq{"gaming.friendships.requesting_player_id": filter.RequestingPlayerIds})
+	}
+	if filter.InvitedPlayerIds != nil {
+		sq = sq.Where(squirrel.Eq{"gaming.friendships.invited_player_id": filter.InvitedPlayerIds})
+	}
+	if filter.RequestingOrInvitedPlayerIds != nil {
+		sq = sq.Where(
+			squirrel.Or{
+				squirrel.Eq{"gaming.friendships.requesting_player_id": filter.RequestingOrInvitedPlayerIds},
+				squirrel.Eq{"gaming.friendships.invited_player_id": filter.RequestingOrInvitedPlayerIds},
+			},
+		)
+	}
+
+	return sq
+}
+
+func (s *DBGamingStore) friendshipSortSelect(qs squirrel.SelectBuilder, filter Sortable) squirrel.SelectBuilder {
+	if filter == nil {
+		return qs // return original query if no filter is provided
+	}
+	sortBy, sortOrder := filter.Sort()
+	if sortBy == "" {
+		return qs
+	}
+	if sortOrder == "" {
+		sortOrder = "ASC"
+	}
+	// if sortBy is in the registered fieldnames, it is a scalar field. direct sort.
+	if slices.Contains(repository.FrindshipBuilder.FieldNames(), sortBy) {
+		qs = qs.OrderBy(sortBy + " " + strings.ToUpper(sortOrder))
+	} else {
+		slog.Warn("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder)
+	}
+	return qs
 }
 
 func (s *DBGamingStore) FindFriendship(ctx context.Context, filter *FriendshipFilter) (*models.Frindship, error) {
@@ -101,23 +135,16 @@ func (s *DBGamingStore) FindFriendship(ctx context.Context, filter *FriendshipFi
 }
 
 func (s *DBGamingStore) FindFriendships(ctx context.Context, filter *FriendshipFilter) ([]*models.Frindship, error) {
-	limit, offset := filter.Pagination()
-	sortBy, sortOrder := filter.Sort()
-	var sort *map[string]string
-	if sortBy != "" {
-		sort = &map[string]string{
-			sortBy: sortOrder,
-		}
+	q := squirrel.Select(repository.FrindshipBuilder.ColumnNames()...).From("gaming.friendships")
+	q = s.friendshipFilterSelect(q, filter)
+	q = s.friendshipSortSelect(q, filter)
+	q = queryPagination(q, filter)
+
+	data, err := database.PgxQueryRowsToStruct[models.Frindship](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	if err != nil {
+		return nil, err
 	}
-	where := s.friendshipFilterWhere(filter)
-	return repository.Frindship.GetWithOptions(
-		ctx,
-		s.db,
-		repository.WithLimit(limit),
-		repository.WithOffset(offset),
-		repository.WithWhere(where),
-		repository.WithOrder(sort),
-	)
+	return data, nil
 }
 
 func (s *DBGamingStore) CreateFriendship(ctx context.Context, friendship *models.Frindship) (*models.Frindship, error) {
@@ -130,16 +157,27 @@ func (s *DBGamingStore) CreateFriendship(ctx context.Context, friendship *models
 	return repository.Frindship.PostOne(ctx, s.db, friendship)
 }
 
-func (s *DBGamingStore) UpdateFrindship(ctx context.Context, player *models.Frindship) (*models.Frindship, error) {
+func (s *DBGamingStore) UpdateFriendship(ctx context.Context, player *models.Frindship) (*models.Frindship, error) {
 	return repository.Frindship.PutOne(ctx, s.db, player)
 }
 
-func (s *DBGamingStore) DeleteFrindships(ctx context.Context, filter *FriendshipFilter) (int64, error) {
-	where := s.friendshipFilterWhere(filter)
-	return repository.Frindship.Delete(ctx, s.db, where)
+func (s *DBGamingStore) DeleteFriendships(ctx context.Context, filter *FriendshipFilter) (int64, error) {
+	qs := squirrel.Delete(repository.FrindshipBuilder.TableName())
+	qs = s.friendshipFilterDelete(qs, filter)
+	return database.ExecWithBuilder(ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
+	// return database.PgxQuerySingleScalar[int64](ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
 }
 
 func (s *DBGamingStore) CountFriendships(ctx context.Context, filter *FriendshipFilter) (int64, error) {
-	where := s.friendshipFilterWhere(filter)
-	return repository.Frindship.Count(ctx, s.db, where)
+	q := squirrel.Select("COUNT(*)").From(repository.FrindshipBuilder.TableName())
+	q = s.friendshipFilterSelect(q, filter)
+	data, err := database.QueryWithBuilder[database.CountOutput](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	if err != nil {
+		return 0, err
+	}
+	if len(data) == 0 {
+		return 0, nil
+	}
+
+	return data[0].Count, nil
 }
