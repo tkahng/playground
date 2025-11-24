@@ -475,7 +475,9 @@ func (api *Api) ReassignBillingAccess(humaApi huma.API) {
 				middleware.RequireTeamMemberBillingAccessMiddleware(),
 			),
 		},
-		func(ctx context.Context, input *struct{}) (*struct{}, error) {
+		func(ctx context.Context, input *struct {
+			TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
+		}) (*struct{}, error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
 			if teamInfo == nil {
 				return nil, huma.Error403Forbidden("team info not found. you are not a member of the team related to this request")
