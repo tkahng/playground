@@ -4,9 +4,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/stores/testutils"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/types"
 )
@@ -186,5 +188,29 @@ func TestStripeStore_FindCustomer(t *testing.T) {
 		if err != nil || found == nil || found.ID != "cus_find_1" {
 			t.Errorf("FindCustomer() = %v, err = %v", found, err)
 		}
+	})
+}
+
+func TestDbCustomerStore_UpdateCustomer(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewStorageAdapter(db)
+		user := testutils.CreateUserWithOptions(t, adapter)
+		customer, err := adapter.Customer().CreateCustomer(ctx, &models.StripeCustomer{
+			ID:           "cus_1",
+			UserID:       types.Pointer(user.User.ID),
+			Email:        user.User.Email,
+			Name:         types.Pointer("customer_name"),
+			CustomerType: models.StripeCustomerTypeUser,
+		})
+		assert.NoError(t, err)
+		assert.NotNil(t, customer)
+		assert.Equal(t, "cus_1", customer.ID)
+		customer.Email = "new@email.com"
+		customer.Name = types.Pointer("new_customer_name")
+		got, err := adapter.Customer().UpdateCustomer(ctx, customer)
+		assert.NoError(t, err)
+		assert.NotNil(t, got)
+		assert.Equal(t, customer.Email, got.Email)
+		assert.Equal(t, *customer.Name, *got.Name)
 	})
 }
