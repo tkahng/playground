@@ -10,7 +10,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 )
 
-func TestDBGamingStore_CreatePlayer(t *testing.T) {
+func TestDBGamingStore_CreateUpdateCountPlayer(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		gamingStore := NewDBGamingStore(db)
 		for i := range 10 {
@@ -55,13 +55,69 @@ func TestDBGamingStore_CreatePlayer(t *testing.T) {
 			if deleted != 1 {
 				t.Errorf("DeletePlayers() = %v, want %v", deleted, 1)
 			}
-			count, err = gamingStore.CountPlayers(ctx, nil)
+			res, err := gamingStore.FindPlayers(ctx, nil)
+			if err != nil {
+				t.Fatalf("FindPlayers() error = %v", err)
+			}
+			if len(res) != 0 {
+				t.Errorf("FindPlayers() = %v, want %v", len(res), 0)
+			}
+			newCount, err := gamingStore.CountPlayers(ctx, nil)
 			if err != nil {
 				t.Fatalf("CountPlayers() error = %v", err)
 			}
-			if count != 0 {
+			if newCount != 0 {
 				t.Errorf("CountPlayers() = %v, want %v", count, 0)
 			}
+		}
+	})
+}
+
+func TestDBGamingStore_CountPlayer(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		gamingStore := NewDBGamingStore(db)
+		players := []*models.Player{}
+		for i := range 10 {
+			playerEmail := fmt.Sprintf("user%d@example.com", i)
+			player, err := gamingStore.CreatePlayer(ctx, &models.Player{
+				Email: playerEmail,
+			})
+			if err != nil {
+				t.Fatalf("CreatePlayer() error = %v", err)
+			}
+			if player.ID == uuid.Nil {
+				t.Errorf("CreatePlayer() = %v, want id not nil", player)
+			}
+			if player.Email != playerEmail {
+				t.Errorf("CreatePlayer() = %v, want email %v", player, playerEmail)
+			}
+			if player.DisplayName != nil {
+				t.Errorf("CreatePlayer() = %v, want display name nil", player)
+			}
+			displayName := fmt.Sprintf("display name %d", i)
+			player.DisplayName = &displayName
+			newPlayer, err := gamingStore.UpdatePlayer(ctx, player)
+			if err != nil {
+				t.Fatalf("UpdatePlayer() error = %v", err)
+			}
+			if *newPlayer.DisplayName != displayName {
+				t.Errorf("UpdatePlayer() = %v, want display name %v", *newPlayer.DisplayName, displayName)
+			}
+			players = append(players, newPlayer)
+		}
+		res, err := gamingStore.FindPlayers(ctx, nil)
+		if err != nil {
+			t.Fatalf("FindPlayers() error = %v", err)
+		}
+		if len(res) != 10 {
+			t.Errorf("FindPlayers() = %v, want %v", len(res), 10)
+		}
+		count, err := gamingStore.CountPlayers(ctx, nil)
+		if err != nil {
+			t.Fatalf("CountPlayers() error = %v", err)
+		}
+		if count != 10 {
+			t.Errorf("CountPlayers() = %v, want %v", count, 10)
 		}
 	})
 }

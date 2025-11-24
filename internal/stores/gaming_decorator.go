@@ -1,0 +1,213 @@
+package stores
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/models"
+)
+
+type DbGamingStoreDecorator struct {
+	Delegate                  *DBGamingStore
+	CountFriendshipsFunc      func(ctx context.Context, filter *FriendshipFilter) (int64, error)
+	CountPlayersFunc          func(ctx context.Context, filter *PlayersFilter) (int64, error)
+	CreateFriendshipFunc      func(ctx context.Context, friendship *models.Frindship) (*models.Frindship, error)
+	CreatePlayerFunc          func(ctx context.Context, player *models.Player) (*models.Player, error)
+	DeleteFriendshipsFunc     func(ctx context.Context, filter *FriendshipFilter) (int64, error)
+	DeletePlayersFunc         func(ctx context.Context, filter *PlayersFilter) (int64, error)
+	FindFriendshipFunc        func(ctx context.Context, filter *FriendshipFilter) (*models.Frindship, error)
+	FindFriendshipsFunc       func(ctx context.Context, filter *FriendshipFilter) ([]*models.Frindship, error)
+	FindPlayerFunc            func(ctx context.Context, filter *PlayersFilter) (*models.Player, error)
+	FindPlayersFunc           func(ctx context.Context, filter *PlayersFilter) ([]*models.Player, error)
+	UpdateFriendshipFunc      func(ctx context.Context, player *models.Frindship) (*models.Frindship, error)
+	UpdatePlayerFunc          func(ctx context.Context, player *models.Player) (*models.Player, error)
+	CreateGameWithRequestFunc func(ctx context.Context, input *GameCreateInput) (*models.RpsGame, error)
+	CreateGameFunc            func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
+	UpdateGameFunc            func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
+	WithTxFunc                func(db database.Dbx) *DBGamingStore
+}
+
+// CreateRpsGame implements [GamingStore].
+func (s *DbGamingStoreDecorator) CreateRpsGame(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error) {
+	if s.CreateGameFunc != nil {
+		return s.CreateGameFunc(ctx, game)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator CreateGame %w", ErrDelegateNil)
+	}
+	return s.Delegate.CreateRpsGame(ctx, game)
+}
+
+// UpdateRpsGame implements [GamingStore].
+func (s *DbGamingStoreDecorator) UpdateRpsGame(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error) {
+	if s.UpdateGameFunc != nil {
+		return s.UpdateGameFunc(ctx, game)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator UpdateGame %w", ErrDelegateNil)
+	}
+	return s.Delegate.UpdateRpsGame(ctx, game)
+}
+
+// CreateGameWithRequest implements [GamingStore].
+func (s *DbGamingStoreDecorator) CreateGameWithRequest(ctx context.Context, input *GameCreateInput) (*models.RpsGame, error) {
+	if s.CreateGameWithRequestFunc != nil {
+		return s.CreateGameWithRequestFunc(ctx, input)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator CreateGame %w", ErrDelegateNil)
+	}
+	return s.Delegate.CreateGameWithRequest(ctx, input)
+}
+
+// CountPlayers implements [GamingStore].
+func (s *DbGamingStoreDecorator) CountPlayers(ctx context.Context, filter *PlayersFilter) (int64, error) {
+	if s.CountPlayersFunc != nil {
+		return s.CountPlayersFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return 0, fmt.Errorf("Gaming store decorator CountPlayers %w", ErrDelegateNil)
+	}
+	return s.Delegate.CountPlayers(ctx, filter)
+}
+
+// CreateFriendship implements [GamingStore].
+func (s *DbGamingStoreDecorator) CreateFriendship(ctx context.Context, friendship *models.Frindship) (*models.Frindship, error) {
+	if s.CreateFriendshipFunc != nil {
+		return s.CreateFriendshipFunc(ctx, friendship)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator CreateFriendship %w", ErrDelegateNil)
+	}
+	return s.Delegate.CreateFriendship(ctx, friendship)
+}
+
+// CreatePlayer implements [GamingStore].
+func (s *DbGamingStoreDecorator) CreatePlayer(ctx context.Context, player *models.Player) (*models.Player, error) {
+	if s.CreatePlayerFunc != nil {
+		return s.CreatePlayerFunc(ctx, player)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator CreatePlayer %w", ErrDelegateNil)
+	}
+	return s.Delegate.CreatePlayer(ctx, player)
+}
+
+// DeleteFriendships implements [GamingStore].
+func (s *DbGamingStoreDecorator) DeleteFriendships(ctx context.Context, filter *FriendshipFilter) (int64, error) {
+	if s.DeleteFriendshipsFunc != nil {
+		return s.DeleteFriendshipsFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return 0, fmt.Errorf("Gaming store decorator DeleteFriendships %w", ErrDelegateNil)
+	}
+	return s.Delegate.DeleteFriendships(ctx, filter)
+}
+
+// DeletePlayers implements [GamingStore].
+func (s *DbGamingStoreDecorator) DeletePlayers(ctx context.Context, filter *PlayersFilter) (int64, error) {
+	if s.DeletePlayersFunc != nil {
+		return s.DeletePlayersFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return 0, fmt.Errorf("Gaming store decorator DeletePlayers %w", ErrDelegateNil)
+	}
+	return s.Delegate.DeletePlayers(ctx, filter)
+}
+
+// NewDbGamingStoreDecorator creates a new DbGamingStoreDecorator.
+func NewDbGamingStoreDecorator(db database.Dbx) *DbGamingStoreDecorator {
+	return &DbGamingStoreDecorator{
+		Delegate: NewDBGamingStore(db),
+	}
+}
+
+// FindFriendship implements [GamingStore].
+func (s *DbGamingStoreDecorator) FindFriendship(ctx context.Context, filter *FriendshipFilter) (*models.Frindship, error) {
+	if s.FindFriendshipFunc != nil {
+		return s.FindFriendshipFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator FindFriendship %w", ErrDelegateNil)
+	}
+	return s.Delegate.FindFriendship(ctx, filter)
+}
+
+// FindFriendships implements [GamingStore].
+func (s *DbGamingStoreDecorator) FindFriendships(ctx context.Context, filter *FriendshipFilter) ([]*models.Frindship, error) {
+	if s.FindFriendshipsFunc != nil {
+		return s.FindFriendshipsFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator FindFriendships %w", ErrDelegateNil)
+	}
+	return s.Delegate.FindFriendships(ctx, filter)
+}
+
+// FindPlayer implements [GamingStore].
+func (s *DbGamingStoreDecorator) FindPlayer(ctx context.Context, filter *PlayersFilter) (*models.Player, error) {
+	if s.FindPlayerFunc != nil {
+		return s.FindPlayerFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator FindPlayer %w", ErrDelegateNil)
+	}
+	return s.Delegate.FindPlayer(ctx, filter)
+}
+
+// FindPlayers implements [GamingStore].
+func (s *DbGamingStoreDecorator) FindPlayers(ctx context.Context, filter *PlayersFilter) ([]*models.Player, error) {
+	if s.FindPlayersFunc != nil {
+		return s.FindPlayersFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator FindPlayers %w", ErrDelegateNil)
+	}
+	return s.Delegate.FindPlayers(ctx, filter)
+}
+
+// UpdateFriendship implements [GamingStore].
+func (s *DbGamingStoreDecorator) UpdateFriendship(ctx context.Context, player *models.Frindship) (*models.Frindship, error) {
+	if s.UpdateFriendshipFunc != nil {
+		return s.UpdateFriendshipFunc(ctx, player)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator UpdateFriendship %w", ErrDelegateNil)
+	}
+	return s.Delegate.UpdateFriendship(ctx, player)
+}
+
+// UpdatePlayer implements [GamingStore].
+func (s *DbGamingStoreDecorator) UpdatePlayer(ctx context.Context, player *models.Player) (*models.Player, error) {
+	if s.UpdatePlayerFunc != nil {
+		return s.UpdatePlayerFunc(ctx, player)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator UpdatePlayer %w", ErrDelegateNil)
+	}
+	return s.Delegate.UpdatePlayer(ctx, player)
+}
+
+// WithTx implements [GamingStore].
+func (s *DbGamingStoreDecorator) WithTx(db database.Dbx) *DBGamingStore {
+	if s.WithTxFunc != nil {
+		return s.WithTxFunc(db)
+	}
+	if s.Delegate == nil {
+		return nil
+	}
+	return s.Delegate.WithTx(db)
+}
+
+func (s *DbGamingStoreDecorator) CountFriendships(ctx context.Context, filter *FriendshipFilter) (int64, error) {
+	if s.CountFriendshipsFunc != nil {
+		return s.CountFriendshipsFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return 0, fmt.Errorf("Gaming store decorator CountFriendships %w", ErrDelegateNil)
+	}
+	return s.Delegate.CountFriendships(ctx, filter)
+}
+
+var _ GamingStore = (*DbGamingStoreDecorator)(nil)

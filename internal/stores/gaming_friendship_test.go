@@ -10,10 +10,9 @@ import (
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/test"
-	"github.com/tkahng/playground/internal/tools/utils"
 )
 
-func TestDBGamingStore_CreateFriendship(t *testing.T) {
+func TestDBGamingStore_CreateUpdateFindCount(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		// init
 		gamingStore := NewDBGamingStore(db)
@@ -32,6 +31,7 @@ func TestDBGamingStore_CreateFriendship(t *testing.T) {
 			players = append(players, player)
 		}
 
+		// create -------------------------------------------------------------------
 		// for each player in players
 		for i, player1 := range players {
 			// for each progressive player, increment i as to avoid duplicate friendships
@@ -65,6 +65,7 @@ func TestDBGamingStore_CreateFriendship(t *testing.T) {
 				}
 			}
 		}
+		// find -------------------------------------------------------------------
 		// for each player in playerIdFriendshipMap
 		for k, m := range playerIdFriendshipMap {
 			// find player
@@ -82,6 +83,7 @@ func TestDBGamingStore_CreateFriendship(t *testing.T) {
 				t.Errorf("Friendship count for player id %v should be one less than total player count. got %v, want %v", k, len(m), playerCount-1)
 			}
 		}
+		// update -------------------------------------------------------------------
 		// random selector
 		providerSelector := test.NewRandomeSelector(
 			models.FriendshipStatusAccepted,
@@ -98,7 +100,7 @@ func TestDBGamingStore_CreateFriendship(t *testing.T) {
 
 			// update status
 			f.Status = status
-			newf, err := gamingStore.UpdateFrindship(ctx, f)
+			newf, err := gamingStore.UpdateFriendship(ctx, f)
 			if err != nil {
 				t.Fatalf("UpdateFriendshipStatus() error = %v", err)
 			}
@@ -117,7 +119,7 @@ func TestDBGamingStore_CreateFriendship(t *testing.T) {
 		if len(accepted)+len(declined) != len(friendships) {
 			t.Errorf("The sum of the lengths of accepted and declined should be equal to the length of friendships. got %v, want %v", len(accepted)+len(declined), len(friendships))
 		}
-
+		// find -------------------------------------------------------------------
 		acceptedMap := map[uuid.UUID]*models.Frindship{}
 		declinedMap := map[uuid.UUID]*models.Frindship{}
 		for _, player := range players {
@@ -161,20 +163,67 @@ func TestDBGamingStore_CreateFriendship(t *testing.T) {
 		if len(declinedMap) != len(declined) {
 			t.Errorf("The sum of the lengths of accepted and declined should be equal to the length of friendships. got %v, want %v", len(declinedMap), len(declined))
 		}
-	})
-}
-
-func TestDBGamingStore_friendshipFilterWhere(t *testing.T) {
-	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		s := NewDBGamingStore(db)
-		got := s.friendshipFilterWhere(&FriendshipFilter{
+		// count -------------------------------------------------------------------
+		totalFriendShipCount, err := gamingStore.CountFriendships(ctx, nil)
+		if err != nil {
+			t.Fatalf("CountFriendships() error = %v", err)
+		}
+		if totalFriendShipCount != int64(len(friendships)) {
+			t.Errorf("CountFriendships() = %v, want %v", totalFriendShipCount, len(friendships))
+		}
+		totalAcceptedFriendShipCount, err := gamingStore.CountFriendships(ctx, &FriendshipFilter{
 			PaginatedInput: repository.PaginatedInput{
 				Page:    0,
 				PerPage: 100,
 			},
-			RequestingOrInvitedPlayerIds: []uuid.UUID{uuid.New()},
-			Statuses:                     []models.FriendshipStatus{models.FriendshipStatusDeclined},
+			Statuses: []models.FriendshipStatus{models.FriendshipStatusAccepted},
 		})
-		utils.PrettyPrintJSON(got)
+		if err != nil {
+			t.Fatalf("CountFriendships() error = %v", err)
+		}
+		if totalAcceptedFriendShipCount != int64(len(accepted)) {
+			t.Errorf("CountFriendships() = %v, want %v", totalAcceptedFriendShipCount, len(accepted))
+		}
+		totalDeclinedFriendShipCount, err := gamingStore.CountFriendships(ctx, &FriendshipFilter{
+			PaginatedInput: repository.PaginatedInput{
+				Page:    0,
+				PerPage: 100,
+			},
+			Statuses: []models.FriendshipStatus{models.FriendshipStatusDeclined},
+		})
+		if err != nil {
+			t.Fatalf("CountFriendships() error = %v", err)
+		}
+		if totalDeclinedFriendShipCount != int64(len(declined)) {
+			t.Errorf("CountFriendships() = %v, want %v", totalDeclinedFriendShipCount, len(declined))
+		}
+		if totalAcceptedFriendShipCount+totalDeclinedFriendShipCount != totalFriendShipCount {
+			t.Errorf("CountFriendships() = %v, want %v", totalAcceptedFriendShipCount+totalDeclinedFriendShipCount, totalFriendShipCount)
+		}
+		// count again
+		totalFriendShipCount, err = gamingStore.CountFriendships(ctx, nil)
+		if err != nil {
+			t.Fatalf("CountFriendships() error = %v", err)
+		}
+		if totalFriendShipCount != 45 {
+			t.Errorf("CountFriendships() = %v, want %v", totalFriendShipCount, 0)
+		}
+		// delete
+		toDeleteIds := []uuid.UUID{}
+		for _, f := range accepted {
+			toDeleteIds = append(toDeleteIds, f.ID)
+		}
+		for _, f := range declined {
+			toDeleteIds = append(toDeleteIds, f.ID)
+		}
+		deleted, err := gamingStore.DeleteFriendships(ctx, &FriendshipFilter{
+			Ids: toDeleteIds,
+		})
+		if err != nil {
+			t.Fatalf("DeleteFriendships() error = %v", err)
+		}
+		if deleted != int64(len(toDeleteIds)) {
+			t.Errorf("DeleteFriendships() = %v, want %v", deleted, len(toDeleteIds))
+		}
 	})
 }

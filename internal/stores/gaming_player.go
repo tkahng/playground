@@ -3,11 +3,25 @@ package stores
 import (
 	"context"
 	"errors"
+	"log/slog"
+	"slices"
+	"strings"
 
+	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
 )
+
+type GamingPlayerStore interface {
+	FindPlayers(ctx context.Context, filter *PlayersFilter) ([]*models.Player, error)
+	FindPlayer(ctx context.Context, filter *PlayersFilter) (*models.Player, error)
+	CreatePlayer(ctx context.Context, player *models.Player) (*models.Player, error)
+	UpdatePlayer(ctx context.Context, player *models.Player) (*models.Player, error)
+	DeletePlayers(ctx context.Context, filter *PlayersFilter) (int64, error)
+	CountPlayers(ctx context.Context, filter *PlayersFilter) (int64, error)
+}
 
 type PlayersFilter struct {
 	repository.PaginatedInput
@@ -18,45 +32,67 @@ type PlayersFilter struct {
 	DisplayNames []string    `query:"display_names,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
 }
 
-func (s *DBGamingStore) filterPlayerWhere(filter *PlayersFilter) *map[string]any {
+func (s *DBGamingStore) playerFilterSelect(qs squirrel.SelectBuilder, filter *PlayersFilter) squirrel.SelectBuilder {
 	if filter == nil {
-		return nil
+		return qs
 	}
-	where := map[string]any{}
 	if filter.Ids != nil {
-		where["id"] = map[string]any{
-			"_in": filter.Ids,
-		}
+		qs = qs.Where(squirrel.Eq{"gaming.players.id": filter.Ids})
 	}
 	if filter.Q != "" {
-		where["_or"] = []map[string]any{
-			{
-				"_and": []map[string]any{
-					{
-						"display_name": map[string]any{"_ilike": "%" + filter.Q + "%"},
-					},
-				},
-			},
-			{
-				"_and": []map[string]any{
-					{
-						"email": map[string]any{"_ilike": "%" + filter.Q + "%"},
-					},
-				},
-			},
-		}
+		qs = qs.Where(squirrel.Or{
+			squirrel.ILike{"gaming.players.display_name": "%" + filter.Q + "%"},
+			squirrel.ILike{"gaming.players.email": "%" + filter.Q + "%"},
+		})
 	}
 	if filter.Emails != nil {
-		where["email"] = map[string]any{
-			"_in": filter.Emails,
-		}
+		qs = qs.Where(squirrel.Eq{"gaming.players.email": filter.Emails})
 	}
 	if filter.DisplayNames != nil {
-		where["display_name"] = map[string]any{
-			"_in": filter.DisplayNames,
-		}
+		qs = qs.Where(squirrel.Eq{"gaming.players.display_name": filter.DisplayNames})
 	}
-	return &where
+	return qs
+}
+func (s *DBGamingStore) playerFilterDelete(qs squirrel.DeleteBuilder, filter *PlayersFilter) squirrel.DeleteBuilder {
+	if filter == nil {
+		return qs
+	}
+	if filter.Ids != nil {
+		qs = qs.Where(squirrel.Eq{"gaming.players.id": filter.Ids})
+	}
+	if filter.Q != "" {
+		qs = qs.Where(squirrel.Or{
+			squirrel.ILike{"gaming.players.display_name": "%" + filter.Q + "%"},
+			squirrel.ILike{"gaming.players.email": "%" + filter.Q + "%"},
+		})
+	}
+	if filter.Emails != nil {
+		qs = qs.Where(squirrel.Eq{"gaming.players.email": filter.Emails})
+	}
+	if filter.DisplayNames != nil {
+		qs = qs.Where(squirrel.Eq{"gaming.players.display_name": filter.DisplayNames})
+	}
+	return qs
+}
+
+func (s *DBGamingStore) playerSortSelect(qs squirrel.SelectBuilder, filter Sortable) squirrel.SelectBuilder {
+	if filter == nil {
+		return qs // return original query if no filter is provided
+	}
+	sortBy, sortOrder := filter.Sort()
+	if sortBy == "" {
+		return qs
+	}
+	if sortOrder == "" {
+		sortOrder = "ASC"
+	}
+	// if sortBy is in the registered fieldnames, it is a scalar field. direct sort.
+	if slices.Contains(repository.PlayerBuilder.FieldNames(), sortBy) {
+		qs = qs.OrderBy(sortBy + " " + strings.ToUpper(sortOrder))
+	} else {
+		slog.Warn("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder)
+	}
+	return qs
 }
 
 func (s *DBGamingStore) FindPlayers(ctx context.Context, filter *PlayersFilter) ([]*models.Player, error) {
@@ -72,23 +108,16 @@ func (s *DBGamingStore) FindPlayers(ctx context.Context, filter *PlayersFilter) 
 			},
 		}
 	}
-	limit, offset := filter.Pagination()
-	sortBy, sortOrder := filter.Sort()
-	var sort *map[string]string
-	if sortBy != "" {
-		sort = &map[string]string{
-			sortBy: sortOrder,
-		}
+	q := squirrel.Select(repository.PlayerBuilder.ColumnNames()...).From("gaming.players")
+	q = s.playerFilterSelect(q, filter)
+	q = s.playerSortSelect(q, filter)
+	q = queryPagination(q, filter)
+
+	data, err := database.PgxQueryRowsToStruct[models.Player](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	if err != nil {
+		return nil, err
 	}
-	where := s.filterPlayerWhere(filter)
-	return repository.Player.GetWithOptions(
-		ctx,
-		s.db,
-		repository.WithLimit(limit),
-		repository.WithOffset(offset),
-		repository.WithWhere(where),
-		repository.WithOrder(sort),
-	)
+	return data, nil
 }
 
 func (s *DBGamingStore) FindPlayer(ctx context.Context, filter *PlayersFilter) (*models.Player, error) {
@@ -132,11 +161,21 @@ func (s *DBGamingStore) UpdatePlayer(ctx context.Context, player *models.Player)
 }
 
 func (s *DBGamingStore) DeletePlayers(ctx context.Context, filter *PlayersFilter) (int64, error) {
-	where := s.filterPlayerWhere(filter)
-	return repository.Player.Delete(ctx, s.db, where)
+	qs := squirrel.Delete(repository.PlayerBuilder.TableName())
+	qs = s.playerFilterDelete(qs, filter)
+	return database.ExecWithBuilder(ctx, s.db, qs.PlaceholderFormat(squirrel.Dollar))
 }
 
 func (s *DBGamingStore) CountPlayers(ctx context.Context, filter *PlayersFilter) (int64, error) {
-	where := s.filterPlayerWhere(filter)
-	return repository.Player.Count(ctx, s.db, where)
+	q := squirrel.Select("COUNT(*)").From(repository.PlayerBuilder.TableName())
+	q = s.playerFilterSelect(q, filter)
+	data, err := database.QueryWithBuilder[database.CountOutput](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	if err != nil {
+		return 0, err
+	}
+	if len(data) == 0 {
+		return 0, nil
+	}
+
+	return data[0].Count, nil
 }

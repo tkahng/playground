@@ -16,14 +16,8 @@ type SortParams struct {
 
 func (s *SortParams) Sort() (sortBy, sortOrder string) {
 	if s == nil {
-		return "", "" // default values
+		return "", ""
 	}
-	// if s.SortBy == "" {
-	// 	s.SortBy = "created_at" // default sort by
-	// }
-	// if s.SortOrder == "" {
-	// 	s.SortOrder = "desc" // default sort order
-	// }
 	return s.SortBy, s.SortOrder
 }
 
@@ -57,7 +51,7 @@ func pagination(filter Paginable) (limit, offset int) {
 }
 
 func queryPagination(q squirrel.SelectBuilder, filter Paginable) squirrel.SelectBuilder {
-	limit, offset := pagination(filter)
+	limit, offset := filter.LimitOffset()
 	q = q.Limit(uint64(limit)).Offset(uint64(offset))
 	return q
 }
