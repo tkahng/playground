@@ -20,12 +20,22 @@ type DbCustomerStoreInterface interface {
 	ListCustomers(ctx context.Context, input *StripeCustomerFilter) ([]*models.StripeCustomer, error)
 	CountCustomers(ctx context.Context, filter *StripeCustomerFilter) (int64, error)
 	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
+	UpdateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 	FindCustomer(ctx context.Context, customer *StripeCustomerFilter) (*models.StripeCustomer, error)
 	LoadCustomersByIds(ctx context.Context, ids ...string) ([]*models.StripeCustomer, error)
 }
 
 type DbCustomerStore struct {
 	db database.Dbx
+}
+
+// UpdateCustomer implements [DbCustomerStoreInterface].
+func (s *DbCustomerStore) UpdateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
+	return repository.StripeCustomer.PutOne(
+		ctx,
+		s.db,
+		customer,
+	)
 }
 
 // LoadCustomersByIds implements DbCustomerStoreInterface.

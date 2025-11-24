@@ -2,6 +2,7 @@ package stores
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/tkahng/playground/internal/models"
 )
@@ -12,7 +13,19 @@ type CustomerStoreDecorator struct {
 	FindCustomerFunc       func(ctx context.Context, filter *StripeCustomerFilter) (*models.StripeCustomer, error)
 	ListCustomersFunc      func(ctx context.Context, input *StripeCustomerFilter) ([]*models.StripeCustomer, error)
 	CreateCustomerFunc     func(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
+	UpdateCustomerFunc     func(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 	LoadCustomersByIdsFunc func(ctx context.Context, ids ...string) ([]*models.StripeCustomer, error)
+}
+
+// UpdateCustomer implements [DbCustomerStoreInterface].
+func (c *CustomerStoreDecorator) UpdateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error) {
+	if c.UpdateCustomerFunc != nil {
+		return c.UpdateCustomerFunc(ctx, customer)
+	}
+	if c.Delegate == nil {
+		return nil, fmt.Errorf("Customer store decorator %w", ErrDelegateNil)
+	}
+	return c.Delegate.UpdateCustomer(ctx, customer)
 }
 
 // LoadCustomersByIds implements DbCustomerStoreInterface.
