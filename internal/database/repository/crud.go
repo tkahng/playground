@@ -77,6 +77,12 @@ var (
 	UserReactionBuilder = NewSQLBuilder[models.UserReaction](
 		UuidV7Generator,
 	)
+	PlayerBuilder = NewSQLBuilder[models.Player](
+		UuidV7Generator,
+	)
+	FrindshipBuilder = NewSQLBuilder[models.Frindship](
+		UuidV7Generator,
+	)
 )
 
 var (
@@ -104,4 +110,6 @@ var (
 	Notification       Repository[models.Notification]       = NewPostgresRepository(NotificationBuilder)
 	Job                Repository[models.JobRow]             = NewPostgresRepository(JobBuilder)
 	UserReaction       Repository[models.UserReaction]       = NewPostgresRepository(UserReactionBuilder)
+	Player             Repository[models.Player]             = NewPostgresRepository(PlayerBuilder)
+	Frindship          Repository[models.Frindship]          = NewPostgresRepository(FrindshipBuilder)
 )
