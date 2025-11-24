@@ -112,6 +112,11 @@ func (s *StripeService) RefreshCustomerBillingAccess(ctx context.Context, teamId
 	if err != nil {
 		return err
 	}
+	customer.Email = user.Email
+	_, err = s.adapter.Customer().UpdateCustomer(ctx, customer)
+	if err != nil {
+		return err
+	}
 	_, err = s.client.UpdateCustomer(customer.ID, &stripe.CustomerParams{
 		Email: types.Pointer(user.Email),
 	})
