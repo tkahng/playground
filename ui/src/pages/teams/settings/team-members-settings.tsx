@@ -7,6 +7,7 @@ import { getTeamTeamMembers } from "@/lib/team-queries";
 import { MemberRowDropdownMenuDialog } from "@/pages/teams/settings/member-row-dropdown-dialog";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
+import { CheckCircle, XCircle } from "lucide-react";
 import { useSearchParams } from "react-router";
 import { InviteTeamMemberDialog } from "./invite-team-member-dialog";
 
@@ -93,6 +94,17 @@ export default function TeamMembersSettingPage() {
             {
               header: "Role",
               accessorKey: "role",
+            },
+            {
+              header: "Billing Access",
+              accessorKey: "has_billing_access",
+              cell: ({ row }) => {
+                return row.original.has_billing_access ? (
+                  <CheckCircle className="text-green-600 dark:text-green-300" />
+                ) : (
+                  <XCircle className="text-muted-foreground" />
+                );
+              },
             },
             {
               id: "actions",

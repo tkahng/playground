@@ -403,3 +403,29 @@ export const readTeamMemberNotification = async (
   }
   return true;
 };
+
+export const reassignBillingAccess = async ({
+  token,
+  memberId,
+}: {
+  token: string;
+  memberId: string;
+}) => {
+  const { data, error } = await client.PUT(
+    "/api/team-members/{team-member-id}/reassign-billing-access",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "team-member-id": memberId,
+        },
+      },
+    }
+  );
+  if (error) {
+    throw error;
+  }
+  return data;
+};

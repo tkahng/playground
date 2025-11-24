@@ -36,8 +36,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useTeam } from "@/hooks/use-team";
 import { GetError } from "@/lib/error";
-import { deleteMember, updateTeamMember } from "@/lib/team-queries";
+import {
+  deleteMember,
+  reassignBillingAccess,
+  updateTeamMember,
+} from "@/lib/team-queries";
 import { TeamMember, TeamMemberRole } from "@/schema.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -62,8 +67,12 @@ export function MemberRowDropdownMenuDialog({
 }) {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-
+  const [showReassignBillingAccessDialog, setshowReassignBillingAccessDialog] =
+    useState(false);
   const { user } = useAuthProvider();
+  const { team } = useTeam();
+  const enableReassign =
+    member.role === "owner" && team?.member?.has_billing_access;
   const queryClient = useQueryClient();
 
   const updateMutation = useMutation({
@@ -86,6 +95,27 @@ export function MemberRowDropdownMenuDialog({
     onError: (error) => {
       console.error(error);
       toast.error("Failed to update member");
+    },
+  });
+  const reassignBillingMutation = useMutation({
+    mutationFn: async ({ memberId }: { memberId: string }) => {
+      if (!user?.tokens.access_token) {
+        throw new Error("Missing access token");
+      }
+      await reassignBillingAccess({
+        memberId,
+        token: user.tokens.access_token,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: [{ key: "team-team-members" }],
+      });
+      toast.success("Billing access reassigned successfully");
+    },
+    onError: (error) => {
+      console.error(error);
+      toast.error("Failed to reassign billing access");
     },
   });
   const updateForm = useForm<z.infer<typeof updateFormSchema>>({
@@ -123,6 +153,12 @@ export function MemberRowDropdownMenuDialog({
   const onDeleteSubmit = () => {
     deleteMutation.mutate();
   };
+  const onReassignSubmit = () => {
+    reassignBillingMutation.mutate({ memberId: member.id });
+  };
+  if (!team) {
+    return <p>No team.</p>;
+  }
   return (
     <>
       {/* dropdown */}
@@ -141,6 +177,16 @@ export function MemberRowDropdownMenuDialog({
           <DropdownMenuItem onSelect={() => setShowEditDialog(true)}>
             Edit
           </DropdownMenuItem>
+          {enableReassign && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={() => setshowReassignBillingAccessDialog(true)}
+              >
+                Reassign Billing Access
+              </DropdownMenuItem>
+            </>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onSelect={() => setShowDeleteDialog(true)}
@@ -240,6 +286,30 @@ export function MemberRowDropdownMenuDialog({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Reassign Billing Access dialog */}
+      {enableReassign && (
+        <Dialog
+          open={showReassignBillingAccessDialog}
+          onOpenChange={setshowReassignBillingAccessDialog}
+        >
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Reassign Billing Access</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to do this?
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button variant="destructive" onClick={onReassignSubmit}>
+                Reassign
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }
