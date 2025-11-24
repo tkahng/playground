@@ -259,7 +259,24 @@ func (t *MockPaymentClient) UpdateCustomer(customerId string, params *stripe.Cus
 	if t.UpdateCustomerFunc != nil {
 		return t.UpdateCustomerFunc(customerId, params)
 	}
-	return nil, mockPaymentErr
+	for _, customer := range t.Customers {
+		if customer.ID == customerId {
+			if params.Name != nil {
+				customer.Name = *params.Name
+			}
+			if params.Email != nil {
+				customer.Email = *params.Email
+			}
+			if params.Description != nil {
+				customer.Description = *params.Description
+			}
+			if params.Phone != nil {
+				customer.Phone = *params.Phone
+			}
+			return customer, nil
+		}
+	}
+	return nil, errors.New("could not find customer")
 }
 
 // UpdateItemQuantity implements PaymentClient.
