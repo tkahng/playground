@@ -21,12 +21,57 @@ type DbCustomerStoreInterface interface {
 	CountCustomers(ctx context.Context, filter *StripeCustomerFilter) (int64, error)
 	CreateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 	UpdateCustomer(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
+	UpsertCustomer(ctx context.Context, customer *models.StripeCustomer) error
 	FindCustomer(ctx context.Context, customer *StripeCustomerFilter) (*models.StripeCustomer, error)
 	LoadCustomersByIds(ctx context.Context, ids ...string) ([]*models.StripeCustomer, error)
 }
 
 type DbCustomerStore struct {
 	db database.Dbx
+}
+
+// UpsertCustomer implements [DbCustomerStoreInterface].
+func (s *DbCustomerStore) UpsertCustomer(ctx context.Context, customer *models.StripeCustomer) error {
+	dbx := s.db
+	q := squirrel.Insert("billing.stripe_customers").
+		Columns(
+			"id",
+			"email",
+			"name",
+			"user_id",
+			"team_id",
+			"customer_type",
+			"billing_address",
+			"payment_method",
+			"created_at",
+			"updated_at",
+		).
+		Values(
+			customer.ID,
+			customer.Email,
+			customer.Name,
+			customer.UserID,
+			customer.TeamID,
+			customer.CustomerType,
+			customer.BillingAddress,
+			customer.PaymentMethod,
+			customer.CreatedAt,
+			customer.UpdatedAt,
+		).
+		Suffix(`
+		ON CONFLICT(id) DO UPDATE SET 
+			email = EXCLUDED.email, 
+			name = EXCLUDED.name, 
+			user_id = EXCLUDED.user_id, 
+			team_id = EXCLUDED.team_id, 
+			customer_type = EXCLUDED.customer_type, 
+			billing_address = EXCLUDED.billing_address, 
+			payment_method = EXCLUDED.payment_method,
+			created_at = EXCLUDED.created_at,
+			updated_at = EXCLUDED.updated_at
+		`)
+	_, err := database.ExecWithBuilder(ctx, dbx, q.PlaceholderFormat(squirrel.Dollar))
+	return err
 }
 
 // UpdateCustomer implements [DbCustomerStoreInterface].
