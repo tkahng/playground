@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/core"
@@ -1011,6 +1012,80 @@ func TestApi_ReassignBillingAccess_Fail_AssignToDeactivated(t *testing.T) {
 			},
 			ExpectedContent: []string{
 				"member to assign is not active",
+			},
+		}
+		testScenario.Test(t)
+	})
+}
+func TestApi_ReassignBillingAccess_Success_AssignToOwner(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		appApi := SetupApi(t, ctx, db)
+		testScenario := &ApiScenario{
+			Name:           "Success_AssignToOwner",
+			Method:         http.MethodPut,
+			URL:            "/team-members/{team-member-id}/reassign-billing-access",
+			ExpectedStatus: http.StatusNoContent,
+			TestAppFactory: func(t testing.TB) *TestApi {
+				return appApi
+			},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				// init stripe
+				core.CreateProductsAndPrices(t, app)
+				// team1 owner1
+				team1Owner1 := CreateTeamAndOwner(t, app)
+				scenario.Store.Set("prev_owner", team1Owner1)
+				// team1 member1
+				team1Member1 := CreateTeamMember(t, app, &team1Owner1.Team, core.TeamWithRole(models.TeamMemberRoleOwner), core.TeamWithBilling(false))
+				scenario.Store.Set("new_owner", team1Member1)
+				// sub := CreateTeamSubscription(t, app, team1Owner1, core.SubscriptionWithQuantity(2))
+				// assert.Equal(t, int64(2), sub.Quantity)
+
+				// set team1 Member1 id into url
+				scenario.URL = strings.ReplaceAll(scenario.URL, "{team-member-id}", team1Member1.Member.ID.String())
+				// set team2 owner1 to make request
+				header := core.CreateTokenHeader(t, app, team1Owner1.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				team1Owner1, ok := scenario.Store.Get("prev_owner").(*models.TeamInfoModel)
+				if !ok || team1Owner1 == nil {
+					t.Fail()
+				}
+				team1Member1, ok := scenario.Store.Get("new_owner").(*models.TeamInfoModel)
+				if !ok || team1Member1 == nil {
+					t.Fail()
+				}
+				prevOwner := repository.MustFindOneCtx(t, ctx, repository.TeamMember, app.Db(), &map[string]any{
+					"id": map[string]any{
+						"_eq": team1Owner1.Member.ID,
+					},
+				})
+				nextOwner := repository.MustFindOneCtx(t, ctx, repository.TeamMember, app.Db(), &map[string]any{
+					"id": map[string]any{
+						"_eq": team1Member1.Member.ID,
+					},
+				})
+
+				assert.False(t, prevOwner.HasBillingAccess)
+				assert.True(t, nextOwner.HasBillingAccess)
+
+				dbCustomer := repository.MustFindOneCtx(t, ctx, repository.StripeCustomer, app.Db(), &map[string]any{
+					"team_id": map[string]any{
+						"_eq": team1Member1.Team.ID,
+					},
+				})
+				require.NotNil(t, dbCustomer)
+				require.Equal(t, *dbCustomer.TeamID, team1Member1.Team.ID)
+				require.Equal(t, dbCustomer.Email, team1Member1.User.Email)
+				paymentClient := core.ExtractTestPaymentClient(t, app)
+				var customer *stripe.Customer
+				for _, c := range paymentClient.Customers {
+					if c.ID == dbCustomer.ID {
+						customer = c
+					}
+				}
+				require.NotNil(t, customer)
+				require.Equal(t, team1Member1.User.Email, customer.Email)
 			},
 		}
 		testScenario.Test(t)

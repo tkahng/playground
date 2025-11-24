@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"errors"
 
 	"net/http"
 	"time"
@@ -503,7 +502,21 @@ func (api *Api) ReassignBillingAccess(humaApi huma.API) {
 			}
 			// update member
 			txErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
-				return errors.New("error")
+				currentBillingOwner := &teamInfo.Member
+				newBillingOwner := memberToAssign
+
+				currentBillingOwner.HasBillingAccess = false
+				newBillingOwner.HasBillingAccess = true
+
+				_, err := api.App().Adapter().TeamMember().UpdateTeamMember(txCtx, currentBillingOwner)
+				if err != nil {
+					return err
+				}
+				_, err = api.App().Adapter().TeamMember().UpdateTeamMember(txCtx, newBillingOwner)
+				if err != nil {
+					return err
+				}
+				return api.App().Payment().RefreshCustomerBillingAccess(txCtx, teamInfo.Team.ID)
 			})
 			if txErr != nil {
 				return nil, txErr
