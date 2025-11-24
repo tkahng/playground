@@ -19,3 +19,15 @@ func (s *DBGamingStore) WithTx(db database.Dbx) *DBGamingStore {
 		db: db,
 	}
 }
+
+var _ GamingStore = (*DBGamingStore)(nil)
+
+type GamingStore interface {
+	// friendships
+	GamingFriendshipStore
+	// players
+	GamingPlayerStore
+	// games
+	RpsGameStore
+	WithTx(db database.Dbx) *DBGamingStore
+}

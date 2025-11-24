@@ -117,6 +117,12 @@ type DbUserReactionStoreDectorator struct {
 	GetLastReactionFunc    func(ctx context.Context) (*models.UserReaction, error)
 }
 
+func NewDbUserReactionStoreDectorator(db database.Dbx) *DbUserReactionStoreDectorator {
+	return &DbUserReactionStoreDectorator{
+		delegate: NewDbUserReactionStore(db),
+	}
+}
+
 // GetLastReaction implements UserReactionStore.
 func (d *DbUserReactionStoreDectorator) GetLastReaction(ctx context.Context) (*models.UserReaction, error) {
 	if d.GetLastReactionFunc != nil {
