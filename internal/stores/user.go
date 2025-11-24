@@ -8,7 +8,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
@@ -59,19 +58,6 @@ func (s *DbUserStore) CountUsers(ctx context.Context, filter *UserFilter) (int64
 		return 0, fmt.Errorf("error counting users: %w", err)
 	}
 	return count, nil
-}
-
-func pagination(filter Paginable) (limit, offset int) {
-	if filter == nil {
-		return 10, 0 // default values
-	}
-	return filter.LimitOffset()
-}
-
-func queryPagination(q squirrel.SelectBuilder, filter Paginable) squirrel.SelectBuilder {
-	limit, offset := pagination(filter)
-	q = q.Limit(uint64(limit)).Offset(uint64(offset))
-	return q
 }
 
 func (s *DbUserStore) sort(filter Sortable) *map[string]string {
