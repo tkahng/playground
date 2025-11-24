@@ -76,26 +76,29 @@ export default function ProjectListPage() {
       <DataTable
         columns={[
           {
-            accessorKey: "id",
-            header: "ID",
+            accessorKey: "name",
+            header: "Name",
             cell: ({ row }) => {
               return (
                 <NavLink
                   to={`/teams/${team?.slug}/projects/${row.original.id}`}
                   className="hover:underline text-blue-500"
                 >
-                  {row.original.id}
+                  {row.original.name}
                 </NavLink>
               );
             },
           },
           {
-            accessorKey: "name",
-            header: "Name",
-          },
-          {
             accessorKey: "description",
             header: "Description",
+            cell: ({ row }) => {
+              return (
+                <span className="truncate overflow-hidden whitespace-nowrap">
+                  {row.original.description}
+                </span>
+              );
+            },
           },
           {
             accessorKey: "updated_at",
