@@ -46,3 +46,6 @@ func (p *PaginatedInput) Pagination() (limit, offset int) {
 	}
 	return int(p.PerPage), int(p.Page) * int(p.PerPage)
 }
+func (p *PaginatedInput) LimitOffset() (limit, offset int) {
+	return p.Pagination()
+}
