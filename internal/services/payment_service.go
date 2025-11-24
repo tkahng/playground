@@ -50,6 +50,8 @@ type PaymentService interface {
 	VerifyAndUpdateTeamSubscriptionQuantity(ctx context.Context, teamId uuid.UUID) error
 
 	TeamCanAddMembers(ctx context.Context, teamId uuid.UUID) (bool, error)
+
+	RefreshCustomerBillingAccess(ctx context.Context, teamId uuid.UUID) error
 }
 
 type PaymentClient interface {
@@ -71,6 +73,52 @@ type StripeService struct {
 	logger  *slog.Logger
 	client  PaymentClient
 	adapter stores.StorageAdapterInterface
+}
+
+// RefreshCustomerBillingAccess implements [PaymentService].
+func (s *StripeService) RefreshCustomerBillingAccess(ctx context.Context, teamId uuid.UUID) error {
+	customer, err := s.adapter.Customer().FindCustomer(ctx, &stores.StripeCustomerFilter{
+		TeamIds: []uuid.UUID{teamId},
+	})
+	if err != nil {
+		return err
+	}
+	if customer == nil {
+		return errors.New("customer not found")
+	}
+	billingTeamOwner, err := s.adapter.TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
+		Active: types.OptionalParam[bool]{
+			Value: true,
+			IsSet: true,
+		},
+		Roles: []models.TeamMemberRole{models.TeamMemberRoleOwner},
+		HasBillingAccess: types.OptionalParam[bool]{
+			Value: true,
+			IsSet: true,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if billingTeamOwner == nil {
+		return errors.New("active owner member with billing access not found.")
+	}
+	if billingTeamOwner.UserID == nil {
+		return errors.New("user id null for billing team owner")
+	}
+	user, err := s.adapter.User().FindUser(ctx, &stores.UserFilter{
+		Ids: []uuid.UUID{*billingTeamOwner.UserID},
+	})
+	if err != nil {
+		return err
+	}
+	_, err = s.client.UpdateCustomer(customer.ID, &stripe.CustomerParams{
+		Email: types.Pointer(user.Email),
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Adapter implements PaymentService.
