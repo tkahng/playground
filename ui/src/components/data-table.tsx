@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+
 import {
   Table,
   TableBody,
@@ -54,9 +55,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div>
-      <div>
-        <DataTableBody table={table} onClick={onClick} columns={columns} />
-      </div>
+      <DataTableBody table={table} onClick={onClick} columns={columns} />
       <div className="flex items-center justify-end space-x-2 py-4">
         {paginationEnabled && <DataTableFooter table={table} />}
       </div>
