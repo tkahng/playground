@@ -989,7 +989,7 @@ func TestApi_ReassignBillingAccess_Fail_AssignToDeactivated(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		appApi := SetupApi(t, ctx, db)
 		testScenario := &ApiScenario{
-			Name:           "Fail_AssignToNonOwner",
+			Name:           "Fail_AssignToDeactivated",
 			Method:         http.MethodPut,
 			URL:            "/team-members/{team-member-id}/reassign-billing-access",
 			ExpectedStatus: http.StatusBadRequest,
