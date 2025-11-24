@@ -14,7 +14,19 @@ type CustomerStoreDecorator struct {
 	ListCustomersFunc      func(ctx context.Context, input *StripeCustomerFilter) ([]*models.StripeCustomer, error)
 	CreateCustomerFunc     func(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
 	UpdateCustomerFunc     func(ctx context.Context, customer *models.StripeCustomer) (*models.StripeCustomer, error)
+	UpsertCustomerFunc     func(ctx context.Context, customer *models.StripeCustomer) error
 	LoadCustomersByIdsFunc func(ctx context.Context, ids ...string) ([]*models.StripeCustomer, error)
+}
+
+// UpsertCustomer implements [DbCustomerStoreInterface].
+func (c *CustomerStoreDecorator) UpsertCustomer(ctx context.Context, customer *models.StripeCustomer) error {
+	if c.UpsertCustomerFunc != nil {
+		return c.UpsertCustomerFunc(ctx, customer)
+	}
+	if c.Delegate == nil {
+		return fmt.Errorf("CustomerStoreDecorator.UpsertCustomer %w", ErrDelegateNil)
+	}
+	return c.Delegate.UpsertCustomer(ctx, customer)
 }
 
 // UpdateCustomer implements [DbCustomerStoreInterface].
