@@ -162,6 +162,6 @@
       "terminal.findMatchHighlightBackground": "#ff00fbbb", // Inactive matches background (green)
       "terminal.overviewRuler.findMatchForeground": "#FF0000" // Overview ruler color (red)
     },
-    "conventionalCommits.scopes": ["api", "store", "service", "database"]
+    "conventionalCommits.scopes": ["api", "store", "service", "database", "ui"]
   }
 }
