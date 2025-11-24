@@ -157,6 +157,17 @@ func (s *DbTeamMemberStore) FindTeamMember(ctx context.Context, filter *TeamMemb
 			Page:    0,
 			PerPage: 1,
 		}
+	} else {
+		filter = &TeamMemberFilter{
+			PaginatedInput: PaginatedInput{
+				Page:    0,
+				PerPage: 1,
+			},
+			SortParams: SortParams{
+				SortBy:    "updated_at",
+				SortOrder: "desc",
+			},
+		}
 	}
 	result, err := s.FindTeamMembers(ctx, filter)
 	if err != nil {
