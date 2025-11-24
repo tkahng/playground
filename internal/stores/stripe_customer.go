@@ -191,8 +191,22 @@ func (s *DbCustomerStore) CreateCustomer(ctx context.Context, customer *models.S
 
 // FindCustomer implements PaymentStore.
 func (s *DbCustomerStore) FindCustomer(ctx context.Context, filter *StripeCustomerFilter) (*models.StripeCustomer, error) {
-	if filter == nil {
-		return nil, nil
+	if filter != nil {
+		filter.PaginatedInput = PaginatedInput{
+			Page:    0,
+			PerPage: 1,
+		}
+	} else {
+		filter = &StripeCustomerFilter{
+			PaginatedInput: PaginatedInput{
+				Page:    0,
+				PerPage: 1,
+			},
+			SortParams: SortParams{
+				SortBy:    "created_at",
+				SortOrder: "desc",
+			},
+		}
 	}
 	where := s.filter(filter)
 	data, err := repository.StripeCustomer.GetOne(
