@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
 )
@@ -63,4 +64,30 @@ func Exec(ctx context.Context, db Dbx, query string, args ...any) (int64, error)
 
 type CountOutput struct {
 	Count int64
+}
+
+func PgxQueryRowsToStruct[T any](ctx context.Context, db Dbx, query QueryBuilder) ([]*T, error) {
+	ctxDbx := GetContextOrDefaultDbx(ctx, db)
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return nil, err
+	}
+	r, err := ctxDbx.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(r, pgx.RowToAddrOfStructByNameLax[T])
+}
+func PgxQuerySingleScalar[T comparable](ctx context.Context, db Dbx, query QueryBuilder) (T, error) {
+	ctxDbx := GetContextOrDefaultDbx(ctx, db)
+	var zero T
+	sql, args, err := query.ToSql()
+	if err != nil {
+		return zero, err
+	}
+	r, err := ctxDbx.Query(ctx, sql, args...)
+	if err != nil {
+		return zero, err
+	}
+	return pgx.CollectOneRow(r, pgx.RowTo[T])
 }
