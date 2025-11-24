@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"testing"
 
@@ -73,10 +74,10 @@ func WithNewTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	// panic handle
 	defer func() {
 		if recErr := recover(); recErr != nil {
-			slog.ErrorContext(ctx, "recovered from panic in transaction.", slog.Any("error", fmt.Sprint(recErr)), slog.Any("stacktrace", string(debug.Stack())))
+			slog.ErrorContext(ctx, "recovered from panic in transaction.", slog.String("error", strings.ToValidUTF8(string(debug.Stack()), "")))
 			rollBackErr := tx.Rollback(ctx)
 			if rollBackErr != nil {
-				slog.ErrorContext(ctx, "recovered from panic in transaction.", slog.Any("error", fmt.Sprint(recErr)), slog.Any("stacktrace", string(debug.Stack())))
+				slog.ErrorContext(ctx, "error during rollback.", slog.Any("error", rollBackErr))
 				t.Error(rollBackErr)
 			}
 			t.Fatal(fmt.Sprint(recErr))
