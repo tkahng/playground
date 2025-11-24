@@ -7,18 +7,9 @@ import (
 
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/types"
-)
-
-var (
-	knownRoleNames, knwonPermissionNames                     = []string{"superuser", "advanced", "pro", "basic"}, []string{"superuser", "advanced", "pro", "basic"}
-	knownRoleNamesPermissionsMap         map[string][]string = map[string][]string{
-		"basic":     {"basic"},
-		"pro":       {"basic", "pro"},
-		"advanced":  {"basic", "pro", "advanced"},
-		"superuser": {"basic", "pro", "advanced", "superuser"},
-	}
 )
 
 func TestAuth_UserAccountRbac(t *testing.T) {
@@ -33,7 +24,7 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 
 		// init rbac
 		t.Run("initiating rbac. should not panic", func(t *testing.T) {
-			CreateRolesAndPermissions(t, ctx, dbx, knownRoleNamesPermissionsMap)
+			CreateRolesAndPermissions(t, ctx, dbx, shared.KnownRoleNamesPermissionsMap)
 		})
 
 		// find all 4 roles and 4 permissions
@@ -105,7 +96,7 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 		// verify each role has the correct number and specific permissions
 		t.Run("verify each role has the correct number of permissions based on knownRoleNamesPermissionsMap", func(t *testing.T) {
 			tempRoleNameMap := *roleNameMap
-			for roleName, permissionNames := range knownRoleNamesPermissionsMap {
+			for roleName, permissionNames := range shared.KnownRoleNamesPermissionsMap {
 				if role, ok := tempRoleNameMap[roleName]; ok {
 					if len(role.Permissions) != len(permissionNames) {
 						t.Errorf("expected role %s to have %d permissions, got %d", role.Name, len(permissionNames), len(role.Permissions))
@@ -142,7 +133,7 @@ func TestAuth_UserAccountRbac(t *testing.T) {
 			}
 			// every role name should be known
 			test.TestSliceEveryFunc(t, "every role name should be known", rolesWithBasicPermission, func(role *models.Role) bool {
-				return slices.Contains(knownRoleNames, role.Name)
+				return slices.Contains(shared.KnownRoleNames, role.Name)
 			})
 			// every role name should be unique
 			test.TestSliceEveryUniqueFunc(t, "all role names should be unique", rolesWithBasicPermission, func(role *models.Role) string {
