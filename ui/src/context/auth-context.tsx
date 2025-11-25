@@ -71,15 +71,11 @@ export const AuthProvider: React.FC<{
           setUser(null);
           return Promise.reject();
         }
-        if (decoded?.exp <= Math.round(Date.now() / 1000)) {
-          const data = await refreshToken({
-            refresh_token: user.tokens.refresh_token,
-          });
-          setUser(data);
-          return data;
-        } else {
-          return user;
-        }
+        const data = await refreshToken({
+          refresh_token: user.tokens.refresh_token,
+        });
+        setUser(data);
+        return data;
       }
     } catch (error) {
       console.error("Error refreshing token:", error);
