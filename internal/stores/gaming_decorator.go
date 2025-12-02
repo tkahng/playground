@@ -27,7 +27,68 @@ type DbGamingStoreDecorator struct {
 	UpdateRpsGameFunc            func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
 	FindRpsGameFunc              func(ctx context.Context, filter *RpsGameFilter) (*models.RpsGame, error)
 	FindRpsGamesFunc             func(ctx context.Context, filter *RpsGameFilter) ([]*models.RpsGame, error)
+	CountRpsGamesFunc            func(ctx context.Context, filter *RpsGameFilter) (int64, error)
+	CountRpsParticipantsFunc     func(ctx context.Context, filter *RpsParticipantFilter) (int64, error)
+	CreateRpsParticipantFunc     func(ctx context.Context, participant *models.RpsParticipant) (*models.RpsParticipant, error)
+	FindRpsParticipantFunc       func(ctx context.Context, filter *RpsParticipantFilter) (*models.RpsParticipant, error)
+	FindRpsParticipantsFunc      func(ctx context.Context, filter *RpsParticipantFilter) ([]*models.RpsParticipant, error)
+	UpdateRpsParticipantFunc     func(ctx context.Context, participant *models.RpsParticipant) (*models.RpsParticipant, error)
 	WithTxFunc                   func(db database.Dbx) *DBGamingStore
+}
+
+// CountRpsParticipants implements [GamingStore].
+func (s *DbGamingStoreDecorator) CountRpsParticipants(ctx context.Context, filter *RpsParticipantFilter) (int64, error) {
+	if s.CountRpsParticipantsFunc != nil {
+		return s.CountRpsParticipantsFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return 0, fmt.Errorf("Gaming store decorator CountRpsParticipants %w", ErrDelegateNil)
+	}
+	return s.Delegate.CountRpsParticipants(ctx, filter)
+}
+
+// CreateRpsParticipant implements [GamingStore].
+func (s *DbGamingStoreDecorator) CreateRpsParticipant(ctx context.Context, participant *models.RpsParticipant) (*models.RpsParticipant, error) {
+	if s.CreateRpsParticipantFunc != nil {
+		return s.CreateRpsParticipantFunc(ctx, participant)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator CreateRpsParticipant %w", ErrDelegateNil)
+	}
+	return s.Delegate.CreateRpsParticipant(ctx, participant)
+}
+
+// FindRpsParticipant implements [GamingStore].
+func (s *DbGamingStoreDecorator) FindRpsParticipant(ctx context.Context, filter *RpsParticipantFilter) (*models.RpsParticipant, error) {
+	if s.FindRpsParticipantFunc != nil {
+		return s.FindRpsParticipantFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator FindRpsParticipant %w", ErrDelegateNil)
+	}
+	return s.Delegate.FindRpsParticipant(ctx, filter)
+}
+
+// FindRpsParticipants implements [GamingStore].
+func (s *DbGamingStoreDecorator) FindRpsParticipants(ctx context.Context, filter *RpsParticipantFilter) ([]*models.RpsParticipant, error) {
+	if s.FindRpsParticipantsFunc != nil {
+		return s.FindRpsParticipantsFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator FindRpsParticipants %w", ErrDelegateNil)
+	}
+	return s.Delegate.FindRpsParticipants(ctx, filter)
+}
+
+// UpdateRpsParticipant implements [GamingStore].
+func (s *DbGamingStoreDecorator) UpdateRpsParticipant(ctx context.Context, participant *models.RpsParticipant) (*models.RpsParticipant, error) {
+	if s.UpdateRpsParticipantFunc != nil {
+		return s.UpdateRpsParticipantFunc(ctx, participant)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator UpdateRpsParticipant %w", ErrDelegateNil)
+	}
+	return s.Delegate.UpdateRpsParticipant(ctx, participant)
 }
 
 // FindRpsGame implements [GamingStore].
