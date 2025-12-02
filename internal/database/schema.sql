@@ -1,7 +1,7 @@
-\restrict DdGXYZkZCIBgwXAeaofQXrBxWqOl0EQbfHS7JeCppIbcd2eScxaQGAOgnoZ1QUY
+\restrict FBJ0sqX78rXUVaWnC9Kd9ifAa7YFpSk5VLvn1XGTvsglbW3d2S8J0ohIJFnRBt9
 
 -- Dumped from database version 18.0 (Debian 18.0-1.pgdg13+3)
--- Dumped by pg_dump version 18.0
+-- Dumped by pg_dump version 18.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -34,6 +34,13 @@ CREATE SCHEMA auth;
 --
 
 CREATE SCHEMA billing;
+
+
+--
+-- Name: gaming; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA gaming;
 
 
 --
@@ -547,6 +554,76 @@ CREATE TABLE billing.stripe_webhook_events (
 
 
 --
+-- Name: friendships; Type: TABLE; Schema: gaming; Owner: -
+--
+
+CREATE TABLE gaming.friendships (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    requesting_player_id uuid NOT NULL,
+    invited_player_id uuid NOT NULL,
+    status text DEFAULT 'pending'::text NOT NULL,
+    responded_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    CONSTRAINT friendships_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text])))
+);
+
+
+--
+-- Name: players; Type: TABLE; Schema: gaming; Owner: -
+--
+
+CREATE TABLE gaming.players (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    email text NOT NULL,
+    display_name text,
+    user_id uuid,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL
+);
+
+
+--
+-- Name: rps_games; Type: TABLE; Schema: gaming; Owner: -
+--
+
+CREATE TABLE gaming.rps_games (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    completed_at timestamp with time zone,
+    expires_at timestamp with time zone NOT NULL,
+    status text DEFAULT 'pending'::text NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    CONSTRAINT rps_games_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'cancelled'::text, 'completed'::text])))
+);
+
+
+--
+-- Name: rps_participants; Type: TABLE; Schema: gaming; Owner: -
+--
+
+CREATE TABLE gaming.rps_participants (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    game_id uuid NOT NULL,
+    player_id uuid NOT NULL,
+    type text DEFAULT 'host'::text NOT NULL,
+    status text DEFAULT 'pending'::text NOT NULL,
+    move text DEFAULT 'rock'::text NOT NULL,
+    result text DEFAULT 'tie'::text NOT NULL,
+    responded_at timestamp with time zone,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    CONSTRAINT rps_participants_move_check CHECK ((move = ANY (ARRAY['rock'::text, 'paper'::text, 'scissors'::text]))),
+    CONSTRAINT rps_participants_result_check CHECK ((result = ANY (ARRAY['tie'::text, 'win'::text, 'lose'::text]))),
+    CONSTRAINT rps_participants_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'declined'::text, 'completed'::text]))),
+    CONSTRAINT rps_participants_type_check CHECK ((type = ANY (ARRAY['host'::text, 'guest'::text])))
+);
+
+
+--
 -- Name: notifications; Type: TABLE; Schema: messaging; Owner: -
 --
 
@@ -928,6 +1005,62 @@ ALTER TABLE ONLY billing.stripe_webhook_events
 
 
 --
+-- Name: friendships friendships_pkey; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.friendships
+    ADD CONSTRAINT friendships_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: players players_email_key; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.players
+    ADD CONSTRAINT players_email_key UNIQUE (email);
+
+
+--
+-- Name: players players_pkey; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.players
+    ADD CONSTRAINT players_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: rps_games rps_games_pkey; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_games
+    ADD CONSTRAINT rps_games_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: rps_participants rps_participants_game_id_player_id_unique; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_participants
+    ADD CONSTRAINT rps_participants_game_id_player_id_unique UNIQUE (game_id, player_id);
+
+
+--
+-- Name: rps_participants rps_participants_game_id_type_unique; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_participants
+    ADD CONSTRAINT rps_participants_game_id_type_unique UNIQUE (game_id, type);
+
+
+--
+-- Name: rps_participants rps_participants_pkey; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_participants
+    ADD CONSTRAINT rps_participants_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: notifications notifications_pkey; Type: CONSTRAINT; Schema: messaging; Owner: -
 --
 
@@ -1082,6 +1215,111 @@ CREATE UNIQUE INDEX uniq_jobs_active_key ON app.jobs USING btree (unique_key) WH
 
 
 --
+-- Name: idx_gaming_friendships_invited_player_id; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_friendships_invited_player_id ON gaming.friendships USING btree (invited_player_id);
+
+
+--
+-- Name: idx_gaming_friendships_requesting_player_id; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_friendships_requesting_player_id ON gaming.friendships USING btree (requesting_player_id);
+
+
+--
+-- Name: idx_gaming_friendships_responded_at; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_friendships_responded_at ON gaming.friendships USING btree (responded_at);
+
+
+--
+-- Name: idx_gaming_friendships_status; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_friendships_status ON gaming.friendships USING btree (status);
+
+
+--
+-- Name: idx_gaming_friendships_status_invited_player_id_requesting_play; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_friendships_status_invited_player_id_requesting_play ON gaming.friendships USING btree (status, invited_player_id, requesting_player_id);
+
+
+--
+-- Name: idx_gaming_players_display_name; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_players_display_name ON gaming.players USING btree (display_name);
+
+
+--
+-- Name: idx_gaming_players_email; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_players_email ON gaming.players USING btree (email);
+
+
+--
+-- Name: idx_gaming_players_metadata_gin; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_players_metadata_gin ON gaming.players USING gin (metadata);
+
+
+--
+-- Name: idx_gaming_players_user_id; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_players_user_id ON gaming.players USING btree (user_id);
+
+
+--
+-- Name: idx_gaming_rps_games_completed_at; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_games_completed_at ON gaming.rps_games USING btree (completed_at);
+
+
+--
+-- Name: idx_gaming_rps_games_expires_at; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_games_expires_at ON gaming.rps_games USING btree (expires_at);
+
+
+--
+-- Name: idx_gaming_rps_games_metadata_gin; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_games_metadata_gin ON gaming.rps_games USING gin (metadata);
+
+
+--
+-- Name: idx_gaming_rps_games_status; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_games_status ON gaming.rps_games USING btree (status);
+
+
+--
+-- Name: idx_gaming_rps_participants_game_id; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_participants_game_id ON gaming.rps_participants USING btree (game_id);
+
+
+--
+-- Name: idx_gaming_rps_participants_player_id; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_participants_player_id ON gaming.rps_participants USING btree (player_id);
+
+
+--
 -- Name: permissions handle_auth_permissions_updated_at; Type: TRIGGER; Schema: auth; Owner: -
 --
 
@@ -1163,6 +1401,34 @@ CREATE TRIGGER handle_stripe_subscriptions_updated_at BEFORE UPDATE ON billing.s
 --
 
 CREATE TRIGGER handle_stripe_webhook_events_updated_at BEFORE UPDATE ON billing.stripe_webhook_events FOR EACH ROW EXECUTE FUNCTION utility.set_current_timestamp_updated_at();
+
+
+--
+-- Name: friendships handle_gaming_friendships_updated_at; Type: TRIGGER; Schema: gaming; Owner: -
+--
+
+CREATE TRIGGER handle_gaming_friendships_updated_at BEFORE UPDATE ON gaming.friendships FOR EACH ROW EXECUTE FUNCTION utility.set_current_timestamp_updated_at();
+
+
+--
+-- Name: players handle_gaming_players_updated_at; Type: TRIGGER; Schema: gaming; Owner: -
+--
+
+CREATE TRIGGER handle_gaming_players_updated_at BEFORE UPDATE ON gaming.players FOR EACH ROW EXECUTE FUNCTION utility.set_current_timestamp_updated_at();
+
+
+--
+-- Name: rps_games handle_gaming_rps_games_updated_at; Type: TRIGGER; Schema: gaming; Owner: -
+--
+
+CREATE TRIGGER handle_gaming_rps_games_updated_at BEFORE UPDATE ON gaming.rps_games FOR EACH ROW EXECUTE FUNCTION utility.set_current_timestamp_updated_at();
+
+
+--
+-- Name: rps_participants handle_gaming_rps_participants_updated_at; Type: TRIGGER; Schema: gaming; Owner: -
+--
+
+CREATE TRIGGER handle_gaming_rps_participants_updated_at BEFORE UPDATE ON gaming.rps_participants FOR EACH ROW EXECUTE FUNCTION utility.set_current_timestamp_updated_at();
 
 
 --
@@ -1367,6 +1633,46 @@ ALTER TABLE ONLY billing.stripe_subscriptions
 
 
 --
+-- Name: friendships friendships_invited_player_id_fkey; Type: FK CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.friendships
+    ADD CONSTRAINT friendships_invited_player_id_fkey FOREIGN KEY (invited_player_id) REFERENCES gaming.players(id);
+
+
+--
+-- Name: friendships friendships_requesting_player_id_fkey; Type: FK CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.friendships
+    ADD CONSTRAINT friendships_requesting_player_id_fkey FOREIGN KEY (requesting_player_id) REFERENCES gaming.players(id);
+
+
+--
+-- Name: players players_user_id_fkey; Type: FK CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.players
+    ADD CONSTRAINT players_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: rps_participants rps_participants_game_id_fkey; Type: FK CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_participants
+    ADD CONSTRAINT rps_participants_game_id_fkey FOREIGN KEY (game_id) REFERENCES gaming.rps_games(id);
+
+
+--
+-- Name: rps_participants rps_participants_player_id_fkey; Type: FK CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_participants
+    ADD CONSTRAINT rps_participants_player_id_fkey FOREIGN KEY (player_id) REFERENCES gaming.players(id);
+
+
+--
 -- Name: notifications fk_notifications_team; Type: FK CONSTRAINT; Schema: messaging; Owner: -
 --
 
@@ -1522,7 +1828,7 @@ ALTER TABLE ONLY task.tasks
 -- PostgreSQL database dump complete
 --
 
-\unrestrict DdGXYZkZCIBgwXAeaofQXrBxWqOl0EQbfHS7JeCppIbcd2eScxaQGAOgnoZ1QUY
+\unrestrict FBJ0sqX78rXUVaWnC9Kd9ifAa7YFpSk5VLvn1XGTvsglbW3d2S8J0ohIJFnRBt9
 
 
 --
@@ -1551,4 +1857,7 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20250505071914'),
     ('20250523035749'),
     ('20250717035204'),
-    ('20250717035205');
+    ('20250717035205'),
+    ('20251124084842'),
+    ('20251124084843'),
+    ('20251124090932');
