@@ -2,6 +2,7 @@ package stores
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"slices"
 	"strings"
@@ -143,4 +144,20 @@ func (s *DBGamingStore) CountRpsParticipants(ctx context.Context, filter *RpsPar
 	q := squirrel.Select("COUNT(*)").From("gaming.rps_participants")
 	q = rpsParticipantsFilterSelect(q, filter)
 	return database.ExecWithBuilder(ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+}
+
+// CreateParticipant
+func (s *DBGamingStore) CreateRpsParticipant(ctx context.Context, rpsParticipant *models.RpsParticipant) (*models.RpsParticipant, error) {
+	if rpsParticipant == nil {
+		return nil, errors.New("rpsParticipant is nil")
+	}
+	if rpsParticipant.Metadata == nil {
+		rpsParticipant.Metadata = []byte("{}")
+	}
+	return repository.RpsParticipant.PostOne(ctx, s.db, rpsParticipant)
+}
+
+// UpdateParticipant
+func (s *DBGamingStore) UpdateRpsParticipant(ctx context.Context, rpsParticipant *models.RpsParticipant) (*models.RpsParticipant, error) {
+	return repository.RpsParticipant.PutOne(ctx, s.db, rpsParticipant)
 }
