@@ -27,7 +27,7 @@ type RpsGameStore interface {
 type RpsGameFilter struct {
 	repository.PaginatedInput
 	repository.SortParams
-	IDs            []uuid.UUID                    `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Ids            []uuid.UUID                    `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	Statuses       []models.RpsGameStatus         `query:"statuses,omitempty" required:"false" minimum:"1" maximum:"100" enum:"pending,cancelled,completed"`
 	CompletedAt    types.OptionalParam[time.Time] `query:"completed_at,omitempty" required:"false"`
 	ExpiresAt      types.OptionalParam[time.Time] `query:"expires_at,omitempty" required:"false"`
@@ -38,17 +38,17 @@ func filterRpsGames(qs squirrel.SelectBuilder, filter *RpsGameFilter) squirrel.S
 	if filter == nil {
 		return qs
 	}
-	if len(filter.IDs) > 0 {
-		qs = qs.Where(squirrel.Eq{"g.id": filter.IDs})
+	if len(filter.Ids) > 0 {
+		qs = qs.Where(squirrel.Eq{"gaming.rps_games.id": filter.Ids})
 	}
 	if len(filter.Statuses) > 0 {
-		qs = qs.Where(squirrel.Eq{"g.status": filter.Statuses})
+		qs = qs.Where(squirrel.Eq{"gameing.rps_games.status": filter.Statuses})
 	}
 	if filter.CompletedAt.IsSet {
-		qs = qs.Where(squirrel.Eq{"g.completed_at": filter.CompletedAt.Value})
+		qs = qs.Where(squirrel.Eq{"gaming.rps_games.completed_at": filter.CompletedAt.Value})
 	}
 	if filter.ExpiresAt.IsSet {
-		qs = qs.Where(squirrel.Eq{"g.expires_at": filter.ExpiresAt.Value})
+		qs = qs.Where(squirrel.Eq{"gaming.rps_games.expires_at": filter.ExpiresAt.Value})
 	}
 	if len(filter.ParticipantIds) > 0 {
 		//  WHERE g.id IN (
@@ -58,9 +58,9 @@ func filterRpsGames(qs squirrel.SelectBuilder, filter *RpsGameFilter) squirrel.S
 		// );
 
 		qs = qs.Where(`
-			g.id IN (
+			gaming.rps_games.id IN (
 				SELECT rp.gameid
-				FROM gaming.rpsparticipants rp
+				FROM gaming.rps_participants rp
 				WHERE rp.playerid = ANY(?)  -- $1 = array of UUIDs
 			)
 		`, filter.ParticipantIds)
@@ -88,7 +88,7 @@ func rpsgamesSortSelect(qs squirrel.SelectBuilder, filter Sortable) squirrel.Sel
 }
 
 func (s *DBGamingStore) FindRpsGame(ctx context.Context, filter *RpsGameFilter) (*models.RpsGame, error) {
-	q := squirrel.Select(repository.RpsGameBuilder.ColumnNames()...).From("gaming.rpsgames")
+	q := squirrel.Select(repository.RpsGameBuilder.ColumnNames()...).From("gaming.rps_games")
 	q = filterRpsGames(q, filter)
 	q = rpsgamesSortSelect(q, filter)
 
@@ -102,7 +102,7 @@ func (s *DBGamingStore) FindRpsGame(ctx context.Context, filter *RpsGameFilter) 
 	return nil, nil
 }
 func (s *DBGamingStore) FindRpsGames(ctx context.Context, filter *RpsGameFilter) ([]*models.RpsGame, error) {
-	q := squirrel.Select(repository.RpsGameBuilder.ColumnNames()...).From("gaming.rpsgames")
+	q := squirrel.Select(repository.RpsGameBuilder.ColumnNames()...).From("gaming.rps_games")
 	q = filterRpsGames(q, filter)
 	q = rpsgamesSortSelect(q, filter)
 	q = queryPagination(q, filter)
@@ -148,6 +148,12 @@ func (s *DBGamingStore) CreateGameWithRequest(ctx context.Context, input *GameCr
 
 // CreateRpsGame implements [GamingStore].
 func (s *DBGamingStore) CreateRpsGame(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error) {
+	if game == nil {
+		return nil, errors.New("game is nil")
+	}
+	if game.Metadata == nil {
+		game.Metadata = []byte("{}")
+	}
 	return repository.RpsGame.PostOne(ctx, s.db, game)
 }
 
