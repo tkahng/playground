@@ -2,7 +2,7 @@ package test
 
 import (
 	"fmt"
-	"math/rand"
+	"math/rand/v2"
 	"reflect"
 	"slices"
 	"testing"
@@ -17,19 +17,15 @@ type RandomSelector[T any] interface {
 
 type RandomeSelectorImpl[T any] struct {
 	options []T
-	r       *rand.Rand
 }
 
 func (r *RandomeSelectorImpl[T]) Select() T {
-	return r.options[r.r.Intn(len(r.options))]
+	return r.options[rand.IntN(len(r.options))]
 }
 
 func NewRandomeSelector[T any](options ...T) RandomSelector[T] {
-	src := rand.NewSource(time.Now().UnixNano())
-	r := rand.New(src)
 	return &RandomeSelectorImpl[T]{
 		options: options,
-		r:       r,
 	}
 }
 
@@ -158,4 +154,23 @@ func MustUnMarshal[T any](t testing.TB, data []byte) T {
 		t.Fatal(err)
 	}
 	return res
+}
+
+func RandomTimeBetween(start, end time.Time) time.Time {
+	if !start.Before(end) {
+		panic("start time must be before end time")
+	}
+
+	minUnix := start.Unix()
+	maxUnix := end.Unix()
+
+	// Generate a random int64 within the range [minUnix, maxUnix)
+	// rand.Int64N(n) generates a random int64 in the range [0, n)
+	randomUnixDelta := rand.Int64N(maxUnix - minUnix)
+	randomUnix := minUnix + randomUnixDelta
+
+	// Convert the random Unix timestamp back to a time.Time struct
+	randomTime := time.Unix(randomUnix, 0)
+
+	return randomTime
 }
