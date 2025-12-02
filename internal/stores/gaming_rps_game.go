@@ -85,13 +85,9 @@ func filterRpsGames(qs squirrel.SelectBuilder, filter *RpsGameFilter) squirrel.S
 	}
 	if filter.CompletedAtOp != "" {
 		qs = toSquirrelOp2(qs, filter.CompletedAtOp, "gaming.rps_games.completed_at", filter.CompletedAt.Value)
-		// qs = qs.Where(toSquirrelOp(filter.CompletedAtOp, "gaming.rps_games.completed_at", filter.CompletedAt.Value))
-		// qs = qs.Where(squirrel.Eq{"gaming.rps_games.completed_at": filter.CompletedAt.Value})
 	}
 	if filter.ExpiresAtOp != "" {
 		qs = toSquirrelOp2(qs, filter.ExpiresAtOp, "gaming.rps_games.expires_at", filter.ExpiresAt.Value)
-		// qs = qs.Where(toSquirrelOp(filter.ExpiresAtOp, "gaming.rps_games.expires_at", filter.ExpiresAt.Value))
-		// qs = qs.Where(squirrel.Eq{"gaming.rps_games.expires_at": filter.ExpiresAt.Value})
 	}
 	if len(filter.ParticipantIds) > 0 {
 		//  WHERE g.id IN (
