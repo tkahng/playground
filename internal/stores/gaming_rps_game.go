@@ -42,7 +42,7 @@ func filterRpsGames(qs squirrel.SelectBuilder, filter *RpsGameFilter) squirrel.S
 		qs = qs.Where(squirrel.Eq{"gaming.rps_games.id": filter.Ids})
 	}
 	if len(filter.Statuses) > 0 {
-		qs = qs.Where(squirrel.Eq{"gameing.rps_games.status": filter.Statuses})
+		qs = qs.Where(squirrel.Eq{"gaming.rps_games.status": filter.Statuses})
 	}
 	if filter.CompletedAt.IsSet {
 		qs = qs.Where(squirrel.Eq{"gaming.rps_games.completed_at": filter.CompletedAt.Value})
