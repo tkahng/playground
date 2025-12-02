@@ -3,6 +3,7 @@ package stores
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"slices"
 	"strings"
@@ -24,14 +25,52 @@ type RpsGameStore interface {
 	CreateGameWithRequest(ctx context.Context, input *GameCreateInput) (*models.RpsGame, error)
 }
 
+type FilterOperator string
+
+const (
+	FilterOperatorEq      FilterOperator = "eq"
+	FilterOperatorGt      FilterOperator = "gt"
+	FilterOperatorGte     FilterOperator = "gte"
+	FilterOperatorLt      FilterOperator = "lt"
+	FilterOperatorLte     FilterOperator = "lte"
+	FilterOperatorNeq     FilterOperator = "neq"
+	FilterOperatorNotNull FilterOperator = "not_null"
+	FilterOperatorNull    FilterOperator = "null"
+)
+
 type RpsGameFilter struct {
 	repository.PaginatedInput
 	repository.SortParams
 	Ids            []uuid.UUID                    `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	Statuses       []models.RpsGameStatus         `query:"statuses,omitempty" required:"false" minimum:"1" maximum:"100" enum:"pending,cancelled,completed"`
 	CompletedAt    types.OptionalParam[time.Time] `query:"completed_at,omitempty" required:"false"`
+	CompletedAtOp  FilterOperator                 `query:"completed_at_op,omitempty" required:"false" enum:"eq,gt,gte,lt,lte"`
 	ExpiresAt      types.OptionalParam[time.Time] `query:"expires_at,omitempty" required:"false"`
+	ExpiresAtOp    FilterOperator                 `query:"expires_at_op,omitempty" required:"false" enum:"eq,gt,gte,lt,lte"`
 	ParticipantIds []uuid.UUID                    `query:"participant_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+}
+
+func toSquirrelOp2(sq squirrel.SelectBuilder, op FilterOperator, key string, value any) squirrel.SelectBuilder {
+	switch op {
+	case FilterOperatorEq:
+		return sq.Where(fmt.Sprintf("%s = ?", key), value)
+	case FilterOperatorGt:
+		return sq.Where(fmt.Sprintf("%s > ?", key), value)
+	case FilterOperatorGte:
+		return sq.Where(fmt.Sprintf("%s >= ?", key), value)
+	case FilterOperatorLt:
+		return sq.Where(fmt.Sprintf("%s < ?", key), value)
+	case FilterOperatorLte:
+		return sq.Where(fmt.Sprintf("%s <= ?", key), value)
+	case FilterOperatorNeq:
+		return sq.Where(fmt.Sprintf("%s != ?", key), value)
+	case FilterOperatorNotNull:
+		return sq.Where(fmt.Sprintf("%s IS NOT NULL", key))
+	case FilterOperatorNull:
+		return sq.Where(fmt.Sprintf("%s IS NULL", key))
+	default:
+		return sq
+	}
 }
 
 func filterRpsGames(qs squirrel.SelectBuilder, filter *RpsGameFilter) squirrel.SelectBuilder {
@@ -44,11 +83,15 @@ func filterRpsGames(qs squirrel.SelectBuilder, filter *RpsGameFilter) squirrel.S
 	if len(filter.Statuses) > 0 {
 		qs = qs.Where(squirrel.Eq{"gaming.rps_games.status": filter.Statuses})
 	}
-	if filter.CompletedAt.IsSet {
-		qs = qs.Where(squirrel.Eq{"gaming.rps_games.completed_at": filter.CompletedAt.Value})
+	if filter.CompletedAtOp != "" {
+		qs = toSquirrelOp2(qs, filter.CompletedAtOp, "gaming.rps_games.completed_at", filter.CompletedAt.Value)
+		// qs = qs.Where(toSquirrelOp(filter.CompletedAtOp, "gaming.rps_games.completed_at", filter.CompletedAt.Value))
+		// qs = qs.Where(squirrel.Eq{"gaming.rps_games.completed_at": filter.CompletedAt.Value})
 	}
-	if filter.ExpiresAt.IsSet {
-		qs = qs.Where(squirrel.Eq{"gaming.rps_games.expires_at": filter.ExpiresAt.Value})
+	if filter.ExpiresAtOp != "" {
+		qs = toSquirrelOp2(qs, filter.ExpiresAtOp, "gaming.rps_games.expires_at", filter.ExpiresAt.Value)
+		// qs = qs.Where(toSquirrelOp(filter.ExpiresAtOp, "gaming.rps_games.expires_at", filter.ExpiresAt.Value))
+		// qs = qs.Where(squirrel.Eq{"gaming.rps_games.expires_at": filter.ExpiresAt.Value})
 	}
 	if len(filter.ParticipantIds) > 0 {
 		//  WHERE g.id IN (
