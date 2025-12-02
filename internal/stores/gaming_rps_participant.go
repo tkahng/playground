@@ -17,9 +17,9 @@ import (
 )
 
 type RpsParticipantStore interface {
-	FindRpsParticipant(ctx context.Context, filter RpsParticipantFilter) (*models.RpsParticipant, error)
-	FindRpsParticipants(ctx context.Context, filter RpsParticipantFilter) ([]*models.RpsParticipant, error)
-	CountRpsParticipants(ctx context.Context, filter RpsParticipantFilter) (int64, error)
+	FindRpsParticipant(ctx context.Context, filter *RpsParticipantFilter) (*models.RpsParticipant, error)
+	FindRpsParticipants(ctx context.Context, filter *RpsParticipantFilter) ([]*models.RpsParticipant, error)
+	CountRpsParticipants(ctx context.Context, filter *RpsParticipantFilter) (int64, error)
 	CreateRpsParticipant(ctx context.Context, participant *models.RpsParticipant) (*models.RpsParticipant, error)
 	UpdateRpsParticipant(ctx context.Context, participant *models.RpsParticipant) (*models.RpsParticipant, error)
 }
