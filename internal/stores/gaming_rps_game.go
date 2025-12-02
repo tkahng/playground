@@ -17,6 +17,8 @@ import (
 )
 
 type RpsGameStore interface {
+	FindRpsGames(ctx context.Context, filter *RpsGameFilter) ([]*models.RpsGame, error)
+	FindRpsGame(ctx context.Context, filter *RpsGameFilter) (*models.RpsGame, error)
 	CreateRpsGame(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
 	UpdateRpsGame(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
 	CreateGameWithRequest(ctx context.Context, input *GameCreateInput) (*models.RpsGame, error)
@@ -83,6 +85,21 @@ func rpsgamesSortSelect(qs squirrel.SelectBuilder, filter Sortable) squirrel.Sel
 		slog.Warn("sort by field not found in repository columns", "sortBy", sortBy, "sortOrder", sortOrder)
 	}
 	return qs
+}
+
+func (s *DBGamingStore) FindRpsGame(ctx context.Context, filter *RpsGameFilter) (*models.RpsGame, error) {
+	q := squirrel.Select(repository.RpsGameBuilder.ColumnNames()...).From("gaming.rpsgames")
+	q = filterRpsGames(q, filter)
+	q = rpsgamesSortSelect(q, filter)
+
+	data, err := database.PgxQueryRowsToStruct[models.RpsGame](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	if err != nil {
+		return nil, err
+	}
+	if len(data) > 0 {
+		return data[0], nil
+	}
+	return nil, nil
 }
 func (s *DBGamingStore) FindRpsGames(ctx context.Context, filter *RpsGameFilter) ([]*models.RpsGame, error) {
 	q := squirrel.Select(repository.RpsGameBuilder.ColumnNames()...).From("gaming.rpsgames")
