@@ -3,6 +3,7 @@ package stores
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func TestDBGamingStore_CreateRpsGame(t *testing.T) {
@@ -87,6 +89,118 @@ func TestDBGamingStore_UpdateRpsGame(t *testing.T) {
 			if string(updatedGame.Metadata) != string(createdGame.Metadata) {
 				t.Errorf("UpdateRpsGame.Metadata() = %v, want metadata %v", updatedGame.Metadata, createdGame.Metadata)
 			}
+		}
+	})
+}
+
+func TestDBGamingStore_FindRpsGame_ByIds(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		gameStore := NewDBGamingStore(db)
+		games := []*models.RpsGame{
+			{
+				Status:      models.RpsGameStatusCancelled,
+				ExpiresAt:   time.Now().UTC().Add(time.Hour * 1).UTC(),
+				CompletedAt: types.Pointer(time.Now().UTC().Add(time.Hour * 1).UTC()),
+			},
+			{
+				Status:      models.RpsGameStatusCompleted,
+				ExpiresAt:   time.Now().UTC().Add(time.Hour * 2).UTC(),
+				CompletedAt: nil,
+			},
+			{
+				Status:      models.RpsGameStatusPending,
+				ExpiresAt:   time.Now().UTC().Add(time.Hour * 1).UTC(),
+				CompletedAt: types.Pointer(time.Now().UTC().Add(time.Hour * 2).UTC()),
+			},
+		}
+		createdGames := []*models.RpsGame{}
+		for _, game := range games {
+			createdGame, err := gameStore.CreateRpsGame(ctx, game)
+			if err != nil {
+				t.Fatalf("CreateRpsGame error: %v", err)
+			}
+			createdGames = append(createdGames, createdGame)
+		}
+
+		testCases := []struct {
+			desc      string
+			filter    *RpsGameFilter
+			afterFunc func(t *testing.T, res []*models.RpsGame)
+		}{
+			{
+				desc: "1,2",
+				filter: &RpsGameFilter{
+					Ids: []uuid.UUID{
+						createdGames[0].ID,
+						createdGames[1].ID,
+					},
+				},
+				afterFunc: func(t *testing.T, result []*models.RpsGame) {
+					if len(result) != 2 {
+						t.Errorf("FindRpsGames() = %v, want %v", len(result), 2)
+					}
+					ids := []uuid.UUID{
+						createdGames[0].ID,
+						createdGames[1].ID,
+					}
+					for _, game := range result {
+						if !slices.Contains(ids, game.ID) {
+							t.Errorf("FindRpsGames() = %v, want %v", game.ID, ids)
+						}
+					}
+				},
+			},
+			{
+				desc: "1",
+				filter: &RpsGameFilter{
+					Ids: []uuid.UUID{
+						createdGames[0].ID,
+					},
+				},
+				afterFunc: func(t *testing.T, result []*models.RpsGame) {
+					if len(result) != 1 {
+						t.Errorf("FindRpsGames() = %v, want %v", len(result), 1)
+					}
+					ids := []uuid.UUID{
+						createdGames[0].ID,
+					}
+					for _, game := range result {
+						if !slices.Contains(ids, game.ID) {
+							t.Errorf("FindRpsGames() = %v, want %v", game.ID, ids)
+						}
+					}
+				},
+			},
+			{
+				desc: "3",
+				filter: &RpsGameFilter{
+					Ids: []uuid.UUID{
+						createdGames[2].ID,
+					},
+				},
+				afterFunc: func(t *testing.T, result []*models.RpsGame) {
+					if len(result) != 1 {
+						t.Errorf("FindRpsGames() = %v, want %v", len(result), 1)
+					}
+					ids := []uuid.UUID{
+						createdGames[2].ID,
+					}
+					for _, game := range result {
+						if !slices.Contains(ids, game.ID) {
+							t.Errorf("FindRpsGames() = %v, want %v", game.ID, ids)
+						}
+					}
+				},
+			},
+		}
+		for _, tC := range testCases {
+			t.Run(tC.desc, func(t *testing.T) {
+				result, err := gameStore.FindRpsGames(ctx, tC.filter)
+				if err != nil {
+					t.Fatalf("FindRpsGames error: %v", err)
+				}
+				tC.afterFunc(t, result)
+			})
 		}
 	})
 }
