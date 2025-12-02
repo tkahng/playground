@@ -8,9 +8,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func TestDBGamingStore_CreateRpsParticipant(t *testing.T) {
@@ -296,6 +298,105 @@ func TestDBGamingStore_UpdateRpsParticipant(t *testing.T) {
 			if updatedParticipant.Result != createdParticipant.Result {
 				t.Errorf("UpdateRpsParticipant.Result() = %v, want result %v", updatedParticipant.Result, createdParticipant.Result)
 			}
+		}
+	})
+}
+
+func TestDBGamingStore_FindRpsParticipant(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		now := time.Now().UTC()
+		gameStore := NewDBGamingStore(db)
+		player1, err := gameStore.CreatePlayer(ctx, &models.Player{
+			Email: "player1@gmail.com",
+		})
+		require.NoError(t, err)
+		player2, err := gameStore.CreatePlayer(ctx, &models.Player{
+			Email: "player2@gmail.com",
+		})
+		require.NoError(t, err)
+
+		games := []*models.RpsGame{
+			{
+				Status:      models.RpsGameStatusCancelled,
+				ExpiresAt:   now.Add(time.Hour * 1).UTC(),
+				CompletedAt: types.Pointer(now.Add(time.Hour * 1).UTC()),
+			},
+			{
+				Status:      models.RpsGameStatusCompleted,
+				ExpiresAt:   now.Add(time.Hour * 2).UTC(),
+				CompletedAt: nil,
+			},
+			{
+				Status:      models.RpsGameStatusPending,
+				ExpiresAt:   now.Add(time.Hour * 1).UTC(),
+				CompletedAt: types.Pointer(now.Add(time.Hour * 2).UTC()),
+			},
+		}
+		participants := []*models.RpsParticipant{}
+		createdGames := []*models.RpsGame{}
+		for _, game := range games {
+			createdGame, err := gameStore.CreateRpsGame(ctx, game)
+			if err != nil {
+				t.Fatalf("CreateRpsGame error: %v", err)
+			}
+			createdGames = append(createdGames, createdGame)
+		}
+		for _, createdGame := range createdGames {
+			ps := []*models.RpsParticipant{
+				{
+					GameID:      createdGame.ID,
+					PlayerID:    player1.ID,
+					Type:        models.RpsParticipantTypeGuest,
+					Status:      models.RpsParticipantStatusCompleted,
+					Move:        models.RpsParticipantMovePaper,
+					Result:      models.RpsParticipantResultTie,
+					RespondedAt: nil,
+				},
+				{
+					GameID:      createdGame.ID,
+					PlayerID:    player2.ID,
+					Type:        models.RpsParticipantTypeHost,
+					Status:      models.RpsParticipantStatusPending,
+					Move:        models.RpsParticipantMovePaper,
+					Result:      models.RpsParticipantResultTie,
+					RespondedAt: nil,
+				},
+			}
+			for _, p := range ps {
+				createdParticipant, err := gameStore.CreateRpsParticipant(ctx, p)
+				if err != nil {
+					t.Fatalf("CreateRpsParticipant error: %v", err)
+				}
+				participants = append(participants, createdParticipant)
+			}
+		}
+		testCases := []struct {
+			desc      string
+			filter    *RpsParticipantFilter
+			afterFunc func(t *testing.T, res []*models.RpsParticipant)
+		}{
+			{
+				desc: "by status pending",
+				filter: &RpsParticipantFilter{
+					Statuses: []models.RpsParticipantStatus{
+						models.RpsParticipantStatusPending,
+					},
+				},
+				afterFunc: func(t *testing.T, result []*models.RpsParticipant) {
+					if len(result) != 3 {
+						t.Errorf("FindRpsGames() = %v, want %v", len(result), 3)
+					}
+				},
+			},
+		}
+		for _, tC := range testCases {
+			t.Run(tC.desc, func(t *testing.T) {
+				result, err := gameStore.FindRpsParticipants(ctx, tC.filter)
+				if err != nil {
+					t.Fatalf("FindRpsGames error: %v", err)
+				}
+				tC.afterFunc(t, result)
+			})
 		}
 	})
 }
