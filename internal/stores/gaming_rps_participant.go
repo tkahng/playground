@@ -21,6 +21,7 @@ type RpsParticipantStore interface {
 	FindRpsParticipants(ctx context.Context, filter *RpsParticipantFilter) ([]*models.RpsParticipant, error)
 	CountRpsParticipants(ctx context.Context, filter *RpsParticipantFilter) (int64, error)
 	CreateRpsParticipant(ctx context.Context, participant *models.RpsParticipant) (*models.RpsParticipant, error)
+	CreateRpsParticipants(ctx context.Context, participant []*models.RpsParticipant) ([]*models.RpsParticipant, error)
 	UpdateRpsParticipant(ctx context.Context, participant *models.RpsParticipant) (*models.RpsParticipant, error)
 }
 type RpsParticipantFilter struct {
@@ -150,6 +151,19 @@ func (s *DBGamingStore) CreateRpsParticipant(ctx context.Context, rpsParticipant
 		rpsParticipant.Metadata = []byte("{}")
 	}
 	return repository.RpsParticipant.PostOne(ctx, s.db, rpsParticipant)
+}
+func (s *DBGamingStore) CreateRpsParticipants(ctx context.Context, rpsParticipants []*models.RpsParticipant) ([]*models.RpsParticipant, error) {
+	participants := []models.RpsParticipant{}
+	for _, rpsParticipant := range rpsParticipants {
+		if rpsParticipant == nil {
+			return nil, errors.New("rpsParticipant is nil")
+		}
+		if rpsParticipant.Metadata == nil {
+			rpsParticipant.Metadata = []byte("{}")
+		}
+		participants = append(participants, *rpsParticipant)
+	}
+	return repository.RpsParticipant.Post(ctx, s.db, participants)
 }
 
 // UpdateParticipant
