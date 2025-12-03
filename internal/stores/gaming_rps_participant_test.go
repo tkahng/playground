@@ -76,6 +76,83 @@ func TestDBGamingStore_CreateRpsParticipant(t *testing.T) {
 		}
 	})
 }
+func TestDBGamingStore_CreateRpsParticipants(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		gameStore := NewDBGamingStore(db)
+		rpsGameStatusSelector := test.NewRandomeSelector(models.RpsGameStatusPending, models.RpsGameStatusCancelled, models.RpsGameStatusCompleted)
+		moveSelector := test.NewRandomeSelector(models.RpsParticipantMoveRock, models.RpsParticipantMovePaper, models.RpsParticipantMoveScissors)
+		rpsParticipantStatusSelector := test.NewRandomeSelector(models.RpsParticipantStatusPending, models.RpsParticipantStatusDeclined, models.RpsParticipantStatusCompleted)
+		rpsParticipantResultSelector := test.NewRandomeSelector(models.RpsParticipantResultWin, models.RpsParticipantResultTie, models.RpsParticipantResultLose)
+		for i := range 10 {
+			game := &models.RpsGame{
+				Status:    rpsGameStatusSelector.Select(),
+				ExpiresAt: time.Now().UTC().Add(time.Hour * 1).UTC(),
+				Metadata:  fmt.Appendf(nil, `{"idx": %d}`, i),
+			}
+			createdGame, err := gameStore.CreateRpsGame(ctx, game)
+			if err != nil {
+				t.Errorf("CreateRpsGame error: %v", err)
+			}
+			player, err := gameStore.CreatePlayer(ctx, &models.Player{
+				Email: fmt.Sprintf("%d@example.com", i),
+			})
+			if err != nil {
+				t.Errorf("CreatePlayer error: %v", err)
+			}
+			player2, err := gameStore.CreatePlayer(ctx, &models.Player{
+				Email: fmt.Sprintf("%d-2@example.com", i),
+			})
+			if err != nil {
+				t.Errorf("CreatePlayer error: %v", err)
+			}
+			participant1 := &models.RpsParticipant{
+				GameID:   createdGame.ID,
+				PlayerID: player.ID,
+				Move:     moveSelector.Select(),
+				Type:     models.RpsParticipantTypeHost,
+				Status:   rpsParticipantStatusSelector.Select(),
+				Result:   rpsParticipantResultSelector.Select(),
+			}
+			participant2 := &models.RpsParticipant{
+				GameID:   createdGame.ID,
+				PlayerID: player2.ID,
+				Move:     moveSelector.Select(),
+				Type:     models.RpsParticipantTypeGuest,
+				Status:   rpsParticipantStatusSelector.Select(),
+				Result:   rpsParticipantResultSelector.Select(),
+			}
+			participants := []*models.RpsParticipant{participant1, participant2}
+			createdParticipants, err := gameStore.CreateRpsParticipants(ctx, participants)
+			if err != nil {
+				t.Errorf("CreateRpsParticipant error: %v", err)
+			}
+			for idx, createdParticipant := range createdParticipants {
+				participant := participants[idx]
+				if createdParticipant.ID == uuid.Nil {
+					t.Errorf("CreateRpsParticipant.ID() = %v, want id not nil", createdParticipant.ID)
+				}
+				if createdParticipant.GameID != participant.GameID {
+					t.Errorf("CreateRpsParticipant.GameID() = %v, want game id %v", createdParticipant.GameID, participant.GameID)
+				}
+				if createdParticipant.PlayerID != participant.PlayerID {
+					t.Errorf("CreateRpsParticipant.PlayerID() = %v, want player id %v", createdParticipant.PlayerID, participant.PlayerID)
+				}
+				if createdParticipant.Move != participant.Move {
+					t.Errorf("CreateRpsParticipant.Move() = %v, want move %v", createdParticipant.Move, participant.Move)
+				}
+				if createdParticipant.Type != participant.Type {
+					t.Errorf("CreateRpsParticipant.Type() = %v, want type %v", createdParticipant.Type, participant.Type)
+				}
+				if createdParticipant.Status != participant.Status {
+					t.Errorf("CreateRpsParticipant.Status() = %v, want status %v", createdParticipant.Status, participant.Status)
+				}
+				if createdParticipant.Result != participant.Result {
+					t.Errorf("CreateRpsParticipant.Result() = %v, want result %v", createdParticipant.Result, participant.Result)
+				}
+			}
+		}
+	})
+}
 
 func TestDBGamingStore_CreateRpsParticipant_ParticipantTypeConstraint(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
