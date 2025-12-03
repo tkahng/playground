@@ -10,20 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// CreateNewQueriesContext creates a new pool.
-func CreateNewQueriesContext(ctx context.Context, connString string) *Queries {
-	pool, err := getDbPool(ctx, connString)
-	if err != nil {
-		slog.Error("CreateNewQueriesContext: error creating pool.", "error", err)
-		panic(err.Error())
-	}
-	return &Queries{
-		db: pool,
-	}
-}
-
-func getDbPool(ctx context.Context, connString string) (*pgxpool.Pool, error) {
-	// Set up a new pool with the custom types and the config.
+func CreatePool(ctx context.Context, connString string) (*pgxpool.Pool, error) {
 	config, err := pgxpool.ParseConfig(connString)
 	if err != nil {
 		return nil, err
@@ -34,6 +21,28 @@ func getDbPool(ctx context.Context, connString string) (*pgxpool.Pool, error) {
 		return nil, err
 	}
 
+	return dbpool, nil
+}
+
+// CreateNewQueriesContext creates a new pool.
+func CreateNewQueriesContext(ctx context.Context, connString string) *Queries {
+	pool, err := CreatePoolWithCustomDataTypes(ctx, connString)
+	if err != nil {
+		slog.Error("CreateNewQueriesContext: error creating pool.", "error", err)
+		panic(err.Error())
+	}
+	return &Queries{
+		db: pool,
+	}
+}
+
+func CreatePoolWithCustomDataTypes(ctx context.Context, connString string) (*pgxpool.Pool, error) {
+	// Set up a new pool with the custom types and the config.
+	dbpool, err := CreatePool(ctx, connString)
+	if err != nil {
+		return nil, err
+	}
+	config := dbpool.Config()
 	// Collect the custom data types once, store them in memory, and register them for every future connection.
 	customTypes, err := getCustomDataTypes(ctx, dbpool)
 	if err != nil {
