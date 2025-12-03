@@ -10,6 +10,8 @@ import (
 	"sync"
 	"testing"
 
+	_ "github.com/amacneil/dbmate/v2/pkg/driver/postgres"
+
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/tools/logger"
 	"github.com/tkahng/playground/internal/tools/security"
@@ -91,6 +93,45 @@ func WithNewTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 func WithNewDatabase(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	t.Helper()
 	_ = logger.GetDefaultLogger()
+	uid := security.RandomString(16)
+	ctx := context.Background()
+	cfg := conf.ZeroEnvConfig()
+	dbCfg := cfg.Db
+	clonedDbCfg := conf.DBConfig{
+		User:     dbCfg.User,
+		Password: dbCfg.Password,
+		Host:     dbCfg.Host,
+		Port:     dbCfg.Port,
+		Db:       fmt.Sprintf("%s_%s", cfg.Db.Db, uid),
+		SSL:      dbCfg.SSL,
+	}
+	mConfig := MigratorConfig{
+		DatabaseUrl: clonedDbCfg.GetDatabaseUrl(),
+	}
+	migrator := NewMigrator(&mConfig)
+	if err := migrator.CreateAndMigrate(); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := migrator.Drop(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	dbx := CreateNewQueriesContext(ctx, clonedDbCfg.GetDatabaseUrl())
+	defer dbx.Close()
+	// panic handle
+	defer func() {
+		if recErr := recover(); recErr != nil {
+			slog.ErrorContext(ctx, "recovered from panic in transaction.", slog.String("error", strings.ToValidUTF8(string(debug.Stack()), "")))
+			t.Fatal(fmt.Sprint(recErr))
+		}
+	}()
+	fn(ctx, dbx)
+}
+
+func WithNewDatabase2(t *testing.T, fn func(ctx context.Context, db Dbx)) {
+	t.Helper()
+	_ = logger.GetDefaultLogger()
 	ctx := context.Background()
 	cfg := conf.ZeroEnvConfig()
 	defaultDbCfg := cfg.Db
@@ -114,7 +155,7 @@ func WithNewDatabase(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 		t.Fatal(err)
 	}
 	defer func() {
-		err = DeleteDatabase(ctx, pool, name)
+		err := DeleteDatabase(ctx, pool, name)
 		if err != nil {
 			t.Fatal(err)
 		}
