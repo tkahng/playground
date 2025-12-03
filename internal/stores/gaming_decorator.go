@@ -30,10 +30,22 @@ type DbGamingStoreDecorator struct {
 	CountRpsGamesFunc            func(ctx context.Context, filter *RpsGameFilter) (int64, error)
 	CountRpsParticipantsFunc     func(ctx context.Context, filter *RpsParticipantFilter) (int64, error)
 	CreateRpsParticipantFunc     func(ctx context.Context, participant *models.RpsParticipant) (*models.RpsParticipant, error)
+	CreateRpsParticipantsFunc    func(ctx context.Context, participant []*models.RpsParticipant) ([]*models.RpsParticipant, error)
 	FindRpsParticipantFunc       func(ctx context.Context, filter *RpsParticipantFilter) (*models.RpsParticipant, error)
 	FindRpsParticipantsFunc      func(ctx context.Context, filter *RpsParticipantFilter) ([]*models.RpsParticipant, error)
 	UpdateRpsParticipantFunc     func(ctx context.Context, participant *models.RpsParticipant) (*models.RpsParticipant, error)
 	WithTxFunc                   func(db database.Dbx) *DBGamingStore
+}
+
+// CreateRpsParticipants implements [GamingStore].
+func (s *DbGamingStoreDecorator) CreateRpsParticipants(ctx context.Context, participant []*models.RpsParticipant) ([]*models.RpsParticipant, error) {
+	if s.CreateRpsParticipantsFunc != nil {
+		return s.CreateRpsParticipantsFunc(ctx, participant)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator CreateRpsParticipants %w", ErrDelegateNil)
+	}
+	return s.Delegate.CreateRpsParticipants(ctx, participant)
 }
 
 // CountRpsParticipants implements [GamingStore].
