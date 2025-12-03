@@ -12,6 +12,7 @@ import (
 
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/tools/logger"
+	"github.com/tkahng/playground/internal/tools/security"
 )
 
 var (
@@ -84,4 +85,48 @@ func WithNewTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 		}
 	}()
 	fn(ctx, NewTxQueries(tx))
+}
+
+// WithNewTestTx creates a new pool connection, runs the test within that transactions, rolls back, and closes the pool.
+func WithNewDatabase(t *testing.T, fn func(ctx context.Context, db Dbx)) {
+	t.Helper()
+	_ = logger.GetDefaultLogger()
+	ctx := context.Background()
+	cfg := conf.ZeroEnvConfig()
+	defaultDbCfg := cfg.Db
+	defaultDbCfg.Db = "postgres"
+	clonedDbCfg := conf.DBConfig{
+		User:     cfg.Db.User,
+		Password: cfg.Db.Password,
+		Host:     cfg.Db.Host,
+		Port:     cfg.Db.Port,
+		Db:       fmt.Sprintf("%s_%s", cfg.Db.Db, security.RandomString(16)),
+		SSL:      cfg.Db.SSL,
+	}
+	pool, err := CreatePool(ctx, defaultDbCfg.GetDatabaseUrl())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pool.Close()
+	name := clonedDbCfg.Db
+	err = CreateDatabaseWithTemplate(ctx, pool, name, "playground_test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err = DeleteDatabase(ctx, pool, name)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	dbx := CreateNewQueriesContext(ctx, clonedDbCfg.GetDatabaseUrl())
+	defer dbx.Close()
+	// panic handle
+	defer func() {
+		if recErr := recover(); recErr != nil {
+			slog.ErrorContext(ctx, "recovered from panic in transaction.", slog.String("error", strings.ToValidUTF8(string(debug.Stack()), "")))
+			t.Fatal(fmt.Sprint(recErr))
+		}
+	}()
+	fn(ctx, dbx)
 }
