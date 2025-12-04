@@ -14,14 +14,19 @@ import (
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/tools/geoip"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/sse"
 	"github.com/tkahng/playground/internal/userreaction"
 )
 
+type GeolocationCoordinate struct {
+	Latitude  float64 `json:"latitude" required:"true"`
+	Longitude float64 `json:"longitude" required:"true"`
+}
+
 type UserReactionDto struct {
-	Type string `json:"type" required:"true"`
+	Type        string                 `json:"type" required:"true"`
+	Coordinates *GeolocationCoordinate `json:"coordinates" required:"false"`
 }
 type UserReactionInput struct {
 	Body UserReactionDto
@@ -53,21 +58,17 @@ func (api *Api) bindCreateUserReaction(aapi huma.API) {
 			if userInfo != nil {
 				reaction.UserID = &userInfo.User.ID
 			}
-			if ip != "" {
-				reaction.IpAddress = &ip
-				city, err := geoip.City(ip)
-				if err != nil {
-					slog.ErrorContext(ctx, "error getting city", slog.String("ip", ip), slog.Any("error", err))
-					return nil, err
-				}
-				if city == nil {
-					return nil, huma.Error400BadRequest("failed to get city from ip")
-				}
-				reaction.City = &city.City.Names.English
-				reaction.Country = &city.Country.ISOCode
-			} else {
-				return nil, huma.Error400BadRequest("Missing ip address")
+			var place *userreaction.Location
+			if input.Body.Coordinates != nil {
+				place = userreaction.GetLocationFromBody(ctx, input.Body.Coordinates.Longitude, input.Body.Coordinates.Latitude)
+			} else if ip != "" {
+				place = userreaction.GetLocationFromIp(ctx, ip)
 			}
+			if place != nil {
+				reaction.City = &place.City
+				reaction.Country = &place.Country
+			}
+
 			reaction.Type = input.Body.Type
 			reaction, err := api.App().Adapter().UserReaction().CreateUserReaction(ctx, reaction)
 			if err != nil {
