@@ -45,7 +45,7 @@ type (
 
 func Reverse(ctx context.Context, lon, lat float64) (*ReversePlace, error) {
 	uri := fmt.Sprintf("https://nominatim.openstreetmap.org/reverse?lat=%f&lon=%f&format=jsonv2", lat, lon)
-	req, err := http.NewRequest("GET", uri, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", uri, nil)
 	if err != nil {
 		return nil, err
 	}
