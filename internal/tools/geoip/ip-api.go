@@ -36,7 +36,9 @@ func GetLocationFromIp(ctx context.Context, ip string) (*IpLocationResponse, err
 	if err != nil {
 		return nil, err
 	}
-
+	if res.StatusCode > 300 {
+		return nil, fmt.Errorf("error getting response: %w", err)
+	}
 	defer res.Body.Close()
 
 	var response IpLocationResponse
