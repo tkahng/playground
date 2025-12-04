@@ -70,10 +70,11 @@ func (api *Api) bindCreateUserReaction(aapi huma.API) {
 			} else if ip != "" {
 				place = userreaction.GetLocationFromIp(ctx, ip)
 			}
-			if place != nil {
-				reaction.City = &place.City
-				reaction.Country = &place.Country
+			if place == nil {
+				return nil, huma.Error500InternalServerError("failed to get location")
 			}
+			reaction.City = &place.City
+			reaction.Country = &place.Country
 
 			reaction.Type = input.Body.Type
 			reaction, err := api.App().Adapter().UserReaction().CreateUserReaction(ctx, reaction)
