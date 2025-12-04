@@ -1230,24 +1230,3 @@ export const adminJobQueries = {
     return true;
   },
 };
-
-export const userReactionQueries = {
-  createReaction: async () => {
-    const { data, error } = await client.POST("/api/user-reactions", {
-      body: {
-        type: "hello",
-      },
-    });
-    if (error) {
-      throw ApiError.fromErrorModel(error);
-    }
-    return data;
-  },
-  getStats: async () => {
-    const { data, error } = await client.GET("/api/user-reactions/stats", {});
-    if (error) {
-      throw ApiError.fromErrorModel(error);
-    }
-    return data;
-  },
-};

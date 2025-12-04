@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardTitle } from "@/components/ui/card";
-import { userReactionQueries } from "@/lib/api";
 import { getCountryName } from "@/lib/get-country-name";
+import { userReactionQueries } from "@/lib/user-reaction-queries";
 import { UserReactionsStatsWithReactions } from "@/schema.types";
 import {
   useEventSource,
