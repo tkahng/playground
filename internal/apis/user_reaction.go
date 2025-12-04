@@ -55,12 +55,18 @@ func (api *Api) bindCreateUserReaction(aapi huma.API) {
 			userInfo := contextstore.GetContextUserInfo(ctx)
 
 			reaction := new(models.UserReaction)
+			reaction.IpAddress = &ip
 			if userInfo != nil {
 				reaction.UserID = &userInfo.User.ID
 			}
 			var place *userreaction.Location
 			if input.Body.Coordinates != nil {
 				place = userreaction.GetLocationFromBody(ctx, input.Body.Coordinates.Longitude, input.Body.Coordinates.Latitude)
+				if place == nil {
+					if ip != "" {
+						place = userreaction.GetLocationFromIp(ctx, ip)
+					}
+				}
 			} else if ip != "" {
 				place = userreaction.GetLocationFromIp(ctx, ip)
 			}
@@ -74,6 +80,7 @@ func (api *Api) bindCreateUserReaction(aapi huma.API) {
 			if err != nil {
 				return nil, err
 			}
+			// utils.PrettyPrintJSON(reaction)
 			err = api.App().EventManager().EventBus().Publish(ctx, userreaction.UserReactionCreated{
 				UserReaction: reaction,
 			})
