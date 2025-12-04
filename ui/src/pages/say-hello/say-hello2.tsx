@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { userReactionQueries } from "@/lib/api";
 import { getCountryName } from "@/lib/get-country-name";
+import { userReactionQueries } from "@/lib/user-reaction-queries";
 import { UserReactionsStatsWithReactions } from "@/schema.types";
 import {
   useEventSource,
@@ -70,24 +70,6 @@ export default function SayHelloPage() {
   const handleSayHello = () => {
     mutation.mutate();
   };
-
-  // const formatTimestamp = (timestamp: Date) => {
-  //   const now = new Date();
-  //   const diffInSeconds = Math.floor(
-  //     (now.getTime() - timestamp.getTime()) / 1000
-  //   );
-
-  //   if (diffInSeconds < 60) {
-  //     return `${diffInSeconds}s ago`;
-  //   } else if (diffInSeconds < 3600) {
-  //     return `${Math.floor(diffInSeconds / 60)}m ago`;
-  //   } else if (diffInSeconds < 86400) {
-  //     return `${Math.floor(diffInSeconds / 3600)}h ago`;
-  //   } else {
-  //     return `${Math.floor(diffInSeconds / 86400)}d ago`;
-  //   }
-  // };
-
   if (isStatsLoading) {
     return <div>Loading...</div>;
   }
