@@ -2102,6 +2102,12 @@ export interface components {
              */
             type: string;
         };
+        GeolocationCoordinate: {
+            /** Format: double */
+            latitude: number;
+            /** Format: double */
+            longitude: number;
+        };
         IndexOutputBody: {
             /**
              * Format: uri
@@ -2954,6 +2960,7 @@ export interface components {
              * @example http://localhost:8080/schemas/UserReactionDto.json
              */
             readonly $schema?: string;
+            coordinates?: components["schemas"]["GeolocationCoordinate"];
             type: string;
         };
         UserReactionStats: {
