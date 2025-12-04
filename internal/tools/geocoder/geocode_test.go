@@ -114,8 +114,8 @@ func TestReverse(t *testing.T) {
 			if !reflect.DeepEqual(got.Address, want.Address) {
 				t.Errorf("Reverse().Address = %v, want %v", got.Address, want.Address)
 			}
-			if !reflect.DeepEqual(got.Place, want.Place) {
-				t.Errorf("Reverse().Place = %v, want %v", got.Place, want.Place)
+			if !reflect.DeepEqual(got, want) {
+				t.Errorf("Reverse().Place = %v, want %v", got, want)
 			}
 		})
 	}
