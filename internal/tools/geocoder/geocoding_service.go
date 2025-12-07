@@ -95,7 +95,7 @@ func (g *GeocoderImpl) GetLocation(ctx context.Context, input GeocodingInput) (*
 			if location.City == "" {
 				return nil, errors.New("city is empty")
 			}
-			g.cache.Put(key, place)
+			g.cache.Put(key, location)
 			return location, nil
 		}
 	}
@@ -113,7 +113,7 @@ func (g *GeocoderImpl) GetLocation(ctx context.Context, input GeocodingInput) (*
 			Country: place.CountryCode,
 			City:    place.City,
 		}
-		g.cache.Put(key, place)
+		g.cache.Put(key, location)
 		return location, nil
 	}
 
