@@ -8,6 +8,7 @@ import {
   useEventSourceListener,
 } from "@react-nano/use-event-source";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useGeolocation } from "@uidotdev/usehooks";
 import { Clock, Globe } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useReducer } from "react";
@@ -32,6 +33,7 @@ function messageReducer(
   };
 }
 export default function SayHelloPage() {
+  const state = useGeolocation();
   const [stats, updateStats] = useReducer(messageReducer, {
     top_five_countries: [],
     total_reactions: 0,
@@ -54,7 +56,12 @@ export default function SayHelloPage() {
   });
   const mutation = useMutation({
     mutationFn: async () => {
-      return userReactionQueries.createReaction();
+      return userReactionQueries.createReaction({
+        coords:
+          state.latitude && state.longitude
+            ? { latitude: state.latitude, longitude: state.longitude }
+            : undefined,
+      });
     },
     onSuccess: async () => {
       toast.success("Success");
@@ -70,9 +77,14 @@ export default function SayHelloPage() {
   const handleSayHello = () => {
     mutation.mutate();
   };
+  if (state.loading) {
+    return <p>loading... (you may need to enable permissions)</p>;
+  }
+
   if (isStatsLoading) {
     return <div>Loading...</div>;
   }
+
   return (
     <div className="min-h-screen bg-secondary p-4">
       <div className="max-w-4xl mx-auto">
