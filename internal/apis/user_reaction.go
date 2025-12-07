@@ -14,6 +14,7 @@ import (
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/geocoder"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/sse"
 	"github.com/tkahng/playground/internal/userreaction"
@@ -35,6 +36,7 @@ type UserReactionInput struct {
 func (api *Api) bindCreateUserReaction(aapi huma.API) {
 	ipMiddleware := humamiddleware.HumaChiMiddleware(middleware.IpAddressMiddleware())
 	rateLimitByIp := humamiddleware.HumaChiMiddleware(httprate.LimitByIP(1, 1*time.Second))
+	geoCoder := geocoder.NewGeocoder()
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -59,25 +61,24 @@ func (api *Api) bindCreateUserReaction(aapi huma.API) {
 			if userInfo != nil {
 				reaction.UserID = &userInfo.User.ID
 			}
-			var place *userreaction.Location
-			if input.Body.Coordinates != nil {
-				place = userreaction.GetLocationFromBody(ctx, input.Body.Coordinates.Longitude, input.Body.Coordinates.Latitude)
-				if place == nil {
-					if ip != "" {
-						place = userreaction.GetLocationFromIp(ctx, ip)
-					}
-				}
-			} else if ip != "" {
-				place = userreaction.GetLocationFromIp(ctx, ip)
+			locInput := geocoder.GeocodingInput{
+				IP: ip,
 			}
-			if place == nil {
-				return nil, huma.Error500InternalServerError("failed to get location")
+			if input.Body.Coordinates != nil {
+				locInput.Coordinates = &geocoder.Coordinates{
+					Latitude:  input.Body.Coordinates.Latitude,
+					Longitude: input.Body.Coordinates.Longitude,
+				}
+			}
+			place, err := geoCoder.GetLocation(ctx, locInput)
+			if err != nil {
+				return nil, err
 			}
 			reaction.City = &place.City
 			reaction.Country = &place.Country
 
 			reaction.Type = input.Body.Type
-			reaction, err := api.App().Adapter().UserReaction().CreateUserReaction(ctx, reaction)
+			reaction, err = api.App().Adapter().UserReaction().CreateUserReaction(ctx, reaction)
 			if err != nil {
 				return nil, err
 			}
