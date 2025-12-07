@@ -24,6 +24,9 @@ type IpLocationResponse struct {
 	As          string  `json:"as"`
 }
 
+// GetLocationFromIp returns location from ip
+// it uses ip-api with free plan.
+// rate limit is 1 request per second
 func GetLocationFromIp(ctx context.Context, ip string) (*IpLocationResponse, error) {
 	url := fmt.Sprintf("http://ip-api.com/json/%s", ip)
 

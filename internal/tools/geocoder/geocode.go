@@ -41,6 +41,9 @@ type (
 	}
 )
 
+// Reverse returns reverse geocoded location.
+// It uses Nominatim reverse geocoding API.
+// Rate limit is 1 request per second.
 func Reverse(ctx context.Context, lon, lat float64) (*ReversePlace, error) {
 	uri := fmt.Sprintf("https://nominatim.openstreetmap.org/reverse?lat=%f&lon=%f&format=jsonv2", lat, lon)
 	req, err := http.NewRequestWithContext(ctx, "GET", uri, nil)
