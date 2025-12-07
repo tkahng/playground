@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/tkahng/playground/internal/tools/geocoder"
-	"github.com/tkahng/playground/internal/tools/geoip"
 )
 
 type Location struct {
@@ -50,7 +49,7 @@ func GetLocationFromBody(ctx context.Context, lon, lat float64) *Location {
 }
 
 func GetLocationFromIp(ctx context.Context, ip string) *Location {
-	address, err := geoip.GetLocationFromIp(ctx, ip)
+	address, err := geocoder.GetLocationFromIp(ctx, ip)
 
 	if err != nil {
 		slog.ErrorContext(
