@@ -17,10 +17,19 @@ const (
 	EmailTypeConfirmPasswordReset  EmailType = "confirm-password-reset"
 	EmailTypeSecurityPasswordReset EmailType = "security-password-reset"
 	EmailTypeTeamInvite            EmailType = "team-invite"
+	RpsGameInvite                  EmailType = "rps-game-invite"
 	EmailTypeInvite                EmailType = "invite"
 )
 
 var (
+	RpsGameEmailPathMap = map[EmailType]SendMailParams{
+		RpsGameInvite: {
+			Type:         RpsGameInvite,
+			Subject:      "%s - You are invited to join a game",
+			TemplatePath: "/rps-game-invitation",
+			Template:     DefaultRpsGameInviteMail,
+		},
+	}
 	TeamEmailPathMap = map[EmailType]SendMailParams{
 		EmailTypeTeamInvite: {
 			Type:         EmailTypeTeamInvite,
@@ -128,6 +137,10 @@ const DefaultInviteMail = `<h2>You have been invited</h2>
 
 const DefaultTeamInviteMail = `<h2>You have been invited</h2>
 <p>You have been invited to joint team {{ .TeamName }} by {{ .InvitedByEmail }}. Follow this link to accept the invite:</p>
+<p><a href="{{ .ConfirmationURL }}">Accept the invite</a></p>`
+
+const DefaultRpsGameInviteMail = `<h2>You have been invited to play a game of Rock Paper Scissors</h2>
+<p>You have been invited play a game of Rock Paper Scissors with {{ .InvitedByEmail }}. Follow this link to accept the invite:</p>
 <p><a href="{{ .ConfirmationURL }}">Accept the invite</a></p>`
 
 const DefaultConfirmationMail = `<h2>Confirm your email</h2>
