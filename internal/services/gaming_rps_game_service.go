@@ -96,20 +96,31 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 	}
 	switch input.Status {
 	case models.RpsGameStatusCancelled:
+		// if game is cancelled, set the game status to cancelled
+		// and set the invited player status to declined
 		gameWithParticipants.RpsGame.Status = models.RpsGameStatusCancelled
 		gameWithParticipants.InvitedParticipant.Status = models.RpsParticipantStatusDeclined
 	case models.RpsGameStatusCompleted:
+		// if game is completed, set the game status to completed
+		// and set the invited player status to completed
 		gameWithParticipants.InvitedParticipant.Move = input.Move
 		gameWithParticipants.Status = models.RpsGameStatusCompleted
 		gameWithParticipants.RequestingParticipant.Status = models.RpsParticipantStatusCompleted
 		gameWithParticipants.InvitedParticipant.Status = models.RpsParticipantStatusCompleted
 		if gameWithParticipants.RequestingParticipant.Move == gameWithParticipants.InvitedParticipant.Move {
+			// if the requesting player move is the same as the invited player move, set the result to tie
 			gameWithParticipants.RequestingParticipant.Result = models.RpsParticipantResultTie
 			gameWithParticipants.InvitedParticipant.Result = models.RpsParticipantResultTie
 		} else if (gameWithParticipants.RequestingParticipant.Move == models.RpsParticipantMoveRock && gameWithParticipants.InvitedParticipant.Move == models.RpsParticipantMoveScissors) || (gameWithParticipants.RequestingParticipant.Move == models.RpsParticipantMovePaper && gameWithParticipants.InvitedParticipant.Move == models.RpsParticipantMoveRock) || (gameWithParticipants.RequestingParticipant.Move == models.RpsParticipantMoveScissors && gameWithParticipants.InvitedParticipant.Move == models.RpsParticipantMovePaper) {
+			// check for all requesting player wins.
+			// |requesting player move| |invited player move|
+			// |rock| |scissors|
+			// |paper| |rock|
+			// |scissors| |paper|
 			gameWithParticipants.RequestingParticipant.Result = models.RpsParticipantResultWin
 			gameWithParticipants.InvitedParticipant.Result = models.RpsParticipantResultLose
 		} else {
+			// otherwise, the invited player wins
 			gameWithParticipants.RequestingParticipant.Result = models.RpsParticipantResultLose
 			gameWithParticipants.InvitedParticipant.Result = models.RpsParticipantResultWin
 		}
