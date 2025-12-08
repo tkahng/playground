@@ -81,15 +81,16 @@ type RpsParticipant struct {
 
 // create table gaming.rps_game_invites (
 //
-//	id uuid primary key default uuidv7(),
-//	game_id uuid not null references gaming.rps_games(id),
-//	requesting_player_id uuid not null references gaming.players(id),
-//	invited_player_id uuid not null references gaming.players(id),
-//	token text not null unique,
-//	metadata jsonb not null default '{}'::jsonb,
-//	created_at timestamptz not null default clock_timestamp(),
-//	updated_at timestamptz not null default clock_timestamp(),
-//	constraint rps_game_invites_token check (utility.not_empty(token))
+//		id uuid primary key default uuidv7(),
+//		game_id uuid not null references gaming.rps_games(id),
+//		requesting_player_id uuid not null references gaming.players(id),
+//		invited_player_id uuid not null references gaming.players(id),
+//		token text not null unique,
+//	    expires_at timestamptz NOT NULL,
+//		metadata jsonb not null default '{}'::jsonb,
+//		created_at timestamptz not null default clock_timestamp(),
+//		updated_at timestamptz not null default clock_timestamp(),
+//		constraint rps_game_invites_token check (utility.not_empty(token))
 //
 // );
 type RpsGameInvite struct {
@@ -99,6 +100,7 @@ type RpsGameInvite struct {
 	RequestingPlayerID uuid.UUID `db:"requesting_player_id" json:"requesting_player_id"`
 	InvitedPlayerID    uuid.UUID `db:"invited_player_id" json:"invited_player_id"`
 	Token              string    `db:"token" json:"token"`
+	ExpiresAt          time.Time `db:"expires_at" json:"expires_at"`
 	Metadata           []byte    `db:"metadata" json:"metadata"`
 	CreatedAt          time.Time `db:"created_at" json:"created_at"`
 	UpdatedAt          time.Time `db:"updated_at" json:"updated_at"`
