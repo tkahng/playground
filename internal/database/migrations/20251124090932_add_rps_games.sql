@@ -39,7 +39,30 @@ create index idx_gaming_rps_participants_game_id on gaming.rps_participants(game
 create index idx_gaming_rps_participants_player_id on gaming.rps_participants(player_id);
 create trigger handle_gaming_rps_participants_updated_at before
 update on gaming.rps_participants for each row execute procedure utility.set_current_timestamp_updated_at();
+-- rps game invites 
+create table gaming.rps_game_invites (
+    id uuid primary key default uuidv7(),
+    game_id uuid not null references gaming.rps_games(id),
+    requesting_player_id uuid not null references gaming.players(id),
+    invited_player_id uuid not null references gaming.players(id),
+    token text not null unique,
+    metadata jsonb not null default '{}'::jsonb,
+    created_at timestamptz not null default clock_timestamp(),
+    updated_at timestamptz not null default clock_timestamp(),
+    constraint rps_game_invites_token check (utility.not_empty(token))
+);
+create index idx_gaming_rps_game_invites_game_id on gaming.rps_game_invites(game_id);
+create index idx_gaming_rps_game_invites_requesting_player_id on gaming.rps_game_invites(requesting_player_id);
+create index idx_gaming_rps_game_invites_invited_player_id on gaming.rps_game_invites(invited_player_id);
+create trigger handle_gaming_rps_game_invites_updated_at before
+update on gaming.rps_game_invites for each row execute procedure utility.set_current_timestamp_updated_at();
 -- migrate:down
+-- rps game invites --------------------------------------------------------------------------------
+drop trigger handle_gaming_rps_game_invites_updated_at on gaming.rps_game_invites;
+drop index gaming.idx_gaming_rps_game_invites_invited_player_id;
+drop index gaming.idx_gaming_rps_game_invites_requesting_player_id;
+drop index gaming.idx_gaming_rps_game_invites_game_id;
+drop table gaming.rps_game_invites;
 -- rps_participants --------------------------------------------------------------------------------
 drop trigger handle_gaming_rps_participants_updated_at on gaming.rps_participants;
 drop index gaming.idx_gaming_rps_participants_player_id;
