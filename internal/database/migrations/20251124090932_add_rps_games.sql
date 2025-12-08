@@ -46,6 +46,7 @@ create table gaming.rps_game_invites (
     requesting_player_id uuid not null references gaming.players(id),
     invited_player_id uuid not null references gaming.players(id),
     token text not null unique,
+    expires_at timestamptz NOT NULL,
     metadata jsonb not null default '{}'::jsonb,
     created_at timestamptz not null default clock_timestamp(),
     updated_at timestamptz not null default clock_timestamp(),
