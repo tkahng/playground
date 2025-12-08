@@ -22,7 +22,6 @@ type RpsGameStore interface {
 	FindRpsGame(ctx context.Context, filter *RpsGameFilter) (*models.RpsGame, error)
 	CreateRpsGame(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
 	UpdateRpsGame(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
-	CreateGameWithRequest(ctx context.Context, input *GameCreateInput) (*models.RpsGame, error)
 }
 
 type RpsGameFilter struct {
@@ -115,38 +114,6 @@ func (s *DBGamingStore) FindRpsGames(ctx context.Context, filter *RpsGameFilter)
 		return nil, err
 	}
 	return data, nil
-}
-
-type GameCreateInput struct {
-	RequestingPlayerID   uuid.UUID
-	InvitedPlayerID      uuid.UUID
-	RequestingPlayerMove models.RpsParticipantMove
-}
-
-// CreateGame implements [GamingStore].
-func (s *DBGamingStore) CreateGameWithRequest(ctx context.Context, input *GameCreateInput) (*models.RpsGame, error) {
-	players, err := s.FindPlayers(ctx, &PlayersFilter{
-		Ids: []uuid.UUID{input.RequestingPlayerID, input.InvitedPlayerID},
-	})
-	if err != nil {
-		return nil, err
-	}
-	if len(players) != 2 {
-		return nil, errors.New("did not find 2 players.")
-	}
-	var invitedPlayer, requestingPlayer *models.Player
-	for _, player := range players {
-		if player.ID == input.InvitedPlayerID {
-			invitedPlayer = player
-		}
-		if player.ID == input.RequestingPlayerID {
-			requestingPlayer = player
-		}
-	}
-	if invitedPlayer == nil || requestingPlayer == nil {
-		return nil, errors.New("did not find 2 players.")
-	}
-	return nil, nil
 }
 
 // CreateRpsGame implements [GamingStore].
