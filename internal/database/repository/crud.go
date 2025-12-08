@@ -89,6 +89,9 @@ var (
 	RpsParticipantBuilder = NewSQLBuilder[models.RpsParticipant](
 		UuidV7Generator,
 	)
+	RpsGameInviteBuilder = NewSQLBuilder[models.RpsGameInvite](
+		UuidV7Generator,
+	)
 )
 
 var (
@@ -120,4 +123,5 @@ var (
 	Frindship          Repository[models.Frindship]          = NewPostgresRepository(FrindshipBuilder)
 	RpsGame            Repository[models.RpsGame]            = NewPostgresRepository(RpsGameBuilder)
 	RpsParticipant     Repository[models.RpsParticipant]     = NewPostgresRepository(RpsParticipantBuilder)
+	RpsGameInvite      Repository[models.RpsGameInvite]      = NewPostgresRepository(RpsGameInviteBuilder)
 )
