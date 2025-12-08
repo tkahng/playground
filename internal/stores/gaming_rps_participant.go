@@ -11,6 +11,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/queries"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/tools/types"
@@ -34,7 +35,7 @@ type RpsParticipantFilter struct {
 	Moves         []models.RpsParticipantMove    `query:"moves,omitempty" required:"false" minimum:"1" maximum:"100" enum:"rock,paper,scissors"`
 	Results       []models.RpsParticipantResult  `query:"results,omitempty" required:"false" minimum:"1" maximum:"100" enum:"win,lose,draw"`
 	RespondedAt   types.OptionalParam[time.Time] `query:"responded_at,omitempty" required:"false"`
-	RespondedAtOp FilterOperator                 `query:"responded_at_op,omitempty" required:"false" enum:"eq,gt,gte,lt,lte"`
+	RespondedAtOp queries.FilterOperator         `query:"responded_at_op,omitempty" required:"false" enum:"eq,gt,gte,lt,lte"`
 }
 
 func rpsParticipantsSortSelect(qs squirrel.SelectBuilder, filter Sortable) squirrel.SelectBuilder {
@@ -79,7 +80,7 @@ func rpsParticipantsFilterSelect(q squirrel.SelectBuilder, filter *RpsParticipan
 		q = q.Where(squirrel.Eq{"gaming.rps_participants.result": filter.Results})
 	}
 	if filter.RespondedAtOp != "" {
-		q = toSquirrelOp2(q, filter.RespondedAtOp, "gaming.rps_participants.responded_at", filter.RespondedAt.Value)
+		q = queries.ToSquirrelOp(q, filter.RespondedAtOp, "gaming.rps_participants.responded_at", filter.RespondedAt.Value)
 		// q = q.Where(squirrel.Eq{"gaming.rps_participants.responded_at": filter.RespondedAt.Value})
 	}
 
