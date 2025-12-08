@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/database/queries"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/types"
@@ -357,7 +358,7 @@ func TestDBGamingStore_FindRpsGame_ByCompletedAt(t *testing.T) {
 						Value: now,
 						IsSet: true,
 					},
-					CompletedAtOp: FilterOperatorGte,
+					CompletedAtOp: queries.FilterOperatorGte,
 				},
 				afterFunc: func(t *testing.T, result []*models.RpsGame) {
 					if len(result) != 2 {
@@ -381,7 +382,7 @@ func TestDBGamingStore_FindRpsGame_ByCompletedAt(t *testing.T) {
 						Value: now.Add(time.Hour * 1).UTC(),
 						IsSet: true,
 					},
-					CompletedAtOp: FilterOperatorGte,
+					CompletedAtOp: queries.FilterOperatorGte,
 				},
 				afterFunc: func(t *testing.T, result []*models.RpsGame) {
 					if len(result) != 2 {
@@ -405,7 +406,7 @@ func TestDBGamingStore_FindRpsGame_ByCompletedAt(t *testing.T) {
 						Value: now.Add(time.Hour * 2).UTC(),
 						IsSet: true,
 					},
-					CompletedAtOp: FilterOperatorGte,
+					CompletedAtOp: queries.FilterOperatorGte,
 				},
 				afterFunc: func(t *testing.T, result []*models.RpsGame) {
 					if len(result) != 1 {
@@ -424,7 +425,7 @@ func TestDBGamingStore_FindRpsGame_ByCompletedAt(t *testing.T) {
 			{
 				desc: "completed at null",
 				filter: &RpsGameFilter{
-					CompletedAtOp: FilterOperatorNull,
+					CompletedAtOp: queries.FilterOperatorNull,
 				},
 				afterFunc: func(t *testing.T, result []*models.RpsGame) {
 					if len(result) != 1 {
@@ -443,7 +444,7 @@ func TestDBGamingStore_FindRpsGame_ByCompletedAt(t *testing.T) {
 			{
 				desc: "completed at not null",
 				filter: &RpsGameFilter{
-					CompletedAtOp: FilterOperatorNotNull,
+					CompletedAtOp: queries.FilterOperatorNotNull,
 				},
 				afterFunc: func(t *testing.T, result []*models.RpsGame) {
 					if len(result) != 2 {
@@ -511,7 +512,7 @@ func TestDBGamingStore_FindRpsGame_ByExpiresAt(t *testing.T) {
 						Value: now.Add(time.Hour * 1).UTC(),
 						IsSet: true,
 					},
-					ExpiresAtOp: FilterOperatorGte,
+					ExpiresAtOp: queries.FilterOperatorGte,
 				},
 				afterFunc: func(t *testing.T, result []*models.RpsGame) {
 					if len(result) != 3 {
@@ -536,7 +537,7 @@ func TestDBGamingStore_FindRpsGame_ByExpiresAt(t *testing.T) {
 						Value: now.Add(time.Hour * 2).UTC(),
 						IsSet: true,
 					},
-					ExpiresAtOp: FilterOperatorGte,
+					ExpiresAtOp: queries.FilterOperatorGte,
 				},
 				afterFunc: func(t *testing.T, result []*models.RpsGame) {
 					if len(result) != 2 {
