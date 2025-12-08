@@ -9,32 +9,104 @@ import (
 )
 
 type DbGamingStoreDecorator struct {
-	Delegate                     *DBGamingStore
-	CountFriendshipsFunc         func(ctx context.Context, filter *FriendshipFilter) (int64, error)
-	CountPlayersFunc             func(ctx context.Context, filter *PlayersFilter) (int64, error)
-	CreateFriendshipFunc         func(ctx context.Context, friendship *models.Frindship) (*models.Frindship, error)
-	CreatePlayerFunc             func(ctx context.Context, player *models.Player) (*models.Player, error)
-	DeleteFriendshipsFunc        func(ctx context.Context, filter *FriendshipFilter) (int64, error)
-	DeletePlayersFunc            func(ctx context.Context, filter *PlayersFilter) (int64, error)
-	FindFriendshipFunc           func(ctx context.Context, filter *FriendshipFilter) (*models.Frindship, error)
-	FindFriendshipsFunc          func(ctx context.Context, filter *FriendshipFilter) ([]*models.Frindship, error)
-	FindPlayerFunc               func(ctx context.Context, filter *PlayersFilter) (*models.Player, error)
-	FindPlayersFunc              func(ctx context.Context, filter *PlayersFilter) ([]*models.Player, error)
-	UpdateFriendshipFunc         func(ctx context.Context, player *models.Frindship) (*models.Frindship, error)
-	UpdatePlayerFunc             func(ctx context.Context, player *models.Player) (*models.Player, error)
-	CreateRpsGameWithRequestFunc func(ctx context.Context, input *GameCreateInput) (*models.RpsGame, error)
-	CreateRpsGameFunc            func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
-	UpdateRpsGameFunc            func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
-	FindRpsGameFunc              func(ctx context.Context, filter *RpsGameFilter) (*models.RpsGame, error)
-	FindRpsGamesFunc             func(ctx context.Context, filter *RpsGameFilter) ([]*models.RpsGame, error)
-	CountRpsGamesFunc            func(ctx context.Context, filter *RpsGameFilter) (int64, error)
-	CountRpsParticipantsFunc     func(ctx context.Context, filter *RpsParticipantFilter) (int64, error)
-	CreateRpsParticipantFunc     func(ctx context.Context, participant *models.RpsParticipant) (*models.RpsParticipant, error)
-	CreateRpsParticipantsFunc    func(ctx context.Context, participant []*models.RpsParticipant) ([]*models.RpsParticipant, error)
-	FindRpsParticipantFunc       func(ctx context.Context, filter *RpsParticipantFilter) (*models.RpsParticipant, error)
-	FindRpsParticipantsFunc      func(ctx context.Context, filter *RpsParticipantFilter) ([]*models.RpsParticipant, error)
-	UpdateRpsParticipantFunc     func(ctx context.Context, participant *models.RpsParticipant) (*models.RpsParticipant, error)
-	WithTxFunc                   func(db database.Dbx) *DBGamingStore
+	Delegate                  *DBGamingStore
+	CountFriendshipsFunc      func(ctx context.Context, filter *FriendshipFilter) (int64, error)
+	CountPlayersFunc          func(ctx context.Context, filter *PlayersFilter) (int64, error)
+	CreateFriendshipFunc      func(ctx context.Context, friendship *models.Frindship) (*models.Frindship, error)
+	CreatePlayerFunc          func(ctx context.Context, player *models.Player) (*models.Player, error)
+	DeleteFriendshipsFunc     func(ctx context.Context, filter *FriendshipFilter) (int64, error)
+	DeletePlayersFunc         func(ctx context.Context, filter *PlayersFilter) (int64, error)
+	FindFriendshipFunc        func(ctx context.Context, filter *FriendshipFilter) (*models.Frindship, error)
+	FindFriendshipsFunc       func(ctx context.Context, filter *FriendshipFilter) ([]*models.Frindship, error)
+	FindPlayerFunc            func(ctx context.Context, filter *PlayersFilter) (*models.Player, error)
+	FindPlayersFunc           func(ctx context.Context, filter *PlayersFilter) ([]*models.Player, error)
+	UpdateFriendshipFunc      func(ctx context.Context, player *models.Frindship) (*models.Frindship, error)
+	UpdatePlayerFunc          func(ctx context.Context, player *models.Player) (*models.Player, error)
+	CreateRpsGameFunc         func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
+	UpdateRpsGameFunc         func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
+	FindRpsGameFunc           func(ctx context.Context, filter *RpsGameFilter) (*models.RpsGame, error)
+	FindRpsGamesFunc          func(ctx context.Context, filter *RpsGameFilter) ([]*models.RpsGame, error)
+	CountRpsGamesFunc         func(ctx context.Context, filter *RpsGameFilter) (int64, error)
+	CountRpsParticipantsFunc  func(ctx context.Context, filter *RpsParticipantFilter) (int64, error)
+	CreateRpsParticipantFunc  func(ctx context.Context, participant *models.RpsParticipant) (*models.RpsParticipant, error)
+	CreateRpsParticipantsFunc func(ctx context.Context, participant []*models.RpsParticipant) ([]*models.RpsParticipant, error)
+	FindRpsParticipantFunc    func(ctx context.Context, filter *RpsParticipantFilter) (*models.RpsParticipant, error)
+	FindRpsParticipantsFunc   func(ctx context.Context, filter *RpsParticipantFilter) ([]*models.RpsParticipant, error)
+	UpdateRpsParticipantFunc  func(ctx context.Context, participant *models.RpsParticipant) (*models.RpsParticipant, error)
+	CountRpsGameInvitesFunc   func(ctx context.Context, filter *RpsGameInviteFilter) (int64, error)
+	CreateRpsGameInviteFunc   func(ctx context.Context, invite *models.RpsGameInvite) (*models.RpsGameInvite, error)
+	DeleteRpGameInvitesFunc   func(ctx context.Context, filter *RpsGameInviteFilter) (int64, error)
+	UpdateRpsGameInviteFunc   func(ctx context.Context, player *models.RpsGameInvite) (*models.RpsGameInvite, error)
+	FindRpsGameInviteFunc     func(ctx context.Context, filter *RpsGameInviteFilter) (*models.RpsGameInvite, error)
+	FindRpsGameInvitesFunc    func(ctx context.Context, filter *RpsGameInviteFilter) ([]*models.RpsGameInvite, error)
+
+	WithTxFunc func(db database.Dbx) *DBGamingStore
+}
+
+// FindRpsGameInvite implements [GamingStore].
+func (s *DbGamingStoreDecorator) FindRpsGameInvite(ctx context.Context, filter *RpsGameInviteFilter) (*models.RpsGameInvite, error) {
+	if s.FindRpsGameInviteFunc != nil {
+		return s.FindRpsGameInviteFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator FindRpsGameInvite %w", ErrDelegateNil)
+	}
+	return s.Delegate.FindRpsGameInvite(ctx, filter)
+}
+
+// FindRpsGameInvites implements [GamingStore].
+func (s *DbGamingStoreDecorator) FindRpsGameInvites(ctx context.Context, filter *RpsGameInviteFilter) ([]*models.RpsGameInvite, error) {
+	if s.FindRpsGameInvitesFunc != nil {
+		return s.FindRpsGameInvitesFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator FindRpsGameInvites %w", ErrDelegateNil)
+	}
+	return s.Delegate.FindRpsGameInvites(ctx, filter)
+}
+
+// CountRpsGameInvites implements [GamingStore].
+func (s *DbGamingStoreDecorator) CountRpsGameInvites(ctx context.Context, filter *RpsGameInviteFilter) (int64, error) {
+	if s.CountRpsGameInvitesFunc != nil {
+		return s.CountRpsGameInvitesFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return 0, fmt.Errorf("Gaming store decorator CountRpsGameInvites %w", ErrDelegateNil)
+	}
+	return s.Delegate.CountRpsGameInvites(ctx, filter)
+}
+
+// CreateRpsGameInvite implements [GamingStore].
+func (s *DbGamingStoreDecorator) CreateRpsGameInvite(ctx context.Context, invite *models.RpsGameInvite) (*models.RpsGameInvite, error) {
+	if s.CreateRpsGameInviteFunc != nil {
+		return s.CreateRpsGameInviteFunc(ctx, invite)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator CreateRpsGameInvite %w", ErrDelegateNil)
+	}
+	return s.Delegate.CreateRpsGameInvite(ctx, invite)
+}
+
+// DeleteRpGameInvites implements [GamingStore].
+func (s *DbGamingStoreDecorator) DeleteRpGameInvites(ctx context.Context, filter *RpsGameInviteFilter) (int64, error) {
+	if s.DeleteRpGameInvitesFunc != nil {
+		return s.DeleteRpGameInvitesFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return 0, fmt.Errorf("Gaming store decorator DeleteRpGameInvites %w", ErrDelegateNil)
+	}
+	return s.Delegate.DeleteRpGameInvites(ctx, filter)
+}
+
+// UpdateRpsGameInvite implements [GamingStore].
+func (s *DbGamingStoreDecorator) UpdateRpsGameInvite(ctx context.Context, player *models.RpsGameInvite) (*models.RpsGameInvite, error) {
+	if s.UpdateRpsGameInviteFunc != nil {
+		return s.UpdateRpsGameInviteFunc(ctx, player)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator UpdateRpsGameInvite %w", ErrDelegateNil)
+	}
+	return s.Delegate.UpdateRpsGameInvite(ctx, player)
 }
 
 // CreateRpsParticipants implements [GamingStore].
@@ -145,17 +217,6 @@ func (s *DbGamingStoreDecorator) UpdateRpsGame(ctx context.Context, game *models
 		return nil, fmt.Errorf("Gaming store decorator UpdateGame %w", ErrDelegateNil)
 	}
 	return s.Delegate.UpdateRpsGame(ctx, game)
-}
-
-// CreateGameWithRequest implements [GamingStore].
-func (s *DbGamingStoreDecorator) CreateGameWithRequest(ctx context.Context, input *GameCreateInput) (*models.RpsGame, error) {
-	if s.CreateRpsGameWithRequestFunc != nil {
-		return s.CreateRpsGameWithRequestFunc(ctx, input)
-	}
-	if s.Delegate == nil {
-		return nil, fmt.Errorf("Gaming store decorator CreateGame %w", ErrDelegateNil)
-	}
-	return s.Delegate.CreateGameWithRequest(ctx, input)
 }
 
 // CountPlayers implements [GamingStore].
