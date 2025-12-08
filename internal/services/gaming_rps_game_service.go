@@ -11,6 +11,7 @@ import (
 )
 
 type RpsGameService interface {
+	FindRpsWithParticipants(ctx context.Context, gameID uuid.UUID) (*RpsGameWithParticipants, error)
 	RequestGame(ctx context.Context, input *RpsGameRequestInput) (*RpsGameWithParticipants, error)
 	RespondToGameRequest(ctx context.Context, input *GameRequestResponse) (*RpsGameWithParticipants, error)
 }
@@ -89,6 +90,9 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 	gameWithParticipants, err := d.FindRpsWithParticipants(ctx, input.GameID)
 	if err != nil {
 		return nil, err
+	}
+	if gameWithParticipants.ExpiresAt.UTC().Before(time.Now().UTC()) {
+		return nil, errors.New("game expired")
 	}
 	switch input.Status {
 	case models.RpsGameStatusCancelled:

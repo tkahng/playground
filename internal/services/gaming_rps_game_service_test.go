@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
@@ -164,6 +165,38 @@ func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Tie(t *test
 		}
 		if respondedGame.InvitedParticipant.Result != models.RpsParticipantResultTie {
 			t.Errorf("Expected respondedGame.InvitedParticipant.Result to be %s, got %s", models.RpsParticipantResultTie, respondedGame.InvitedParticipant.Result)
+		}
+	})
+}
+func TestDbRpsGameService_RespondToGameRequest_Fail_Expired(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		rpsService := NewDbRpsGameService(adapter)
+		player1 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("player1@gmail.com"))
+		player2 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("player2@gmail.com"))
+		requestInput := &RpsGameRequestInput{
+			RequestingPlayerID:   player1.ID,
+			InvitedPlayerID:      player2.ID,
+			RequestingPlayerMove: models.RpsParticipantMovePaper,
+			DurationSeconds:      1,
+		}
+		game, err := rpsService.RequestGame(ctx, requestInput)
+		if err != nil {
+			t.Fatalf("RequestGame() error = %v", err)
+		}
+		time.Sleep(time.Second * 1)
+		respondInput := &GameRequestResponse{
+			InvitedPlayerID: player2.ID,
+			GameID:          game.ID,
+			Status:          models.RpsGameStatusCompleted,
+			Move:            models.RpsParticipantMovePaper,
+		}
+		_, err = rpsService.RespondToGameRequest(ctx, respondInput)
+		if err == nil {
+			t.Fatalf("RespondToGameRequest() error = %v", err)
+		}
+		if err.Error() != "game expired" {
+			t.Errorf("Expected error to be 'game expired', got %s", err.Error())
 		}
 	})
 }
