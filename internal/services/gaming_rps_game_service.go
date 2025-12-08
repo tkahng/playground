@@ -94,6 +94,8 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 	case models.RpsGameStatusCancelled:
 		cancelGame(gameWithParticipants)
 	case models.RpsGameStatusCompleted:
+		gameWithParticipants.InvitedParticipant.Move = input.Move
+		gameWithParticipants.Status = models.RpsGameStatusCompleted
 		playGame(gameWithParticipants)
 	default:
 		return nil, errors.New("invalid status")
