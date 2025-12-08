@@ -95,6 +95,7 @@ func (d *DbJobService) EnqueueTeamInvitationJob(ctx context.Context, args *worke
 func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier) {
 	jobs.RegisterWorker(d.manager, workers.NewOtpEmailWorker(mail))
 	jobs.RegisterWorker(d.manager, workers.NewTeamInvitationWorker(mail))
+	jobs.RegisterWorker(d.manager, workers.NewRpsGameInvitationWorker(mail))
 	jobs.RegisterWorker(d.manager, workers.NewRefreshSubscriptionQuantityWorker(paymentService))
 	jobs.RegisterWorker(d.manager, workers.NewNewMemberNotificationWorker(notification))
 	jobs.RegisterWorker(d.manager, NewAssignedToTaskWorker(notification))
