@@ -92,11 +92,23 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 	}
 	switch input.Status {
 	case models.RpsGameStatusCancelled:
-		cancelGame(gameWithParticipants)
+		gameWithParticipants.RpsGame.Status = models.RpsGameStatusCancelled
+		gameWithParticipants.InvitedParticipant.Status = models.RpsParticipantStatusDeclined
 	case models.RpsGameStatusCompleted:
 		gameWithParticipants.InvitedParticipant.Move = input.Move
 		gameWithParticipants.Status = models.RpsGameStatusCompleted
-		playGame(gameWithParticipants)
+		gameWithParticipants.RequestingParticipant.Status = models.RpsParticipantStatusCompleted
+		gameWithParticipants.InvitedParticipant.Status = models.RpsParticipantStatusCompleted
+		if gameWithParticipants.RequestingParticipant.Move == gameWithParticipants.InvitedParticipant.Move {
+			gameWithParticipants.RequestingParticipant.Result = models.RpsParticipantResultTie
+			gameWithParticipants.InvitedParticipant.Result = models.RpsParticipantResultTie
+		} else if (gameWithParticipants.RequestingParticipant.Move == models.RpsParticipantMoveRock && gameWithParticipants.InvitedParticipant.Move == models.RpsParticipantMoveScissors) || (gameWithParticipants.RequestingParticipant.Move == models.RpsParticipantMovePaper && gameWithParticipants.InvitedParticipant.Move == models.RpsParticipantMoveRock) || (gameWithParticipants.RequestingParticipant.Move == models.RpsParticipantMoveScissors && gameWithParticipants.InvitedParticipant.Move == models.RpsParticipantMovePaper) {
+			gameWithParticipants.RequestingParticipant.Result = models.RpsParticipantResultWin
+			gameWithParticipants.InvitedParticipant.Result = models.RpsParticipantResultLose
+		} else {
+			gameWithParticipants.RequestingParticipant.Result = models.RpsParticipantResultLose
+			gameWithParticipants.InvitedParticipant.Result = models.RpsParticipantResultWin
+		}
 	default:
 		return nil, errors.New("invalid status")
 	}
@@ -106,27 +118,6 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 		return nil, err
 	}
 	return updatedGameWithParticipants, nil
-}
-
-func playGame(game *RpsGameWithParticipants) {
-	if game.RequestingParticipant.Move == game.InvitedParticipant.Move {
-		game.RequestingParticipant.Result = models.RpsParticipantResultTie
-		game.InvitedParticipant.Result = models.RpsParticipantResultTie
-	}
-	if (game.RequestingParticipant.Move == models.RpsParticipantMoveRock && game.InvitedParticipant.Move == models.RpsParticipantMoveScissors) ||
-		(game.RequestingParticipant.Move == models.RpsParticipantMovePaper && game.InvitedParticipant.Move == models.RpsParticipantMoveRock) ||
-		(game.RequestingParticipant.Move == models.RpsParticipantMoveScissors && game.InvitedParticipant.Move == models.RpsParticipantMovePaper) {
-		game.RequestingParticipant.Result = models.RpsParticipantResultWin
-		game.InvitedParticipant.Result = models.RpsParticipantResultLose
-	} else {
-		game.RequestingParticipant.Result = models.RpsParticipantResultLose
-		game.InvitedParticipant.Result = models.RpsParticipantResultWin
-	}
-}
-
-func cancelGame(game *RpsGameWithParticipants) {
-	game.RpsGame.Status = models.RpsGameStatusCancelled
-	game.InvitedParticipant.Status = models.RpsParticipantStatusDeclined
 }
 
 func (d *DbRpsGameService) updateGame(ctx context.Context, gameWithParticipants *RpsGameWithParticipants) (*RpsGameWithParticipants, error) {
