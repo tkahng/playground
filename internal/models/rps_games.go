@@ -78,3 +78,31 @@ type RpsParticipant struct {
 	Game        *RpsGame             `db:"game" src:"game_id" dest:"id" table:"gaming.rps_games" json:"game,omitempty"`
 	Player      *Player              `db:"player" src:"player_id" dest:"id" table:"gaming.players" json:"player,omitempty"`
 }
+
+// create table gaming.rps_game_invites (
+//
+//	id uuid primary key default uuidv7(),
+//	game_id uuid not null references gaming.rps_games(id),
+//	requesting_player_id uuid not null references gaming.players(id),
+//	invited_player_id uuid not null references gaming.players(id),
+//	token text not null unique,
+//	metadata jsonb not null default '{}'::jsonb,
+//	created_at timestamptz not null default clock_timestamp(),
+//	updated_at timestamptz not null default clock_timestamp(),
+//	constraint rps_game_invites_token check (utility.not_empty(token))
+//
+// );
+type RpsGameInvite struct {
+	_                  struct{}  `db:"rps_game_invites" schema:"gaming" json:"-"`
+	ID                 uuid.UUID `db:"id,pk" json:"id"`
+	GameID             uuid.UUID `db:"game_id" json:"game_id"`
+	RequestingPlayerID uuid.UUID `db:"requesting_player_id" json:"requesting_player_id"`
+	InvitedPlayerID    uuid.UUID `db:"invited_player_id" json:"invited_player_id"`
+	Token              string    `db:"token" json:"token"`
+	Metadata           []byte    `db:"metadata" json:"metadata"`
+	CreatedAt          time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt          time.Time `db:"updated_at" json:"updated_at"`
+	Game               *RpsGame  `db:"game" src:"game_id" dest:"id" table:"gaming.rps_games" json:"game,omitempty"`
+	RequestingPlayer   *Player   `db:"requesting_player" src:"requesting_player_id" dest:"id" table:"gaming.players" json:"requesting_player,omitempty"`
+	InvitedPlayer      *Player   `db:"invited_player" src:"invited_player_id" dest:"id" table:"gaming.players" json:"invited_player,omitempty"`
+}
