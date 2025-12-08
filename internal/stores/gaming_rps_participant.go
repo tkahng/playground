@@ -64,7 +64,7 @@ func rpsParticipantsFilterSelect(q squirrel.SelectBuilder, filter *RpsParticipan
 		q = q.Where(squirrel.Eq{"gaming.rps_participants.id": filter.Ids})
 	}
 	if len(filter.RpsGameIds) > 0 {
-		q = q.Where(squirrel.Eq{"gaming.rps_participants.rps_game_id": filter.RpsGameIds})
+		q = q.Where(squirrel.Eq{"gaming.rps_participants.game_id": filter.RpsGameIds})
 	}
 	if len(filter.PlayerIds) > 0 {
 		q = q.Where(squirrel.Eq{"gaming.rps_participants.player_id": filter.PlayerIds})
