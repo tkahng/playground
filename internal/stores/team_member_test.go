@@ -12,7 +12,6 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/populator"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/stores/testutils"
 	"github.com/tkahng/playground/internal/test"
 )
 
@@ -480,15 +479,15 @@ func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
-		user1 := testutils.CreateUser(adapter, ctx, "user1@example.com")
-		user2 := testutils.CreateUser(adapter, ctx, "user2@example.com")
-		user3 := testutils.CreateUser(adapter, ctx, "user3@example.com")
-		team1 := testutils.CreateTeam(adapter, ctx, "Team1")
-		team2 := testutils.CreateTeam(adapter, ctx, "Team2")
-		team3 := testutils.CreateTeam(adapter, ctx, "Team3")
-		user1Team3Member := testutils.CreateTeamMember(adapter, ctx, team1, user3, models.TeamMemberRoleOwner, true)
-		user2Team2Member := testutils.CreateTeamMember(adapter, ctx, team2, user2, models.TeamMemberRoleOwner, true)
-		user3Team1Member := testutils.CreateTeamMember(adapter, ctx, team3, user1, models.TeamMemberRoleOwner, true)
+		user1 := stores.CreateUser(adapter, ctx, "user1@example.com")
+		user2 := stores.CreateUser(adapter, ctx, "user2@example.com")
+		user3 := stores.CreateUser(adapter, ctx, "user3@example.com")
+		team1 := stores.CreateTeam(adapter, ctx, "Team1")
+		team2 := stores.CreateTeam(adapter, ctx, "Team2")
+		team3 := stores.CreateTeam(adapter, ctx, "Team3")
+		user1Team3Member := stores.CreateTeamMember(adapter, ctx, team1, user3, models.TeamMemberRoleOwner, true)
+		user2Team2Member := stores.CreateTeamMember(adapter, ctx, team2, user2, models.TeamMemberRoleOwner, true)
+		user3Team1Member := stores.CreateTeamMember(adapter, ctx, team3, user1, models.TeamMemberRoleOwner, true)
 
 		user1Team3Member.User = user1
 		user1Team3Member.Team = team3
