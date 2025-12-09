@@ -75,7 +75,7 @@ func bindGameGetUserPlayerApi(appApi *Api) {
 }
 
 type GamePutUserPlayerArgs struct {
-	DisplayName *string `json:"display_name" required:"true" nullable:"true"`
+	DisplayName *string `json:"display_name" required:"true" nullable:"true" minLength:"1" maxLength:"80"`
 }
 
 func bindGamePutUserPlayerApi(appApi *Api) {
