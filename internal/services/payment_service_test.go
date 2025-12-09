@@ -12,7 +12,6 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/stores/testutils"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
@@ -24,8 +23,8 @@ func TestStripeService_CreateTeamCustomer(t *testing.T) {
 			client := services.NewMockPaymentClient()
 			service := services.NewPaymentService(client, adpt)
 			// setup
-			userInfo1 := testutils.CreateUserWithOptions(t, adpt)
-			teamInfo1 := testutils.CreateTeamAndMemberWithOptions(t, adpt, &userInfo1.User)
+			userInfo1 := stores.CreateUserWithOptions(t, adpt)
+			teamInfo1 := stores.CreateTeamAndMemberWithOptions(t, adpt, &userInfo1.User)
 			team1 := &teamInfo1.Team
 			user1 := &userInfo1.User
 			// test
@@ -55,8 +54,8 @@ func TestStripeService_CreateTeamCustomer(t *testing.T) {
 			client := services.NewMockPaymentClient()
 			service := services.NewPaymentService(client, adpt)
 			// setup
-			userInfo1 := testutils.CreateUserWithOptions(t, adpt)
-			teamInfo1 := testutils.CreateTeamAndMemberWithOptions(t, adpt, &userInfo1.User)
+			userInfo1 := stores.CreateUserWithOptions(t, adpt)
+			teamInfo1 := stores.CreateTeamAndMemberWithOptions(t, adpt, &userInfo1.User)
 			team1 := &teamInfo1.Team
 			user1 := &userInfo1.User
 
@@ -85,7 +84,7 @@ func TestStripeService_CreateUserCustomer(t *testing.T) {
 			client := services.NewMockPaymentClient()
 			service := services.NewPaymentService(client, adapter)
 			// setup
-			userInfo1 := testutils.CreateUserWithOptions(t, adapter)
+			userInfo1 := stores.CreateUserWithOptions(t, adapter)
 			user1 := &userInfo1.User
 			// test
 			result, err := service.CreateUserCustomer(ctx, user1)
@@ -110,7 +109,7 @@ func TestStripeService_CreateUserCustomer(t *testing.T) {
 			client := services.NewMockPaymentClient()
 			service := services.NewPaymentService(client, adapter)
 			// setup
-			userInfo1 := testutils.CreateUserWithOptions(t, adapter)
+			userInfo1 := stores.CreateUserWithOptions(t, adapter)
 			user1 := &userInfo1.User
 
 			client.CreateCustomerFunc = func(email string, name *string, metadata *map[string]string) (*stripe.Customer, error) {
@@ -131,8 +130,8 @@ func TestStripeService_FindCustomerByTeam(t *testing.T) {
 		client := services.NewMockPaymentClient()
 		service := services.NewPaymentService(client, adapter)
 
-		userInfo := testutils.CreateUserWithOptions(t, adapter)
-		teamInfo := testutils.CreateTeamAndMemberWithOptions(t, adapter, &userInfo.User)
+		userInfo := stores.CreateUserWithOptions(t, adapter)
+		teamInfo := stores.CreateTeamAndMemberWithOptions(t, adapter, &userInfo.User)
 
 		team := &teamInfo.Team
 		user := &userInfo.User
@@ -164,7 +163,7 @@ func TestStripeService_FindCustomerByUser(t *testing.T) {
 		client := services.NewMockPaymentClient()
 		service := services.NewPaymentService(client, adapter)
 
-		userInfo := testutils.CreateUserWithOptions(t, adapter)
+		userInfo := stores.CreateUserWithOptions(t, adapter)
 
 		user := &userInfo.User
 

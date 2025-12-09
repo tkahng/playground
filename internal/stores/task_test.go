@@ -10,7 +10,6 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/stores/testutils"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/types"
 )
@@ -20,10 +19,10 @@ func TestSearchUserTasks(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
-		user := testutils.CreateUser(adapter, ctx, "tkahng@gmail.com")
-		team := testutils.CreateTeam(adapter, ctx, "TestTeam")
-		member := testutils.CreateTeamMember(adapter, ctx, team, user, models.TeamMemberRoleOwner, true)
-		project := testutils.CreateTeamProject(adapter, ctx, member, "Test Project", "Test Project")
+		user := stores.CreateUser(adapter, ctx, "tkahng@gmail.com")
+		team := stores.CreateTeam(adapter, ctx, "TestTeam")
+		member := stores.CreateTeamMember(adapter, ctx, team, user, models.TeamMemberRoleOwner, true)
+		project := stores.CreateTeamProject(adapter, ctx, member, "Test Project", "Test Project")
 		task1 := &models.Task{
 			ProjectID:         project.ID,
 			Name:              "One",
@@ -41,8 +40,8 @@ func TestSearchUserTasks(t *testing.T) {
 			Description:       types.Pointer("Dos"),
 		}
 
-		testutils.CreateTask(adapter, ctx, task1)
-		testutils.CreateTask(adapter, ctx, task2)
+		stores.CreateTask(adapter, ctx, task1)
+		stores.CreateTask(adapter, ctx, task2)
 
 		t.Run("search one", func(t *testing.T) {
 			tasks, err := adapter.Task().ListTasks(ctx, &stores.TaskFilter{

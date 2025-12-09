@@ -9,7 +9,6 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/stores/testutils"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/types"
 )
@@ -195,7 +194,7 @@ func TestStripeStore_FindCustomer(t *testing.T) {
 func TestDbCustomerStore_UpdateCustomer(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
-		user := testutils.CreateUserWithOptions(t, adapter)
+		user := stores.CreateUserWithOptions(t, adapter)
 		customer, err := adapter.Customer().CreateCustomer(ctx, &models.StripeCustomer{
 			ID:           "cus_1",
 			UserID:       types.Pointer(user.User.ID),
@@ -218,7 +217,7 @@ func TestDbCustomerStore_UpdateCustomer(t *testing.T) {
 func TestDbCustomerStore_UpsertCustomer_Existing(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
-		user := testutils.CreateUserWithOptions(t, adapter)
+		user := stores.CreateUserWithOptions(t, adapter)
 		fds := &models.StripeCustomer{
 			ID:           "cus_1",
 			UserID:       types.Pointer(user.User.ID),
@@ -246,7 +245,7 @@ func TestDbCustomerStore_UpsertCustomer_Existing(t *testing.T) {
 func TestDbCustomerStore_UpsertCustomer_New(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
-		user := testutils.CreateUserWithOptions(t, adapter)
+		user := stores.CreateUserWithOptions(t, adapter)
 		fds := &models.StripeCustomer{
 			ID:           "cus_1",
 			UserID:       types.Pointer(user.User.ID),
