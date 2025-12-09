@@ -10,14 +10,59 @@ import (
 	"github.com/tkahng/playground/internal/stores"
 )
 
+type PlayerFindParams struct {
+	Email  string
+	UserID *uuid.UUID
+}
+
 type RpsGameService interface {
-	FindRpsWithParticipants(ctx context.Context, gameID uuid.UUID) (*RpsGameWithParticipants, error)
+	// player
+	FindPlayerByParams(ctx context.Context, params *PlayerFindParams) (*models.Player, error)
+	CreatePlayerByParams(ctx context.Context, params *PlayerFindParams) (*models.Player, error)
+	// friendship
+	PlayerCanPlayWithPlayer(ctx context.Context, requestingPlayerID uuid.UUID, invitedPlayerID uuid.UUID) (bool, error)
+	// rps game
+	FindRpsGameWithParticipants(ctx context.Context, gameID uuid.UUID) (*RpsGameWithParticipants, error)
 	RequestGame(ctx context.Context, input *RpsGameRequestInput) (*RpsGameWithParticipants, error)
 	RespondToGameRequest(ctx context.Context, input *GameRequestResponse) (*RpsGameWithParticipants, error)
 }
 
 type DbRpsGameService struct {
 	adapter stores.StorageAdapterInterface
+}
+
+// CreatePlayerByParams implements [RpsGameService].
+func (d *DbRpsGameService) CreatePlayerByParams(ctx context.Context, params *PlayerFindParams) (*models.Player, error) {
+	return d.adapter.Gaming().CreatePlayer(ctx, &models.Player{
+		UserID: params.UserID,
+		Email:  params.Email,
+	})
+}
+
+// FindPlayerByParams implements [RpsGameService].
+func (d *DbRpsGameService) FindPlayerByParams(ctx context.Context, params *PlayerFindParams) (*models.Player, error) {
+	return d.adapter.Gaming().FindPlayer(ctx, &stores.PlayersFilter{
+		Emails: []string{params.Email},
+	})
+}
+
+// PlayerCanPlayWithPlayer implements [RpsGameService].
+func (d *DbRpsGameService) PlayerCanPlayWithPlayer(ctx context.Context, requestingPlayerID uuid.UUID, invitedPlayerID uuid.UUID) (bool, error) {
+	friendship, err := d.adapter.Gaming().FindFriendship(ctx, &stores.FriendshipFilter{
+		RequestingPlayerIds: []uuid.UUID{requestingPlayerID},
+		InvitedPlayerIds:    []uuid.UUID{invitedPlayerID},
+	})
+	if err != nil {
+		return false, err
+	}
+	if friendship != nil {
+		if friendship.Status == models.FriendshipStatusAccepted {
+			return true, nil
+		}
+		return false, nil
+	}
+
+	return false, nil
 }
 
 var _ RpsGameService = (*DbRpsGameService)(nil)
@@ -87,7 +132,7 @@ type GameRequestResponse struct {
 }
 
 func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *GameRequestResponse) (*RpsGameWithParticipants, error) {
-	gameWithParticipants, err := d.FindRpsWithParticipants(ctx, input.GameID)
+	gameWithParticipants, err := d.FindRpsGameWithParticipants(ctx, input.GameID)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +211,7 @@ type RpsGameWithParticipants struct {
 	InvitedParticipant    *models.RpsParticipant
 }
 
-func (d *DbRpsGameService) FindRpsWithParticipants(ctx context.Context, gameID uuid.UUID) (*RpsGameWithParticipants, error) {
+func (d *DbRpsGameService) FindRpsGameWithParticipants(ctx context.Context, gameID uuid.UUID) (*RpsGameWithParticipants, error) {
 	game, err := d.adapter.Gaming().FindRpsGame(ctx, &stores.RpsGameFilter{
 		Ids: []uuid.UUID{gameID},
 	})
