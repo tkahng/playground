@@ -121,3 +121,39 @@ func TestDBGamingStore_CountPlayer(t *testing.T) {
 		}
 	})
 }
+
+func TestDBGamingStore_FindPlayers_UserIDNotNull(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := NewStorageAdapter(db)
+		user := CreateUserWithOptions(t, adapter, UserWithEmail("testing@gmail.com"))
+		player, err := adapter.Gaming().CreatePlayer(ctx, &models.Player{
+			UserID: &user.User.ID,
+			Email:  user.User.Email,
+		})
+		if err != nil {
+			t.Fatalf("CreatePlayer() error = %v", err)
+		}
+		_, err = adapter.Gaming().CreatePlayer(ctx, &models.Player{
+			Email: "no_user@example.com",
+		})
+		if err != nil {
+			t.Fatalf("CreatePlayer() error = %v", err)
+		}
+		filter := &PlayersFilter{
+			UserIDNotNull: true,
+		}
+		foundPlayers, err := adapter.Gaming().FindPlayers(ctx, filter)
+		if err != nil {
+			t.Fatalf("FindPlayers() error = %v", err)
+		}
+		if len(foundPlayers) != 1 {
+			t.Errorf("FindPlayers() got %d players, want 1", len(foundPlayers))
+		}
+		if foundPlayers[0].ID != player.ID {
+			t.Errorf("FindPlayers() got player %v, want %v", foundPlayers[0].ID, player.ID)
+		}
+		if foundPlayers[0].UserID == nil {
+			t.Errorf("FindPlayers() got player %v, want %v", foundPlayers[0].UserID, user.User.ID)
+		}
+	})
+}

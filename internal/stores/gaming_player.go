@@ -3,6 +3,7 @@ package stores
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"slices"
 	"strings"
@@ -26,10 +27,13 @@ type GamingPlayerStore interface {
 type PlayersFilter struct {
 	repository.PaginatedInput
 	repository.SortParams
-	Ids          []uuid.UUID `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	Q            string      `query:"q,omitempty" required:"false"`
-	Emails       []string    `query:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
-	DisplayNames []string    `query:"display_names,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
+	Ids           []uuid.UUID `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Q             string      `query:"q,omitempty" required:"false"`
+	Emails        []string    `query:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
+	DisplayNames  []string    `query:"display_names,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
+	UserIds       []uuid.UUID `query:"user_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	UserIDNotNull bool        `query:"user_id_not_null,omitempty" required:"false"`
+	UserIDNull    bool        `query:"user_id_null,omitempty" required:"false"`
 }
 
 func (s *DBGamingStore) playerFilterSelect(qs squirrel.SelectBuilder, filter *PlayersFilter) squirrel.SelectBuilder {
@@ -51,6 +55,15 @@ func (s *DBGamingStore) playerFilterSelect(qs squirrel.SelectBuilder, filter *Pl
 	if filter.DisplayNames != nil {
 		qs = qs.Where(squirrel.Eq{"gaming.players.display_name": filter.DisplayNames})
 	}
+	if filter.UserIds != nil {
+		qs = qs.Where(squirrel.Eq{"gaming.players.user_id": filter.UserIds})
+	}
+	if filter.UserIDNotNull {
+		qs = qs.Where(fmt.Sprintf("%s IS NOT NULL", "gaming.players.user_id"))
+	}
+	if filter.UserIDNull {
+		qs = qs.Where(fmt.Sprintf("%s IS NULL", "gaming.players.user_id"))
+	}
 	return qs
 }
 func (s *DBGamingStore) playerFilterDelete(qs squirrel.DeleteBuilder, filter *PlayersFilter) squirrel.DeleteBuilder {
@@ -71,6 +84,15 @@ func (s *DBGamingStore) playerFilterDelete(qs squirrel.DeleteBuilder, filter *Pl
 	}
 	if filter.DisplayNames != nil {
 		qs = qs.Where(squirrel.Eq{"gaming.players.display_name": filter.DisplayNames})
+	}
+	if filter.UserIds != nil {
+		qs = qs.Where(squirrel.Eq{"gaming.players.user_id": filter.UserIds})
+	}
+	if filter.UserIDNotNull {
+		qs = qs.Where(fmt.Sprintf("%s IS NOT NULL", "gaming.players.user_id"))
+	}
+	if filter.UserIDNull {
+		qs = qs.Where(fmt.Sprintf("%s IS NULL", "gaming.players.user_id"))
 	}
 	return qs
 }
