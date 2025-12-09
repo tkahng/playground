@@ -56,13 +56,13 @@ func (d *DbRpsGameService) PlayerCanPlayWithPlayer(ctx context.Context, requesti
 		return false, err
 	}
 	if friendship != nil {
-		if friendship.Status == models.FriendshipStatusAccepted {
-			return true, nil
+		if friendship.Status == models.FriendshipStatusDeclined {
+			return false, nil
 		}
-		return false, nil
+		return true, nil
 	}
 
-	return false, nil
+	return true, nil
 }
 
 var _ RpsGameService = (*DbRpsGameService)(nil)
