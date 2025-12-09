@@ -47,7 +47,7 @@ func bindGameGetUserPlayerApi(appApi *Api) {
 		huma.Operation{
 			OperationID: "get-user-player",
 			Method:      http.MethodGet,
-			Path:        "/games/player",
+			Path:        "/games/players",
 			Summary:     "Put player.",
 			Description: "Gets a player for the user. Returns the player if there is one.",
 			Tags:        []string{"Games", "Player"},
@@ -73,22 +73,29 @@ func bindGameGetUserPlayerApi(appApi *Api) {
 		},
 	)
 }
+
+type GamePutUserPlayerArgs struct {
+	DisplayName *string `json:"display_name" required:"true" nullable:"true"`
+}
+
 func bindGamePutUserPlayerApi(appApi *Api) {
 	huma.Register(
 		appApi.Api(),
 		huma.Operation{
 			OperationID: "put-user-player",
 			Method:      http.MethodPut,
-			Path:        "/games/player",
+			Path:        "/games/players",
 			Summary:     "Put user player.",
-			Description: "Creates a player for the user if there is none. Returns the player.",
+			Description: "Creates a player for the user if there is none, otherwise updates the player. Returns the player.",
 			Tags:        []string{"Games", "Player"},
 			Errors:      []int{http.StatusUnauthorized},
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
 		},
-		func(ctx context.Context, input *struct{}) (*ApiOutput[*ApiPlayer], error) {
+		func(ctx context.Context, input *struct {
+			Body GamePutUserPlayerArgs
+		}) (*ApiOutput[*ApiPlayer], error) {
 			user := contextstore.GetContextUserInfo(ctx)
 			if user == nil {
 				return nil, huma.Error401Unauthorized("Unauthorized. No user info")
@@ -103,21 +110,21 @@ func bindGamePutUserPlayerApi(appApi *Api) {
 				player, err = appApi.App().Adapter().Gaming().CreatePlayer(ctx, &models.Player{
 					Email:       user.User.Email,
 					UserID:      &user.User.ID,
-					DisplayName: user.User.Name,
+					DisplayName: input.Body.DisplayName,
 				})
 				if err != nil {
 					return nil, err
 				}
 			} else {
-				if player.UserID == nil {
-					player, err = appApi.App().Adapter().Gaming().UpdatePlayer(ctx, &models.Player{
-						ID:          player.ID,
-						UserID:      &user.User.ID,
-						DisplayName: user.User.Name,
-					})
-					if err != nil {
-						return nil, err
-					}
+				player, err = appApi.App().Adapter().Gaming().UpdatePlayer(ctx, &models.Player{
+					ID:          player.ID,
+					UserID:      &user.User.ID,
+					DisplayName: user.User.Name,
+					Email:       user.User.Email,
+					Metadata:    player.Metadata,
+				})
+				if err != nil {
+					return nil, err
 				}
 			}
 			return &ApiOutput[*ApiPlayer]{
