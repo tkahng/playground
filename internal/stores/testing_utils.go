@@ -1,4 +1,4 @@
-package testutils
+package stores
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
@@ -59,7 +58,7 @@ func UserWithRoles(roleNames ...string) UserOptionFunc {
 	}
 }
 
-func CreateUserWithOptions(t testing.TB, adapter stores.StorageAdapterInterface, options ...UserOptionFunc) *models.UserInfo {
+func CreateUserWithOptions(t testing.TB, adapter StorageAdapterInterface, options ...UserOptionFunc) *models.UserInfo {
 	ctx := context.Background()
 	opts := &CreateUserOption{
 		user: &models.User{
@@ -159,7 +158,7 @@ func TeamWithBilling(billing bool) TeamOptionFunc {
 	}
 }
 
-func CreateTeamAndMemberWithOptions(t testing.TB, adapter stores.StorageAdapterInterface, user *models.User, optFunc ...TeamOptionFunc) *models.TeamInfoModel {
+func CreateTeamAndMemberWithOptions(t testing.TB, adapter StorageAdapterInterface, user *models.User, optFunc ...TeamOptionFunc) *models.TeamInfoModel {
 	ctx := context.Background()
 	option := &CreateTeamOptions{
 		teamName: user.Email,
@@ -195,7 +194,7 @@ func CreateTeamAndMemberWithOptions(t testing.TB, adapter stores.StorageAdapterI
 	}
 }
 
-func CreateUser(adapter stores.StorageAdapterInterface, ctx context.Context, email string) *models.User {
+func CreateUser(adapter StorageAdapterInterface, ctx context.Context, email string) *models.User {
 	user, err := adapter.User().CreateUser(ctx, &models.User{
 		Email: email,
 	})
@@ -205,7 +204,7 @@ func CreateUser(adapter stores.StorageAdapterInterface, ctx context.Context, ema
 	return user
 }
 
-func CreateTeam(adapter stores.StorageAdapterInterface, ctx context.Context, slug string) *models.Team {
+func CreateTeam(adapter StorageAdapterInterface, ctx context.Context, slug string) *models.Team {
 	team, err := adapter.TeamGroup().CreateTeam(ctx, slug, slug)
 	if err != nil {
 		panic(err)
@@ -213,7 +212,7 @@ func CreateTeam(adapter stores.StorageAdapterInterface, ctx context.Context, slu
 	return team
 }
 
-func CreateTeamMember(adapter stores.StorageAdapterInterface, ctx context.Context, team *models.Team, user *models.User, role models.TeamMemberRole, billingAccess bool) *models.TeamMember {
+func CreateTeamMember(adapter StorageAdapterInterface, ctx context.Context, team *models.Team, user *models.User, role models.TeamMemberRole, billingAccess bool) *models.TeamMember {
 	member, err := adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
 		TeamID:           team.ID,
 		UserID:           &user.ID,
@@ -227,8 +226,8 @@ func CreateTeamMember(adapter stores.StorageAdapterInterface, ctx context.Contex
 	return member
 }
 
-func CreateTeamProject(adapter stores.StorageAdapterInterface, ctx context.Context, member *models.TeamMember, name string, description string) *models.TaskProject {
-	taskProject, err := adapter.Task().CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
+func CreateTeamProject(adapter StorageAdapterInterface, ctx context.Context, member *models.TeamMember, name string, description string) *models.TaskProject {
+	taskProject, err := adapter.Task().CreateTaskProject(ctx, &CreateTaskProjectDTO{
 		Name:        name,
 		Status:      models.TaskProjectStatusDone,
 		TeamID:      member.TeamID,
@@ -241,7 +240,7 @@ func CreateTeamProject(adapter stores.StorageAdapterInterface, ctx context.Conte
 	return taskProject
 }
 
-func CreateTask(adapter stores.StorageAdapterInterface, ctx context.Context, task *models.Task) *models.Task {
+func CreateTask(adapter StorageAdapterInterface, ctx context.Context, task *models.Task) *models.Task {
 	task, err := adapter.Task().CreateTask(ctx, task)
 	if err != nil {
 		panic(err)

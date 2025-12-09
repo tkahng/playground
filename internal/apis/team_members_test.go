@@ -20,7 +20,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
-	"github.com/tkahng/playground/internal/stores/testutils"
+	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
 )
 
@@ -270,17 +270,17 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		adapter := testApi.App.Adapter()
-		user1 := testutils.CreateUser(adapter, ctx, "user1@example.com")
-		user2 := testutils.CreateUser(adapter, ctx, "user2@example.com")
-		team1 := testutils.CreateTeam(adapter, ctx, "Team1")
-		team2 := testutils.CreateTeam(adapter, ctx, "Team2")
-		team3 := testutils.CreateTeam(adapter, ctx, "Team3")
-		user1Team1Member := testutils.CreateTeamMember(adapter, ctx, team1, user1, models.TeamMemberRoleOwner, true)
-		user1Team2Member := testutils.CreateTeamMember(adapter, ctx, team2, user1, models.TeamMemberRoleMember, true)
-		user1Team3Member := testutils.CreateTeamMember(adapter, ctx, team3, user1, models.TeamMemberRoleGuest, true)
-		user2Team1Member := testutils.CreateTeamMember(adapter, ctx, team1, user2, models.TeamMemberRoleOwner, true)
-		user2Team2Member := testutils.CreateTeamMember(adapter, ctx, team2, user2, models.TeamMemberRoleMember, true)
-		user2Team3Member := testutils.CreateTeamMember(adapter, ctx, team3, user2, models.TeamMemberRoleGuest, true)
+		user1 := stores.CreateUser(adapter, ctx, "user1@example.com")
+		user2 := stores.CreateUser(adapter, ctx, "user2@example.com")
+		team1 := stores.CreateTeam(adapter, ctx, "Team1")
+		team2 := stores.CreateTeam(adapter, ctx, "Team2")
+		team3 := stores.CreateTeam(adapter, ctx, "Team3")
+		user1Team1Member := stores.CreateTeamMember(adapter, ctx, team1, user1, models.TeamMemberRoleOwner, true)
+		user1Team2Member := stores.CreateTeamMember(adapter, ctx, team2, user1, models.TeamMemberRoleMember, true)
+		user1Team3Member := stores.CreateTeamMember(adapter, ctx, team3, user1, models.TeamMemberRoleGuest, true)
+		user2Team1Member := stores.CreateTeamMember(adapter, ctx, team1, user2, models.TeamMemberRoleOwner, true)
+		user2Team2Member := stores.CreateTeamMember(adapter, ctx, team2, user2, models.TeamMemberRoleMember, true)
+		user2Team3Member := stores.CreateTeamMember(adapter, ctx, team3, user2, models.TeamMemberRoleGuest, true)
 
 		user1Team1Member.User = user1
 		user1Team1Member.Team = team3
