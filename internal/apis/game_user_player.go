@@ -3,10 +3,8 @@ package apis
 import (
 	"context"
 	"net/http"
-	"time"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/middleware"
@@ -18,34 +16,6 @@ import (
 	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/internal/tools/utils"
 )
-
-type ApiPlayer struct {
-	_           struct{}   `db:"players" schema:"gaming" json:"-"`
-	ID          uuid.UUID  `db:"id,pk" json:"id"`
-	Email       string     `db:"email" json:"email"`
-	DisplayName *string    `db:"display_name" json:"display_name,omitempty" required:"false"`
-	UserID      *uuid.UUID `db:"user_id" json:"user_id,omitempty" required:"false"`
-	Metadata    []byte     `db:"metadata" json:"metadata"`
-	CreatedAt   time.Time  `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time  `db:"updated_at" json:"updated_at"`
-	User        *ApiUser   `db:"user" src:"user_id" dest:"id" table:"auth.users" json:"user,omitempty"`
-}
-
-func ToApiPlayer(player *models.Player) *ApiPlayer {
-	if player == nil {
-		return nil
-	}
-	return &ApiPlayer{
-		ID:          player.ID,
-		Email:       player.Email,
-		DisplayName: player.DisplayName,
-		UserID:      player.UserID,
-		Metadata:    player.Metadata,
-		CreatedAt:   player.CreatedAt,
-		UpdatedAt:   player.UpdatedAt,
-		User:        fromUserModel(player.User),
-	}
-}
 
 func bindGetMyPlayerApi(api huma.API, app core.App) {
 	huma.Register(
@@ -62,7 +32,7 @@ func bindGetMyPlayerApi(api huma.API, app core.App) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 		},
-		func(ctx context.Context, input *struct{}) (*ApiSingleOutput[*ApiPlayer], error) {
+		func(ctx context.Context, input *struct{}) (*ApiSingleOutput[*Player], error) {
 			user := contextstore.GetContextUserInfo(ctx)
 			if user == nil {
 				return nil, huma.Error401Unauthorized("Unauthorized. No user info")
@@ -73,8 +43,8 @@ func bindGetMyPlayerApi(api huma.API, app core.App) {
 			if err != nil {
 				return nil, err
 			}
-			return &ApiSingleOutput[*ApiPlayer]{
-				Body: ApiSingleResponse[*ApiPlayer]{
+			return &ApiSingleOutput[*Player]{
+				Body: ApiSingleResponse[*Player]{
 					Data: ToApiPlayer(player),
 				},
 			}, nil
@@ -103,7 +73,7 @@ func bindPutMyPlayerApi(api huma.API, app core.App) {
 		},
 		func(ctx context.Context, input *struct {
 			Body GamePutPlayerMeArgs
-		}) (*ApiSingleOutput[*ApiPlayer], error) {
+		}) (*ApiSingleOutput[*Player], error) {
 			user := contextstore.GetContextUserInfo(ctx)
 			if user == nil {
 				return nil, huma.Error401Unauthorized("Unauthorized. No user info")
@@ -135,8 +105,8 @@ func bindPutMyPlayerApi(api huma.API, app core.App) {
 					return nil, err
 				}
 			}
-			return &ApiSingleOutput[*ApiPlayer]{
-				Body: ApiSingleResponse[*ApiPlayer]{
+			return &ApiSingleOutput[*Player]{
+				Body: ApiSingleResponse[*Player]{
 					Data: ToApiPlayer(player),
 				},
 			}, nil
@@ -170,7 +140,7 @@ func bindFindPlayersApi(api huma.API, app core.App) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 		},
-		func(ctx context.Context, input *PlayersFilter) (*ApiPaginatedOutput[*ApiPlayer], error) {
+		func(ctx context.Context, input *PlayersFilter) (*ApiPaginatedOutput[*Player], error) {
 			user := contextstore.GetContextUserInfo(ctx)
 			if user == nil {
 				return nil, huma.Error401Unauthorized("Unauthorized. No user info")
@@ -194,8 +164,8 @@ func bindFindPlayersApi(api huma.API, app core.App) {
 			if err != nil {
 				return nil, err
 			}
-			return &ApiPaginatedOutput[*ApiPlayer]{
-				Body: ApiPaginatedResponse[*ApiPlayer]{
+			return &ApiPaginatedOutput[*Player]{
+				Body: ApiPaginatedResponse[*Player]{
 					Data: mapper.Map(players, ToApiPlayer),
 					Meta: ApiGenerateMeta(&input.PaginatedInput, count),
 				},
@@ -209,7 +179,7 @@ func bindFindRegisteredPlayerByEmailApi(api huma.API, app core.App) {
 		huma.Operation{
 			OperationID: "search-registered-player",
 			Method:      http.MethodGet,
-			Path:        "/games/players/registered/email/{inviting-player-email}",
+			Path:        "/players/registered/email/{inviting-player-email}",
 			Summary:     "search registered player by email",
 			Description: "search registered player by email",
 			Tags:        []string{"Games", "Player"},
@@ -223,7 +193,7 @@ func bindFindRegisteredPlayerByEmailApi(api huma.API, app core.App) {
 		},
 		func(ctx context.Context, input *struct {
 			Email string `path:"inviting-player-email" required:"true" format:"email"`
-		}) (*ApiSingleOutput[*ApiPlayer], error) {
+		}) (*ApiSingleOutput[*Player], error) {
 			user := contextstore.GetContextUserInfo(ctx)
 			if user == nil {
 				return nil, huma.Error401Unauthorized("Unauthorized. No user info")
@@ -240,9 +210,60 @@ func bindFindRegisteredPlayerByEmailApi(api huma.API, app core.App) {
 			if err != nil {
 				return nil, err
 			}
-			return &ApiSingleOutput[*ApiPlayer]{
-				Body: ApiSingleResponse[*ApiPlayer]{
+			return &ApiSingleOutput[*Player]{
+				Body: ApiSingleResponse[*Player]{
 					Data: ToApiPlayer(player),
+				},
+			}, nil
+		},
+	)
+}
+
+func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "send-game-request-to-registered-player",
+			Method:      http.MethodPost,
+			Path:        "/players/{inviting-player-id}/games/requests",
+			Summary:     "send game request to registered player",
+			Description: "send game request to registered player",
+			Tags:        []string{"Games", "Player"},
+			Errors:      []int{http.StatusUnauthorized},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireCurrentPlayerMiddelware(),
+			),
+		},
+		func(ctx context.Context, input *struct {
+			InvitingPlayerId string `path:"inviting-player-id" required:"true" format:"uuid"`
+		}) (*ApiSingleOutput[*RpsGame], error) {
+			user := contextstore.GetContextUserInfo(ctx)
+			if user == nil {
+				return nil, huma.Error401Unauthorized("Unauthorized. No user info")
+			}
+			currentPlayer := contextstore.GetContextCurrentPlayer(ctx)
+			if currentPlayer == nil {
+				return nil, huma.Error401Unauthorized("no player found.")
+			}
+			filter := &stores.PlayersFilter{}
+			filter.Ids = utils.ParseValidUUIDs(input.InvitingPlayerId)
+			filter.Registered = types.OptionalParam[bool]{
+				Value: true,
+				IsSet: true,
+			}
+			player, err := app.Adapter().Gaming().FindPlayer(ctx, filter)
+			if err != nil {
+				return nil, err
+			}
+			if player == nil {
+				return nil, huma.Error404NotFound("player not found")
+			}
+			return &ApiSingleOutput[*RpsGame]{
+				Body: ApiSingleResponse[*RpsGame]{
+					//
 				},
 			}, nil
 		},
