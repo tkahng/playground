@@ -8,9 +8,15 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/core"
+	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/mapper"
+	"github.com/tkahng/playground/internal/tools/types"
+	"github.com/tkahng/playground/internal/tools/utils"
 )
 
 type ApiPlayer struct {
@@ -41,14 +47,14 @@ func ToApiPlayer(player *models.Player) *ApiPlayer {
 	}
 }
 
-func bindGetUserPlayerApi(appApi *Api) {
+func bindGetMyPlayerApi(api huma.API, app core.App) {
 	huma.Register(
-		appApi.Api(),
+		api,
 		huma.Operation{
-			OperationID: "get-user-player",
+			OperationID: "get-my-player",
 			Method:      http.MethodGet,
-			Path:        "/games/players",
-			Summary:     "Put player.",
+			Path:        "/games/players/me",
+			Summary:     "get my player.",
 			Description: "Gets a player for the user. Returns the player if there is one.",
 			Tags:        []string{"Games", "Player"},
 			Errors:      []int{http.StatusUnauthorized},
@@ -61,7 +67,7 @@ func bindGetUserPlayerApi(appApi *Api) {
 			if user == nil {
 				return nil, huma.Error401Unauthorized("Unauthorized. No user info")
 			}
-			player, err := appApi.App().Adapter().Gaming().FindPlayer(ctx, &stores.PlayersFilter{
+			player, err := app.Adapter().Gaming().FindPlayer(ctx, &stores.PlayersFilter{
 				Emails: []string{user.User.Email},
 			})
 			if err != nil {
@@ -76,17 +82,17 @@ func bindGetUserPlayerApi(appApi *Api) {
 	)
 }
 
-type GamePutUserPlayerArgs struct {
+type GamePutPlayerMeArgs struct {
 	DisplayName *string `json:"display_name" required:"true" nullable:"true" minLength:"1" maxLength:"80"`
 }
 
-func bindPutUserPlayerApi(appApi *Api) {
+func bindPutMyPlayerApi(api huma.API, app core.App) {
 	huma.Register(
-		appApi.Api(),
+		api,
 		huma.Operation{
-			OperationID: "put-user-player",
+			OperationID: "put-my-player",
 			Method:      http.MethodPut,
-			Path:        "/games/players",
+			Path:        "/games/players/me",
 			Summary:     "Put user player.",
 			Description: "Creates a player for the user if there is none, otherwise updates the player. Returns the player.",
 			Tags:        []string{"Games", "Player"},
@@ -96,20 +102,20 @@ func bindPutUserPlayerApi(appApi *Api) {
 			}},
 		},
 		func(ctx context.Context, input *struct {
-			Body GamePutUserPlayerArgs
+			Body GamePutPlayerMeArgs
 		}) (*ApiSingleOutput[*ApiPlayer], error) {
 			user := contextstore.GetContextUserInfo(ctx)
 			if user == nil {
 				return nil, huma.Error401Unauthorized("Unauthorized. No user info")
 			}
-			player, err := appApi.App().Adapter().Gaming().FindPlayer(ctx, &stores.PlayersFilter{
+			player, err := app.Adapter().Gaming().FindPlayer(ctx, &stores.PlayersFilter{
 				Emails: []string{user.User.Email},
 			})
 			if err != nil {
 				return nil, err
 			}
 			if player == nil {
-				player, err = appApi.App().Adapter().Gaming().CreatePlayer(ctx, &models.Player{
+				player, err = app.Adapter().Gaming().CreatePlayer(ctx, &models.Player{
 					Email:       user.User.Email,
 					UserID:      &user.User.ID,
 					DisplayName: input.Body.DisplayName,
@@ -118,7 +124,7 @@ func bindPutUserPlayerApi(appApi *Api) {
 					return nil, err
 				}
 			} else {
-				player, err = appApi.App().Adapter().Gaming().UpdatePlayer(ctx, &models.Player{
+				player, err = app.Adapter().Gaming().UpdatePlayer(ctx, &models.Player{
 					ID:          player.ID,
 					UserID:      &user.User.ID,
 					DisplayName: user.User.Name,
@@ -128,6 +134,111 @@ func bindPutUserPlayerApi(appApi *Api) {
 				if err != nil {
 					return nil, err
 				}
+			}
+			return &ApiSingleOutput[*ApiPlayer]{
+				Body: ApiSingleResponse[*ApiPlayer]{
+					Data: ToApiPlayer(player),
+				},
+			}, nil
+		},
+	)
+}
+
+type PlayersFilter struct {
+	PaginatedInput
+	SortParams
+	Ids          []string                  `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Q            string                    `query:"q,omitempty" required:"false"`
+	Emails       []string                  `query:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
+	DisplayNames []string                  `query:"display_names,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
+	UserIds      []string                  `query:"user_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Registered   types.OptionalParam[bool] `query:"registered,omitempty" required:"false"`
+}
+
+func bindFindPlayersApi(api huma.API, app core.App) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "get-players",
+			Method:      http.MethodGet,
+			Path:        "/games/players",
+			Summary:     "get players.",
+			Description: "gets a list of players.",
+			Tags:        []string{"Games", "Player"},
+			Errors:      []int{http.StatusUnauthorized},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		func(ctx context.Context, input *PlayersFilter) (*ApiPaginatedOutput[*ApiPlayer], error) {
+			user := contextstore.GetContextUserInfo(ctx)
+			if user == nil {
+				return nil, huma.Error401Unauthorized("Unauthorized. No user info")
+			}
+			filter := &stores.PlayersFilter{}
+			filter.DisplayNames = input.DisplayNames
+			filter.Emails = input.Emails
+			filter.UserIds = utils.ParseValidUUIDs(input.UserIds...)
+			filter.Registered = input.Registered
+			filter.Ids = utils.ParseValidUUIDs(input.Ids...)
+			filter.Q = input.Q
+			filter.Page = input.Page
+			filter.PerPage = input.PerPage
+			filter.SortBy = input.SortBy
+			filter.SortOrder = input.SortOrder
+			players, err := app.Adapter().Gaming().FindPlayers(ctx, filter)
+			if err != nil {
+				return nil, err
+			}
+			count, err := app.Adapter().Gaming().CountPlayers(ctx, filter)
+			if err != nil {
+				return nil, err
+			}
+			return &ApiPaginatedOutput[*ApiPlayer]{
+				Body: ApiPaginatedResponse[*ApiPlayer]{
+					Data: mapper.Map(players, ToApiPlayer),
+					Meta: ApiGenerateMeta(&input.PaginatedInput, count),
+				},
+			}, nil
+		},
+	)
+}
+func bindFindRegisteredPlayerByEmailApi(api huma.API, app core.App) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "search-registered-player",
+			Method:      http.MethodGet,
+			Path:        "/games/players/registered/email/{inviting-player-email}",
+			Summary:     "search registered player by email",
+			Description: "search registered player by email",
+			Tags:        []string{"Games", "Player"},
+			Errors:      []int{http.StatusUnauthorized},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireCurrentPlayerMiddelware(),
+			),
+		},
+		func(ctx context.Context, input *struct {
+			Email string `path:"inviting-player-email" required:"true" format:"email"`
+		}) (*ApiSingleOutput[*ApiPlayer], error) {
+			user := contextstore.GetContextUserInfo(ctx)
+			if user == nil {
+				return nil, huma.Error401Unauthorized("Unauthorized. No user info")
+			}
+			filter := &stores.PlayersFilter{}
+			filter.Emails = []string{input.Email}
+			filter.Registered = types.OptionalParam[bool]{
+				Value: true,
+				IsSet: true,
+			}
+			filter.Page = 0
+			filter.PerPage = 1
+			player, err := app.Adapter().Gaming().FindPlayer(ctx, filter)
+			if err != nil {
+				return nil, err
 			}
 			return &ApiSingleOutput[*ApiPlayer]{
 				Body: ApiSingleResponse[*ApiPlayer]{
