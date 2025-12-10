@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func TestDBGamingStore_CreateUpdateCountPlayer(t *testing.T) {
@@ -122,7 +123,7 @@ func TestDBGamingStore_CountPlayer(t *testing.T) {
 	})
 }
 
-func TestDBGamingStore_FindPlayers_UserIDNotNull(t *testing.T) {
+func TestDBGamingStore_FindPlayers_Registered(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := NewStorageAdapter(db)
 		user := CreateUserWithOptions(t, adapter, UserWithEmail("testing@gmail.com"))
@@ -140,7 +141,10 @@ func TestDBGamingStore_FindPlayers_UserIDNotNull(t *testing.T) {
 			t.Fatalf("CreatePlayer() error = %v", err)
 		}
 		filter := &PlayersFilter{
-			UserIDNotNull: true,
+			Registered: types.OptionalParam[bool]{
+				Value: true,
+				IsSet: true,
+			},
 		}
 		foundPlayers, err := adapter.Gaming().FindPlayers(ctx, filter)
 		if err != nil {
@@ -154,6 +158,83 @@ func TestDBGamingStore_FindPlayers_UserIDNotNull(t *testing.T) {
 		}
 		if foundPlayers[0].UserID == nil {
 			t.Errorf("FindPlayers() got player %v, want %v", foundPlayers[0].UserID, user.User.ID)
+		}
+	})
+}
+func TestDBGamingStore_FindPlayers_NotRegistered(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := NewStorageAdapter(db)
+		user := CreateUserWithOptions(t, adapter, UserWithEmail("testing@gmail.com"))
+		_, err := adapter.Gaming().CreatePlayer(ctx, &models.Player{
+			UserID: &user.User.ID,
+			Email:  user.User.Email,
+		})
+		if err != nil {
+			t.Fatalf("CreatePlayer() error = %v", err)
+		}
+		noUserPlayer, err := adapter.Gaming().CreatePlayer(ctx, &models.Player{
+			Email: "no_user@example.com",
+		})
+		if err != nil {
+			t.Fatalf("CreatePlayer() error = %v", err)
+		}
+		filter := &PlayersFilter{
+			Registered: types.OptionalParam[bool]{
+				Value: false,
+				IsSet: true,
+			},
+		}
+		foundPlayers, err := adapter.Gaming().FindPlayers(ctx, filter)
+		if err != nil {
+			t.Fatalf("FindPlayers() error = %v", err)
+		}
+		if len(foundPlayers) != 1 {
+			t.Errorf("FindPlayers() got %d players, want 1", len(foundPlayers))
+		}
+		if foundPlayers[0].ID != noUserPlayer.ID {
+			t.Errorf("FindPlayers() got player %v, want %v", foundPlayers[0].ID, noUserPlayer.ID)
+		}
+		if foundPlayers[0].UserID != nil {
+			t.Errorf("FindPlayers() got player %v, want %v", foundPlayers[0].UserID, nil)
+		}
+	})
+}
+func TestDBGamingStore_DeletePlayers_Registered(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := NewStorageAdapter(db)
+		user := CreateUserWithOptions(t, adapter, UserWithEmail("testing@gmail.com"))
+		_, err := adapter.Gaming().CreatePlayer(ctx, &models.Player{
+			UserID: &user.User.ID,
+			Email:  user.User.Email,
+		})
+		if err != nil {
+			t.Fatalf("CreatePlayer() error = %v", err)
+		}
+		_, err = adapter.Gaming().CreatePlayer(ctx, &models.Player{
+			Email: "no_user@example.com",
+		})
+		if err != nil {
+			t.Fatalf("CreatePlayer() error = %v", err)
+		}
+		filter := &PlayersFilter{
+			Registered: types.OptionalParam[bool]{
+				Value: true,
+				IsSet: true,
+			},
+		}
+		deleted, err := adapter.Gaming().DeletePlayers(ctx, filter)
+		if err != nil {
+			t.Fatalf("FindPlayers() error = %v", err)
+		}
+		if deleted != 1 {
+			t.Errorf("FindPlayers() got %d players, want 1", deleted)
+		}
+		playerCount, err := adapter.Gaming().CountPlayers(ctx, nil)
+		if err != nil {
+			t.Fatalf("FindPlayers() error = %v", err)
+		}
+		if playerCount != 1 {
+			t.Errorf("FindPlayers() got %d players, want 1", playerCount)
 		}
 	})
 }

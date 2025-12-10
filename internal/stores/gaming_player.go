@@ -13,6 +13,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 type GamingPlayerStore interface {
@@ -27,13 +28,12 @@ type GamingPlayerStore interface {
 type PlayersFilter struct {
 	repository.PaginatedInput
 	repository.SortParams
-	Ids           []uuid.UUID `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	Q             string      `query:"q,omitempty" required:"false"`
-	Emails        []string    `query:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
-	DisplayNames  []string    `query:"display_names,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
-	UserIds       []uuid.UUID `query:"user_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	UserIDNotNull bool        `query:"user_id_not_null,omitempty" required:"false"`
-	UserIDNull    bool        `query:"user_id_null,omitempty" required:"false"`
+	Ids          []uuid.UUID               `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Q            string                    `query:"q,omitempty" required:"false"`
+	Emails       []string                  `query:"emails,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
+	DisplayNames []string                  `query:"display_names,omitempty" required:"false" minimum:"1" maximum:"100" format:"email"`
+	UserIds      []uuid.UUID               `query:"user_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Registered   types.OptionalParam[bool] `query:"registered,omitempty" required:"false"`
 }
 
 func (s *DBGamingStore) playerFilterSelect(qs squirrel.SelectBuilder, filter *PlayersFilter) squirrel.SelectBuilder {
@@ -58,11 +58,12 @@ func (s *DBGamingStore) playerFilterSelect(qs squirrel.SelectBuilder, filter *Pl
 	if filter.UserIds != nil {
 		qs = qs.Where(squirrel.Eq{"gaming.players.user_id": filter.UserIds})
 	}
-	if filter.UserIDNotNull {
-		qs = qs.Where(fmt.Sprintf("%s IS NOT NULL", "gaming.players.user_id"))
-	}
-	if filter.UserIDNull {
-		qs = qs.Where(fmt.Sprintf("%s IS NULL", "gaming.players.user_id"))
+	if filter.Registered.IsSet {
+		if filter.Registered.Value {
+			qs = qs.Where(fmt.Sprintf("%s IS NOT NULL", "gaming.players.user_id"))
+		} else {
+			qs = qs.Where(fmt.Sprintf("%s IS NULL", "gaming.players.user_id"))
+		}
 	}
 	return qs
 }
@@ -88,11 +89,12 @@ func (s *DBGamingStore) playerFilterDelete(qs squirrel.DeleteBuilder, filter *Pl
 	if filter.UserIds != nil {
 		qs = qs.Where(squirrel.Eq{"gaming.players.user_id": filter.UserIds})
 	}
-	if filter.UserIDNotNull {
-		qs = qs.Where(fmt.Sprintf("%s IS NOT NULL", "gaming.players.user_id"))
-	}
-	if filter.UserIDNull {
-		qs = qs.Where(fmt.Sprintf("%s IS NULL", "gaming.players.user_id"))
+	if filter.Registered.IsSet {
+		if filter.Registered.Value {
+			qs = qs.Where(fmt.Sprintf("%s IS NOT NULL", "gaming.players.user_id"))
+		} else {
+			qs = qs.Where(fmt.Sprintf("%s IS NULL", "gaming.players.user_id"))
+		}
 	}
 	return qs
 }
