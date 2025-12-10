@@ -56,7 +56,7 @@ func bindGameGetUserPlayerApi(appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 		},
-		func(ctx context.Context, input *struct{}) (*ApiOutput[*ApiPlayer], error) {
+		func(ctx context.Context, input *struct{}) (*ApiSingleOutput[*ApiPlayer], error) {
 			user := contextstore.GetContextUserInfo(ctx)
 			if user == nil {
 				return nil, huma.Error401Unauthorized("Unauthorized. No user info")
@@ -67,8 +67,10 @@ func bindGameGetUserPlayerApi(appApi *Api) {
 			if err != nil {
 				return nil, err
 			}
-			return &ApiOutput[*ApiPlayer]{
-				Body: ToApiPlayer(player),
+			return &ApiSingleOutput[*ApiPlayer]{
+				Body: ApiSingleResponse[*ApiPlayer]{
+					Data: ToApiPlayer(player),
+				},
 			}, nil
 		},
 	)
@@ -95,7 +97,7 @@ func bindGamePutUserPlayerApi(appApi *Api) {
 		},
 		func(ctx context.Context, input *struct {
 			Body GamePutUserPlayerArgs
-		}) (*ApiOutput[*ApiPlayer], error) {
+		}) (*ApiSingleOutput[*ApiPlayer], error) {
 			user := contextstore.GetContextUserInfo(ctx)
 			if user == nil {
 				return nil, huma.Error401Unauthorized("Unauthorized. No user info")
@@ -127,8 +129,10 @@ func bindGamePutUserPlayerApi(appApi *Api) {
 					return nil, err
 				}
 			}
-			return &ApiOutput[*ApiPlayer]{
-				Body: ToApiPlayer(player),
+			return &ApiSingleOutput[*ApiPlayer]{
+				Body: ApiSingleResponse[*ApiPlayer]{
+					Data: ToApiPlayer(player),
+				},
 			}, nil
 		},
 	)
