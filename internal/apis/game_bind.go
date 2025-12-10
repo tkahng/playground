@@ -1,6 +1,6 @@
 package apis
 
 func bindGameApi(api *Api) {
-	bindGameGetUserPlayerApi(api)
-	bindGamePutUserPlayerApi(api)
+	bindGetUserPlayerApi(api)
+	bindPutUserPlayerApi(api)
 }

@@ -41,7 +41,7 @@ func ToApiPlayer(player *models.Player) *ApiPlayer {
 	}
 }
 
-func bindGameGetUserPlayerApi(appApi *Api) {
+func bindGetUserPlayerApi(appApi *Api) {
 	huma.Register(
 		appApi.Api(),
 		huma.Operation{
@@ -80,7 +80,7 @@ type GamePutUserPlayerArgs struct {
 	DisplayName *string `json:"display_name" required:"true" nullable:"true" minLength:"1" maxLength:"80"`
 }
 
-func bindGamePutUserPlayerApi(appApi *Api) {
+func bindPutUserPlayerApi(appApi *Api) {
 	huma.Register(
 		appApi.Api(),
 		huma.Operation{

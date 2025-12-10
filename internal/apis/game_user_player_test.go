@@ -18,7 +18,7 @@ import (
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
-func Test_GamePutUserPlayer_Success_SetDisplayName(t *testing.T) {
+func Test_PutUserPlayer_Success_SetDisplayName(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		scenario := &ApiScenario{
@@ -59,7 +59,7 @@ func Test_GamePutUserPlayer_Success_SetDisplayName(t *testing.T) {
 		scenario.Test(t)
 	})
 }
-func Test_GamePutUserPlayer_Success_SetDisplayNameNil(t *testing.T) {
+func Test_PutUserPlayer_Success_SetDisplayNameNil(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		scenario := &ApiScenario{
@@ -100,7 +100,7 @@ func Test_GamePutUserPlayer_Success_SetDisplayNameNil(t *testing.T) {
 		scenario.Test(t)
 	})
 }
-func Test_GamePutUserPlayer_Fail_EmptyDisplayName(t *testing.T) {
+func Test_PutUserPlayer_Fail_EmptyDisplayName(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		scenario := &ApiScenario{
@@ -135,8 +135,7 @@ func Test_GamePutUserPlayer_Fail_EmptyDisplayName(t *testing.T) {
 		scenario.Test(t)
 	})
 }
-
-func Test_GameGetUserPlayer_Success_HasPlayer(t *testing.T) {
+func Test_GetUserPlayer_Success_HasPlayer(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		scenario := &ApiScenario{
@@ -176,7 +175,7 @@ func Test_GameGetUserPlayer_Success_HasPlayer(t *testing.T) {
 		scenario.Test(t)
 	})
 }
-func Test_GameGetUserPlayer_Success_HasNoPlayer(t *testing.T) {
+func Test_GetUserPlayer_Success_HasNoPlayer(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		scenario := &ApiScenario{
