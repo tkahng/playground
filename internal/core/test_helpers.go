@@ -468,3 +468,61 @@ func CreateProjectAndTasks(t testing.TB, app App, owner *models.TeamMember, fns 
 	}
 	return taskProject
 }
+
+type PlayerConfig struct {
+	Email       string
+	DisplayName *string
+	Registered  bool
+}
+
+func WithPlayerEmail(email string) func(*PlayerConfig) {
+	return func(r *PlayerConfig) {
+		r.Email = email
+	}
+}
+
+func WithPlayerDisplayName(displayName string) func(*PlayerConfig) {
+	return func(r *PlayerConfig) {
+		r.DisplayName = &displayName
+	}
+}
+
+func WithPlayerRegistered(registered bool) func(*PlayerConfig) {
+	return func(r *PlayerConfig) {
+		r.Registered = registered
+	}
+}
+
+func MustCreatePlayerWithOptions(t testing.TB, app App, fns ...func(*PlayerConfig)) *models.Player {
+	ctx := context.Background()
+	playerConfig := &PlayerConfig{
+		Email:       fmt.Sprintf("%s@gmail.com", uuid.NewString()),
+		DisplayName: types.Pointer(uuid.NewString()),
+		Registered:  true,
+	}
+	for _, fn := range fns {
+		fn(playerConfig)
+	}
+	var userId *uuid.UUID
+	var user *models.User
+	if playerConfig.Registered {
+		var err error
+		user, err = app.Adapter().User().CreateUser(ctx, &models.User{
+			Email: playerConfig.Email,
+		})
+		if err != nil {
+			t.Fatalf("CreateUser() error = %v", err)
+		}
+		userId = &user.ID
+	}
+	player, err := app.Adapter().Gaming().CreatePlayer(ctx, &models.Player{
+		Email:       playerConfig.Email,
+		DisplayName: playerConfig.DisplayName,
+		UserID:      userId,
+	})
+	if err != nil {
+		t.Fatalf("CreatePlayer() error = %v", err)
+	}
+	player.User = user
+	return player
+}
