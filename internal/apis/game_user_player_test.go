@@ -49,7 +49,7 @@ func Test_PutMyPlayer_Success_SetDisplayName(t *testing.T) {
 				if !ok {
 					t.Fatal("user info not found")
 				}
-				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.ApiPlayer]](t, res.Body.Bytes())
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.Player]](t, res.Body.Bytes())
 				assert.NotNil(t, result)
 				userId := *result.Data.UserID
 				assert.Equal(t, userInfo.User.ID, userId)
@@ -90,7 +90,7 @@ func Test_PutMyPlayer_Success_SetDisplayNameNil(t *testing.T) {
 				if !ok {
 					t.Fatal("user info not found")
 				}
-				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.ApiPlayer]](t, res.Body.Bytes())
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.Player]](t, res.Body.Bytes())
 				assert.NotNil(t, result)
 				userId := *result.Data.UserID
 				assert.Equal(t, userInfo.User.ID, userId)
@@ -166,7 +166,7 @@ func Test_GetMyPlayer_Success_HasPlayer(t *testing.T) {
 				if !ok {
 					t.Fatal("user info not found")
 				}
-				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.ApiPlayer]](t, res.Body.Bytes())
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.Player]](t, res.Body.Bytes())
 				assert.NotNil(t, result)
 				userId := *result.Data.UserID
 				assert.Equal(t, *player.UserID, userId)
@@ -195,7 +195,7 @@ func Test_GetMyPlayer_Success_HasNoPlayer(t *testing.T) {
 				scenario.Headers = []string{tokenHeader}
 			},
 			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
-				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.ApiPlayer]](t, res.Body.Bytes())
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.Player]](t, res.Body.Bytes())
 				assert.Nil(t, result.Data)
 			},
 		}
@@ -222,14 +222,14 @@ func Test_GetPlayers_Success_ByEmail(t *testing.T) {
 				scenario.URL = fmt.Sprintf("%s?emails=%s&page=0&per_page=1", scenario.URL, userInfo.User.Email)
 			},
 			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
-				result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.ApiPlayer]](t, res.Body.Bytes())
+				result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.Player]](t, res.Body.Bytes())
 				assert.Nil(t, result.Data)
 			},
 		}
 		scenario.Test(t)
 	})
 }
-func Test_FindRegisteredPlayerByEmail_Success(t *testing.T) {
+func Test_FindRegisteredPlayerByEmail(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		playerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
@@ -239,7 +239,7 @@ func Test_FindRegisteredPlayerByEmail_Success(t *testing.T) {
 			{
 				Name:           "found",
 				Method:         http.MethodGet,
-				URL:            "/games/players/registered/email",
+				URL:            "/players/registered/email",
 				ExpectedStatus: http.StatusOK,
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
@@ -250,7 +250,7 @@ func Test_FindRegisteredPlayerByEmail_Success(t *testing.T) {
 					scenario.URL = fmt.Sprintf("%s/%s", scenario.URL, otherPlayerWithUser.Email)
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
-					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.ApiPlayer]](t, res.Body.Bytes())
+					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.Player]](t, res.Body.Bytes())
 					assert.NotNil(t, result.Data)
 					userId := *result.Data.UserID
 					assert.Equal(t, *otherPlayerWithUser.UserID, userId)
@@ -260,7 +260,7 @@ func Test_FindRegisteredPlayerByEmail_Success(t *testing.T) {
 			{
 				Name:           "not found not registered",
 				Method:         http.MethodGet,
-				URL:            "/games/players/registered/email",
+				URL:            "/players/registered/email",
 				ExpectedStatus: http.StatusOK,
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
@@ -271,14 +271,14 @@ func Test_FindRegisteredPlayerByEmail_Success(t *testing.T) {
 					scenario.URL = fmt.Sprintf("%s/%s", scenario.URL, unregisteredPlayer.Email)
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
-					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.ApiPlayer]](t, res.Body.Bytes())
+					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.Player]](t, res.Body.Bytes())
 					assert.Nil(t, result.Data)
 				},
 			},
 			{
 				Name:           "not found not existing",
 				Method:         http.MethodGet,
-				URL:            "/games/players/registered/email",
+				URL:            "/players/registered/email",
 				ExpectedStatus: http.StatusOK,
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
@@ -289,8 +289,41 @@ func Test_FindRegisteredPlayerByEmail_Success(t *testing.T) {
 					scenario.URL = fmt.Sprintf("%s/%s", scenario.URL, "some@email.com")
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
-					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.ApiPlayer]](t, res.Body.Bytes())
+					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.Player]](t, res.Body.Bytes())
 					assert.Nil(t, result.Data)
+				},
+			},
+		}
+		for _, scenario := range scenarios {
+			scenario.Test(t)
+		}
+	})
+}
+func Test_SendGameRequestToRegisteredPlayer_Success(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := SetupApi(t, ctx, db)
+		playerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		otherPlayerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		scenarios := []*ApiScenario{
+			{
+				Name:           "success",
+				Method:         http.MethodPost,
+				URL:            "/players/{inviting-player-id}/games/requests",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, playerWithUser.Email)
+					scenario.Headers = []string{tokenHeader}
+					scenario.URL = strings.ReplaceAll(scenario.URL, "{inviting-player-id}", fmt.Sprintf("%s", otherPlayerWithUser.ID))
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.Player]](t, res.Body.Bytes())
+					assert.NotNil(t, result.Data)
+					userId := *result.Data.UserID
+					assert.Equal(t, *otherPlayerWithUser.UserID, userId)
+					assert.Equal(t, otherPlayerWithUser.Email, result.Data.Email)
 				},
 			},
 		}
