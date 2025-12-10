@@ -48,12 +48,12 @@ func Test_GamePutUserPlayer_Success_SetDisplayName(t *testing.T) {
 				if !ok {
 					t.Fatal("user info not found")
 				}
-				result := test.MustUnMarshal[*apis.ApiPlayer](t, res.Body.Bytes())
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.ApiPlayer]](t, res.Body.Bytes())
 				assert.NotNil(t, result)
-				userId := *result.UserID
+				userId := *result.Data.UserID
 				assert.Equal(t, userInfo.User.ID, userId)
-				assert.Equal(t, userInfo.User.Email, result.Email)
-				assert.Equal(t, "test_display_name", *result.DisplayName)
+				assert.Equal(t, userInfo.User.Email, result.Data.Email)
+				assert.Equal(t, "test_display_name", *result.Data.DisplayName)
 			},
 		}
 		scenario.Test(t)
@@ -89,12 +89,12 @@ func Test_GamePutUserPlayer_Success_SetDisplayNameNil(t *testing.T) {
 				if !ok {
 					t.Fatal("user info not found")
 				}
-				result := test.MustUnMarshal[*apis.ApiPlayer](t, res.Body.Bytes())
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.ApiPlayer]](t, res.Body.Bytes())
 				assert.NotNil(t, result)
-				userId := *result.UserID
+				userId := *result.Data.UserID
 				assert.Equal(t, userInfo.User.ID, userId)
-				assert.Equal(t, userInfo.User.Email, result.Email)
-				assert.Nil(t, result.DisplayName)
+				assert.Equal(t, userInfo.User.Email, result.Data.Email)
+				assert.Nil(t, result.Data.DisplayName)
 			},
 		}
 		scenario.Test(t)
@@ -130,6 +130,73 @@ func Test_GamePutUserPlayer_Fail_EmptyDisplayName(t *testing.T) {
 				assert.Equal(t, result.Status, 422)
 				assert.Equal(t, result.Detail, "validation failed")
 				assert.Equal(t, result.Errors[0].Message, "expected length >= 1")
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+func Test_GameGetUserPlayer_Success_HasPlayer(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := SetupApi(t, ctx, db)
+		scenario := &ApiScenario{
+			Name:           "success put user player",
+			Method:         http.MethodGet,
+			URL:            "/games/players",
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *TestApi {
+				return testApi
+			},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				userInfo := core.CreateUserWithOptions(t, testApi.App)
+				scenario.Store.Set("user_info", userInfo)
+				player, err := app.Adapter().Gaming().CreatePlayer(ctx, &models.Player{
+					Email:  userInfo.User.Email,
+					UserID: &userInfo.User.ID,
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				scenario.Store.Set("player", player)
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, userInfo.User.Email)
+				scenario.Headers = []string{tokenHeader}
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				player, ok := scenario.Store.Get("player").(*models.Player)
+				if !ok {
+					t.Fatal("user info not found")
+				}
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.ApiPlayer]](t, res.Body.Bytes())
+				assert.NotNil(t, result)
+				userId := *result.Data.UserID
+				assert.Equal(t, *player.UserID, userId)
+				assert.Equal(t, player.Email, result.Data.Email)
+			},
+		}
+		scenario.Test(t)
+	})
+}
+func Test_GameGetUserPlayer_Success_HasNoPlayer(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := SetupApi(t, ctx, db)
+		scenario := &ApiScenario{
+			Name:           "success put user player",
+			Method:         http.MethodGet,
+			URL:            "/games/players",
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *TestApi {
+				return testApi
+			},
+			ExpectedContent: []string{"null"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				userInfo := core.CreateUserWithOptions(t, testApi.App)
+				scenario.Store.Set("user_info", userInfo)
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, userInfo.User.Email)
+				scenario.Headers = []string{tokenHeader}
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.ApiPlayer]](t, res.Body.Bytes())
+				assert.Nil(t, result.Data)
 			},
 		}
 		scenario.Test(t)
