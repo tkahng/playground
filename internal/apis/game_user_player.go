@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/middleware"
@@ -24,7 +25,7 @@ func bindGetMyPlayerApi(api huma.API, app core.App) {
 		huma.Operation{
 			OperationID: "get-my-player",
 			Method:      http.MethodGet,
-			Path:        "/games/players/me",
+			Path:        "/players/me",
 			Summary:     "get my player.",
 			Description: "Gets a player for the user. Returns the player if there is one.",
 			Tags:        []string{"Games", "Player"},
@@ -63,7 +64,7 @@ func bindPutMyPlayerApi(api huma.API, app core.App) {
 		huma.Operation{
 			OperationID: "put-my-player",
 			Method:      http.MethodPut,
-			Path:        "/games/players/me",
+			Path:        "/players/me",
 			Summary:     "Put user player.",
 			Description: "Creates a player for the user if there is none, otherwise updates the player. Returns the player.",
 			Tags:        []string{"Games", "Player"},
@@ -132,7 +133,7 @@ func bindFindPlayersApi(api huma.API, app core.App) {
 		huma.Operation{
 			OperationID: "get-players",
 			Method:      http.MethodGet,
-			Path:        "/games/players",
+			Path:        "/players",
 			Summary:     "get players.",
 			Description: "gets a list of players.",
 			Tags:        []string{"Games", "Player"},
@@ -230,7 +231,7 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 		huma.Operation{
 			OperationID: "send-game-request-to-registered-player",
 			Method:      http.MethodPost,
-			Path:        "/players/{inviting-player-id}/games/requests",
+			Path:        "/players/{inviting-player-id}/games/rps/requests",
 			Summary:     "send game request to registered player",
 			Description: "send game request to registered player",
 			Tags:        []string{"Games", "Player"},
@@ -274,6 +275,77 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 					InvitedPlayerID:      player.ID,
 					RequestingPlayerMove: models.RpsParticipantMove(input.Body.Move),
 					DurationSeconds:      3 * 24 * 60 * 60,
+				})
+				return err
+			})
+			if txErr != nil {
+				return nil, txErr
+			}
+			return &ApiSingleOutput[*RpsGameWithParticipants]{
+				Body: ApiSingleResponse[*RpsGameWithParticipants]{
+					Data: &RpsGameWithParticipants{
+						RpsGame:               toApiRpsGame(rpsGameWithParticipants.RpsGame),
+						RequestingParticipant: ToApiRpsParticipant(rpsGameWithParticipants.RequestingParticipant),
+						InvitedParticipant:    ToApiRpsParticipant(rpsGameWithParticipants.InvitedParticipant),
+					},
+				},
+			}, nil
+		},
+	)
+}
+
+type SubmitMoveToGameInput struct {
+	Move   RpsParticipantMove `json:"move" required:"true" enum:"rock,paper,scissors"`
+	Status RpsGameStatus      `json:"status" required:"true" enum:"pending,completed,cancelled"`
+}
+
+func bindSubmitMoveToRpsGameApi(api huma.API, app core.App) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "submit-move-to-rps-game",
+			Method:      http.MethodPost,
+			Path:        "/games/rps/{game-id}/submit-move",
+			Summary:     "submit move to rps game",
+			Description: "submit move to rps game",
+			Tags:        []string{"Games", "Player"},
+			Errors:      []int{http.StatusUnauthorized},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireCurrentPlayerMiddelware(),
+			),
+		},
+		func(ctx context.Context, input *struct {
+			GameID string `path:"game-id" required:"true" format:"uuid"`
+			Body   SubmitMoveToGameInput
+		}) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
+			currentPlayer := contextstore.GetContextCurrentPlayer(ctx)
+			if currentPlayer == nil {
+				return nil, huma.Error401Unauthorized("no player found.")
+			}
+			gameId, err := uuid.Parse(input.GameID)
+			if err != nil {
+				return nil, huma.Error400BadRequest("error parsing game id")
+			}
+			game, err := app.RpsGame().FindRpsGameWithParticipants(ctx, gameId)
+			if err != nil {
+				return nil, err
+			}
+			if game == nil {
+				return nil, huma.Error404NotFound("game not found")
+			}
+			if currentPlayer.ID != game.InvitedParticipant.PlayerID {
+				return nil, huma.Error401Unauthorized("not invited player")
+			}
+			var rpsGameWithParticipants *services.RpsGameWithParticipants
+			txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+				rpsGameWithParticipants, err = app.RpsGame().RespondToGameRequest(txCtx, &services.GameRequestResponse{
+					GameID:          game.RpsGame.ID,
+					InvitedPlayerID: currentPlayer.ID,
+					Move:            models.RpsParticipantMove(input.Body.Move),
+					Status:          models.RpsGameStatus(input.Body.Status),
 				})
 				return err
 			})

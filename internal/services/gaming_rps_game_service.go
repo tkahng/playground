@@ -139,6 +139,12 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 	if gameWithParticipants.RpsGame.ExpiresAt.UTC().Before(time.Now().UTC()) {
 		return nil, errors.New("game expired")
 	}
+	if gameWithParticipants.RpsGame.Status != models.RpsGameStatusPending {
+		return nil, errors.New("game is not pending")
+	}
+	if gameWithParticipants.InvitedParticipant.PlayerID != input.InvitedPlayerID {
+		return nil, errors.New("invited player does not match")
+	}
 	switch input.Status {
 	case models.RpsGameStatusCancelled:
 		// if game is cancelled, set the game status to cancelled
