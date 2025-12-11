@@ -309,7 +309,7 @@ func NewApp(config *conf.EnvConfig) *BaseApp {
 
 	payment := services.NewPaymentClient(config.StripeConfig)
 
-	mailer := mailer.NewResendMailer(config.ResendConfig)
+	mailer := mailer.NewSmtpMailer(config.SmtpConfig)
 
 	logger := logger.GetDefaultLogger()
 
