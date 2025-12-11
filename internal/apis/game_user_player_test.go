@@ -376,7 +376,8 @@ func Test_SendGameRequestToUnRegisteredPlayer_Success(t *testing.T) {
 					ctx := t.Context()
 					err := app.JobManager().PollOnce(ctx)
 					assert.NoError(t, err)
-					// token := ExtractFistMessageTokenFromMailer(t, app)
+					token := ExtractFistMessageTokenFromMailer(t, app)
+					assert.NotZero(t, token)
 				},
 			},
 		}
