@@ -16,6 +16,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/services"
+	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/types"
 )
@@ -377,7 +378,11 @@ func Test_SendGameRequestToUnRegisteredPlayer_Success(t *testing.T) {
 					err := app.JobManager().PollOnce(ctx)
 					assert.NoError(t, err)
 					token := ExtractFistMessageTokenFromMailer(t, app)
-					assert.NotZero(t, token)
+					invite, err := app.Adapter().Gaming().FindRpsGameInvite(ctx, &stores.RpsGameInviteFilter{
+						Tokens: []string{token},
+					})
+					assert.NoError(t, err)
+					assert.Equal(t, token, invite.Token)
 				},
 			},
 		}
