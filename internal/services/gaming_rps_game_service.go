@@ -136,7 +136,7 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 	if err != nil {
 		return nil, err
 	}
-	if gameWithParticipants.ExpiresAt.UTC().Before(time.Now().UTC()) {
+	if gameWithParticipants.RpsGame.ExpiresAt.UTC().Before(time.Now().UTC()) {
 		return nil, errors.New("game expired")
 	}
 	switch input.Status {
@@ -149,7 +149,7 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 		// if game is completed, set the game status to completed
 		// and set the invited player status to completed
 		gameWithParticipants.InvitedParticipant.Move = input.Move
-		gameWithParticipants.Status = models.RpsGameStatusCompleted
+		gameWithParticipants.RpsGame.Status = models.RpsGameStatusCompleted
 		gameWithParticipants.RequestingParticipant.Status = models.RpsParticipantStatusCompleted
 		gameWithParticipants.InvitedParticipant.Status = models.RpsParticipantStatusCompleted
 		if gameWithParticipants.RequestingParticipant.Move == gameWithParticipants.InvitedParticipant.Move {
@@ -206,7 +206,7 @@ func (d *DbRpsGameService) updateGame(ctx context.Context, gameWithParticipants 
 }
 
 type RpsGameWithParticipants struct {
-	*models.RpsGame
+	RpsGame               *models.RpsGame
 	RequestingParticipant *models.RpsParticipant
 	InvitedParticipant    *models.RpsParticipant
 }

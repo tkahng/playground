@@ -81,7 +81,7 @@ func (a *Assembler) setBasicServices(app *BaseApp) {
 
 	adapter := app.Adapter()
 	dbx := app.Db()
-
+	app.rpsGame = services.NewDbRpsGameService(adapter)
 	app.hash = services.NewHashService()
 	app.encrypt = services.NewCrypto(cfg.EncryptionKey)
 	app.jwt = services.NewJwtService()

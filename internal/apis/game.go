@@ -86,6 +86,12 @@ func toApiRpsGame(game *models.RpsGame) *RpsGame {
 	}
 }
 
+type RpsGameWithParticipants struct {
+	RpsGame               *RpsGame
+	RequestingParticipant *RpsParticipant
+	InvitedParticipant    *RpsParticipant
+}
+
 // enum:"pending,declined,completed"
 type RpsParticipantStatus string
 
