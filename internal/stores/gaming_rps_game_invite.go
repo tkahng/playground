@@ -28,7 +28,7 @@ func filterSelectRpsGameInvites(qs squirrel.SelectBuilder, filter *RpsGameInvite
 		return qs
 	}
 	if len(filter.Ids) > 0 {
-		qs = qs.Where(squirrel.Eq{"gaming.rps_games.id": filter.Ids})
+		qs = qs.Where(squirrel.Eq{"gaming.rps_game_invites.id": filter.Ids})
 	}
 	if len(filter.Tokens) > 0 {
 		qs = qs.Where(squirrel.Eq{"gaming.rps_game_invites.token": filter.Tokens})
@@ -43,7 +43,7 @@ func filterDeleteRpsGameInvites(qs squirrel.DeleteBuilder, filter *RpsGameInvite
 		return qs
 	}
 	if len(filter.Ids) > 0 {
-		qs = qs.Where(squirrel.Eq{"gaming.rps_games.id": filter.Ids})
+		qs = qs.Where(squirrel.Eq{"gaming.rps_game_invites.id": filter.Ids})
 	}
 	if len(filter.Tokens) > 0 {
 		qs = qs.Where(squirrel.Eq{"gaming.rps_game_invites.token": filter.Tokens})
@@ -122,7 +122,7 @@ func (s *DBGamingStore) FindRpsGameInvites(ctx context.Context, filter *RpsGameI
 			},
 		}
 	}
-	q := squirrel.Select(repository.PlayerBuilder.ColumnNames()...).From("gaming.players")
+	q := squirrel.Select(repository.RpsGameInviteBuilder.ColumnNames()...).From(repository.RpsGameInviteBuilder.TableName())
 	q = filterSelectRpsGameInvites(q, filter)
 	q = rpGameInviteSortSelect(q, filter)
 	q = queryPagination(q, filter)

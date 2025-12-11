@@ -13,7 +13,8 @@ import (
 
 type JobService interface {
 	WithTx(db database.Dbx) JobService
-
+	// En
+	EnqueueRpsGameInviteJob(ctx context.Context, job *workers.RpsGameInvitationJobArgs) error
 	EnqueueTaskCompletedJob(ctx context.Context, job *workers.TaskCompletedJobArgs) error
 	EnqueTaskDueJob(ctx context.Context, job *workers.TaskDueTodayJobArgs) error
 	EnqueAssignedToTaskJob(ctx context.Context, job *workers.AssignedToTasJobArgs) error
@@ -26,6 +27,15 @@ type JobService interface {
 
 type DbJobService struct {
 	manager jobs.JobManager
+}
+
+// EnqueueRpsGameInviteJob implements [JobService].
+func (d *DbJobService) EnqueueRpsGameInviteJob(ctx context.Context, job *workers.RpsGameInvitationJobArgs) error {
+	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
+		Args:        job,
+		RunAfter:    time.Now(),
+		MaxAttempts: 3,
+	})
 }
 
 // EnqueueTaskCompletedJob implements JobService.
@@ -129,6 +139,18 @@ type JobServiceDecorator struct {
 	EnqueAssignedToTaskJobFunc                func(ctx context.Context, job *workers.AssignedToTasJobArgs) error
 	EnqueTaskDueJobFunc                       func(ctx context.Context, job *workers.TaskDueTodayJobArgs) error
 	EnqueueTaskCompletedJobFunc               func(ctx context.Context, job *workers.TaskCompletedJobArgs) error
+	EnqueueRpsGameInviteJobFunc               func(ctx context.Context, job *workers.RpsGameInvitationJobArgs) error
+}
+
+// EnqueueRpsGameInviteJob implements [JobService].
+func (j *JobServiceDecorator) EnqueueRpsGameInviteJob(ctx context.Context, job *workers.RpsGameInvitationJobArgs) error {
+	if j.EnqueueRpsGameInviteJobFunc != nil {
+		return j.EnqueueRpsGameInviteJobFunc(ctx, job)
+	}
+	if j.Delegate == nil {
+		return errors.New("delegate for EnqueueRpsGameInviteJob in JobService is nil")
+	}
+	return j.Delegate.EnqueueRpsGameInviteJob(ctx, job)
 }
 
 // EnqueueTaskCompletedJob implements JobService.
