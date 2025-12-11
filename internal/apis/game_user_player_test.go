@@ -15,6 +15,7 @@ import (
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/types"
 )
@@ -25,7 +26,7 @@ func Test_PutMyPlayer_Success_SetDisplayName(t *testing.T) {
 		scenario := &ApiScenario{
 			Name:           "set display name",
 			Method:         http.MethodPut,
-			URL:            "/games/players/me",
+			URL:            "/players/me",
 			ExpectedStatus: http.StatusOK,
 			TestAppFactory: func(t testing.TB) *TestApi {
 				return testApi
@@ -66,7 +67,7 @@ func Test_PutMyPlayer_Success_SetDisplayNameNil(t *testing.T) {
 		scenario := &ApiScenario{
 			Name:           "display name nil",
 			Method:         http.MethodPut,
-			URL:            "/games/players/me",
+			URL:            "/players/me",
 			ExpectedStatus: http.StatusOK,
 			TestAppFactory: func(t testing.TB) *TestApi {
 				return testApi
@@ -107,7 +108,7 @@ func Test_PutMyPlayer_Fail_EmptyDisplayName(t *testing.T) {
 		scenario := &ApiScenario{
 			Name:           "empty displayName",
 			Method:         http.MethodPut,
-			URL:            "/games/players/me",
+			URL:            "/players/me",
 			ExpectedStatus: http.StatusUnprocessableEntity,
 			TestAppFactory: func(t testing.TB) *TestApi {
 				return testApi
@@ -142,7 +143,7 @@ func Test_GetMyPlayer_Success_HasPlayer(t *testing.T) {
 		scenario := &ApiScenario{
 			Name:           "has player",
 			Method:         http.MethodGet,
-			URL:            "/games/players/me",
+			URL:            "/players/me",
 			ExpectedStatus: http.StatusOK,
 			TestAppFactory: func(t testing.TB) *TestApi {
 				return testApi
@@ -182,7 +183,7 @@ func Test_GetMyPlayer_Success_HasNoPlayer(t *testing.T) {
 		scenario := &ApiScenario{
 			Name:           "has no player",
 			Method:         http.MethodGet,
-			URL:            "/games/players/me",
+			URL:            "/players/me",
 			ExpectedStatus: http.StatusOK,
 			TestAppFactory: func(t testing.TB) *TestApi {
 				return testApi
@@ -208,7 +209,7 @@ func Test_GetPlayers_Success_ByEmail(t *testing.T) {
 		scenario := &ApiScenario{
 			Name:           "success get user players",
 			Method:         http.MethodGet,
-			URL:            "/games/players",
+			URL:            "/players",
 			ExpectedStatus: http.StatusOK,
 			TestAppFactory: func(t testing.TB) *TestApi {
 				return testApi
@@ -223,7 +224,7 @@ func Test_GetPlayers_Success_ByEmail(t *testing.T) {
 			},
 			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
 				result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.Player]](t, res.Body.Bytes())
-				assert.Nil(t, result.Data)
+				assert.Len(t, result.Data, 0)
 			},
 		}
 		scenario.Test(t)
@@ -299,6 +300,7 @@ func Test_FindRegisteredPlayerByEmail(t *testing.T) {
 		}
 	})
 }
+
 func Test_SendGameRequestToRegisteredPlayer_Success(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -308,7 +310,7 @@ func Test_SendGameRequestToRegisteredPlayer_Success(t *testing.T) {
 			{
 				Name:           "success",
 				Method:         http.MethodPost,
-				URL:            "/players/{inviting-player-id}/games/requests",
+				URL:            "/players/{inviting-player-id}/games/rps/requests",
 				ExpectedStatus: http.StatusOK,
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
@@ -331,6 +333,60 @@ func Test_SendGameRequestToRegisteredPlayer_Success(t *testing.T) {
 					assert.NotNil(t, result.Data)
 					assert.Equal(t, playerWithUser.ID, result.Data.RequestingParticipant.PlayerID)
 					assert.Equal(t, otherPlayerWithUser.ID, result.Data.InvitedParticipant.PlayerID)
+				},
+			},
+		}
+		for _, scenario := range scenarios {
+			scenario.Test(t)
+		}
+	})
+}
+func Test_SubmitMove_Success(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := SetupApi(t, ctx, db)
+		playerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		otherPlayerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		gameWithParticipants, err := testApi.App.RpsGame().RequestGame(ctx, &services.RpsGameRequestInput{
+			RequestingPlayerID:   playerWithUser.ID,
+			InvitedPlayerID:      otherPlayerWithUser.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      3 * 24 * 60 * 60,
+		})
+		if err != nil {
+			t.Errorf("Error requesting game: %v", err)
+		}
+		scenarios := []*ApiScenario{
+			{
+				Name:           "success",
+				Method:         http.MethodPost,
+				URL:            "/games/rps/{game-id}/submit-move",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, otherPlayerWithUser.Email)
+					scenario.Headers = []string{tokenHeader}
+					scenario.URL = strings.ReplaceAll(scenario.URL, "{game-id}", fmt.Sprintf("%s", gameWithParticipants.RpsGame.ID))
+					body := &apis.SubmitMoveToGameInput{
+						Move:   apis.RpsParticipantMovePaper,
+						Status: apis.RpsGameStatusCompleted,
+					}
+					data, err := json.Marshal(body)
+					if err != nil {
+						t.Errorf("Error marshalling input: %v", err)
+					}
+					scenario.Body = strings.NewReader(string(data))
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
+					assert.NotNil(t, result.Data)
+					assert.Equal(t, playerWithUser.ID, result.Data.RequestingParticipant.PlayerID)
+					assert.Equal(t, otherPlayerWithUser.ID, result.Data.InvitedParticipant.PlayerID)
+					assert.Equal(t, apis.RpsParticipantMoveRock, result.Data.RequestingParticipant.Move)
+					assert.Equal(t, apis.RpsParticipantMovePaper, result.Data.InvitedParticipant.Move)
+					assert.Equal(t, apis.RpsGameStatusCompleted, result.Data.RpsGame.Status)
+					assert.Equal(t, result.Data.InvitedParticipant.Result, apis.RpsParticipantResultWin)
 				},
 			},
 		}
