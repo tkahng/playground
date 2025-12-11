@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
@@ -219,6 +220,10 @@ func bindFindRegisteredPlayerByEmailApi(api huma.API, app core.App) {
 	)
 }
 
+type RpsGameRequestInput struct {
+	Move RpsParticipantMove `json:"move" required:"true" enum:"rock,paper,scissors"`
+}
+
 func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 	huma.Register(
 		api,
@@ -239,7 +244,8 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 		},
 		func(ctx context.Context, input *struct {
 			InvitingPlayerId string `path:"inviting-player-id" required:"true" format:"uuid"`
-		}) (*ApiSingleOutput[*RpsGame], error) {
+			Body             RpsGameRequestInput
+		}) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
 			user := contextstore.GetContextUserInfo(ctx)
 			if user == nil {
 				return nil, huma.Error401Unauthorized("Unauthorized. No user info")
@@ -261,9 +267,26 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 			if player == nil {
 				return nil, huma.Error404NotFound("player not found")
 			}
-			return &ApiSingleOutput[*RpsGame]{
-				Body: ApiSingleResponse[*RpsGame]{
-					//
+			var rpsGameWithParticipants *services.RpsGameWithParticipants
+			txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+				rpsGameWithParticipants, err = app.RpsGame().RequestGame(txCtx, &services.RpsGameRequestInput{
+					RequestingPlayerID:   currentPlayer.ID,
+					InvitedPlayerID:      player.ID,
+					RequestingPlayerMove: models.RpsParticipantMove(input.Body.Move),
+					DurationSeconds:      60,
+				})
+				return err
+			})
+			if txErr != nil {
+				return nil, txErr
+			}
+			return &ApiSingleOutput[*RpsGameWithParticipants]{
+				Body: ApiSingleResponse[*RpsGameWithParticipants]{
+					Data: &RpsGameWithParticipants{
+						RpsGame:               toApiRpsGame(rpsGameWithParticipants.RpsGame),
+						RequestingParticipant: ToApiRpsParticipant(rpsGameWithParticipants.RequestingParticipant),
+						InvitedParticipant:    ToApiRpsParticipant(rpsGameWithParticipants.InvitedParticipant),
+					},
 				},
 			}, nil
 		},
