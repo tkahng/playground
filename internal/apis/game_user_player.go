@@ -222,7 +222,8 @@ func bindFindRegisteredPlayerByEmailApi(api huma.API, app core.App) {
 }
 
 type RpsGameRequestInput struct {
-	Move RpsParticipantMove `json:"move" required:"true" enum:"rock,paper,scissors"`
+	InvitingPlayerId uuid.UUID          `json:"inviting_player_id" required:"true" format:"uuid"`
+	Move             RpsParticipantMove `json:"move" required:"true" enum:"rock,paper,scissors"`
 }
 
 func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
@@ -231,7 +232,7 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 		huma.Operation{
 			OperationID: "send-game-request-to-registered-player",
 			Method:      http.MethodPost,
-			Path:        "/players/{inviting-player-id}/games/rps/requests",
+			Path:        "/games/rps/requests",
 			Summary:     "send game request to registered player",
 			Description: "send game request to registered player",
 			Tags:        []string{"Games", "Player"},
@@ -244,8 +245,7 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 			),
 		},
 		func(ctx context.Context, input *struct {
-			InvitingPlayerId string `path:"inviting-player-id" required:"true" format:"uuid"`
-			Body             RpsGameRequestInput
+			Body RpsGameRequestInput
 		}) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
 			user := contextstore.GetContextUserInfo(ctx)
 			if user == nil {
@@ -256,7 +256,7 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 				return nil, huma.Error401Unauthorized("no player found.")
 			}
 			filter := &stores.PlayersFilter{}
-			filter.Ids = utils.ParseValidUUIDs(input.InvitingPlayerId)
+			filter.Ids = []uuid.UUID{input.Body.InvitingPlayerId}
 			filter.Registered = types.OptionalParam[bool]{
 				Value: true,
 				IsSet: true,
