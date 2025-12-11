@@ -273,7 +273,7 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 					RequestingPlayerID:   currentPlayer.ID,
 					InvitedPlayerID:      player.ID,
 					RequestingPlayerMove: models.RpsParticipantMove(input.Body.Move),
-					DurationSeconds:      60,
+					DurationSeconds:      3 * 24 * 60 * 60,
 				})
 				return err
 			})

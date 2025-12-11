@@ -317,13 +317,20 @@ func Test_SendGameRequestToRegisteredPlayer_Success(t *testing.T) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, playerWithUser.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = strings.ReplaceAll(scenario.URL, "{inviting-player-id}", fmt.Sprintf("%s", otherPlayerWithUser.ID))
+					body := &apis.RpsGameRequestInput{
+						Move: apis.RpsParticipantMoveRock,
+					}
+					data, err := json.Marshal(body)
+					if err != nil {
+						t.Errorf("Error marshalling input: %v", err)
+					}
+					scenario.Body = strings.NewReader(string(data))
 				},
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
-					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.Player]](t, res.Body.Bytes())
+					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
 					assert.NotNil(t, result.Data)
-					userId := *result.Data.UserID
-					assert.Equal(t, *otherPlayerWithUser.UserID, userId)
-					assert.Equal(t, otherPlayerWithUser.Email, result.Data.Email)
+					assert.Equal(t, playerWithUser.ID, result.Data.RequestingParticipant.PlayerID)
+					assert.Equal(t, otherPlayerWithUser.ID, result.Data.InvitedParticipant.PlayerID)
 				},
 			},
 		}
