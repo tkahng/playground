@@ -212,7 +212,7 @@ func (i *DbOtpMailService) SendRpsGameInvitationEmail(ctx context.Context, param
 		return err
 	}
 	params.ConfirmationURL = confUrl
-	body := mailer.GenerateBody("body", string(mailer.DefaultTeamInviteMail), params)
+	body := mailer.GenerateBody("body", string(mailer.DefaultRpsGameInviteMail), params)
 	message := &mailer.Message{
 		From:    i.options.SenderAddress,
 		To:      params.Email,

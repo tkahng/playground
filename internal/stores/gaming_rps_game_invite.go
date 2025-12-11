@@ -135,6 +135,9 @@ func (s *DBGamingStore) FindRpsGameInvites(ctx context.Context, filter *RpsGameI
 }
 
 func (s *DBGamingStore) CreateRpsGameInvite(ctx context.Context, invite *models.RpsGameInvite) (*models.RpsGameInvite, error) {
+	if invite.Metadata == nil {
+		invite.Metadata = []byte("{}")
+	}
 	return repository.RpsGameInvite.PostOne(ctx, s.db, invite)
 }
 
