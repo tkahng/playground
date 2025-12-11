@@ -310,7 +310,7 @@ func Test_SendGameRequestToRegisteredPlayer_Success(t *testing.T) {
 			{
 				Name:           "success",
 				Method:         http.MethodPost,
-				URL:            "/players/{inviting-player-id}/games/rps/requests",
+				URL:            "/games/rps/requests",
 				ExpectedStatus: http.StatusOK,
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
@@ -318,9 +318,9 @@ func Test_SendGameRequestToRegisteredPlayer_Success(t *testing.T) {
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, playerWithUser.Email)
 					scenario.Headers = []string{tokenHeader}
-					scenario.URL = strings.ReplaceAll(scenario.URL, "{inviting-player-id}", fmt.Sprintf("%s", otherPlayerWithUser.ID))
 					body := &apis.RpsGameRequestInput{
-						Move: apis.RpsParticipantMoveRock,
+						Move:             apis.RpsParticipantMoveRock,
+						InvitingPlayerId: otherPlayerWithUser.ID,
 					}
 					data, err := json.Marshal(body)
 					if err != nil {
