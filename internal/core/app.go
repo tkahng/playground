@@ -29,6 +29,8 @@ type App interface {
 
 	Logger() *slog.Logger
 
+	// gaming
+	RpsGame() services.RpsGameService
 	// jobs -------------------------------------------------------------------------------------
 
 	JobManager() jobs.JobManager

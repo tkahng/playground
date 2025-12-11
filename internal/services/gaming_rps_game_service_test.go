@@ -26,8 +26,8 @@ func TestDbRpsGameService_RequestGame_Success(t *testing.T) {
 		if err != nil {
 			t.Fatalf("RequestGame() error = %v", err)
 		}
-		if game.CompletedAt != nil {
-			t.Errorf("Expected game.CompletedAt to be nil, got %v", game.CompletedAt)
+		if game.RpsGame.CompletedAt != nil {
+			t.Errorf("Expected game.CompletedAt to be nil, got %v", game.RpsGame.CompletedAt)
 		}
 		// if game.ExpiresAt !=
 		if game.RequestingParticipant.PlayerID != player1.ID {
@@ -39,8 +39,8 @@ func TestDbRpsGameService_RequestGame_Success(t *testing.T) {
 		if game.InvitedParticipant.PlayerID != player2.ID {
 			t.Errorf("Expected game.InvitedParticipant.PlayerID to be %s, got %s", player2.ID, game.InvitedParticipant.PlayerID)
 		}
-		if game.Status != models.RpsGameStatusPending {
-			t.Errorf("Expected game.Status to be %s, got %s", models.RpsGameStatusPending, game.Status)
+		if game.RpsGame.Status != models.RpsGameStatusPending {
+			t.Errorf("Expected game.RpsGame.Status to be %s, got %s", models.RpsGameStatusPending, game.RpsGame.Status)
 		}
 	})
 }
@@ -64,7 +64,7 @@ func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Win(t *test
 
 		respondInput := &GameRequestResponse{
 			InvitedPlayerID: player2.ID,
-			GameID:          game.ID,
+			GameID:          game.RpsGame.ID,
 			Status:          models.RpsGameStatusCompleted,
 			Move:            models.RpsParticipantMoveScissors,
 		}
@@ -72,11 +72,11 @@ func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Win(t *test
 		if err != nil {
 			t.Fatalf("RespondToGameRequest() error = %v", err)
 		}
-		if respondedGame.ID != game.ID {
-			t.Errorf("Expected respondedGame.ID to be %s, got %s", game.ID, respondedGame.ID)
+		if respondedGame.RpsGame.ID != game.RpsGame.ID {
+			t.Errorf("Expected respondedgame.RpsGame.ID to be %s, got %s", game.RpsGame.ID, respondedGame.RpsGame.ID)
 		}
-		if respondedGame.Status != models.RpsGameStatusCompleted {
-			t.Errorf("Expected respondedGame.Status to be %s, got %s", models.RpsGameStatusCompleted, respondedGame.Status)
+		if respondedGame.RpsGame.Status != models.RpsGameStatusCompleted {
+			t.Errorf("Expected respondedGame.RpsGame.Status to be %s, got %s", models.RpsGameStatusCompleted, respondedGame.RpsGame.Status)
 		}
 		if respondedGame.RequestingParticipant.Result != models.RpsParticipantResultLose {
 			t.Errorf("Expected respondedGame.RequestingParticipant.Result to be %s, got %s", models.RpsParticipantResultLose, respondedGame.RequestingParticipant.Result)
@@ -105,7 +105,7 @@ func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Lose(t *tes
 
 		respondInput := &GameRequestResponse{
 			InvitedPlayerID: player2.ID,
-			GameID:          game.ID,
+			GameID:          game.RpsGame.ID,
 			Status:          models.RpsGameStatusCompleted,
 			Move:            models.RpsParticipantMoveRock,
 		}
@@ -113,11 +113,11 @@ func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Lose(t *tes
 		if err != nil {
 			t.Fatalf("RespondToGameRequest() error = %v", err)
 		}
-		if respondedGame.ID != game.ID {
-			t.Errorf("Expected respondedGame.ID to be %s, got %s", game.ID, respondedGame.ID)
+		if respondedGame.RpsGame.ID != game.RpsGame.ID {
+			t.Errorf("Expected respondedgame.RpsGame.ID to be %s, got %s", game.RpsGame.ID, respondedGame.RpsGame.ID)
 		}
-		if respondedGame.Status != models.RpsGameStatusCompleted {
-			t.Errorf("Expected respondedGame.Status to be %s, got %s", models.RpsGameStatusCompleted, respondedGame.Status)
+		if respondedGame.RpsGame.Status != models.RpsGameStatusCompleted {
+			t.Errorf("Expected respondedGame.RpsGame.Status to be %s, got %s", models.RpsGameStatusCompleted, respondedGame.RpsGame.Status)
 		}
 		if respondedGame.RequestingParticipant.Result != models.RpsParticipantResultWin {
 			t.Errorf("Expected respondedGame.RequestingParticipant.Result to be %s, got %s", models.RpsParticipantResultWin, respondedGame.RequestingParticipant.Result)
@@ -146,7 +146,7 @@ func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Tie(t *test
 
 		respondInput := &GameRequestResponse{
 			InvitedPlayerID: player2.ID,
-			GameID:          game.ID,
+			GameID:          game.RpsGame.ID,
 			Status:          models.RpsGameStatusCompleted,
 			Move:            models.RpsParticipantMovePaper,
 		}
@@ -154,11 +154,11 @@ func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Tie(t *test
 		if err != nil {
 			t.Fatalf("RespondToGameRequest() error = %v", err)
 		}
-		if respondedGame.ID != game.ID {
-			t.Errorf("Expected respondedGame.ID to be %s, got %s", game.ID, respondedGame.ID)
+		if respondedGame.RpsGame.ID != game.RpsGame.ID {
+			t.Errorf("Expected respondedgame.RpsGame.ID to be %s, got %s", game.RpsGame.ID, respondedGame.RpsGame.ID)
 		}
-		if respondedGame.Status != models.RpsGameStatusCompleted {
-			t.Errorf("Expected respondedGame.Status to be %s, got %s", models.RpsGameStatusCompleted, respondedGame.Status)
+		if respondedGame.RpsGame.Status != models.RpsGameStatusCompleted {
+			t.Errorf("Expected respondedGame.RpsGame.Status to be %s, got %s", models.RpsGameStatusCompleted, respondedGame.RpsGame.Status)
 		}
 		if respondedGame.RequestingParticipant.Result != models.RpsParticipantResultTie {
 			t.Errorf("Expected respondedGame.RequestingParticipant.Result to be %s, got %s", models.RpsParticipantResultTie, respondedGame.RequestingParticipant.Result)
@@ -187,7 +187,7 @@ func TestDbRpsGameService_RespondToGameRequest_Fail_Expired(t *testing.T) {
 		time.Sleep(time.Second * 1)
 		respondInput := &GameRequestResponse{
 			InvitedPlayerID: player2.ID,
-			GameID:          game.ID,
+			GameID:          game.RpsGame.ID,
 			Status:          models.RpsGameStatusCompleted,
 			Move:            models.RpsParticipantMovePaper,
 		}
