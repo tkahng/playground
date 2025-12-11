@@ -2,13 +2,13 @@ package mailer
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/wneessen/go-mail"
 )
 
 type SmtpMailer struct {
+	cfg conf.SmtpConfig
 	// contains filtered or unexported fields
 	client *mail.Client
 }
@@ -23,8 +23,8 @@ func (s *SmtpMailer) Send(message *Message) error {
 		return err
 	}
 	msg.Subject(message.Subject)
-	msg.SetBodyString(mail.TypeMultipartMixed, message.Body)
-	return s.client.Send(msg)
+	msg.SetBodyString(mail.TypeTextHTML, message.Body)
+	return s.client.DialAndSend(msg)
 }
 
 var _ Mailer = (*SmtpMailer)(nil)
@@ -38,9 +38,8 @@ func NewSmtpMailer(cfg conf.SmtpConfig) *SmtpMailer {
 		mail.WithPassword(cfg.EmailPass),
 	)
 	if err != nil {
-		fmt.Printf("failed to create mail client: %s\n", err)
-		os.Exit(1)
+		panic(fmt.Errorf("failed to create smtp client: %w", err))
 	}
 
-	return &SmtpMailer{client: client}
+	return &SmtpMailer{cfg: cfg, client: client}
 }
