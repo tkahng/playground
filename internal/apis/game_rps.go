@@ -3,6 +3,7 @@ package apis
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
@@ -18,6 +19,117 @@ import (
 	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/internal/workers"
 )
+
+func getRpsGameInviteFromTokenQuery(app core.App, ctx context.Context, token string) (*models.RpsGameInvite, error) {
+	rpsGameInvite, err := app.Adapter().Gaming().FindRpsGameInvite(ctx, &stores.RpsGameInviteFilter{
+		Tokens: []string{token},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if rpsGameInvite == nil {
+		return nil, huma.Error400BadRequest("invalid token")
+	}
+	if rpsGameInvite.ExpiresAt.UTC().Before(time.Now().UTC()) {
+		return nil, huma.Error400BadRequest("invalid token")
+	}
+	return rpsGameInvite, nil
+}
+
+func bindSubmitMoveWithTokenApi(api huma.API, app core.App) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "submit-move-with-token",
+			Method:      http.MethodPost,
+			Path:        "/games/rps/token/submit-move",
+			Summary:     "submit move to rps game with token",
+			Description: "submit move to rps game with token",
+			Tags:        []string{"Games", "Player"},
+			Errors:      []int{http.StatusUnauthorized},
+			Security:    []map[string][]string{{}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(),
+		},
+		func(ctx context.Context, input *struct {
+			Body struct {
+				Token  string             `json:"token" required:"true" minlength:"2"`
+				Move   RpsParticipantMove `json:"move" required:"true" enum:"rock,paper,scissors"`
+				Status RpsGameStatus      `json:"status" required:"true" enum:"pending,completed,cancelled"`
+			}
+		}) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
+			rpsGameInvite, err := getRpsGameInviteFromTokenQuery(app, ctx, input.Body.Token)
+			if err != nil {
+				return nil, err
+			}
+			rpsGameWithParticipants, err := app.RpsGame().FindRpsGameWithParticipants(ctx, rpsGameInvite.GameID)
+			if err != nil {
+				return nil, err
+			}
+			txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+				rpsGameWithParticipants, err = app.RpsGame().RespondToGameRequest(txCtx, &services.GameRequestResponse{
+					GameID:          rpsGameWithParticipants.RpsGame.ID,
+					InvitedPlayerID: rpsGameWithParticipants.InvitedParticipant.PlayerID,
+					Move:            models.RpsParticipantMove(input.Body.Move),
+					Status:          models.RpsGameStatus(input.Body.Status),
+				})
+				return err
+			})
+			if txErr != nil {
+				return nil, txErr
+			}
+			return &ApiSingleOutput[*RpsGameWithParticipants]{
+				Body: ApiSingleResponse[*RpsGameWithParticipants]{
+					Data: &RpsGameWithParticipants{
+						RpsGame:               toApiRpsGame(rpsGameWithParticipants.RpsGame),
+						RequestingParticipant: ToApiRpsParticipant(rpsGameWithParticipants.RequestingParticipant),
+						InvitedParticipant:    ToApiRpsParticipant(rpsGameWithParticipants.InvitedParticipant),
+					},
+				},
+			}, nil
+		},
+	)
+}
+func bindGetRpsGameWithTokenApi(api huma.API, app core.App) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "verify-rps-game-invite",
+			Method:      http.MethodPost,
+			Path:        "/games/rps/invites/verify",
+			Summary:     "verify rps game invite",
+			Description: "verify rps game invite",
+			Tags:        []string{"Games", "Player"},
+			Errors:      []int{http.StatusUnauthorized},
+			Security:    []map[string][]string{{}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireCurrentPlayerMiddelware(),
+			),
+		},
+		func(ctx context.Context, input *struct {
+			Body struct {
+				Token string `json:"token" required:"true" minlength:"2"`
+			}
+		}) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
+			rpsGameInvite, err := getRpsGameInviteFromTokenQuery(app, ctx, input.Body.Token)
+			if err != nil {
+				return nil, err
+			}
+			rpsGameWithParticipants, err := app.RpsGame().FindRpsGameWithParticipants(ctx, rpsGameInvite.GameID)
+			if err != nil {
+				return nil, err
+			}
+			return &ApiSingleOutput[*RpsGameWithParticipants]{
+				Body: ApiSingleResponse[*RpsGameWithParticipants]{
+					Data: &RpsGameWithParticipants{
+						RpsGame:               toApiRpsGame(rpsGameWithParticipants.RpsGame),
+						RequestingParticipant: ToApiRpsParticipant(rpsGameWithParticipants.RequestingParticipant),
+						InvitedParticipant:    ToApiRpsParticipant(rpsGameWithParticipants.InvitedParticipant),
+					},
+				},
+			}, nil
+		},
+	)
+}
 
 type SubmitMoveToGameInput struct {
 	Move   RpsParticipantMove `json:"move" required:"true" enum:"rock,paper,scissors"`
