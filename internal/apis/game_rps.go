@@ -173,7 +173,7 @@ func bindSendGameRequestToUnRegisteredPlayerApi(api huma.API, app core.App) {
 					return err
 				}
 				// send invitation
-				err = app.JobService().EnqueueRpsGameInviteJob(ctx, &workers.RpsGameInvitationJobArgs{
+				err = app.JobService().EnqueueRpsGameInviteJob(txCtx, &workers.RpsGameInvitationJobArgs{
 					Email:          player.Email,
 					InvitedByEmail: currentPlayer.Email,
 					TokenHash:      invitation.Token,
