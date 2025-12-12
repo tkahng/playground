@@ -20,4 +20,6 @@ func bindGameApi(api *Api) {
 	bindSendGameRequestToRegisteredPlayerApi(gameGroup, api.App())
 	bindSubmitMoveToRpsGameApi(gameGroup, api.App())
 	bindSendGameRequestToUnRegisteredPlayerApi(gameGroup, api.App())
+	bindGetRpsGameWithTokenApi(gameGroup, api.App())
+	bindSubmitMoveWithTokenApi(gameGroup, api.App())
 }
