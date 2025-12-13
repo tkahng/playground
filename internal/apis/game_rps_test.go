@@ -21,19 +21,19 @@ import (
 
 func Test_SubmitMoveWithToken_Success(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		playerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		unregisteredPlayer := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(false))
-		scenarios := []*ApiScenario{
+		scenarios := []*apis.ApiScenario{
 			{
 				Name:           "inviting player win",
 				Method:         http.MethodPost,
 				URL:            "/games/rps/token/submit-move",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					_, err := apis.SendRpsGameRequestToUnregisteredPlayer(app, t.Context(), apis.UnregisteredPlayerInput{
 						InvitingPlayerEmail: unregisteredPlayer.Email,
 						Move:                apis.RpsParticipantMovePaper,
@@ -56,7 +56,7 @@ func Test_SubmitMoveWithToken_Success(t *testing.T) {
 					}
 					scenario.Body = strings.NewReader(string(data))
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
 					assert.NotNil(t, result.Data)
 					assert.Equal(t, playerWithUser.ID, result.Data.RequestingParticipant.PlayerID)
@@ -75,19 +75,19 @@ func Test_SubmitMoveWithToken_Success(t *testing.T) {
 }
 func Test_VerifyRpsGameInvite_Success(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		playerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		unregisteredPlayer := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(false))
-		scenarios := []*ApiScenario{
+		scenarios := []*apis.ApiScenario{
 			{
 				Name:           "inviting player win",
 				Method:         http.MethodPost,
 				URL:            "/games/rps/invites/verify",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					_, err := apis.SendRpsGameRequestToUnregisteredPlayer(app, t.Context(), apis.UnregisteredPlayerInput{
 						InvitingPlayerEmail: unregisteredPlayer.Email,
 						Move:                apis.RpsParticipantMovePaper,
@@ -108,7 +108,7 @@ func Test_VerifyRpsGameInvite_Success(t *testing.T) {
 					}
 					scenario.Body = strings.NewReader(string(data))
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
 					assert.NotNil(t, result.Data)
 					assert.Equal(t, playerWithUser.ID, result.Data.RequestingParticipant.PlayerID)
@@ -124,7 +124,7 @@ func Test_VerifyRpsGameInvite_Success(t *testing.T) {
 }
 func Test_SubmitMove_Success(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		playerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		otherPlayerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		gameWithParticipants, err := testApi.App.RpsGame().RequestGame(ctx, &services.RpsGameRequestInput{
@@ -136,16 +136,16 @@ func Test_SubmitMove_Success(t *testing.T) {
 		if err != nil {
 			t.Errorf("Error requesting game: %v", err)
 		}
-		scenarios := []*ApiScenario{
+		scenarios := []*apis.ApiScenario{
 			{
 				Name:           "success",
 				Method:         http.MethodPost,
 				URL:            "/games/rps/{game-id}/submit-move",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, otherPlayerWithUser.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = strings.ReplaceAll(scenario.URL, "{game-id}", fmt.Sprintf("%s", gameWithParticipants.RpsGame.ID))
@@ -159,7 +159,7 @@ func Test_SubmitMove_Success(t *testing.T) {
 					}
 					scenario.Body = strings.NewReader(string(data))
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
 					assert.NotNil(t, result.Data)
 					assert.Equal(t, playerWithUser.ID, result.Data.RequestingParticipant.PlayerID)
@@ -178,19 +178,19 @@ func Test_SubmitMove_Success(t *testing.T) {
 }
 func Test_SendGameRequestToUnRegisteredPlayer_Success(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		playerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		unregisteredPlayer := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(false))
-		scenarios := []*ApiScenario{
+		scenarios := []*apis.ApiScenario{
 			{
 				Name:           "success",
 				Method:         http.MethodPost,
 				URL:            "/games/rps/requests/unregistered",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, playerWithUser.Email)
 					scenario.Headers = []string{tokenHeader}
 					body := &apis.UnregisteredPlayerInput{
@@ -203,7 +203,7 @@ func Test_SendGameRequestToUnRegisteredPlayer_Success(t *testing.T) {
 					}
 					scenario.Body = strings.NewReader(string(data))
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
 					assert.NotNil(t, result.Data)
 					assert.Equal(t, playerWithUser.ID, result.Data.RequestingParticipant.PlayerID)
@@ -228,19 +228,19 @@ func Test_SendGameRequestToUnRegisteredPlayer_Success(t *testing.T) {
 
 func Test_SendGameRequestToRegisteredPlayer_Success(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		playerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		otherPlayerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
-		scenarios := []*ApiScenario{
+		scenarios := []*apis.ApiScenario{
 			{
 				Name:           "success",
 				Method:         http.MethodPost,
 				URL:            "/games/rps/requests",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, playerWithUser.Email)
 					scenario.Headers = []string{tokenHeader}
 					body := &apis.RpsGameRequestInput{
@@ -253,7 +253,7 @@ func Test_SendGameRequestToRegisteredPlayer_Success(t *testing.T) {
 					}
 					scenario.Body = strings.NewReader(string(data))
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
 					assert.NotNil(t, result.Data)
 					assert.Equal(t, playerWithUser.ID, result.Data.RequestingParticipant.PlayerID)

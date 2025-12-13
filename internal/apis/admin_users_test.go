@@ -25,22 +25,22 @@ func TestApi_AdminUsersList(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		adminUser := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("admin@k2dv.io"), core.UserWithPermission(shared.PermissionNameAdmin))
 		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
 		user1 := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("user1@example.com"))
 		user2 := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("user2@example.com"))
-		tests := []ApiScenario{
+		tests := []apis.ApiScenario{
 			{
 				Name:           "admin users list all",
 				Method:         http.MethodGet,
 				URL:            "/admin/users",
 				ExpectedStatus: http.StatusOK,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.ApiUser]
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -57,10 +57,10 @@ func TestApi_AdminUsersList(t *testing.T) {
 				URL:            "/admin/users?emails=" + user1.User.Email,
 				ExpectedStatus: http.StatusOK,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.ApiUser]
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -80,10 +80,10 @@ func TestApi_AdminUsersList(t *testing.T) {
 				URL:            "/admin/users?emails=" + user2.User.Email,
 				ExpectedStatus: http.StatusOK,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.ApiUser]
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -108,20 +108,20 @@ func TestApi_AdminUsersCreate(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		adminUser := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("admin@k2dv.io"), core.UserWithPermission(shared.PermissionNameAdmin))
 		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
-		scenarios := []ApiScenario{
+		scenarios := []apis.ApiScenario{
 			{
 				Name:           "admin users create",
 				Method:         http.MethodPost,
 				URL:            "/admin/users",
 				ExpectedStatus: http.StatusOK,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					input := &apis.UserCreateInput{
 						Password: "Password123!",
 						UserMutationInput: &apis.UserMutationInput{
@@ -135,7 +135,7 @@ func TestApi_AdminUsersCreate(t *testing.T) {
 					}
 					scenario.Body = strings.NewReader(string(data))
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiUser
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -158,10 +158,10 @@ func TestApi_AdminUsersCreate(t *testing.T) {
 				URL:            "/admin/users",
 				ExpectedStatus: http.StatusConflict,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					input := &apis.UserCreateInput{
 						Password: "Password123!",
 						UserMutationInput: &apis.UserMutationInput{
@@ -175,7 +175,7 @@ func TestApi_AdminUsersCreate(t *testing.T) {
 					}
 					scenario.Body = strings.NewReader(string(data))
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apphttp.ErrorModel
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -203,24 +203,24 @@ func TestApi_AdminUsersDelete(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		adminUser := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("admin@k2dv.io"), core.UserWithPermission(shared.PermissionNameAdmin))
 		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
-		scenarios := []ApiScenario{
+		scenarios := []apis.ApiScenario{
 			{
 				Name:           "admin users delete user",
 				Method:         http.MethodDelete,
 				URL:            "/admin/users/",
 				ExpectedStatus: http.StatusNoContent,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					user1 := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("user1@example.com"))
 					scenario.URL = fmt.Sprintf("/admin/users/%s", user1.User.ID)
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					user, err := app.Adapter().User().FindUser(ctx, &stores.UserFilter{
 						Emails: []string{"user1@example.com"},
 					})
@@ -238,13 +238,13 @@ func TestApi_AdminUsersDelete(t *testing.T) {
 				URL:            "/admin/users/",
 				ExpectedStatus: http.StatusNotFound,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					scenario.URL = fmt.Sprintf("/admin/users/%s", uuid.New().String())
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apphttp.ErrorModel
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -271,29 +271,29 @@ func TestApi_AdminUsersUpdate(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		adminUser := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("admin@k2dv.io"), core.UserWithPermission(shared.PermissionNameAdmin))
 		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
-		scenarios := []ApiScenario{
+		scenarios := []apis.ApiScenario{
 			{
 				Name:           "admin users update user",
 				Method:         http.MethodPut,
 				URL:            "/admin/users/",
 				ExpectedStatus: http.StatusNoContent,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					user1 := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("user1@example.com"), core.UserWithName("User 1"))
 					scenario.URL = fmt.Sprintf("/admin/users/%s", user1.User.ID)
 					input := &apis.UserMutationInput{
 						Email: "user1@example.com",
 						Name:  types.Pointer("User 2"),
 					}
-					scenario.Body = JsonToReader(t, input)
+					scenario.Body = apis.JsonToReader(t, input)
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					user, err := app.Adapter().User().FindUser(ctx, &stores.UserFilter{
 						Emails: []string{"user1@example.com"},
 					})
@@ -314,18 +314,18 @@ func TestApi_AdminUsersUpdate(t *testing.T) {
 				URL:            "/admin/users/",
 				ExpectedStatus: http.StatusNotFound,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					scenario.URL = fmt.Sprintf("/admin/users/%s", uuid.New().String())
 					input := &apis.UserMutationInput{
 						Email: "user1@example.com",
 						Name:  types.Pointer("User 2"),
 					}
-					scenario.Body = JsonToReader(t, input)
+					scenario.Body = apis.JsonToReader(t, input)
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apphttp.ErrorModel
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -352,20 +352,20 @@ func TestApi_AdminUsersUpdatePassword(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		adminUser := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("admin@k2dv.io"), core.UserWithPermission(shared.PermissionNameAdmin))
 		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
-		scenarios := []ApiScenario{
+		scenarios := []apis.ApiScenario{
 			{
 				Name:           "admin users update user password",
 				Method:         http.MethodPut,
 				URL:            "/admin/users/",
 				ExpectedStatus: http.StatusNoContent,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					user1 := core.CreateUserWithOptions(
 						t,
 						testApi.App,
@@ -379,9 +379,9 @@ func TestApi_AdminUsersUpdatePassword(t *testing.T) {
 					input := &apis.UpdateUserPasswordInput{
 						Password: "password2",
 					}
-					scenario.Body = JsonToReader(t, input)
+					scenario.Body = apis.JsonToReader(t, input)
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					user, err := app.Adapter().User().FindUser(ctx, &stores.UserFilter{
 						Emails: []string{"user1@example.com"},
 					})
@@ -425,21 +425,21 @@ func TestApi_AdminUsersGet(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		adminUser := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("admin@k2dv.io"), core.UserWithPermission(shared.PermissionNameAdmin))
 		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
 		user1 := core.CreateUserWithOptions(t, testApi.App, core.UserWithEmail("user1@example.com"))
-		tests := []ApiScenario{
+		tests := []apis.ApiScenario{
 			{
 				Name:           "admin users get user1",
 				Method:         http.MethodGet,
 				URL:            "/admin/users/" + user1.User.ID.String(),
 				ExpectedStatus: http.StatusOK,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiUser
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -456,10 +456,10 @@ func TestApi_AdminUsersGet(t *testing.T) {
 				URL:            "/admin/users/" + uuid.NewString(),
 				ExpectedStatus: http.StatusNotFound,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apphttp.ErrorModel
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {

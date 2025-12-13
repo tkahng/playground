@@ -22,7 +22,7 @@ func TestApi_ResetPassword(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		userInfo := core.CreateUserWithOptions(t, testApi.App, core.UserWithPassword("Password123!"))
 		var testMailer *mailer.TestMailer
 		if m, ok := testApi.App.Mailer().(*mailer.TestMailer); ok {
@@ -30,16 +30,16 @@ func TestApi_ResetPassword(t *testing.T) {
 		} else {
 			t.Fatal("mailer is not a TestMailer")
 		}
-		tests := []ApiScenario{
+		tests := []apis.ApiScenario{
 			{
 				Name:           "Test reset password request success",
 				Method:         http.MethodPost,
 				URL:            "/auth/request-password-reset",
 				ExpectedStatus: http.StatusNoContent,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					dto := apis.RequestPasswordResetInput{
 						Email: userInfo.User.Email,
 					}
@@ -49,7 +49,7 @@ func TestApi_ResetPassword(t *testing.T) {
 					}
 					scenario.Body = strings.NewReader(string(data))
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					err := app.JobManager().PollOnce(ctx)
 					if err != nil {
 						t.Fatalf("Error polling job: %v", err)
@@ -80,10 +80,10 @@ func TestApi_ResetPassword(t *testing.T) {
 				Method:         http.MethodPost,
 				URL:            "/auth/check-password-reset",
 				ExpectedStatus: http.StatusNoContent,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					checktoken, err := app.Token().GenerateToken(ctx, &token.GenerateTokenOptions{
 						Email: userInfo.User.Email,
 						Type:  models.TokenTypesPasswordResetToken,
@@ -102,7 +102,7 @@ func TestApi_ResetPassword(t *testing.T) {
 					}
 					scenario.Body = strings.NewReader(string(data))
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 
 				},
 			},
@@ -111,10 +111,10 @@ func TestApi_ResetPassword(t *testing.T) {
 				Method:         http.MethodPost,
 				URL:            "/auth/confirm-password-reset",
 				ExpectedStatus: http.StatusNoContent,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					checktoken, err := app.Token().GenerateToken(ctx, &token.GenerateTokenOptions{
 						Email: userInfo.User.Email,
 						Type:  models.TokenTypesPasswordResetToken,
@@ -133,7 +133,7 @@ func TestApi_ResetPassword(t *testing.T) {
 					}
 					scenario.Body = strings.NewReader(string(data))
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					authTokens, err := app.Auth().Signin(ctx, &auth.SigninInput{
 						Email:    userInfo.User.Email,
 						Password: "SomePassword123!",

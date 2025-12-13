@@ -27,13 +27,13 @@ import (
 )
 
 func TestApi_CreateInvitation(t *testing.T) {
-	tests := []ApiScenario{
+	tests := []apis.ApiScenario{
 		{
 			Name:           "success: create invitation by owner member",
 			Method:         http.MethodPost,
 			URL:            "/teams/{team-id}/invitations",
 			ExpectedStatus: http.StatusNoContent,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				user := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &user.User)
 				scenario.URL = fmt.Sprintf("/teams/%s/invitations", team.Team.ID)
@@ -41,11 +41,11 @@ func TestApi_CreateInvitation(t *testing.T) {
 					Email: "VY7o1@example.com",
 					Role:  string(apis.TeamMemberRoleMember),
 				}
-				scenario.Body = JsonToReader(t, body)
+				scenario.Body = apis.JsonToReader(t, body)
 				header := core.CreateTokenHeader(t, app, user.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				ctx := t.Context()
 				err := app.JobManager().PollOnce(ctx)
 				assert.NoError(t, err)
@@ -70,7 +70,7 @@ func TestApi_CreateInvitation(t *testing.T) {
 			Method:         http.MethodPost,
 			URL:            "/teams/{team-id}/invitations",
 			ExpectedStatus: http.StatusForbidden,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				user := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &user.User, core.TeamWithRole(models.TeamMemberRoleMember))
 				scenario.URL = fmt.Sprintf("/teams/%s/invitations", team.Team.ID)
@@ -78,7 +78,7 @@ func TestApi_CreateInvitation(t *testing.T) {
 					Email: "VY7o1@example.com",
 					Role:  string(apis.TeamMemberRoleMember),
 				}
-				scenario.Body = JsonToReader(t, body)
+				scenario.Body = apis.JsonToReader(t, body)
 				header := core.CreateTokenHeader(t, app, user.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
@@ -90,8 +90,8 @@ func TestApi_CreateInvitation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			testApi := SetupApi(t, ctx, db)
-			tt.TestAppFactory = func(t testing.TB) *TestApi {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
 				return testApi
 			}
 			tt.Test(t)
@@ -111,13 +111,13 @@ func ExtractFistMessageTokenFromMailer(t testing.TB, app *core.BaseApp) string {
 }
 func TestApi_AcceptInvitation(t *testing.T) {
 	inviteeEmail := "VY7o1@example.com"
-	tests := []ApiScenario{
+	tests := []apis.ApiScenario{
 		{
 			Name:           "success: accept invitation",
 			Method:         http.MethodPost,
 			URL:            "/team-invitations/accept",
 			ExpectedStatus: http.StatusNoContent,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				ctx := t.Context()
 				core.CreateProductsAndPrices(t, app)
 				// init team
@@ -145,11 +145,11 @@ func TestApi_AcceptInvitation(t *testing.T) {
 				body := apis.CheckValidInvitationDto{
 					Token: token,
 				}
-				scenario.Body = JsonToReader(t, body)
+				scenario.Body = apis.JsonToReader(t, body)
 				header := core.CreateTokenHeader(t, app, inviteeUserInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				ctx := t.Context()
 				for range 5 {
 					err := app.JobManager().PollOnce(ctx)
@@ -201,7 +201,7 @@ func TestApi_AcceptInvitation(t *testing.T) {
 			ExpectedContent: []string{
 				"user does not match invitation",
 			},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				ctx := t.Context()
 				core.CreateProductsAndPrices(t, app)
 				// init team
@@ -229,11 +229,11 @@ func TestApi_AcceptInvitation(t *testing.T) {
 					Token: token,
 				}
 				otherUserInfo := core.CreateUserWithOptions(t, app, core.UserWithEmail("other@example"), core.UserWithVerifiedNow())
-				scenario.Body = JsonToReader(t, body)
+				scenario.Body = apis.JsonToReader(t, body)
 				header := core.CreateTokenHeader(t, app, otherUserInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				ctx := t.Context()
 				for range 5 {
 					err := app.JobManager().PollOnce(ctx)
@@ -251,7 +251,7 @@ func TestApi_AcceptInvitation(t *testing.T) {
 			ExpectedContent: []string{
 				"unknown error",
 			},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				ctx := t.Context()
 
 				core.CreateProductsAndPrices(t, app)
@@ -277,7 +277,7 @@ func TestApi_AcceptInvitation(t *testing.T) {
 				body := apis.CheckValidInvitationDto{
 					Token: token,
 				}
-				scenario.Body = JsonToReader(t, body)
+				scenario.Body = apis.JsonToReader(t, body)
 				header := core.CreateTokenHeader(t, app, otherUserInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 				decorator, ok := app.Adapter().TeamInvitation().(*stores.TeamInvitationStoreDecorator)
@@ -286,7 +286,7 @@ func TestApi_AcceptInvitation(t *testing.T) {
 					return errors.New("unknown error")
 				}
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				ctx := t.Context()
 				for range 5 {
 					err := app.JobManager().PollOnce(ctx)
@@ -305,8 +305,8 @@ func TestApi_AcceptInvitation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			testApi := SetupApi(t, ctx, db)
-			tt.TestAppFactory = func(t testing.TB) *TestApi {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
 				return testApi
 			}
 			tt.Test(t)
@@ -315,13 +315,13 @@ func TestApi_AcceptInvitation(t *testing.T) {
 }
 func TestApi_CancelInvitation(t *testing.T) {
 	inviteeEmail := "VY7o1@example.com"
-	tests := []ApiScenario{
+	tests := []apis.ApiScenario{
 		{
 			Name:           "success: cancel invitation",
 			Method:         http.MethodDelete,
 			URL:            "/teams/{team-id}/invitations/{invitation-id}",
 			ExpectedStatus: http.StatusNoContent,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				ctx := t.Context()
 				core.CreateProductsAndPrices(t, app)
 				// init team
@@ -355,7 +355,7 @@ func TestApi_CancelInvitation(t *testing.T) {
 				header := core.CreateTokenHeader(t, app, teamInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				ctx := t.Context()
 				invite := scenario.Store.Get("invite").(*models.TeamInvitation)
 				updatedInvite := repository.MustFindOneCtx(t, ctx, repository.TeamInvitation, app.Db(), &map[string]any{
@@ -374,7 +374,7 @@ func TestApi_CancelInvitation(t *testing.T) {
 			ExpectedContent: []string{
 				"You do not have the required team member roles: [owner]",
 			},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				ctx := t.Context()
 				core.CreateProductsAndPrices(t, app)
 				// init team
@@ -411,7 +411,7 @@ func TestApi_CancelInvitation(t *testing.T) {
 				header := core.CreateTokenHeader(t, app, otherUserInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				ctx := t.Context()
 				invite := scenario.Store.Get("invite").(*models.TeamInvitation)
 				updatedInvite := repository.MustFindOneCtx(t, ctx, repository.TeamInvitation, app.Db(), &map[string]any{
@@ -426,8 +426,8 @@ func TestApi_CancelInvitation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			testApi := SetupApi(t, ctx, db)
-			tt.TestAppFactory = func(t testing.TB) *TestApi {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
 				return testApi
 			}
 			tt.Test(t)
@@ -436,13 +436,13 @@ func TestApi_CancelInvitation(t *testing.T) {
 }
 func TestApi_RejectInvitation(t *testing.T) {
 	inviteeEmail := "VY7o1@example.com"
-	tests := []ApiScenario{
+	tests := []apis.ApiScenario{
 		{
 			Name:           "success: decline invitation",
 			Method:         http.MethodPost,
 			URL:            "/team-invitations/decline",
 			ExpectedStatus: http.StatusNoContent,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				ctx := t.Context()
 				core.CreateProductsAndPrices(t, app)
 				// init team
@@ -469,11 +469,11 @@ func TestApi_RejectInvitation(t *testing.T) {
 				body := apis.CheckValidInvitationDto{
 					Token: token,
 				}
-				scenario.Body = JsonToReader(t, body)
+				scenario.Body = apis.JsonToReader(t, body)
 				header := core.CreateTokenHeader(t, app, inviteeUserInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				ctx := t.Context()
 				for range 5 {
 					err := app.JobManager().PollOnce(ctx)
@@ -495,7 +495,7 @@ func TestApi_RejectInvitation(t *testing.T) {
 			ExpectedContent: []string{
 				"user does not match invitation",
 			},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				ctx := t.Context()
 				core.CreateProductsAndPrices(t, app)
 				// init team
@@ -523,11 +523,11 @@ func TestApi_RejectInvitation(t *testing.T) {
 					Token: token,
 				}
 				otherUserInfo := core.CreateUserWithOptions(t, app, core.UserWithEmail("other@example"), core.UserWithVerifiedNow())
-				scenario.Body = JsonToReader(t, body)
+				scenario.Body = apis.JsonToReader(t, body)
 				header := core.CreateTokenHeader(t, app, otherUserInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				ctx := t.Context()
 				for range 5 {
 					err := app.JobManager().PollOnce(ctx)
@@ -542,8 +542,8 @@ func TestApi_RejectInvitation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			testApi := SetupApi(t, ctx, db)
-			tt.TestAppFactory = func(t testing.TB) *TestApi {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
 				return testApi
 			}
 			tt.Store = store.New[string, any](nil)
@@ -553,13 +553,13 @@ func TestApi_RejectInvitation(t *testing.T) {
 }
 func TestApi_FindUserInvitations(t *testing.T) {
 	inviteeEmail := "VY7o1@example.com"
-	tests := []ApiScenario{
+	tests := []apis.ApiScenario{
 		{
 			Name:           "success: find user invitations 1 pending",
 			Method:         http.MethodGet,
 			URL:            "/team-invitations",
 			ExpectedStatus: http.StatusOK,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				ctx := t.Context()
 				core.CreateProductsAndPrices(t, app)
 				// init team
@@ -586,11 +586,11 @@ func TestApi_FindUserInvitations(t *testing.T) {
 				// body := apis.CheckValidInvitationDto{
 				// 	Token: token,
 				// }
-				// scenario.Body = JsonToReader(t, body)
+				// scenario.Body = apis.JsonToReader(t, body)
 				header := core.CreateTokenHeader(t, app, inviteeUserInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				// ctx := t.Context()
 				resp, err := utils.UnmarshalJSON[apis.ApiPaginatedResponse[*apis.TeamInvitation]](res.Body.Bytes())
 				assert.NoError(t, err)
@@ -601,8 +601,8 @@ func TestApi_FindUserInvitations(t *testing.T) {
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			testApi := SetupApi(t, ctx, db)
-			tt.TestAppFactory = func(t testing.TB) *TestApi {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
 				return testApi
 			}
 			tt.Test(t)

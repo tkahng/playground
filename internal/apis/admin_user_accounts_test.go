@@ -19,7 +19,7 @@ func TestApi_AdminUserAccounts(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		adminUser := core.CreateUserWithOptions(
 			t,
 			testApi.App,
@@ -43,17 +43,17 @@ func TestApi_AdminUserAccounts(t *testing.T) {
 			core.UserWithProvider(models.ProvidersGoogle),
 			core.UserWithProviderType(models.ProviderTypeOAuth),
 		)
-		tests := []ApiScenario{
+		tests := []apis.ApiScenario{
 			{
 				Name:           "admin user accounts list all",
 				Method:         http.MethodGet,
 				URL:            "/admin/user-accounts",
 				ExpectedStatus: http.StatusOK,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.UserAccountOutput]
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -70,10 +70,10 @@ func TestApi_AdminUserAccounts(t *testing.T) {
 				URL:            "/admin/user-accounts?providers=google",
 				ExpectedStatus: http.StatusOK,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.UserAccountOutput]
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {

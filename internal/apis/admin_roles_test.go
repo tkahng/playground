@@ -21,7 +21,7 @@ func TestApi_AdminRolesList(t *testing.T) {
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		repository.CreateRolesAndPermissions(t, ctx, db, shared.KnownRoleNamesPermissionsMap)
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		adminUser := core.CreateUserWithOptions(
 			t,
 			testApi.App,
@@ -48,17 +48,17 @@ func TestApi_AdminRolesList(t *testing.T) {
 			core.UserWithProviderType(models.ProviderTypeCredentials),
 		)
 		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
-		tests := []ApiScenario{
+		tests := []apis.ApiScenario{
 			{
 				Name:           "admin roles list get by user_id, pro and basic, reversed",
 				Method:         http.MethodGet,
 				URL:            "/admin/roles?user_id=" + doubleRoleUser.User.ID.String() + "&reverse=true",
 				ExpectedStatus: http.StatusOK,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.Role]
 					var expectedCount int = 2
 					err := json.NewDecoder(res.Body).Decode(&body)
@@ -76,10 +76,10 @@ func TestApi_AdminRolesList(t *testing.T) {
 				URL:            "/admin/roles?user_id=" + basicUser.User.ID.String() + "&reverse=true",
 				ExpectedStatus: http.StatusOK,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.Role]
 					var expectedCount int = 3
 					err := json.NewDecoder(res.Body).Decode(&body)
@@ -97,10 +97,10 @@ func TestApi_AdminRolesList(t *testing.T) {
 				URL:            "/admin/roles?user_id=" + basicUser.User.ID.String(),
 				ExpectedStatus: http.StatusOK,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.Role]
 					var expectedCount int = 1
 					err := json.NewDecoder(res.Body).Decode(&body)
@@ -118,10 +118,10 @@ func TestApi_AdminRolesList(t *testing.T) {
 				URL:            "/admin/roles?names=" + shared.PermissionNamePro + "," + shared.PermissionNameAdvanced,
 				ExpectedStatus: http.StatusOK,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.Role]
 					var expectedCount int = 2
 					err := json.NewDecoder(res.Body).Decode(&body)
@@ -139,10 +139,10 @@ func TestApi_AdminRolesList(t *testing.T) {
 				URL:            "/admin/roles?names=" + shared.PermissionNameAdmin,
 				ExpectedStatus: http.StatusOK,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.Role]
 					var expectedCount int = 1
 					err := json.NewDecoder(res.Body).Decode(&body)
@@ -160,10 +160,10 @@ func TestApi_AdminRolesList(t *testing.T) {
 				URL:            "/admin/roles",
 				ExpectedStatus: http.StatusOK,
 				Headers:        []string{header},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiPaginatedResponse[*apis.Role]
 					var expectedCount int = 4
 					err := json.NewDecoder(res.Body).Decode(&body)

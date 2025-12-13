@@ -18,20 +18,20 @@ func TestApi_RefreshToken(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 
 		userInfo := core.CreateUserWithOptions(t, testApi.App, core.UserWithPassword("Password123!"))
 
-		tests := []ApiScenario{
+		tests := []apis.ApiScenario{
 			{
 				Name:           "Test refresh token success",
 				Method:         http.MethodPost,
 				URL:            "/auth/refresh-token",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokens, err := app.Auth().GenerateAuthTokens(ctx, userInfo.User.Email)
 					if err != nil {
 						t.Errorf("Error creating auth tokens: %v", err)
@@ -45,7 +45,7 @@ func TestApi_RefreshToken(t *testing.T) {
 					}
 					scenario.Body = strings.NewReader(string(data))
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiOutput[*apis.ApiUserInfoTokens]
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {

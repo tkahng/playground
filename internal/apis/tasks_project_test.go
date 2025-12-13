@@ -20,7 +20,7 @@ import (
 
 func TestApi_TeamTaskProjectList(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		owner := core.CreateUserWithOptions(t, testApi.App, core.UserWithVerifiedNow())
 		team1 := core.CreateTeamAndMemberWithOptions(t, testApi.App, &owner.User)
 		project1 := core.CreateProjectAndTasks(
@@ -46,21 +46,21 @@ func TestApi_TeamTaskProjectList(t *testing.T) {
 		)
 		var allIds []uuid.UUID = []uuid.UUID{project1.ID, project2.ID, project3.ID}
 		// task
-		tests := []ApiScenario{
+		tests := []apis.ApiScenario{
 			{
 				Name:           "success: all projects",
 				Method:         http.MethodGet,
 				URL:            "/teams/{team-id}/task-projects",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("/teams/%s/task-projects", team1.Team.ID.String())
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TaskProject]](t, res.Body.Bytes())
 					assert.Equal(t, int64(3), result.Meta.Total)
 					test.TestSliceEveryFunc(t, "", result.Data, func(item *apis.TaskProject) bool {
@@ -73,15 +73,15 @@ func TestApi_TeamTaskProjectList(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/teams/{team-id}/task-projects?status=todo",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("/teams/%s/task-projects?status=todo", team1.Team.ID.String())
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TaskProject]](t, res.Body.Bytes())
 					assert.Equal(t, int64(1), result.Meta.Total)
 					assert.Equal(t, project1.ID.String(), result.Data[0].ID.String())
@@ -95,13 +95,13 @@ func TestApi_TeamTaskProjectList(t *testing.T) {
 }
 func TestApi_TeamTaskProjectCreate(t *testing.T) {
 	// task
-	tests := []ApiScenario{
+	tests := []apis.ApiScenario{
 		{
 			Name:           "success: create project",
 			Method:         http.MethodPost,
 			URL:            "/teams/{team-id}/task-projects",
 			ExpectedStatus: http.StatusOK,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
@@ -115,9 +115,9 @@ func TestApi_TeamTaskProjectCreate(t *testing.T) {
 					},
 				}
 				scenario.Store.Set("input", input)
-				scenario.Body = JsonToReader(t, input)
+				scenario.Body = apis.JsonToReader(t, input)
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				result := test.MustUnMarshal[apis.TaskProject](t, res.Body.Bytes())
 				input, ok := scenario.Store.Get("input").(apis.CreateTaskProjectWithoutTeamWithTasks)
 				if !ok {
@@ -131,8 +131,8 @@ func TestApi_TeamTaskProjectCreate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			testApi := SetupApi(t, ctx, db)
-			tt.TestAppFactory = func(t testing.TB) *TestApi {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
 				return testApi
 			}
 			tt.Test(t)
