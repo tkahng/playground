@@ -27,14 +27,14 @@ import (
 // find-team-team-member-by-id
 func TestApi_FindTeamMemberByID(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		team1 := CreateTeamAndOwner(t, testApi.App)
 		team1Member1 := CreateTeamMember(t, testApi.App, &team1.Team)
 		team1Member2 := CreateTeamMember(t, testApi.App, &team1.Team, core.TeamWithActive(false))
 		assert.False(t, team1Member2.Member.Active)
 		team2 := CreateTeamAndOwner(t, testApi.App)
 		// testMailer := ExtractTestMailer(t, testApi.App)
-		tests := []ApiScenario{
+		tests := []apis.ApiScenario{
 			{
 				Name:           "fail: team2owner find team1member1",
 				Method:         http.MethodGet,
@@ -43,10 +43,10 @@ func TestApi_FindTeamMemberByID(t *testing.T) {
 				ExpectedContent: []string{
 					"team member's team_id does not match team_id in path",
 				},
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team2.User.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("/teams/%s/team-members/%s", team2.Team.ID.String(), team1Member1.Member.ID.String())
@@ -57,13 +57,13 @@ func TestApi_FindTeamMemberByID(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/teams/{team-id}/team-members/{team-member-id}",
 				ExpectedStatus: http.StatusForbidden,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
 				ExpectedContent: []string{
 					"team info not found",
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1Member2.User.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("/teams/%s/team-members/%s", team1Member2.Team.ID.String(), team1.Member.ID.String())
@@ -74,15 +74,15 @@ func TestApi_FindTeamMemberByID(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/teams/{team-id}/team-members/{team-member-id}",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1Member1.User.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("/teams/%s/team-members/%s", team1Member1.Team.ID.String(), team1.Member.ID.String())
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					teamMember := test.MustUnMarshal[apis.TeamMember](t, res.Body.Bytes())
 					assert.Equal(t, team1.Member.ID, teamMember.ID)
 					assert.Equal(t, team1.Member.TeamID, teamMember.TeamID)
@@ -96,15 +96,15 @@ func TestApi_FindTeamMemberByID(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/teams/{team-id}/team-members/{team-member-id}",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("/teams/%s/team-members/%s", team1.Team.ID.String(), team1Member1.Member.ID.String())
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					teamMember := test.MustUnMarshal[apis.TeamMember](t, res.Body.Bytes())
 					assert.Equal(t, team1Member1.Member.ID, teamMember.ID)
 					assert.Equal(t, team1Member1.Member.TeamID, teamMember.TeamID)
@@ -121,27 +121,27 @@ func TestApi_FindTeamMemberByID(t *testing.T) {
 }
 func TestApi_FindTeamTeamMembers(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		team1 := CreateTeamAndOwner(t, testApi.App)
 		team1Member1 := CreateTeamMember(t, testApi.App, &team1.Team)
 		team1Member2 := CreateTeamMember(t, testApi.App, &team1.Team, core.TeamWithActive(false))
 		team1Member3 := CreateTeamMember(t, testApi.App, &team1.Team, core.TeamWithRole(models.TeamMemberRoleGuest))
 		// testMailer := ExtractTestMailer(t, testApi.App)
-		tests := []ApiScenario{
+		tests := []apis.ApiScenario{
 			{
 				Name:           "success: team1 owner find everyone",
 				Method:         http.MethodGet,
 				URL:            "/teams/{team-id}/members",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("/teams/%s/members", team1.Team.ID.String())
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
 					allTeamMemberIds := []uuid.UUID{team1.Member.ID, team1Member1.Member.ID, team1Member2.Member.ID, team1Member3.Member.ID}
 					test.TestSliceEveryFunc(t, "something", result.Data, func(member *apis.TeamMember) bool {
@@ -156,15 +156,15 @@ func TestApi_FindTeamTeamMembers(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/teams/{team-id}/members",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("/teams/%s/members?active=true", team1.Team.ID.String())
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
 					allTeamMemberIds := []uuid.UUID{team1.Member.ID, team1Member1.Member.ID, team1Member3.Member.ID}
 					test.TestSliceEveryFunc(t, "something", result.Data, func(member *apis.TeamMember) bool {
@@ -179,15 +179,15 @@ func TestApi_FindTeamTeamMembers(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/teams/{team-id}/members",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("/teams/%s/members?active=true&roles=guest,member", team1.Team.ID.String())
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
 					allTeamMemberIds := []uuid.UUID{team1Member3.Member.ID, team1Member1.Member.ID}
 					test.TestSliceEveryFunc(t, "something", result.Data, func(member *apis.TeamMember) bool {
@@ -202,15 +202,15 @@ func TestApi_FindTeamTeamMembers(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/teams/{team-id}/members",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1Member1.User.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("/teams/%s/members", team1Member1.Team.ID.String())
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
 					allTeamMemberIds := []uuid.UUID{team1.Member.ID, team1Member1.Member.ID, team1Member2.Member.ID, team1Member3.Member.ID}
 					test.TestSliceEveryFunc(t, "something", result.Data, func(member *apis.TeamMember) bool {
@@ -225,15 +225,15 @@ func TestApi_FindTeamTeamMembers(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/teams/{team-id}/members",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1Member3.User.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("/teams/%s/members", team1Member3.Team.ID.String())
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
 					allTeamMemberIds := []uuid.UUID{team1.Member.ID, team1Member1.Member.ID, team1Member2.Member.ID, team1Member3.Member.ID}
 					test.TestSliceEveryFunc(t, "something", result.Data, func(member *apis.TeamMember) bool {
@@ -248,13 +248,13 @@ func TestApi_FindTeamTeamMembers(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/teams/{team-id}/members",
 				ExpectedStatus: http.StatusForbidden,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
 				ExpectedContent: []string{
 					"team info not found",
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1Member2.User.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("/teams/%s/members", team1Member2.Team.ID.String())
@@ -268,7 +268,7 @@ func TestApi_FindTeamTeamMembers(t *testing.T) {
 }
 func TestApi_FindUserTeamMembers(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		adapter := testApi.App.Adapter()
 		user1 := stores.CreateUser(adapter, ctx, "user1@example.com")
 		user2 := stores.CreateUser(adapter, ctx, "user2@example.com")
@@ -303,16 +303,16 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 		err = adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, user1Team1Member.TeamID, *user1Team1Member.UserID)
 		assert.NoError(t, err)
 		// testMailer := ExtractTestMailer(t, testApi.App)
-		tests := []ApiScenario{
+		tests := []apis.ApiScenario{
 			{
 				Name:           "user1 teamMembers by team name asc",
 				Method:         http.MethodGet,
 				URL:            "/team-members",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user1.Email)
 					scenario.Headers = []string{tokenHeader}
 					u, err := url.Parse("/team-members")
@@ -322,7 +322,7 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 					u.RawQuery = q.Encode()
 					scenario.URL = u.RequestURI()
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
 					members := result.Data
 					assert.Equal(t, 3, len(members))
@@ -341,10 +341,10 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/team-members",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user1.Email)
 					scenario.Headers = []string{tokenHeader}
 					u, err := url.Parse("/team-members")
@@ -355,7 +355,7 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 					u.RawQuery = q.Encode()
 					scenario.URL = u.RequestURI()
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
 					members := result.Data
 					assert.Equal(t, 3, len(members))
@@ -374,10 +374,10 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/team-members",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user1.Email)
 					scenario.Headers = []string{tokenHeader}
 					u, err := url.Parse("/team-members")
@@ -387,7 +387,7 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 					u.RawQuery = q.Encode()
 					scenario.URL = u.RequestURI()
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
 					members := result.Data
 					assert.Equal(t, 3, len(members))
@@ -406,10 +406,10 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/team-members",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user1.Email)
 					scenario.Headers = []string{tokenHeader}
 					u, err := url.Parse("/team-members")
@@ -420,7 +420,7 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 					u.RawQuery = q.Encode()
 					scenario.URL = u.RequestURI()
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
 					members := result.Data
 					assert.Equal(t, 3, len(members))
@@ -439,10 +439,10 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/team-members",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user1.Email)
 					scenario.Headers = []string{tokenHeader}
 					u, err := url.Parse("/team-members")
@@ -452,7 +452,7 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 					u.RawQuery = q.Encode()
 					scenario.URL = u.RequestURI()
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
 					members := result.Data
 					assert.Equal(t, 1, len(members))
@@ -465,10 +465,10 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/team-members",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user1.Email)
 					scenario.Headers = []string{tokenHeader}
 					u, err := url.Parse("/team-members")
@@ -478,7 +478,7 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 					u.RawQuery = q.Encode()
 					scenario.URL = u.RequestURI()
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.TeamMember]](t, res.Body.Bytes())
 					members := result.Data
 					assert.Equal(t, 2, len(members))
@@ -495,13 +495,13 @@ func TestApi_FindUserTeamMembers(t *testing.T) {
 }
 
 func TestApi_UpdateTeamMember(t *testing.T) {
-	tests := []ApiScenario{
+	tests := []apis.ApiScenario{
 		{
 			Name:           "success: team owner update member to guest",
 			Method:         http.MethodPut,
 			URL:            "/team-members/{team-member-id}",
 			ExpectedStatus: http.StatusNoContent,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				team1 := CreateTeamAndOwner(t, app)
 				team1Member1 := CreateTeamMember(t, app, &team1.Team, core.TeamWithRole(models.TeamMemberRoleMember))
 				assert.Equal(t, models.TeamMemberRoleMember, team1Member1.Member.Role)
@@ -511,11 +511,11 @@ func TestApi_UpdateTeamMember(t *testing.T) {
 				body := apis.UpdateTeamMemberDto{
 					Role: apis.TeamMemberRoleGuest,
 				}
-				scenario.Body = JsonToReader(t, body)
+				scenario.Body = apis.JsonToReader(t, body)
 				header := core.CreateTokenHeader(t, app, team1.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				ctx := t.Context()
 				team1Member1, ok := scenario.Store.Get("team1Member1").(*models.TeamInfoModel)
 				assert.True(t, ok)
@@ -535,7 +535,7 @@ func TestApi_UpdateTeamMember(t *testing.T) {
 			ExpectedContent: []string{
 				"You do not have the required team member roles: [owner]",
 			},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				team1 := CreateTeamAndOwner(t, app)
 				team1Member1 := CreateTeamMember(t, app, &team1.Team, core.TeamWithRole(models.TeamMemberRoleMember))
 				team1Member2 := CreateTeamMember(t, app, &team1.Team, core.TeamWithRole(models.TeamMemberRoleMember))
@@ -547,7 +547,7 @@ func TestApi_UpdateTeamMember(t *testing.T) {
 				body := apis.UpdateTeamMemberDto{
 					Role: apis.TeamMemberRoleGuest,
 				}
-				scenario.Body = JsonToReader(t, body)
+				scenario.Body = apis.JsonToReader(t, body)
 				header := core.CreateTokenHeader(t, app, team1Member2.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
@@ -560,7 +560,7 @@ func TestApi_UpdateTeamMember(t *testing.T) {
 			ExpectedContent: []string{
 				"team info not found. you are not a member of the team related to this request",
 			},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				team1 := CreateTeamAndOwner(t, app)
 				team1Member1 := CreateTeamMember(t, app, &team1.Team, core.TeamWithRole(models.TeamMemberRoleMember))
 				team2 := CreateTeamAndOwner(t, app)
@@ -572,7 +572,7 @@ func TestApi_UpdateTeamMember(t *testing.T) {
 				body := apis.UpdateTeamMemberDto{
 					Role: apis.TeamMemberRoleGuest,
 				}
-				scenario.Body = JsonToReader(t, body)
+				scenario.Body = apis.JsonToReader(t, body)
 				header := core.CreateTokenHeader(t, app, team2.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
@@ -580,8 +580,8 @@ func TestApi_UpdateTeamMember(t *testing.T) {
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			testApi := SetupApi(t, ctx, db)
-			tt.TestAppFactory = func(t testing.TB) *TestApi {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
 				return testApi
 			}
 			tt.Test(t)
@@ -590,13 +590,13 @@ func TestApi_UpdateTeamMember(t *testing.T) {
 }
 
 func TestApi_DeactivateTeamMember(t *testing.T) {
-	tests := []ApiScenario{
+	tests := []apis.ApiScenario{
 		{
 			Name:           "fail: unknown error from payment client. rollback everything.",
 			Method:         http.MethodDelete,
 			URL:            "/team-members/{team-member-id}",
 			ExpectedStatus: http.StatusInternalServerError,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				core.CreateProductsAndPrices(t, app)
 				team1Owner1 := CreateTeamAndOwner(t, app)
 				team1Member1 := CreateTeamMember(t, app, &team1Owner1.Team)
@@ -616,7 +616,7 @@ func TestApi_DeactivateTeamMember(t *testing.T) {
 			ExpectedContent: []string{
 				"unknown error",
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				ctx := t.Context()
 				paymentClient := core.ExtractTestPaymentClient(t, app)
 				sub := scenario.Store.Get("subscription").(*models.StripeSubscription)
@@ -651,7 +651,7 @@ func TestApi_DeactivateTeamMember(t *testing.T) {
 			Method:         http.MethodDelete,
 			URL:            "/team-members/{team-member-id}",
 			ExpectedStatus: http.StatusNoContent,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				core.CreateProductsAndPrices(t, app)
 				team1Owner1 := CreateTeamAndOwner(t, app)
 				team1Member1 := CreateTeamMember(t, app, &team1Owner1.Team)
@@ -664,7 +664,7 @@ func TestApi_DeactivateTeamMember(t *testing.T) {
 				header := core.CreateTokenHeader(t, app, team1Owner1.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				ctx := t.Context()
 				paymentClient := core.ExtractTestPaymentClient(t, app)
 				sub := scenario.Store.Get("subscription").(*models.StripeSubscription)
@@ -701,7 +701,7 @@ func TestApi_DeactivateTeamMember(t *testing.T) {
 			Method:         http.MethodDelete,
 			URL:            "/team-members/{team-member-id}",
 			ExpectedStatus: http.StatusNotFound,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				core.CreateProductsAndPrices(t, app)
 				team1Owner1 := CreateTeamAndOwner(t, app)
 				team1Member1 := CreateTeamMember(t, app, &team1Owner1.Team, core.TeamWithActive(false))
@@ -720,7 +720,7 @@ func TestApi_DeactivateTeamMember(t *testing.T) {
 			Method:         http.MethodDelete,
 			URL:            "/team-members/{team-member-id}",
 			ExpectedStatus: http.StatusForbidden,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				core.CreateProductsAndPrices(t, app)
 				team1Owner1 := CreateTeamAndOwner(t, app)
 				team1Member1 := CreateTeamMember(t, app, &team1Owner1.Team)
@@ -743,8 +743,8 @@ func TestApi_DeactivateTeamMember(t *testing.T) {
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			testApi := SetupApi(t, ctx, db)
-			tt.TestAppFactory = func(t testing.TB) *TestApi {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
 				return testApi
 			}
 			tt.Test(t)
@@ -752,13 +752,13 @@ func TestApi_DeactivateTeamMember(t *testing.T) {
 	}
 }
 func TestApi_LeaveTeam(t *testing.T) {
-	tests := []ApiScenario{
+	tests := []apis.ApiScenario{
 		{
 			Name:           "fail: unknown error from payment client. rollback everything.",
 			Method:         http.MethodDelete,
 			URL:            "/team/{team-id}/leave",
 			ExpectedStatus: http.StatusInternalServerError,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				core.CreateProductsAndPrices(t, app)
 				team1Owner1 := CreateTeamAndOwner(t, app)
 				team1Member1 := CreateTeamMember(t, app, &team1Owner1.Team)
@@ -778,7 +778,7 @@ func TestApi_LeaveTeam(t *testing.T) {
 			ExpectedContent: []string{
 				"unknown error",
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				ctx := t.Context()
 				paymentClient := core.ExtractTestPaymentClient(t, app)
 				sub := scenario.Store.Get("subscription").(*models.StripeSubscription)
@@ -813,7 +813,7 @@ func TestApi_LeaveTeam(t *testing.T) {
 			Method:         http.MethodDelete,
 			URL:            "/team/{team-id}/leave",
 			ExpectedStatus: http.StatusNoContent,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				core.CreateProductsAndPrices(t, app)
 				team1Owner1 := CreateTeamAndOwner(t, app)
 				team1Member1 := CreateTeamMember(t, app, &team1Owner1.Team)
@@ -826,7 +826,7 @@ func TestApi_LeaveTeam(t *testing.T) {
 				header := core.CreateTokenHeader(t, app, team1Member1.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				ctx := t.Context()
 				paymentClient := core.ExtractTestPaymentClient(t, app)
 				sub := scenario.Store.Get("subscription").(*models.StripeSubscription)
@@ -863,7 +863,7 @@ func TestApi_LeaveTeam(t *testing.T) {
 			Method:         http.MethodDelete,
 			URL:            "/team/{team-id}/leave",
 			ExpectedStatus: http.StatusForbidden,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				core.CreateProductsAndPrices(t, app)
 				team1Owner1 := CreateTeamAndOwner(t, app)
 				team1Member1 := CreateTeamMember(t, app, &team1Owner1.Team, core.TeamWithActive(false))
@@ -880,8 +880,8 @@ func TestApi_LeaveTeam(t *testing.T) {
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			testApi := SetupApi(t, ctx, db)
-			tt.TestAppFactory = func(t testing.TB) *TestApi {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
 				return testApi
 			}
 			tt.Test(t)
@@ -891,16 +891,16 @@ func TestApi_LeaveTeam(t *testing.T) {
 
 func TestApi_ReassignBillingAccess_Fail_NoTeamInfoFound(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		appApi := SetupApi(t, ctx, db)
-		testScenario := &ApiScenario{
+		appApi := apis.SetupApi(t, ctx, db)
+		testScenario := &apis.ApiScenario{
 			Name:           "Fail_NoTeamInfoFound",
 			Method:         http.MethodPut,
 			URL:            "/team-members/{team-member-id}/reassign-billing-access",
 			ExpectedStatus: http.StatusForbidden,
-			TestAppFactory: func(t testing.TB) *TestApi {
+			TestAppFactory: func(t testing.TB) *apis.TestApi {
 				return appApi
 			},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				// init stripe
 				core.CreateProductsAndPrices(t, app)
 				// team1 owner1
@@ -924,16 +924,16 @@ func TestApi_ReassignBillingAccess_Fail_NoTeamInfoFound(t *testing.T) {
 }
 func TestApi_ReassignBillingAccess_Fail_NoBillingAccess(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		appApi := SetupApi(t, ctx, db)
-		testScenario := &ApiScenario{
+		appApi := apis.SetupApi(t, ctx, db)
+		testScenario := &apis.ApiScenario{
 			Name:           "Fail_NoBillingAccess",
 			Method:         http.MethodPut,
 			URL:            "/team-members/{team-member-id}/reassign-billing-access",
 			ExpectedStatus: http.StatusForbidden,
-			TestAppFactory: func(t testing.TB) *TestApi {
+			TestAppFactory: func(t testing.TB) *apis.TestApi {
 				return appApi
 			},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				// init stripe
 				core.CreateProductsAndPrices(t, app)
 				// team1 owner1
@@ -957,16 +957,16 @@ func TestApi_ReassignBillingAccess_Fail_NoBillingAccess(t *testing.T) {
 }
 func TestApi_ReassignBillingAccess_Fail_AssignToNonOwner(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		appApi := SetupApi(t, ctx, db)
-		testScenario := &ApiScenario{
+		appApi := apis.SetupApi(t, ctx, db)
+		testScenario := &apis.ApiScenario{
 			Name:           "Fail_AssignToNonOwner",
 			Method:         http.MethodPut,
 			URL:            "/team-members/{team-member-id}/reassign-billing-access",
 			ExpectedStatus: http.StatusBadRequest,
-			TestAppFactory: func(t testing.TB) *TestApi {
+			TestAppFactory: func(t testing.TB) *apis.TestApi {
 				return appApi
 			},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				// init stripe
 				core.CreateProductsAndPrices(t, app)
 				// team1 owner1
@@ -988,16 +988,16 @@ func TestApi_ReassignBillingAccess_Fail_AssignToNonOwner(t *testing.T) {
 }
 func TestApi_ReassignBillingAccess_Fail_AssignToDeactivated(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		appApi := SetupApi(t, ctx, db)
-		testScenario := &ApiScenario{
+		appApi := apis.SetupApi(t, ctx, db)
+		testScenario := &apis.ApiScenario{
 			Name:           "Fail_AssignToDeactivated",
 			Method:         http.MethodPut,
 			URL:            "/team-members/{team-member-id}/reassign-billing-access",
 			ExpectedStatus: http.StatusBadRequest,
-			TestAppFactory: func(t testing.TB) *TestApi {
+			TestAppFactory: func(t testing.TB) *apis.TestApi {
 				return appApi
 			},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				// init stripe
 				core.CreateProductsAndPrices(t, app)
 				// team1 owner1
@@ -1019,16 +1019,16 @@ func TestApi_ReassignBillingAccess_Fail_AssignToDeactivated(t *testing.T) {
 }
 func TestApi_ReassignBillingAccess_Success_AssignToOwner(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		appApi := SetupApi(t, ctx, db)
-		testScenario := &ApiScenario{
+		appApi := apis.SetupApi(t, ctx, db)
+		testScenario := &apis.ApiScenario{
 			Name:           "Success_AssignToOwner",
 			Method:         http.MethodPut,
 			URL:            "/team-members/{team-member-id}/reassign-billing-access",
 			ExpectedStatus: http.StatusNoContent,
-			TestAppFactory: func(t testing.TB) *TestApi {
+			TestAppFactory: func(t testing.TB) *apis.TestApi {
 				return appApi
 			},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				// init stripe
 				core.CreateProductsAndPrices(t, app)
 				// team1 owner1
@@ -1046,7 +1046,7 @@ func TestApi_ReassignBillingAccess_Success_AssignToOwner(t *testing.T) {
 				header := core.CreateTokenHeader(t, app, team1Owner1.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				team1Owner1, ok := scenario.Store.Get("prev_owner").(*models.TeamInfoModel)
 				if !ok || team1Owner1 == nil {
 					t.Fail()

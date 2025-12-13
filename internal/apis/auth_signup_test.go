@@ -20,19 +20,19 @@ func TestApi_SignUp(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		testMailer := core.ExtractTestMailer(t, testApi.App)
 
-		tests := []ApiScenario{
+		tests := []apis.ApiScenario{
 			{
 				Name:           "Test signup success",
 				Method:         http.MethodPost,
 				URL:            "/auth/signup",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					dto := apis.SignupInput{
 						Email:    "test@example.com",
 						Password: "Password123!",
@@ -43,7 +43,7 @@ func TestApi_SignUp(t *testing.T) {
 					}
 					scenario.Body = strings.NewReader(string(data))
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					if err := app.JobManager().PollOnce(context.Background()); err != nil {
 						t.Fatalf("Error polling job manager: %v", err)
 					}
@@ -79,18 +79,18 @@ func TestApi_SignUp_ExistingUsers(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		// testMailer := ExtractTestMailer(t, testApi.App)
-		tests := []ApiScenario{
+		tests := []apis.ApiScenario{
 			{
 				Name:           "Test signup fail for existing user",
 				Method:         http.MethodPost,
 				URL:            "/auth/signup",
 				ExpectedStatus: http.StatusConflict,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					existingUser := core.CreateUserWithOptions(
 						t,
 						testApi.App,

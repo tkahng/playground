@@ -16,22 +16,22 @@ import (
 
 func TestApi_Me(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
-		tests := []ApiScenario{
+		testApi := apis.SetupApi(t, ctx, db)
+		tests := []apis.ApiScenario{
 			{
 				Name:           "success: authorized",
 				Method:         http.MethodGet,
 				URL:            "/auth/me",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					user := core.CreateUserWithOptions(t, app, core.UserWithEmail("me@me.com"))
 					authToken := core.CreateTokenHeader(t, app, user.User.Email)
 					scenario.Headers = []string{authToken}
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.UserWithAccounts
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -45,14 +45,14 @@ func TestApi_Me(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/auth/me",
 				ExpectedStatus: http.StatusUnauthorized,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
 				ExpectedContent: []string{
 					"you are not authenticated.",
 					"Unauthorized",
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body huma.ErrorModel
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {

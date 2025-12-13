@@ -22,7 +22,7 @@ import (
 
 func TestApi_TeamTaskList(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		team1 := CreateTeamAndOwner(t, testApi.App)
 		project1 := core.CreateProjectAndTasks(
 			t,
@@ -33,21 +33,21 @@ func TestApi_TeamTaskList(t *testing.T) {
 			core.WithTaskByCountAndStatus(3, models.TaskStatusDone),
 		)
 		// task
-		tests := []ApiScenario{
+		tests := []apis.ApiScenario{
 			{
 				Name:           "success: all tasks",
 				Method:         http.MethodGet,
 				URL:            "/task-projects/{task-project-id}/tasks",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("/task-projects/%s/tasks", project1.ID.String())
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.Task]](t, res.Body.Bytes())
 					assert.Equal(t, int64(9), result.Meta.Total)
 				},
@@ -57,15 +57,15 @@ func TestApi_TeamTaskList(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/task-projects/{task-project-id}/tasks?status=done",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("/task-projects/%s/tasks?status=done", project1.ID.String())
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.Task]](t, res.Body.Bytes())
 					assert.Equal(t, int64(3), result.Meta.Total)
 				},
@@ -78,13 +78,13 @@ func TestApi_TeamTaskList(t *testing.T) {
 }
 
 func TestApi_TeamTaskUpdate(t *testing.T) {
-	tests := []ApiScenario{
+	tests := []apis.ApiScenario{
 		{
 			Name:           "success: update task",
 			Method:         http.MethodPut,
 			URL:            "/tasks/{task-id}",
 			ExpectedStatus: http.StatusNoContent,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
 				project := core.CreateProjectAndTasks(t, app, &team1.Member)
@@ -107,9 +107,9 @@ func TestApi_TeamTaskUpdate(t *testing.T) {
 					ReporterID:  &team1.Member.ID,
 				}
 				scenario.Store.Set("input", input)
-				scenario.Body = JsonToReader(t, input)
+				scenario.Body = apis.JsonToReader(t, input)
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				result := repository.MustFindOneCtx(t, t.Context(), repository.Task, app.Db(), nil)
 				input, ok := scenario.Store.Get("input").(stores.UpdateTaskDto)
 				if !ok {
@@ -134,8 +134,8 @@ func TestApi_TeamTaskUpdate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			testApi := SetupApi(t, ctx, db)
-			tt.TestAppFactory = func(t testing.TB) *TestApi {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
 				return testApi
 			}
 			tt.Test(t)
@@ -144,13 +144,13 @@ func TestApi_TeamTaskUpdate(t *testing.T) {
 }
 
 func TestApi_TeamTaskGet(t *testing.T) {
-	tests := []ApiScenario{
+	tests := []apis.ApiScenario{
 		{
 			Name:           "success: get task",
 			Method:         http.MethodGet,
 			URL:            "/tasks/{task-id}",
 			ExpectedStatus: http.StatusOK,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
 				project := core.CreateProjectAndTasks(t, app, &team1.Member)
@@ -179,7 +179,7 @@ func TestApi_TeamTaskGet(t *testing.T) {
 				scenario.Headers = []string{tokenHeader}
 				scenario.URL = fmt.Sprintf("/tasks/%s", task.ID.String())
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				result := test.MustUnMarshal[apis.Task](t, res.Body.Bytes())
 				input, ok := scenario.Store.Get("task").(*models.Task)
 				if !ok {
@@ -203,8 +203,8 @@ func TestApi_TeamTaskGet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			testApi := SetupApi(t, ctx, db)
-			tt.TestAppFactory = func(t testing.TB) *TestApi {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
 				return testApi
 			}
 			tt.Test(t)
