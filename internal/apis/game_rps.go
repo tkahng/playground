@@ -30,10 +30,16 @@ func getRpsGameInviteFromTokenQuery(app core.App, ctx context.Context, token str
 	if rpsGameInvite == nil {
 		return nil, huma.Error400BadRequest("invalid token")
 	}
-	if rpsGameInvite.ExpiresAt.UTC().Before(time.Now().UTC()) {
+	if !rpsGameInvite.ExpiresAt.UTC().Before(time.Now().UTC()) {
 		return nil, huma.Error400BadRequest("invalid token")
 	}
 	return rpsGameInvite, nil
+}
+
+type SubmitMoveWithTokenInput struct {
+	Token  string             `json:"token" required:"true" minlength:"2"`
+	Move   RpsParticipantMove `json:"move" required:"true" enum:"rock,paper,scissors"`
+	Status RpsGameStatus      `json:"status" required:"true" enum:"pending,completed,cancelled"`
 }
 
 func bindSubmitMoveWithTokenApi(api huma.API, app core.App) {
@@ -47,15 +53,10 @@ func bindSubmitMoveWithTokenApi(api huma.API, app core.App) {
 			Description: "submit move to rps game with token",
 			Tags:        []string{"Games", "Player"},
 			Errors:      []int{http.StatusUnauthorized},
-			Security:    []map[string][]string{{}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(),
 		},
 		func(ctx context.Context, input *struct {
-			Body struct {
-				Token  string             `json:"token" required:"true" minlength:"2"`
-				Move   RpsParticipantMove `json:"move" required:"true" enum:"rock,paper,scissors"`
-				Status RpsGameStatus      `json:"status" required:"true" enum:"pending,completed,cancelled"`
-			}
+			Body SubmitMoveWithTokenInput
 		}) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
 			rpsGameInvite, err := getRpsGameInviteFromTokenQuery(app, ctx, input.Body.Token)
 			if err != nil {
@@ -71,6 +72,12 @@ func bindSubmitMoveWithTokenApi(api huma.API, app core.App) {
 					InvitedPlayerID: rpsGameWithParticipants.InvitedParticipant.PlayerID,
 					Move:            models.RpsParticipantMove(input.Body.Move),
 					Status:          models.RpsGameStatus(input.Body.Status),
+				})
+				if err != nil {
+					return err
+				}
+				_, err = app.Adapter().Gaming().DeleteRpGameInvites(txCtx, &stores.RpsGameInviteFilter{
+					Tokens: []string{input.Body.Token},
 				})
 				return err
 			})
@@ -89,7 +96,12 @@ func bindSubmitMoveWithTokenApi(api huma.API, app core.App) {
 		},
 	)
 }
-func bindGetRpsGameWithTokenApi(api huma.API, app core.App) {
+
+type VerifyRpsGameInviteInput struct {
+	Token string `json:"token" required:"true" minlength:"2"`
+}
+
+func bindVerifyRpsGameInviteApi(api huma.API, app core.App) {
 	huma.Register(
 		api,
 		huma.Operation{
@@ -101,14 +113,10 @@ func bindGetRpsGameWithTokenApi(api huma.API, app core.App) {
 			Tags:        []string{"Games", "Player"},
 			Errors:      []int{http.StatusUnauthorized},
 			Security:    []map[string][]string{{}},
-			Middlewares: humamiddleware.HumaChiMiddlewares(
-				middleware.RequireCurrentPlayerMiddelware(),
-			),
+			Middlewares: humamiddleware.HumaChiMiddlewares(),
 		},
 		func(ctx context.Context, input *struct {
-			Body struct {
-				Token string `json:"token" required:"true" minlength:"2"`
-			}
+			Body VerifyRpsGameInviteInput
 		}) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
 			rpsGameInvite, err := getRpsGameInviteFromTokenQuery(app, ctx, input.Body.Token)
 			if err != nil {
@@ -202,6 +210,72 @@ func bindSubmitMoveToRpsGameApi(api huma.API, app core.App) {
 	)
 }
 
+func SendRpsGameRequestToUnregisteredPlayer(app core.App, ctx context.Context, input UnregisteredPlayerInput, currentPlayer *models.Player) (*services.RpsGameWithParticipants, error) {
+	// find inviting player by email and unregistered.
+	player, err := app.Adapter().Gaming().FindPlayer(ctx, &stores.PlayersFilter{
+		Emails: []string{input.InvitingPlayerEmail},
+		Registered: types.OptionalParam[bool]{
+			Value: false,
+			IsSet: true,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if player == nil {
+		// if player not found, create player
+		player, err = app.Adapter().Gaming().CreatePlayer(ctx, &models.Player{
+			Email: input.InvitingPlayerEmail,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	// check if player can play again inviting player
+	canPlay, err := app.RpsGame().PlayerCanPlayWithPlayer(ctx, currentPlayer.ID, player.ID)
+	if err != nil {
+		return nil, err
+	}
+	if !canPlay {
+		return nil, huma.Error400BadRequest("player can't play with invited player")
+	}
+	//
+	var rpsGameWithParticipants *services.RpsGameWithParticipants
+	txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+		// request game. returns game and participants.
+		rpsGameWithParticipants, err = app.RpsGame().RequestGame(txCtx, &services.RpsGameRequestInput{
+			RequestingPlayerID:   currentPlayer.ID,
+			InvitedPlayerID:      player.ID,
+			RequestingPlayerMove: models.RpsParticipantMove(input.Move),
+			DurationSeconds:      3 * 24 * 60 * 60,
+		})
+		if err != nil {
+			return err
+		}
+		// create invite
+		invitation, err := app.Adapter().Gaming().CreateRpsGameInvite(txCtx, &models.RpsGameInvite{
+			GameID:             rpsGameWithParticipants.RpsGame.ID,
+			RequestingPlayerID: currentPlayer.ID,
+			InvitedPlayerID:    rpsGameWithParticipants.InvitedParticipant.PlayerID,
+			Token:              security.GenerateTokenKey(),
+		})
+		if err != nil {
+			return err
+		}
+		// send invitation
+		err = app.JobService().EnqueueRpsGameInviteJob(txCtx, &workers.RpsGameInvitationJobArgs{
+			Email:          player.Email,
+			InvitedByEmail: currentPlayer.Email,
+			TokenHash:      invitation.Token,
+		})
+		return err
+	})
+	if txErr != nil {
+		return nil, txErr
+	}
+	return rpsGameWithParticipants, nil
+}
+
 type UnregisteredPlayerInput struct {
 	InvitingPlayerEmail string             `json:"inviting-player-email" required:"true" format:"email"`
 	Move                RpsParticipantMove `json:"move" required:"true" enum:"rock,paper,scissors"`
@@ -233,67 +307,9 @@ func bindSendGameRequestToUnRegisteredPlayerApi(api huma.API, app core.App) {
 			if currentPlayer == nil {
 				return nil, huma.Error401Unauthorized("no player found.")
 			}
-			// find inviting player by email and unregistered.
-			player, err := app.Adapter().Gaming().FindPlayer(ctx, &stores.PlayersFilter{
-				Emails: []string{input.Body.InvitingPlayerEmail},
-				Registered: types.OptionalParam[bool]{
-					Value: false,
-					IsSet: true,
-				},
-			})
+			rpsGameWithParticipants, err := SendRpsGameRequestToUnregisteredPlayer(app, ctx, input.Body, currentPlayer)
 			if err != nil {
 				return nil, err
-			}
-			if player == nil {
-				// if player not found, create player
-				player, err = app.Adapter().Gaming().CreatePlayer(ctx, &models.Player{
-					Email: input.Body.InvitingPlayerEmail,
-				})
-				if err != nil {
-					return nil, err
-				}
-			}
-			// check if player can play again inviting player
-			canPlay, err := app.RpsGame().PlayerCanPlayWithPlayer(ctx, currentPlayer.ID, player.ID)
-			if err != nil {
-				return nil, err
-			}
-			if !canPlay {
-				return nil, huma.Error400BadRequest("player can't play with invited player")
-			}
-			//
-			var rpsGameWithParticipants *services.RpsGameWithParticipants
-			txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
-				// request game. returns game and participants.
-				rpsGameWithParticipants, err = app.RpsGame().RequestGame(txCtx, &services.RpsGameRequestInput{
-					RequestingPlayerID:   currentPlayer.ID,
-					InvitedPlayerID:      player.ID,
-					RequestingPlayerMove: models.RpsParticipantMove(input.Body.Move),
-					DurationSeconds:      3 * 24 * 60 * 60,
-				})
-				if err != nil {
-					return err
-				}
-				// create invite
-				invitation, err := app.Adapter().Gaming().CreateRpsGameInvite(txCtx, &models.RpsGameInvite{
-					GameID:             rpsGameWithParticipants.RpsGame.ID,
-					RequestingPlayerID: currentPlayer.ID,
-					InvitedPlayerID:    rpsGameWithParticipants.InvitedParticipant.PlayerID,
-					Token:              security.GenerateTokenKey(),
-				})
-				if err != nil {
-					return err
-				}
-				// send invitation
-				err = app.JobService().EnqueueRpsGameInviteJob(txCtx, &workers.RpsGameInvitationJobArgs{
-					Email:          player.Email,
-					InvitedByEmail: currentPlayer.Email,
-					TokenHash:      invitation.Token,
-				})
-				return err
-			})
-			if txErr != nil {
-				return nil, txErr
 			}
 			return &ApiSingleOutput[*RpsGameWithParticipants]{
 				Body: ApiSingleResponse[*RpsGameWithParticipants]{

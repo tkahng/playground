@@ -7,19 +7,19 @@ import (
 )
 
 func bindGameApi(api *Api) {
-	gameGroup := huma.NewGroup(api.Api())
-	gameGroup.UseMiddleware(
+	protectedGameGroup := huma.NewGroup(api.Api())
+	protectedGameGroup.UseMiddleware(
 		humamiddleware.HumaChiMiddlewares(
 			middleware.SetCurrentPlayerMiddleware(api.App()),
 		)...,
 	)
-	bindGetMyPlayerApi(gameGroup, api.App())
-	bindPutMyPlayerApi(gameGroup, api.App())
-	bindFindPlayersApi(gameGroup, api.App())
-	bindFindRegisteredPlayerByEmailApi(gameGroup, api.App())
-	bindSendGameRequestToRegisteredPlayerApi(gameGroup, api.App())
-	bindSubmitMoveToRpsGameApi(gameGroup, api.App())
-	bindSendGameRequestToUnRegisteredPlayerApi(gameGroup, api.App())
-	bindGetRpsGameWithTokenApi(gameGroup, api.App())
-	bindSubmitMoveWithTokenApi(gameGroup, api.App())
+	bindGetMyPlayerApi(protectedGameGroup, api.App())
+	bindPutMyPlayerApi(protectedGameGroup, api.App())
+	bindFindPlayersApi(protectedGameGroup, api.App())
+	bindFindRegisteredPlayerByEmailApi(protectedGameGroup, api.App())
+	bindSendGameRequestToRegisteredPlayerApi(protectedGameGroup, api.App())
+	bindSubmitMoveToRpsGameApi(protectedGameGroup, api.App())
+	bindSendGameRequestToUnRegisteredPlayerApi(protectedGameGroup, api.App())
+	bindVerifyRpsGameInviteApi(api.Api(), api.App())
+	bindSubmitMoveWithTokenApi(api.Api(), api.App())
 }
