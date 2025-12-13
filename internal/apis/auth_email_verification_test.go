@@ -26,19 +26,19 @@ func TestApi_RequestVerification(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		testMailer := core.ExtractTestMailer(t, testApi.App)
 
-		tests := []ApiScenario{
+		tests := []apis.ApiScenario{
 			{
 				Name:           "Test request verification fail",
 				Method:         http.MethodPost,
 				URL:            "/auth/request-verification",
 				ExpectedStatus: http.StatusConflict,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					userInfo := core.CreateUserWithOptions(
 						t,
 						testApi.App,
@@ -58,10 +58,10 @@ func TestApi_RequestVerification(t *testing.T) {
 				Method:         http.MethodPost,
 				URL:            "/auth/request-verification",
 				ExpectedStatus: http.StatusNoContent,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					userInfo := core.CreateUserWithOptions(
 						t,
 						testApi.App,
@@ -71,7 +71,7 @@ func TestApi_RequestVerification(t *testing.T) {
 					header := core.CreateTokenHeader(t, testApi.App, userInfo.User.Email)
 					scenario.Headers = append(scenario.Headers, header)
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					if err := app.JobManager().PollOnce(context.Background()); err != nil {
 						t.Fatalf("Error polling job manager: %v", err)
 					}
@@ -102,13 +102,13 @@ func TestApi_RequestVerification(t *testing.T) {
 }
 
 func TestApi_VerifyEmail(t *testing.T) {
-	tests := []ApiScenario{
+	tests := []apis.ApiScenario{
 		{
 			Name:           "Fail: Unknown error during customer creation",
 			Method:         http.MethodPost,
 			URL:            "/auth/confirm-verification",
 			ExpectedStatus: http.StatusInternalServerError,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				userInfo, err := app.Auth().Signup(t.Context(), &auth.SignupInput{
 					Email:    "test2@example.com",
 					Password: "Password123!",
@@ -154,7 +154,7 @@ func TestApi_VerifyEmail(t *testing.T) {
 					return nil, errors.New("unknown error")
 				}
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				dbx := app.Db()
 				customerCount := repository.MustCountAllCtx(t, t.Context(), repository.StripeCustomer, dbx, nil)
 				user := repository.MustFindOneCtx(t, t.Context(), repository.User, dbx, nil)
@@ -167,7 +167,7 @@ func TestApi_VerifyEmail(t *testing.T) {
 			Method:         http.MethodPost,
 			URL:            "/auth/confirm-verification",
 			ExpectedStatus: http.StatusNoContent,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				testMailer := core.ExtractTestMailer(t, app)
 				userInfo, err := app.Auth().Signup(t.Context(), &auth.SignupInput{
 					Email:    "test1@example.com",
@@ -203,7 +203,7 @@ func TestApi_VerifyEmail(t *testing.T) {
 				}
 				scenario.Body = strings.NewReader(string(data))
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				dbx := app.Db()
 				customerCount := repository.MustCountAllCtx(t, t.Context(), repository.StripeCustomer, dbx, nil)
 				user := repository.MustFindOneCtx(t, t.Context(), repository.User, dbx, nil)
@@ -215,8 +215,8 @@ func TestApi_VerifyEmail(t *testing.T) {
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			testApi := SetupApi(t, ctx, db)
-			tt.TestAppFactory = func(t testing.TB) *TestApi {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
 				return testApi
 			}
 			tt.Test(t)
@@ -225,13 +225,13 @@ func TestApi_VerifyEmail(t *testing.T) {
 	// })
 }
 func TestApi_VerifyOtp(t *testing.T) {
-	tests := []ApiScenario{
+	tests := []apis.ApiScenario{
 		{
 			Name:           "Fail: Unknown error during customer creation",
 			Method:         http.MethodPost,
 			URL:            "/auth/confirm-verification/otp",
 			ExpectedStatus: http.StatusInternalServerError,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				userInfo, err := app.Auth().Signup(t.Context(), &auth.SignupInput{
 					Email:    "test2@example.com",
 					Password: "Password123!",
@@ -277,7 +277,7 @@ func TestApi_VerifyOtp(t *testing.T) {
 					return nil, errors.New("unknown error")
 				}
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				dbx := app.Db()
 				customerCount := repository.MustCountAllCtx(t, t.Context(), repository.StripeCustomer, dbx, nil)
 				user := repository.MustFindOneCtx(t, t.Context(), repository.User, dbx, nil)
@@ -290,7 +290,7 @@ func TestApi_VerifyOtp(t *testing.T) {
 			Method:         http.MethodPost,
 			URL:            "/auth/confirm-verification/otp",
 			ExpectedStatus: http.StatusNoContent,
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				testMailer := core.ExtractTestMailer(t, app)
 				userInfo, err := app.Auth().Signup(t.Context(), &auth.SignupInput{
 					Email:    "test1@example.com",
@@ -326,7 +326,7 @@ func TestApi_VerifyOtp(t *testing.T) {
 				}
 				scenario.Body = strings.NewReader(string(data))
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				dbx := app.Db()
 				customerCount := repository.MustCountAllCtx(t, t.Context(), repository.StripeCustomer, dbx, nil)
 				user := repository.MustFindOneCtx(t, t.Context(), repository.User, dbx, nil)
@@ -338,8 +338,8 @@ func TestApi_VerifyOtp(t *testing.T) {
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			testApi := SetupApi(t, ctx, db)
-			tt.TestAppFactory = func(t testing.TB) *TestApi {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
 				return testApi
 			}
 			tt.Test(t)

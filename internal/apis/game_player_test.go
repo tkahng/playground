@@ -21,16 +21,16 @@ import (
 
 func Test_PutMyPlayer_Success_SetDisplayName(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
-		scenario := &ApiScenario{
+		testApi := apis.SetupApi(t, ctx, db)
+		scenario := &apis.ApiScenario{
 			Name:           "set display name",
 			Method:         http.MethodPut,
 			URL:            "/players/me",
 			ExpectedStatus: http.StatusOK,
-			TestAppFactory: func(t testing.TB) *TestApi {
+			TestAppFactory: func(t testing.TB) *apis.TestApi {
 				return testApi
 			},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				userInfo := core.CreateUserWithOptions(t, testApi.App)
 				scenario.Store.Set("user_info", userInfo)
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, userInfo.User.Email)
@@ -44,7 +44,7 @@ func Test_PutMyPlayer_Success_SetDisplayName(t *testing.T) {
 				}
 				scenario.Body = strings.NewReader(string(data))
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				userInfo, ok := scenario.Store.Get("user_info").(*models.UserInfo)
 				if !ok {
 					t.Fatal("user info not found")
@@ -62,16 +62,16 @@ func Test_PutMyPlayer_Success_SetDisplayName(t *testing.T) {
 }
 func Test_PutMyPlayer_Success_SetDisplayNameNil(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
-		scenario := &ApiScenario{
+		testApi := apis.SetupApi(t, ctx, db)
+		scenario := &apis.ApiScenario{
 			Name:           "display name nil",
 			Method:         http.MethodPut,
 			URL:            "/players/me",
 			ExpectedStatus: http.StatusOK,
-			TestAppFactory: func(t testing.TB) *TestApi {
+			TestAppFactory: func(t testing.TB) *apis.TestApi {
 				return testApi
 			},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				userInfo := core.CreateUserWithOptions(t, testApi.App)
 				scenario.Store.Set("user_info", userInfo)
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, userInfo.User.Email)
@@ -85,7 +85,7 @@ func Test_PutMyPlayer_Success_SetDisplayNameNil(t *testing.T) {
 				}
 				scenario.Body = strings.NewReader(string(data))
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				userInfo, ok := scenario.Store.Get("user_info").(*models.UserInfo)
 				if !ok {
 					t.Fatal("user info not found")
@@ -103,16 +103,16 @@ func Test_PutMyPlayer_Success_SetDisplayNameNil(t *testing.T) {
 }
 func Test_PutMyPlayer_Fail_EmptyDisplayName(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
-		scenario := &ApiScenario{
+		testApi := apis.SetupApi(t, ctx, db)
+		scenario := &apis.ApiScenario{
 			Name:           "empty displayName",
 			Method:         http.MethodPut,
 			URL:            "/players/me",
 			ExpectedStatus: http.StatusUnprocessableEntity,
-			TestAppFactory: func(t testing.TB) *TestApi {
+			TestAppFactory: func(t testing.TB) *apis.TestApi {
 				return testApi
 			},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				userInfo := core.CreateUserWithOptions(t, testApi.App)
 				scenario.Store.Set("user_info", userInfo)
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, userInfo.User.Email)
@@ -126,7 +126,7 @@ func Test_PutMyPlayer_Fail_EmptyDisplayName(t *testing.T) {
 				}
 				scenario.Body = strings.NewReader(string(data))
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				result := test.MustUnMarshal[huma.ErrorModel](t, res.Body.Bytes())
 				assert.Equal(t, result.Status, 422)
 				assert.Equal(t, result.Detail, "validation failed")
@@ -138,16 +138,16 @@ func Test_PutMyPlayer_Fail_EmptyDisplayName(t *testing.T) {
 }
 func Test_GetMyPlayer_Success_HasPlayer(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
-		scenario := &ApiScenario{
+		testApi := apis.SetupApi(t, ctx, db)
+		scenario := &apis.ApiScenario{
 			Name:           "has player",
 			Method:         http.MethodGet,
 			URL:            "/players/me",
 			ExpectedStatus: http.StatusOK,
-			TestAppFactory: func(t testing.TB) *TestApi {
+			TestAppFactory: func(t testing.TB) *apis.TestApi {
 				return testApi
 			},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				userInfo := core.CreateUserWithOptions(t, testApi.App)
 				scenario.Store.Set("user_info", userInfo)
 				player, err := app.Adapter().Gaming().CreatePlayer(ctx, &models.Player{
@@ -161,7 +161,7 @@ func Test_GetMyPlayer_Success_HasPlayer(t *testing.T) {
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, userInfo.User.Email)
 				scenario.Headers = []string{tokenHeader}
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				player, ok := scenario.Store.Get("player").(*models.Player)
 				if !ok {
 					t.Fatal("user info not found")
@@ -178,23 +178,23 @@ func Test_GetMyPlayer_Success_HasPlayer(t *testing.T) {
 }
 func Test_GetMyPlayer_Success_HasNoPlayer(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
-		scenario := &ApiScenario{
+		testApi := apis.SetupApi(t, ctx, db)
+		scenario := &apis.ApiScenario{
 			Name:           "has no player",
 			Method:         http.MethodGet,
 			URL:            "/players/me",
 			ExpectedStatus: http.StatusOK,
-			TestAppFactory: func(t testing.TB) *TestApi {
+			TestAppFactory: func(t testing.TB) *apis.TestApi {
 				return testApi
 			},
 			ExpectedContent: []string{"null"},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				userInfo := core.CreateUserWithOptions(t, testApi.App)
 				scenario.Store.Set("user_info", userInfo)
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, userInfo.User.Email)
 				scenario.Headers = []string{tokenHeader}
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.Player]](t, res.Body.Bytes())
 				assert.Nil(t, result.Data)
 			},
@@ -204,24 +204,24 @@ func Test_GetMyPlayer_Success_HasNoPlayer(t *testing.T) {
 }
 func Test_GetPlayers_Success_ByEmail(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
-		scenario := &ApiScenario{
+		testApi := apis.SetupApi(t, ctx, db)
+		scenario := &apis.ApiScenario{
 			Name:           "success get user players",
 			Method:         http.MethodGet,
 			URL:            "/players",
 			ExpectedStatus: http.StatusOK,
-			TestAppFactory: func(t testing.TB) *TestApi {
+			TestAppFactory: func(t testing.TB) *apis.TestApi {
 				return testApi
 			},
 			ExpectedContent: []string{"null"},
-			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				userInfo := core.CreateUserWithOptions(t, testApi.App)
 				scenario.Store.Set("user_info", userInfo)
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, userInfo.User.Email)
 				scenario.Headers = []string{tokenHeader}
 				scenario.URL = fmt.Sprintf("%s?emails=%s&page=0&per_page=1", scenario.URL, userInfo.User.Email)
 			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.Player]](t, res.Body.Bytes())
 				assert.Len(t, result.Data, 0)
 			},
@@ -231,25 +231,25 @@ func Test_GetPlayers_Success_ByEmail(t *testing.T) {
 }
 func Test_FindRegisteredPlayerByEmail(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		playerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		otherPlayerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		unregisteredPlayer := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(false))
-		scenarios := []*ApiScenario{
+		scenarios := []*apis.ApiScenario{
 			{
 				Name:           "found",
 				Method:         http.MethodGet,
 				URL:            "/players/registered/email",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, playerWithUser.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("%s/%s", scenario.URL, otherPlayerWithUser.Email)
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.Player]](t, res.Body.Bytes())
 					assert.NotNil(t, result.Data)
 					userId := *result.Data.UserID
@@ -262,15 +262,15 @@ func Test_FindRegisteredPlayerByEmail(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/players/registered/email",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, playerWithUser.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("%s/%s", scenario.URL, unregisteredPlayer.Email)
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.Player]](t, res.Body.Bytes())
 					assert.Nil(t, result.Data)
 				},
@@ -280,15 +280,15 @@ func Test_FindRegisteredPlayerByEmail(t *testing.T) {
 				Method:         http.MethodGet,
 				URL:            "/players/registered/email",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, playerWithUser.Email)
 					scenario.Headers = []string{tokenHeader}
 					scenario.URL = fmt.Sprintf("%s/%s", scenario.URL, "some@email.com")
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.Player]](t, res.Body.Bytes())
 					assert.Nil(t, result.Data)
 				},

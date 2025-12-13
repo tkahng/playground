@@ -27,7 +27,7 @@ import (
 
 func TestGetGreeting(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		api := testApi.TestApi
 
 		resp := api.Get("/")
@@ -41,7 +41,7 @@ func TestTeamSlug(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		api := testApi.TestApi
 		user := core.CreateUserWithOptions(t, testApi.App, core.UserWithVerified(time.Now()))
 		_ = core.CreateTeamAndMemberWithOptions(t, testApi.App, &user.User, core.TeamWithName("public"))
@@ -66,7 +66,7 @@ func TestTeamSlug_FailRegex(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		api := testApi.TestApi
 		user := core.CreateUserWithOptions(t, testApi.App, core.UserWithVerified(time.Now()))
 		_ = core.CreateTeamAndMemberWithOptions(t, testApi.App, &user.User, core.TeamWithName("public"))
@@ -88,7 +88,7 @@ func TestTeamSlug_TooShort(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		api := testApi.TestApi
 		user := core.CreateUserWithOptions(t, testApi.App, core.UserWithVerified(time.Now()))
 		_ = core.CreateTeamAndMemberWithOptions(t, testApi.App, &user.User, core.TeamWithName("public"))
@@ -111,7 +111,7 @@ func TestGetTeam_unauthorized(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		api := testApi.TestApi
 		t.Run("Unauthorized access", func(t *testing.T) {
 			resp := api.Get("/teams/"+uuid.NewString(), "")
@@ -127,7 +127,7 @@ func TestGetTeam_invalidID(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		api := testApi.TestApi
 		user := core.CreateUserWithOptions(t, testApi.App, core.UserWithVerified(time.Now()))
 		teamIdString := uuid.NewString()
@@ -147,7 +147,7 @@ func TestGetTeam_success(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
 		user := core.CreateUserWithOptions(t, testApi.App, core.UserWithVerified(time.Now()))
@@ -171,7 +171,7 @@ func TestGetTeam_success(t *testing.T) {
 func TestCreateTeam_Failed(t *testing.T) {
 	t.Run("failed: unknown error during db customer creation", func(t *testing.T) {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			appApi := SetupApi(t, ctx, db)
+			appApi := apis.SetupApi(t, ctx, db)
 			adapter := core.ExtractAdapterDecorator(t, appApi.App)
 			var customerStore *stores.CustomerStoreDecorator
 			if m, ok := adapter.Customer().(*stores.CustomerStoreDecorator); ok {
@@ -206,7 +206,7 @@ func TestCreateTeam_Failed(t *testing.T) {
 	})
 	t.Run("failed: emailNotVerified", func(t *testing.T) {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			appApi := SetupApi(t, ctx, db)
+			appApi := apis.SetupApi(t, ctx, db)
 			user := core.CreateUserWithOptions(t, appApi.App)
 			tokensVerifiedTokens, err := appApi.App.Auth().GenerateAuthTokens(ctx, user.User.Email)
 			if err != nil {
@@ -232,17 +232,17 @@ func TestCreateTeam_Failed(t *testing.T) {
 }
 func TestCreateTeam_Success_OptionalSlug_TeamNameIsUrlSafeAndUnique(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		appApi := SetupApi(t, ctx, db)
+		appApi := apis.SetupApi(t, ctx, db)
 		for i := range 10 {
-			scenario := ApiScenario{
+			scenario := apis.ApiScenario{
 				Name:           fmt.Sprintf("test create team success optional slug %d", i),
 				Method:         http.MethodPost,
 				URL:            "/teams",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return appApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					userEmail := fmt.Sprintf("%d@gmail.com", i)
 					teamName := fmt.Sprintf("team%d", i)
 					user := core.CreateUserWithOptions(t, app, core.UserWithEmail(userEmail), core.UserWithVerifiedNow())
@@ -250,7 +250,7 @@ func TestCreateTeam_Success_OptionalSlug_TeamNameIsUrlSafeAndUnique(t *testing.T
 					scenario.Headers = []string{token}
 					scenario.Body = strings.NewReader(`{"name":` + fmt.Sprintf(`"%s"`, teamName) + `}`)
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.TeamWithMember
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -269,17 +269,17 @@ func TestCreateTeam_Success_OptionalSlug_TeamNameIsUrlSafeAndUnique(t *testing.T
 
 func TestCreateTeam_Success_OptionalSlug_TeamNameIsTaken_Randome16Alphabetic(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		appApi := SetupApi(t, ctx, db)
+		appApi := apis.SetupApi(t, ctx, db)
 		for i := range 10 {
-			scenario := ApiScenario{
+			scenario := apis.ApiScenario{
 				Name:           fmt.Sprintf("test create team success optional slug %d team name slug exists", i),
 				Method:         http.MethodPost,
 				URL:            "/teams",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return appApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					// create user
 					userEmail := fmt.Sprintf("%d@gmail.com", i)
 					otherUserEmail := fmt.Sprintf("%d+other@gmail.com", i)
@@ -294,7 +294,7 @@ func TestCreateTeam_Success_OptionalSlug_TeamNameIsTaken_Randome16Alphabetic(t *
 					scenario.Headers = []string{token}
 					scenario.Body = strings.NewReader(`{"name":` + fmt.Sprintf(`"%s"`, teamName) + `}`)
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.TeamWithMember
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {
@@ -312,20 +312,20 @@ func TestCreateTeam_Success_OptionalSlug_TeamNameIsTaken_Randome16Alphabetic(t *
 }
 func TestCreateTeam_Fail_Slug_HasUnderscore(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		appApi := SetupApi(t, ctx, db)
+		appApi := apis.SetupApi(t, ctx, db)
 		for i := range 1 {
-			scenario := ApiScenario{
+			scenario := apis.ApiScenario{
 				Name:           fmt.Sprintf("test create team fail slug has underscore %d", i),
 				Method:         http.MethodPost,
 				URL:            "/teams",
 				ExpectedStatus: http.StatusBadRequest,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return appApi
 				},
 				ExpectedContent: []string{
 					"invalid slug",
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					// create user
 					userEmail := fmt.Sprintf("%d@gmail.com", i)
 					teamName := fmt.Sprintf("team%d", i)
@@ -342,20 +342,20 @@ func TestCreateTeam_Fail_Slug_HasUnderscore(t *testing.T) {
 }
 func TestCreateTeam_Fail_Slug_HasExclamationpoint(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		appApi := SetupApi(t, ctx, db)
+		appApi := apis.SetupApi(t, ctx, db)
 		for i := range 1 {
-			scenario := ApiScenario{
+			scenario := apis.ApiScenario{
 				Name:           fmt.Sprintf("test create team fail slug has exclamationpoint %d", i),
 				Method:         http.MethodPost,
 				URL:            "/teams",
 				ExpectedStatus: http.StatusBadRequest,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return appApi
 				},
 				ExpectedContent: []string{
 					"invalid slug",
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					// create user
 					userEmail := fmt.Sprintf("%d@gmail.com", i)
 					teamName := fmt.Sprintf("team%d", i)
@@ -374,7 +374,7 @@ func TestCreateTeam_Fail_Slug_HasExclamationpoint(t *testing.T) {
 func TestCreateTeam_Success(t *testing.T) {
 	t.Run("success: create team", func(t *testing.T) {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			appApi := SetupApi(t, ctx, db)
+			appApi := apis.SetupApi(t, ctx, db)
 			user := core.CreateUserWithOptions(t, appApi.App, core.UserWithVerified(time.Now()))
 			tokensVerifiedTokens, err := appApi.App.Auth().GenerateAuthTokens(ctx, user.User.Email)
 			if err != nil {
@@ -409,7 +409,7 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
 		user1 := core.CreateUserWithOptions(
@@ -459,7 +459,7 @@ func TestUpdateTeam_successOwner(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
 		user1, err := app.Adapter().User().CreateUser(
@@ -508,7 +508,7 @@ func TestDeleteTeam_successOwner(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
 		user1, err := app.Adapter().User().CreateUser(
@@ -551,7 +551,7 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 		app := testApi.App
 		api := testApi.TestApi
 
