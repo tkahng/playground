@@ -19,26 +19,36 @@ import (
 	"github.com/tkahng/playground/internal/test"
 )
 
-func Test_SendGameRequestToUnRegisteredPlayer_Success(t *testing.T) {
+func Test_SubmitMoveWithToken_Success(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
 		playerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		unregisteredPlayer := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(false))
 		scenarios := []*ApiScenario{
 			{
-				Name:           "success",
+				Name:           "inviting player win",
 				Method:         http.MethodPost,
-				URL:            "/games/rps/requests/unregistered",
+				URL:            "/games/rps/token/submit-move",
 				ExpectedStatus: http.StatusOK,
 				TestAppFactory: func(t testing.TB) *TestApi {
 					return testApi
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
-					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, playerWithUser.Email)
-					scenario.Headers = []string{tokenHeader}
-					body := &apis.UnregisteredPlayerInput{
-						Move:                apis.RpsParticipantMoveRock,
+					_, err := apis.SendRpsGameRequestToUnregisteredPlayer(app, t.Context(), apis.UnregisteredPlayerInput{
 						InvitingPlayerEmail: unregisteredPlayer.Email,
+						Move:                apis.RpsParticipantMovePaper,
+					}, playerWithUser)
+					if err != nil {
+						t.Fatalf("Error requesting game: %v", err)
+					}
+					ctx := t.Context()
+					err = app.JobManager().PollOnce(ctx)
+					assert.NoError(t, err)
+					token := ExtractFistMessageTokenFromMailer(t, app)
+					body := &apis.SubmitMoveWithTokenInput{
+						Move:   apis.RpsParticipantMoveScissors,
+						Token:  token,
+						Status: apis.RpsGameStatusCompleted,
 					}
 					data, err := json.Marshal(body)
 					if err != nil {
@@ -51,15 +61,10 @@ func Test_SendGameRequestToUnRegisteredPlayer_Success(t *testing.T) {
 					assert.NotNil(t, result.Data)
 					assert.Equal(t, playerWithUser.ID, result.Data.RequestingParticipant.PlayerID)
 					assert.Equal(t, unregisteredPlayer.ID, result.Data.InvitedParticipant.PlayerID)
-					ctx := t.Context()
-					err := app.JobManager().PollOnce(ctx)
+					assert.Equal(t, apis.RpsParticipantResultWin, result.Data.InvitedParticipant.Result)
+					count, err := app.Adapter().Gaming().CountRpsGameInvites(t.Context(), nil)
 					assert.NoError(t, err)
-					token := ExtractFistMessageTokenFromMailer(t, app)
-					invite, err := app.Adapter().Gaming().FindRpsGameInvite(ctx, &stores.RpsGameInviteFilter{
-						Tokens: []string{token},
-					})
-					assert.NoError(t, err)
-					assert.Equal(t, token, invite.Token)
+					assert.Equal(t, int64(0), count)
 				},
 			},
 		}
@@ -68,7 +73,55 @@ func Test_SendGameRequestToUnRegisteredPlayer_Success(t *testing.T) {
 		}
 	})
 }
-
+func Test_VerifyRpsGameInvite_Success(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := SetupApi(t, ctx, db)
+		playerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		unregisteredPlayer := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(false))
+		scenarios := []*ApiScenario{
+			{
+				Name:           "inviting player win",
+				Method:         http.MethodPost,
+				URL:            "/games/rps/invites/verify",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					_, err := apis.SendRpsGameRequestToUnregisteredPlayer(app, t.Context(), apis.UnregisteredPlayerInput{
+						InvitingPlayerEmail: unregisteredPlayer.Email,
+						Move:                apis.RpsParticipantMovePaper,
+					}, playerWithUser)
+					if err != nil {
+						t.Fatalf("Error requesting game: %v", err)
+					}
+					ctx := t.Context()
+					err = app.JobManager().PollOnce(ctx)
+					assert.NoError(t, err)
+					token := ExtractFistMessageTokenFromMailer(t, app)
+					body := &apis.VerifyRpsGameInviteInput{
+						Token: token,
+					}
+					data, err := json.Marshal(body)
+					if err != nil {
+						t.Errorf("Error marshalling input: %v", err)
+					}
+					scenario.Body = strings.NewReader(string(data))
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
+					assert.NotNil(t, result.Data)
+					assert.Equal(t, playerWithUser.ID, result.Data.RequestingParticipant.PlayerID)
+					assert.Equal(t, unregisteredPlayer.ID, result.Data.InvitedParticipant.PlayerID)
+					assert.Equal(t, apis.RpsGameStatusPending, result.Data.RpsGame.Status)
+				},
+			},
+		}
+		for _, scenario := range scenarios {
+			scenario.Test(t)
+		}
+	})
+}
 func Test_SubmitMove_Success(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := SetupApi(t, ctx, db)
@@ -115,6 +168,55 @@ func Test_SubmitMove_Success(t *testing.T) {
 					assert.Equal(t, apis.RpsParticipantMovePaper, result.Data.InvitedParticipant.Move)
 					assert.Equal(t, apis.RpsGameStatusCompleted, result.Data.RpsGame.Status)
 					assert.Equal(t, result.Data.InvitedParticipant.Result, apis.RpsParticipantResultWin)
+				},
+			},
+		}
+		for _, scenario := range scenarios {
+			scenario.Test(t)
+		}
+	})
+}
+func Test_SendGameRequestToUnRegisteredPlayer_Success(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := SetupApi(t, ctx, db)
+		playerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		unregisteredPlayer := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(false))
+		scenarios := []*ApiScenario{
+			{
+				Name:           "success",
+				Method:         http.MethodPost,
+				URL:            "/games/rps/requests/unregistered",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, playerWithUser.Email)
+					scenario.Headers = []string{tokenHeader}
+					body := &apis.UnregisteredPlayerInput{
+						Move:                apis.RpsParticipantMoveRock,
+						InvitingPlayerEmail: unregisteredPlayer.Email,
+					}
+					data, err := json.Marshal(body)
+					if err != nil {
+						t.Errorf("Error marshalling input: %v", err)
+					}
+					scenario.Body = strings.NewReader(string(data))
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
+					assert.NotNil(t, result.Data)
+					assert.Equal(t, playerWithUser.ID, result.Data.RequestingParticipant.PlayerID)
+					assert.Equal(t, unregisteredPlayer.ID, result.Data.InvitedParticipant.PlayerID)
+					ctx := t.Context()
+					err := app.JobManager().PollOnce(ctx)
+					assert.NoError(t, err)
+					token := ExtractFistMessageTokenFromMailer(t, app)
+					invite, err := app.Adapter().Gaming().FindRpsGameInvite(ctx, &stores.RpsGameInviteFilter{
+						Tokens: []string{token},
+					})
+					assert.NoError(t, err)
+					assert.Equal(t, token, invite.Token)
 				},
 			},
 		}
