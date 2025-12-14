@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/memo"
@@ -16,14 +17,20 @@ type Populator interface {
 
 	GetTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error)
 	GetProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error)
+	GetParticipantByID(ctx context.Context, id uuid.UUID) (*models.RpsParticipant, error)
 }
 
 type DbPopulator struct {
-	user    *memo.MemoizedStore[*models.User, uuid.UUID]
-	member  *memo.MemoizedStore[*models.TeamMember, uuid.UUID]
-	team    *memo.MemoizedStore[*models.Team, uuid.UUID]
-	task    *memo.MemoizedStore[*models.Task, uuid.UUID]
-	project *memo.MemoizedStore[*models.TaskProject, uuid.UUID]
+	user        *memo.MemoizedStore[*models.User, uuid.UUID]
+	member      *memo.MemoizedStore[*models.TeamMember, uuid.UUID]
+	team        *memo.MemoizedStore[*models.Team, uuid.UUID]
+	task        *memo.MemoizedStore[*models.Task, uuid.UUID]
+	project     *memo.MemoizedStore[*models.TaskProject, uuid.UUID]
+	participant *memo.MemoizedStore[*models.RpsParticipant, uuid.UUID]
+}
+
+func (s *DbPopulator) GetParticipantByID(ctx context.Context, id uuid.UUID) (*models.RpsParticipant, error) {
+	return s.participant.Get(ctx, id)
 }
 
 // GetMemberByID implements Populator.
@@ -51,6 +58,25 @@ func (s *DbPopulator) GetProjectByID(ctx context.Context, id uuid.UUID) (*models
 
 func New(adapter stores.StorageAdapterInterface) Populator {
 	return &DbPopulator{
+		participant: memo.New(
+			func(ctx context.Context, key uuid.UUID) (*models.RpsParticipant, error) {
+				return adapter.Gaming().FindRpsParticipant(ctx, &stores.RpsParticipantFilter{
+					Ids: []uuid.UUID{key},
+				})
+			},
+			func(ctx context.Context, keys ...uuid.UUID) ([]*models.RpsParticipant, error) {
+				return adapter.Gaming().FindRpsParticipants(ctx, &stores.RpsParticipantFilter{
+					Ids: keys,
+					PaginatedInput: repository.PaginatedInput{
+						Page:    0,
+						PerPage: 50,
+					},
+				})
+			},
+			func(rp *models.RpsParticipant) uuid.UUID {
+				return rp.ID
+			},
+		),
 		user: memo.New(
 			func(ctx context.Context, key uuid.UUID) (*models.User, error) {
 				return adapter.User().FindUserByID(ctx, key)
@@ -158,6 +184,12 @@ func getMember(ctx context.Context, populator Populator, memberId uuid.UUID) (*m
 	}
 	return nil, nil
 }
+
+// func PopulateRpsGame(ctx context.Context, populator Populator, rpsGame *models.RpsGame) error {
+// 	var requestedParticipant, invitedParticipant *models.RpsParticipant
+// 	requestedParticipant, err := populator.GetParticipantByID(rpsGame.)
+// 	return nil
+// }
 
 func PopulateTask(ctx context.Context, populator Populator, task *models.Task) error {
 	if task.CreatedByMemberID != nil {
