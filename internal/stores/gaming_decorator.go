@@ -43,6 +43,16 @@ type DbGamingStoreDecorator struct {
 	WithTxFunc func(db database.Dbx) *DBGamingStore
 }
 
+func (s *DbGamingStoreDecorator) CountRpsGames(ctx context.Context, filter *RpsGameFilter) (int64, error) {
+	if s.CountRpsGamesFunc != nil {
+		return s.CountRpsGamesFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return 0, fmt.Errorf("Gaming store decorator CountRpsGames %w", ErrDelegateNil)
+	}
+	return s.Delegate.CountRpsGames(ctx, filter)
+}
+
 // FindRpsGameInvite implements [GamingStore].
 func (s *DbGamingStoreDecorator) FindRpsGameInvite(ctx context.Context, filter *RpsGameInviteFilter) (*models.RpsGameInvite, error) {
 	if s.FindRpsGameInviteFunc != nil {
