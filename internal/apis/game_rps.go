@@ -9,16 +9,109 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/core"
+	"github.com/tkahng/playground/internal/database/queries"
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/security"
 	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/internal/workers"
 )
+
+type RpsGameFilter struct {
+	PaginatedInput
+	SortParams
+	Ids           []uuid.UUID                    `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Statuses      []models.RpsGameStatus         `query:"statuses,omitempty" required:"false" minimum:"1" maximum:"100" enum:"pending,cancelled,completed"`
+	CompletedAt   types.OptionalParam[time.Time] `query:"completed_at,omitempty" required:"false"`
+	CompletedAtOp queries.FilterOperator         `query:"completed_at_op,omitempty" required:"false" enum:"eq,gt,gte,lt,lte"`
+	ExpiresAt     types.OptionalParam[time.Time] `query:"expires_at,omitempty" required:"false"`
+	ExpiresAtOp   queries.FilterOperator         `query:"expires_at_op,omitempty" required:"false" enum:"eq,gt,gte,lt,lte"`
+}
+
+func bindFindCurrentPlayersRpsGamesApi(api huma.API, app core.App) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "find-current-players-rps-games",
+			Method:      http.MethodGet,
+			Path:        "/players/current-player/games/rps",
+			Summary:     "find current players rps games",
+			Description: "find current players rps games",
+			Tags:        []string{"Games", "Player"},
+			Errors:      []int{http.StatusUnauthorized},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireCurrentPlayerMiddelware(),
+			),
+		},
+		func(ctx context.Context, input *RpsGameFilter) (*ApiPaginatedOutput[*RpsGameWithParticipants], error) {
+			currentPlayer := contextstore.GetContextCurrentPlayer(ctx)
+			if currentPlayer == nil {
+				return nil, huma.Error401Unauthorized("no player found.")
+			}
+			filter := &stores.RpsGameFilter{}
+			filter.Page = input.Page
+			filter.PerPage = input.PerPage
+			filter.CompletedAt = input.CompletedAt
+			filter.CompletedAtOp = input.CompletedAtOp
+			filter.ExpiresAt = input.ExpiresAt
+			filter.ExpiresAtOp = input.ExpiresAtOp
+			filter.Ids = input.Ids
+			filter.ParticipantIds = []uuid.UUID{currentPlayer.ID}
+			filter.SortBy = input.SortBy
+			filter.SortOrder = input.SortOrder
+			filter.Statuses = input.Statuses
+			games, err := app.Adapter().Gaming().FindRpsGames(ctx, filter)
+			if err != nil {
+				return nil, err
+			}
+			gamesWithParticipants := []*services.RpsGameWithParticipants{}
+			for _, game := range games {
+				var gameWithPartipants *services.RpsGameWithParticipants = &services.RpsGameWithParticipants{
+					RpsGame: game,
+				}
+				participants, err := app.Adapter().Gaming().FindRpsParticipants(ctx, &stores.RpsParticipantFilter{
+					RpsGameIds: []uuid.UUID{game.ID},
+				})
+				if err != nil {
+					return nil, err
+				}
+				for _, p := range participants {
+					if p.Type == models.RpsParticipantTypeHost {
+						gameWithPartipants.RequestingParticipant = p
+					}
+					if p.Type == models.RpsParticipantTypeGuest {
+						gameWithPartipants.InvitedParticipant = p
+					}
+				}
+				gamesWithParticipants = append(gamesWithParticipants, gameWithPartipants)
+			}
+			count, err := app.Adapter().Gaming().CountRpsGames(ctx, filter)
+			if err != nil {
+				return nil, err
+			}
+			return &ApiPaginatedOutput[*RpsGameWithParticipants]{
+				Body: ApiPaginatedResponse[*RpsGameWithParticipants]{
+					Data: mapper.Map(gamesWithParticipants, func(p *services.RpsGameWithParticipants) *RpsGameWithParticipants {
+						return &RpsGameWithParticipants{
+							RpsGame:               toApiRpsGame(p.RpsGame),
+							RequestingParticipant: ToApiRpsParticipant(p.RequestingParticipant),
+							InvitedParticipant:    ToApiRpsParticipant(p.InvitedParticipant),
+						}
+					}),
+					Meta: ApiGenerateMeta(&input.PaginatedInput, count),
+				},
+			}, nil
+		},
+	)
+}
 
 func getRpsGameInviteFromTokenQuery(app core.App, ctx context.Context, token string) (*models.RpsGameInvite, error) {
 	rpsGameInvite, err := app.Adapter().Gaming().FindRpsGameInvite(ctx, &stores.RpsGameInviteFilter{

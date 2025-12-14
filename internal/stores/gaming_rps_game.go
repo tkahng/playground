@@ -18,6 +18,7 @@ import (
 )
 
 type RpsGameStore interface {
+	CountRpsGames(ctx context.Context, filter *RpsGameFilter) (int64, error)
 	FindRpsGames(ctx context.Context, filter *RpsGameFilter) ([]*models.RpsGame, error)
 	FindRpsGame(ctx context.Context, filter *RpsGameFilter) (*models.RpsGame, error)
 	CreateRpsGame(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
@@ -114,6 +115,12 @@ func (s *DBGamingStore) FindRpsGames(ctx context.Context, filter *RpsGameFilter)
 		return nil, err
 	}
 	return data, nil
+}
+
+func (s *DBGamingStore) CountRpsGames(ctx context.Context, filter *RpsGameFilter) (int64, error) {
+	q := squirrel.Select("COUNT(*)").From("gaming.rps_games")
+	q = filterRpsGames(q, filter)
+	return database.ExecWithBuilder(ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
 }
 
 // CreateRpsGame implements [GamingStore].

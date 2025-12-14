@@ -22,4 +22,5 @@ func bindGameApi(api *Api) {
 	bindSendGameRequestToUnRegisteredPlayerApi(protectedGameGroup, api.App())
 	bindVerifyRpsGameInviteApi(api.Api(), api.App())
 	bindSubmitMoveWithTokenApi(api.Api(), api.App())
+	bindFindCurrentPlayersRpsGamesApi(protectedGameGroup, api.App())
 }
