@@ -4,12 +4,14 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/memo"
 )
 
 type Populator interface {
+	GetPlayerByID(ctx context.Context, id uuid.UUID) (*models.Player, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*models.User, error)
 	GetMemberByID(ctx context.Context, id uuid.UUID) (*models.TeamMember, error)
 	GetTeamByID(ctx context.Context, id uuid.UUID) (*models.Team, error)
@@ -24,6 +26,11 @@ type DbPopulator struct {
 	team    *memo.MemoizedStore[*models.Team, uuid.UUID]
 	task    *memo.MemoizedStore[*models.Task, uuid.UUID]
 	project *memo.MemoizedStore[*models.TaskProject, uuid.UUID]
+	player  *memo.MemoizedStore[*models.Player, uuid.UUID]
+}
+
+func (s *DbPopulator) GetPlayerByID(ctx context.Context, id uuid.UUID) (*models.Player, error) {
+	return s.player.Get(ctx, id)
 }
 
 // GetMemberByID implements Populator.
@@ -51,6 +58,25 @@ func (s *DbPopulator) GetProjectByID(ctx context.Context, id uuid.UUID) (*models
 
 func New(adapter stores.StorageAdapterInterface) Populator {
 	return &DbPopulator{
+		player: memo.New(
+			func(ctx context.Context, key uuid.UUID) (*models.Player, error) {
+				return adapter.Gaming().FindPlayer(ctx, &stores.PlayersFilter{
+					Ids: []uuid.UUID{key},
+				})
+			},
+			func(ctx context.Context, keys ...uuid.UUID) ([]*models.Player, error) {
+				return adapter.Gaming().FindPlayers(ctx, &stores.PlayersFilter{
+					Ids: keys,
+					PaginatedInput: repository.PaginatedInput{
+						Page:    0,
+						PerPage: 50,
+					},
+				})
+			},
+			func(p *models.Player) uuid.UUID {
+				return p.ID
+			},
+		),
 		user: memo.New(
 			func(ctx context.Context, key uuid.UUID) (*models.User, error) {
 				return adapter.User().FindUserByID(ctx, key)
