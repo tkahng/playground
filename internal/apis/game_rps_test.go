@@ -24,6 +24,7 @@ func Test_FindCurrentPlayersRpsGames(t *testing.T) {
 		testApi := apis.SetupApi(t, ctx, db)
 		registeredPlayer := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		registeredPlayer2 := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		registeredPlayer3 := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		for i := range 5 {
 			switch i % 2 {
 			case 0:
@@ -32,9 +33,17 @@ func Test_FindCurrentPlayersRpsGames(t *testing.T) {
 				_ = core.MustCreateGame(t, testApi.App, registeredPlayer2.ID, registeredPlayer.ID, models.RpsParticipantMovePaper)
 			}
 		}
+		for i := range 5 {
+			switch i % 2 {
+			case 0:
+				_ = core.MustCreateGame(t, testApi.App, registeredPlayer3.ID, registeredPlayer2.ID, models.RpsParticipantMovePaper)
+			case 1:
+				_ = core.MustCreateGame(t, testApi.App, registeredPlayer2.ID, registeredPlayer3.ID, models.RpsParticipantMovePaper)
+			}
+		}
 		count, err := testApi.App.Adapter().Gaming().CountRpsGames(ctx, nil)
 		assert.NoError(t, err)
-		assert.Equal(t, int64(5), count)
+		assert.Equal(t, int64(10), count)
 		scenarios := []*apis.ApiScenario{
 			{
 				Name:           "no games",
@@ -51,6 +60,14 @@ func Test_FindCurrentPlayersRpsGames(t *testing.T) {
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
 					assert.NotEmpty(t, result.Data)
+					for _, v := range result.Data {
+						assert.NotNil(t, v)
+						assert.NotNil(t, v.InvitedParticipant)
+						assert.NotNil(t, v.RequestingParticipant)
+						assert.NotNil(t, v.RpsGame)
+						assert.NotNil(t, v.InvitedParticipant.Player)
+						assert.NotNil(t, v.RequestingParticipant.Player)
+					}
 				},
 			},
 		}
