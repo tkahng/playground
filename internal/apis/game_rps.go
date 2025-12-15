@@ -13,6 +13,7 @@ import (
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/populator"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
@@ -72,6 +73,7 @@ func bindFindCurrentPlayersRpsGamesApi(api huma.API, app core.App) {
 			if err != nil {
 				return nil, err
 			}
+			pop := populator.New(app.Adapter())
 			gamesWithParticipants := []*services.RpsGameWithParticipants{}
 			for _, game := range games {
 				var gameWithPartipants *services.RpsGameWithParticipants = &services.RpsGameWithParticipants{
@@ -84,6 +86,11 @@ func bindFindCurrentPlayersRpsGamesApi(api huma.API, app core.App) {
 					return nil, err
 				}
 				for _, p := range participants {
+					player, err := pop.GetPlayerByID(ctx, p.PlayerID)
+					if err != nil {
+						return nil, err
+					}
+					p.Player = player
 					if p.Type == models.RpsParticipantTypeHost {
 						gameWithPartipants.RequestingParticipant = p
 					}
