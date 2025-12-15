@@ -62,9 +62,9 @@ func filterRpsGames(qs squirrel.SelectBuilder, filter *RpsGameFilter) squirrel.S
 
 		qs = qs.Where(`
 			gaming.rps_games.id IN (
-				SELECT rp.gameid
+				SELECT rp.game_id
 				FROM gaming.rps_participants rp
-				WHERE rp.playerid = ANY(?)  -- $1 = array of UUIDs
+				WHERE rp.player_id = ANY(?)  -- $1 = array of UUIDs
 			)
 		`, filter.ParticipantIds)
 	}
@@ -120,7 +120,18 @@ func (s *DBGamingStore) FindRpsGames(ctx context.Context, filter *RpsGameFilter)
 func (s *DBGamingStore) CountRpsGames(ctx context.Context, filter *RpsGameFilter) (int64, error) {
 	q := squirrel.Select("COUNT(*)").From("gaming.rps_games")
 	q = filterRpsGames(q, filter)
-	return database.ExecWithBuilder(ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	c, err := database.QueryWithBuilder[database.CountOutput](
+		ctx,
+		s.db,
+		q.PlaceholderFormat(squirrel.Dollar),
+	)
+	if err != nil {
+		return 0, err
+	}
+	if len(c) == 0 {
+		return 0, nil
+	}
+	return c[0].Count, nil
 }
 
 // CreateRpsGame implements [GamingStore].
