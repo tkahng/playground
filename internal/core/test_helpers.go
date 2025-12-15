@@ -17,6 +17,20 @@ import (
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
+func MustCreateGame(t testing.TB, app App, requestingPlayerID, invitingPlayerID uuid.UUID, requestingPlayerMove models.RpsParticipantMove) *services.RpsGameWithParticipants {
+	ctx := t.Context()
+	game, err := app.RpsGame().RequestGame(ctx, &services.RpsGameRequestInput{
+		RequestingPlayerID:   requestingPlayerID,
+		InvitedPlayerID:      invitingPlayerID,
+		DurationSeconds:      60 * 60 * 24 * 7,
+		RequestingPlayerMove: requestingPlayerMove,
+	})
+	if err != nil {
+		t.Fatalf("RequestGame() error = %v", err)
+	}
+	return game
+}
+
 func ExtractTestMailer(t testing.TB, testApi App) *mailer.TestMailer {
 	var testMailer *mailer.TestMailer
 	if m, ok := testApi.Mailer().(*mailer.TestMailer); ok {

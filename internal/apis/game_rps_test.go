@@ -19,6 +19,47 @@ import (
 	"github.com/tkahng/playground/internal/test"
 )
 
+func Test_FindCurrentPlayersRpsGames(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		registeredPlayer := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		registeredPlayer2 := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		for i := range 5 {
+			switch i % 2 {
+			case 0:
+				_ = core.MustCreateGame(t, testApi.App, registeredPlayer.ID, registeredPlayer2.ID, models.RpsParticipantMovePaper)
+			case 1:
+				_ = core.MustCreateGame(t, testApi.App, registeredPlayer2.ID, registeredPlayer.ID, models.RpsParticipantMovePaper)
+			}
+		}
+		count, err := testApi.App.Adapter().Gaming().CountRpsGames(ctx, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, int64(5), count)
+		scenarios := []*apis.ApiScenario{
+			{
+				Name:           "no games",
+				Method:         http.MethodGet,
+				URL:            "/players/current-player/games/rps",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, registeredPlayer.Email)
+					scenario.Headers = []string{tokenHeader}
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
+					assert.NotEmpty(t, result.Data)
+				},
+			},
+		}
+		for _, scenario := range scenarios {
+			scenario.Test(t)
+		}
+	})
+}
+
 func Test_SubmitMoveWithToken_Success(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := apis.SetupApi(t, ctx, db)
