@@ -120,3 +120,8 @@ export type UserReactionsSseMessage = ExtractArrayType<
 export type UserReactionsStatsWithReactions = UserReactionsStats & {
   last_reactions: UserReaction[];
 };
+
+export type Player = components["schemas"]["Player"];
+
+export type RpsGameWithParticipants =
+  components["schemas"]["RpsGameWithParticipants"];
