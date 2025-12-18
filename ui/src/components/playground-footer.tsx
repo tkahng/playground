@@ -129,7 +129,7 @@ export function PlaygroundFooter() {
         </div>
         <div className="mt-8 border-t pt-8">
           <p className="text-center text-xs text-gray-500 dark:text-gray-400">
-            © 2023 Playground. All rights reserved.
+            © 2025 Playground. All rights reserved.
           </p>
         </div>
       </div>
