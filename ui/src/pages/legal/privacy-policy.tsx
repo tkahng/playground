@@ -14,7 +14,7 @@ export default function PrivacyPolicyPage() {
         <Card>
           <CardHeader>
             <CardTitle>NexusAI Privacy Policy</CardTitle>
-            <CardDescription>Last updated: June 1, 2023</CardDescription>
+            <CardDescription>Last updated: Dec 10, 2025</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <p>
