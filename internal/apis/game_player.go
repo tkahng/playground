@@ -71,6 +71,9 @@ func bindPutMyPlayerApi(api huma.API, app core.App) {
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.EmailVerifiedMiddleware(),
+			),
 		},
 		func(ctx context.Context, input *struct {
 			Body GamePutPlayerMeArgs
