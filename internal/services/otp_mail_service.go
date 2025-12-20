@@ -197,6 +197,22 @@ func (i *DbOtpMailService) SendTeamInvitationEmail(ctx context.Context, params *
 	}
 	return i.mail.Send(message)
 }
+func (i *DbOtpMailService) CreateRpsGameUrl(tokenhash string) (string, error) {
+	path, err := mailer.GetPathParams(
+		"/rock-paper-scissors",
+		tokenhash,
+		"",
+		"",
+	)
+	if err != nil {
+		return "", err
+	}
+	appUrl, err := url.Parse(i.options.AppUrl)
+	if err != nil {
+		return "", err
+	}
+	return appUrl.ResolveReference(path).String(), nil
+}
 
 // SendRpsGameInvitationEmail implements [OtpMailService].
 func (i *DbOtpMailService) SendRpsGameInvitationEmail(ctx context.Context, params *workers.RpsGameInvitationJobArgs) error {
@@ -207,7 +223,7 @@ func (i *DbOtpMailService) SendRpsGameInvitationEmail(ctx context.Context, param
 		return fmt.Errorf("email is empty")
 	}
 
-	confUrl, err := i.CreateTeamConfirmationUrl(params.TokenHash)
+	confUrl, err := i.CreateRpsGameUrl(params.TokenHash)
 	if err != nil {
 		return err
 	}
