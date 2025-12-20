@@ -31,7 +31,7 @@ func Test_PutMyPlayer_Success_SetDisplayName(t *testing.T) {
 				return testApi
 			},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
-				userInfo := core.CreateUserWithOptions(t, testApi.App)
+				userInfo := core.CreateUserWithOptions(t, testApi.App, core.UserWithVerifiedNow())
 				scenario.Store.Set("user_info", userInfo)
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, userInfo.User.Email)
 				scenario.Headers = []string{tokenHeader}
@@ -72,7 +72,7 @@ func Test_PutMyPlayer_Success_SetDisplayNameNil(t *testing.T) {
 				return testApi
 			},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
-				userInfo := core.CreateUserWithOptions(t, testApi.App)
+				userInfo := core.CreateUserWithOptions(t, testApi.App, core.UserWithVerifiedNow())
 				scenario.Store.Set("user_info", userInfo)
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, userInfo.User.Email)
 				scenario.Headers = []string{tokenHeader}
@@ -113,7 +113,7 @@ func Test_PutMyPlayer_Fail_EmptyDisplayName(t *testing.T) {
 				return testApi
 			},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
-				userInfo := core.CreateUserWithOptions(t, testApi.App)
+				userInfo := core.CreateUserWithOptions(t, testApi.App, core.UserWithVerifiedNow())
 				scenario.Store.Set("user_info", userInfo)
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, userInfo.User.Email)
 				scenario.Headers = []string{tokenHeader}
