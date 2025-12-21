@@ -30,6 +30,12 @@ export const RouteLinks = {
     current: (pathname: string) => pathname === RouteMap.ACCOUNT_DASHBOARD,
     icon: <LayoutDashboard />,
   },
+  ACCOUNT_ROCK_PAPER_SCISSORS: {
+    to: RouteMap.ACCOUNT_ROCK_PAPER_SCISSORS,
+    title: "Rock Paper Scissors",
+    current: (pathname: string) =>
+      pathname === RouteMap.ACCOUNT_ROCK_PAPER_SCISSORS,
+  },
   ACCOUNT_TEAMS: {
     to: RouteMap.ACCOUNT_OVERVIEW_TEAMS,
     title: "Teams",
@@ -156,6 +162,7 @@ export const settingsSidebarLinks: LinkDto[] = [
 export const userDashboardLinks: LinkDto[] = [
   RouteLinks.ACCOUNT_DASHBOARD,
   RouteLinks.ACCOUNT_TEAMS,
+  RouteLinks.ACCOUNT_ROCK_PAPER_SCISSORS,
   RouteLinks.SETTINGS,
 ];
 

@@ -2,6 +2,7 @@ import AdminLayoutBase from "@/layouts/admin-layout-base";
 import AuthenticatedLayoutOutlet from "@/layouts/authenticated-layout-outlet";
 import DashboardLayout from "@/layouts/dashboard-layout";
 import RootLayout from "@/layouts/root";
+import RockPaperScissors from "@/pages/account/rock-paper-scissors";
 import PermissionEdit from "@/pages/admin/permissions/permissions-edit";
 import PermissionListPage from "@/pages/admin/permissions/permissions-list";
 import RoleEdit from "@/pages/admin/roles/role-edit";
@@ -197,6 +198,14 @@ function App() {
                   <Route
                     path="teams-invitations"
                     element={<InvitationsPage />}
+                  />
+                </Route>
+                <Route
+                  element={<PageSectionLayout title="Rock Paper Scissors" />}
+                >
+                  <Route
+                    path="rock-paper-scissors"
+                    element={<RockPaperScissors />}
                   />
                 </Route>
                 {/* <Route path="billing" element={<BillingSettingPage />} /> */}
