@@ -1,6 +1,6 @@
 import { client } from "@/lib/client";
 import { ApiError } from "@/lib/error";
-import { components } from "@/schema";
+import { components, operations } from "@/schema";
 
 export class RpsGameQueries {
   async PutUserPlayer({
@@ -57,6 +57,98 @@ export class RpsGameQueries {
           token,
           move,
           status,
+        },
+      }
+    );
+    if (error) {
+      throw ApiError.fromErrorModel(error);
+    }
+    return data;
+  }
+  async getRpsGames({
+    token,
+    ...rest
+  }: {
+    token: string;
+  } & operations["find-current-players-rps-games"]["parameters"]["query"]) {
+    const { data, error } = await client.GET(
+      `/api/players/current-player/games/rps`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          query: rest,
+        },
+      }
+    );
+    if (error) {
+      throw ApiError.fromErrorModel(error);
+    }
+    return data;
+  }
+  async requestGame({
+    token,
+    move,
+    playerId,
+  }: {
+    token: string;
+    move: "rock" | "paper" | "scissors";
+    playerId: string;
+  }) {
+    const { data, error } = await client.POST(`/api/games/rps/requests`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: {
+        inviting_player_id: playerId,
+        move,
+      },
+    });
+    if (error) {
+      throw ApiError.fromErrorModel(error);
+    }
+    return data;
+  }
+
+  async requestGameEmail({
+    token,
+    invitingPlayerEmail,
+    move,
+  }: {
+    token: string;
+    invitingPlayerEmail: string;
+    move: "rock" | "paper" | "scissors";
+  }) {
+    const { data, error } = await client.POST(
+      `/api/games/rps/requests/unregistered`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: {
+          "inviting-player-email": invitingPlayerEmail,
+          move,
+        },
+      }
+    );
+    if (error) {
+      throw ApiError.fromErrorModel(error);
+    }
+    return data;
+  }
+
+  async findPlayerByEmail({ token, email }: { token: string; email: string }) {
+    const { data, error } = await client.GET(
+      `/api/players/registered/email/{inviting-player-email}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          path: {
+            "inviting-player-email": email,
+          },
         },
       }
     );
