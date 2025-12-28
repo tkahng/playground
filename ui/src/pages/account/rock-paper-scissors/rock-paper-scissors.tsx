@@ -1,13 +1,19 @@
 import { DataTable } from "@/components/data-table";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useItemDialog } from "@/hooks/use-item-dialg";
 import { rpsGameQueries } from "@/lib/rps-game-queries";
 import { CreateGameDialog } from "@/pages/account/rock-paper-scissors/create-game-dialog";
+import { RpsGameWithParticipants } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { useSearchParams } from "react-router";
 
 export default function RockPaperScissors() {
+  const { isOpen, selectedItemId, openItem, closeDialog } = useItemDialog();
+
   const userInfo = useAuthProvider();
+
+  // const [game, setGame] = useState<RpsGameWithParticipants | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
@@ -36,6 +42,9 @@ export default function RockPaperScissors() {
       });
     },
   });
+  const selectedItem =
+    data?.data?.find((i) => i.rps_game.id === selectedItemId) ?? null;
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -53,6 +62,9 @@ export default function RockPaperScissors() {
         </p>
         <CreateGameDialog />
       </div>
+      {isOpen && selectedItem && (
+        <ItemDialog item={selectedItem} onClose={closeDialog} />
+      )}
       <DataTable
         columns={[
           {
@@ -91,12 +103,32 @@ export default function RockPaperScissors() {
             },
           },
         ]}
+        onClick={(row) => {
+          openItem(row.original.rps_game.id);
+        }}
         data={data?.data || []}
         rowCount={data?.meta.total || 0}
         paginationState={{ pageIndex, pageSize }}
         onPaginationChange={onPaginationChange}
         paginationEnabled
       />
+    </div>
+  );
+}
+
+function ItemDialog({
+  item,
+  onClose,
+}: {
+  item: RpsGameWithParticipants;
+  onClose: () => void;
+}) {
+  return (
+    <div className="backdrop" onClick={onClose}>
+      <div className="dialog" onClick={(e) => e.stopPropagation()}>
+        <p>{item.rps_game.status}</p>
+        <button onClick={onClose}>Close</button>
+      </div>
     </div>
   );
 }
