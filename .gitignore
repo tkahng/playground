@@ -28,3 +28,4 @@ tmp
 dist/
 
 .idea
+node_modules/
