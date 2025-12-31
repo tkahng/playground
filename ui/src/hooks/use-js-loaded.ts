@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useEffect } from 'react';
+import { useState } from "react";
+import { useEffect } from "react";
 
 /**
  * Hook to check if the JavaScript is loaded.
@@ -11,20 +11,21 @@ export function useJsLoaded() {
 
   useEffect(() => {
     if (
-      document.readyState === 'complete' ||
-      document.readyState === 'interactive'
+      document.readyState === "complete" ||
+      document.readyState === "interactive"
     ) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoaded(true);
       return;
     }
 
     const onReady = () => setLoaded(true);
-    document.addEventListener('DOMContentLoaded', onReady);
-    window.addEventListener('load', onReady);
+    document.addEventListener("DOMContentLoaded", onReady);
+    window.addEventListener("load", onReady);
 
     return () => {
-      document.removeEventListener('DOMContentLoaded', onReady);
-      window.removeEventListener('load', onReady);
+      document.removeEventListener("DOMContentLoaded", onReady);
+      window.removeEventListener("load", onReady);
     };
   }, []);
 

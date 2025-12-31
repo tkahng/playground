@@ -58,13 +58,41 @@ export class RpsGameQueries {
           move,
           status,
         },
-      }
+      },
     );
     if (error) {
       throw ApiError.fromErrorModel(error);
     }
     return data;
   }
+  async submitMoveToGame({
+    token,
+    gameId,
+    ...rest
+  }: components["schemas"]["SubmitMoveToGameInput"] & {
+    token: string;
+    gameId: string;
+  }) {
+    const { data, error } = await client.POST(
+      `/api/games/rps/{game-id}/submit-move`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: rest,
+        params: {
+          path: {
+            "game-id": gameId,
+          },
+        },
+      },
+    );
+    if (error) {
+      throw ApiError.fromErrorModel(error);
+    }
+    return data;
+  }
+
   async getRpsGames({
     token,
     ...rest
@@ -80,12 +108,43 @@ export class RpsGameQueries {
         params: {
           query: rest,
         },
-      }
+      },
     );
     if (error) {
       throw ApiError.fromErrorModel(error);
     }
     return data;
+  }
+  async getRpsGame({
+    token,
+    ...rest
+  }: {
+    token: string;
+  } & { gameId: string }) {
+    const { data, error } = await client.GET(
+      `/api/players/current-player/games/rps`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          query: {
+            ids: [rest.gameId],
+          },
+        },
+      },
+    );
+    if (error) {
+      throw ApiError.fromErrorModel(error);
+    }
+    if (data.data?.length) {
+      return {
+        data: data.data[0],
+      };
+    }
+    return {
+      data: null,
+    };
   }
   async requestGame({
     token,
@@ -130,7 +189,7 @@ export class RpsGameQueries {
           "inviting-player-email": invitingPlayerEmail,
           move,
         },
-      }
+      },
     );
     if (error) {
       throw ApiError.fromErrorModel(error);
@@ -150,7 +209,7 @@ export class RpsGameQueries {
             "inviting-player-email": email,
           },
         },
-      }
+      },
     );
     if (error) {
       throw ApiError.fromErrorModel(error);

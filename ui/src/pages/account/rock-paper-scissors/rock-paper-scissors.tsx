@@ -1,19 +1,21 @@
 import { DataTable } from "@/components/data-table";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { useItemDialog } from "@/hooks/use-item-dialg";
 import { rpsGameQueries } from "@/lib/rps-game-queries";
-import { CreateGameDialog } from "@/pages/account/rock-paper-scissors/create-game-dialog";
-import { RpsGameWithParticipants } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { useSearchParams } from "react-router";
+import { CreateGameDialog } from "./create-game-dialog";
+import { useQueryParams } from "@/hooks/use-query-param";
+import { useState } from "react";
+import { SelectedRpsGameDialog } from "./selected-game-dialog";
+import { Participant, PlayerRpsGame } from "@/schema.types";
+import { ClassValue } from "clsx";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 export default function RockPaperScissors() {
-  const { isOpen, selectedItemId, openItem, closeDialog } = useItemDialog();
-
   const userInfo = useAuthProvider();
-
-  // const [game, setGame] = useState<RpsGameWithParticipants | null>(null);
+  const { param, onClick: onClickGameId } = useQueryParams("game_id");
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
@@ -33,18 +35,90 @@ export default function RockPaperScissors() {
       if (!userInfo.user?.tokens.access_token) {
         throw new Error("No access token");
       }
-      return rpsGameQueries.getRpsGames({
+      const games = await rpsGameQueries.getRpsGames({
         token: userInfo.user.tokens.access_token,
         page: pageIndex,
         per_page: pageSize,
         sort_order: "desc",
         sort_by: "created_at",
       });
+      const playerGames: PlayerRpsGame[] = [];
+      if (games.data?.length) {
+        for (const game of games.data) {
+          let player: Participant;
+          let opponent: Participant;
+          if (
+            game.invited_participant.player?.email === userInfo.user.user.email
+          ) {
+            player = game.invited_participant;
+            opponent = game.requesting_participant;
+          } else {
+            player = game.requesting_participant;
+            opponent = game.invited_participant;
+          }
+          playerGames.push({
+            rpsGame: game.rps_game,
+            player,
+            opponent,
+          });
+        }
+      }
+      return {
+        data: playerGames,
+        meta: games.meta,
+      };
     },
   });
-  const selectedItem =
-    data?.data?.find((i) => i.rps_game.id === selectedItemId) ?? null;
 
+  const [open, onOpenChange] = useState(!!param);
+  const {
+    data: selectedRpsGame,
+    isLoading: selectedRpsGameLoading,
+    isError: isSelectedRpsGameError,
+    error: selectedRpsGameError,
+  } = useQuery({
+    enabled: !!param,
+    queryKey: [{ key: "find-rps-game", id: param }],
+    queryFn: async () => {
+      if (!userInfo.user?.tokens.access_token) {
+        throw new Error("No access token");
+      }
+      if (!param) {
+        throw new Error("No game ID");
+      }
+      const { data: game } = await rpsGameQueries.getRpsGame({
+        token: userInfo.user.tokens.access_token,
+        gameId: param,
+      });
+      if (!game) {
+        return {
+          data: null,
+        };
+      }
+      let player: Participant;
+      let opponent: Participant;
+      if (game.invited_participant.player?.email === userInfo.user.user.email) {
+        player = game.invited_participant;
+        opponent = game.requesting_participant;
+      } else {
+        player = game.requesting_participant;
+        opponent = game.invited_participant;
+      }
+      return {
+        data: {
+          rpsGame: game.rps_game,
+          player,
+          opponent,
+        },
+      };
+    },
+  });
+  if (selectedRpsGameLoading) {
+    return <div>Loading...</div>;
+  }
+  if (isSelectedRpsGameError) {
+    return <div>Error: {selectedRpsGameError.message}</div>;
+  }
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -56,55 +130,52 @@ export default function RockPaperScissors() {
     <div>
       <h1>Rock Paper Scissors</h1>
       <div className="flex items-center justify-between">
-        <p>
-          Create and manage permissions for your applications. Permissions and
-          can be assigned to Users.
-        </p>
+        <p>Start a new Game with a friend</p>
         <CreateGameDialog />
       </div>
-      {isOpen && selectedItem && (
-        <ItemDialog item={selectedItem} onClose={closeDialog} />
-      )}
       <DataTable
         columns={[
           {
             header: "Result",
             cell: ({ row }) => {
-              if (row.original.rps_game.status !== "completed") {
-                return "pending";
-              }
-              if (
-                row.original.invited_participant.player?.email ===
-                userInfo.user?.user.email
-              ) {
-                return row.original.requesting_participant?.result;
-              }
-              return row.original.invited_participant?.result;
+              const state = CalculateGameState(row.original);
+              const style = GameStateClassValMap[state];
+              return <Badge className={cn(style)}>{state}</Badge>;
             },
           },
           {
-            header: "Player",
+            header: "Your Move",
             cell: ({ row }) => {
-              if (
-                row.original.invited_participant.player?.email ===
-                userInfo.user?.user.email
-              ) {
-                return row.original.requesting_participant?.player?.email || "";
+              if (row.original.player?.status === "completed") {
+                return row.original.player.move;
               }
-              return row.original.invited_participant?.player?.email || "";
+              if (row.original.player?.status === "pending") {
+                return "Pending";
+              }
+              if (row.original.player?.status === "declined") {
+                return "Declined";
+              }
+              return "";
+            },
+          },
+          {
+            header: "Opponent",
+            cell: ({ row }) => {
+              return row.original.opponent?.player?.email || "";
             },
           },
           {
             header: "Created At",
             cell: ({ row }) => {
               return new Date(
-                row.original.rps_game.created_at
+                row.original.rpsGame.created_at,
               ).toLocaleDateString();
             },
           },
         ]}
         onClick={(row) => {
-          openItem(row.original.rps_game.id);
+          onClickGameId(row.original.rpsGame.id);
+          onOpenChange(true);
         }}
         data={data?.data || []}
         rowCount={data?.meta.total || 0}
@@ -112,23 +183,61 @@ export default function RockPaperScissors() {
         onPaginationChange={onPaginationChange}
         paginationEnabled
       />
+      <SelectedRpsGameDialog
+        dialogProps={{ open, onOpenChange }}
+        rpsGame={selectedRpsGame?.data || null}
+        onClose={() => {
+          onClickGameId(null);
+        }}
+      />
     </div>
   );
 }
+export enum GameState {
+  Win = "Win",
+  Lose = "Lose",
+  Tie = "Tie",
+  Pending = "Pending",
+  Submitted = "Submitted",
+  Cancelled = "Cancelled",
+  Expired = "Expired",
+}
 
-function ItemDialog({
-  item,
-  onClose,
-}: {
-  item: RpsGameWithParticipants;
-  onClose: () => void;
-}) {
-  return (
-    <div className="backdrop" onClick={onClose}>
-      <div className="dialog" onClick={(e) => e.stopPropagation()}>
-        <p>{item.rps_game.status}</p>
-        <button onClick={onClose}>Close</button>
-      </div>
-    </div>
-  );
+export const GameStateClassValMap: Record<GameState, ClassValue> = {
+  [GameState.Win]: "bg-green-500",
+  [GameState.Lose]: "bg-red-500",
+  [GameState.Tie]: "bg-gray-500",
+  [GameState.Expired]: "bg-gray-500",
+  [GameState.Submitted]: "bg-gray-500",
+  [GameState.Pending]: "bg-blue-500",
+  [GameState.Cancelled]: "bg-gray-500",
+};
+
+function CalculateGameState(game: PlayerRpsGame): GameState {
+  const expired = new Date(game.rpsGame.expires_at).getTime() < Date.now();
+
+  if (game.rpsGame.status === "completed") {
+    switch (game.player.result) {
+      case "tie":
+        return GameState.Tie;
+      case "win":
+        return GameState.Win;
+      case "lose":
+        return GameState.Lose;
+    }
+  }
+  if (expired) {
+    return GameState.Expired;
+  }
+  if (game.rpsGame.status === "pending") {
+    if (game.player.status === "completed") {
+      return GameState.Submitted;
+    }
+    if (game.player.status === "pending") {
+      return GameState.Pending;
+    }
+  } else {
+    return GameState.Cancelled;
+  }
+  return GameState.Pending;
 }
