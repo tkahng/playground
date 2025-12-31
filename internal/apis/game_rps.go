@@ -20,13 +20,14 @@ import (
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/security"
 	"github.com/tkahng/playground/internal/tools/types"
+	"github.com/tkahng/playground/internal/tools/utils"
 	"github.com/tkahng/playground/internal/workers"
 )
 
 type RpsGameFilter struct {
 	PaginatedInput
 	SortParams
-	Ids           []uuid.UUID                    `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Ids           []string                       `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	Statuses      []models.RpsGameStatus         `query:"statuses,omitempty" required:"false" minimum:"1" maximum:"100" enum:"pending,cancelled,completed"`
 	CompletedAt   types.OptionalParam[time.Time] `query:"completed_at,omitempty" required:"false"`
 	CompletedAtOp queries.FilterOperator         `query:"completed_at_op,omitempty" required:"false" enum:"eq,gt,gte,lt,lte"`
@@ -64,7 +65,7 @@ func bindFindCurrentPlayersRpsGamesApi(api huma.API, app core.App) {
 			filter.CompletedAtOp = input.CompletedAtOp
 			filter.ExpiresAt = input.ExpiresAt
 			filter.ExpiresAtOp = input.ExpiresAtOp
-			filter.Ids = input.Ids
+			filter.Ids = utils.ParseValidUUIDs(input.Ids...)
 			filter.ParticipantIds = []uuid.UUID{currentPlayer.ID}
 			filter.SortBy = input.SortBy
 			filter.SortOrder = input.SortOrder
@@ -157,7 +158,8 @@ func bindSubmitMoveWithTokenApi(api huma.API, app core.App) {
 		},
 		func(ctx context.Context, input *struct {
 			Body SubmitMoveWithTokenInput
-		}) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
+		},
+		) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
 			rpsGameInvite, err := getRpsGameInviteFromTokenQuery(app, ctx, input.Body.Token)
 			if err != nil {
 				return nil, err
@@ -217,7 +219,8 @@ func bindVerifyRpsGameInviteApi(api huma.API, app core.App) {
 		},
 		func(ctx context.Context, input *struct {
 			Body VerifyRpsGameInviteInput
-		}) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
+		},
+		) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
 			rpsGameInvite, err := getRpsGameInviteFromTokenQuery(app, ctx, input.Body.Token)
 			if err != nil {
 				return nil, err
@@ -265,7 +268,8 @@ func bindSubmitMoveToRpsGameApi(api huma.API, app core.App) {
 		func(ctx context.Context, input *struct {
 			GameID string `path:"game-id" required:"true" format:"uuid"`
 			Body   SubmitMoveToGameInput
-		}) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
+		},
+		) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
 			currentPlayer := contextstore.GetContextCurrentPlayer(ctx)
 			if currentPlayer == nil {
 				return nil, huma.Error401Unauthorized("no player found.")
@@ -401,7 +405,8 @@ func bindSendGameRequestToUnRegisteredPlayerApi(api huma.API, app core.App) {
 		},
 		func(ctx context.Context, input *struct {
 			Body UnregisteredPlayerInput
-		}) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
+		},
+		) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
 			// get current player
 			currentPlayer := contextstore.GetContextCurrentPlayer(ctx)
 			if currentPlayer == nil {
@@ -449,7 +454,8 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 		},
 		func(ctx context.Context, input *struct {
 			Body RpsGameRequestInput
-		}) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
+		},
+		) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
 			user := contextstore.GetContextUserInfo(ctx)
 			if user == nil {
 				return nil, huma.Error401Unauthorized("Unauthorized. No user info")

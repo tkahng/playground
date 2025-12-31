@@ -98,11 +98,11 @@ export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
     useSensor(TouchSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: coordinateGetter,
-    })
+    }),
   );
 
   const hasDraggableData = <T extends Active | Over>(
-    entry: T | null | undefined
+    entry: T | null | undefined,
   ): entry is T & {
     data: DataRef<CardDragData | ColumnDragData>;
   } => {
@@ -123,18 +123,19 @@ export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
   const flattenColumns = useCallback((cols: NestedColumn[]): Column[] => {
     return cols.flatMap((col) =>
       col.children
-        ? [{ id: col.id, title: col.title }, ...flattenColumns(col.children)]
-        : [col]
+        ? // eslint-disable-next-line react-hooks/immutability
+          [{ id: col.id, title: col.title }, ...flattenColumns(col.children)]
+        : [col],
     );
   }, []);
 
   const flatColumns = useMemo(
     () => flattenColumns(columns),
-    [columns, flattenColumns]
+    [columns, flattenColumns],
   );
   const columnsId = useMemo(
     () => flatColumns.map((col) => col.id),
-    [flatColumns]
+    [flatColumns],
   );
 
   // recursively render nested columns
@@ -204,7 +205,7 @@ export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
     if (isActiveAColumn) {
       setColumns((columns) => {
         const activeColumnIndex = columns.findIndex(
-          (col) => col.id === activeId
+          (col) => col.id === activeId,
         );
         const overColumnIndex = columns.findIndex((col) => col.id === overId);
         return arrayMove(columns, activeColumnIndex, overColumnIndex);
@@ -223,7 +224,7 @@ export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
           return cars.map((car) =>
             car.id === activeId && newColumnId
               ? { ...car, columnId: newColumnId }
-              : car
+              : car,
           );
         });
       }
@@ -320,7 +321,7 @@ export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
             )}
             {activeCard && <TaskCard task={activeCard} isOverlay />}
           </DragOverlay>,
-          document.body
+          document.body,
         )}
     </DndContext>
   );
