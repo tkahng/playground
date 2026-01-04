@@ -166,6 +166,7 @@ export function CreateGameDialog() {
       <DialogContent
         onCloseAutoFocus={() => {
           setPlayer(null);
+          setEmailRequest(false);
           setSearched(false);
           searchForm.reset();
         }}
@@ -271,7 +272,7 @@ export function CreateGameDialog() {
                     <FieldGroup className="flex flex-col gap-2 items-center justify-center">
                       <Controller
                         name="move"
-                        control={requestGameForm.control}
+                        control={emailRequestForm.control}
                         render={({ field, fieldState }) => (
                           <FieldSet data-invalid={fieldState.invalid}>
                             <FieldDescription>
