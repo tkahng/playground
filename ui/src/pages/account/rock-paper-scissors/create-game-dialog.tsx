@@ -258,11 +258,7 @@ export function CreateGameDialog() {
             !findPlayerMutation.isPending &&
             !findPlayerMutation.isError && (
               <>
-                <div className="rounded-lg border p-4">
-                  <p>Select your move.</p>
-                  <p>{}</p>
-                </div>
-                <div>
+                <div className="flex flex-col justify-center">
                   <form
                     id="request-game-email-form"
                     className="rounded-lg border p-4 space-y-2 flex flex-col items-center justify-center"
@@ -319,6 +315,9 @@ export function CreateGameDialog() {
                       />
                     </FieldGroup>
                   </form>
+                  <Button type="submit" form="request-game-email-form">
+                    Send game request
+                  </Button>
                 </div>
               </>
             )}
