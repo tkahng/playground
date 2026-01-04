@@ -232,6 +232,13 @@ func (d *DbRpsGameService) FindRpsGameWithParticipants(ctx context.Context, game
 	}
 	var requestingPlayer, invitedPlayer *models.RpsParticipant
 	for _, p := range participants {
+		player, err := d.adapter.Gaming().FindPlayer(ctx, &stores.PlayersFilter{
+			Ids: []uuid.UUID{p.PlayerID},
+		})
+		if err != nil {
+			return nil, err
+		}
+		p.Player = player
 		if p.Type == models.RpsParticipantTypeHost {
 			requestingPlayer = p
 		}
