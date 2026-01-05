@@ -29,3 +29,7 @@ dist/
 
 .idea
 node_modules/
+
+# log files
+
+*.log
