@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Gamepad2 } from "lucide-react";
 
-type Move = "rock" | "paper" | "scissors" | null;
+type Move = "rock" | "paper" | "scissors";
 
 const moves = [
   {
@@ -26,16 +26,12 @@ const moves = [
   },
 ];
 
-export function MoveSelection() {
-  const [selectedMove, setSelectedMove] = useState<Move>(null);
+export type MoveSelectionProps = {
+  handleSubmit: (move: Move) => void;
+};
 
-  const handleSubmit = () => {
-    if (selectedMove) {
-      console.log("[v0] Selected move:", selectedMove);
-      // Here you would typically send the move to your backend
-      // and navigate to a waiting/result page
-    }
-  };
+export function MoveSelection({ handleSubmit }: MoveSelectionProps) {
+  const [selectedMove, setSelectedMove] = useState<Move | null>(null);
 
   return (
     <div className="w-full max-w-4xl animate-in fade-in zoom-in duration-500">
@@ -117,7 +113,7 @@ export function MoveSelection() {
           size="lg"
           className="min-w-64 text-lg h-12"
           disabled={!selectedMove}
-          onClick={handleSubmit}
+          onClick={() => handleSubmit(selectedMove || "rock")}
         >
           {selectedMove
             ? `Play ${selectedMove.charAt(0).toUpperCase() + selectedMove.slice(1)}`
