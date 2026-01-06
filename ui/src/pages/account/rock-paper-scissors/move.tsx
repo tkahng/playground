@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Gamepad2 } from "lucide-react";
+import { Player } from "@/schema.types";
 
-type Move = "rock" | "paper" | "scissors";
+export type Move = "rock" | "paper" | "scissors";
 
 const moves = [
   {
@@ -28,9 +29,13 @@ const moves = [
 
 export type MoveSelectionProps = {
   handleSubmit: (move: Move) => void;
+  opponentPlayer?: Player | null;
 };
 
-export function MoveSelection({ handleSubmit }: MoveSelectionProps) {
+export function MoveSelection({
+  handleSubmit,
+  opponentPlayer,
+}: MoveSelectionProps) {
   const [selectedMove, setSelectedMove] = useState<Move | null>(null);
 
   return (
@@ -46,10 +51,21 @@ export function MoveSelection({ handleSubmit }: MoveSelectionProps) {
         <p className="text-lg text-muted-foreground">
           Select rock, paper, or scissors to play
         </p>
+        {/* Helper Text */}
+        {/* <p className="text-center text-sm text-muted-foreground mt-6"> */}
+        {/*   Waiting for opponent to join... */}
+        {/* </p> */}
+        {/* Opponent Info */}
+        {opponentPlayer && (
+          <div className="text-center mb-6">
+            <p className="text-lg text-muted-foreground">VS</p>
+            <p className="text-2xl font-semibold">{opponentPlayer?.email}</p>
+          </div>
+        )}
       </div>
 
       {/* Move Selection Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
         {moves.map((move) => (
           <button
             key={move.id}
@@ -59,13 +75,13 @@ export function MoveSelection({ handleSubmit }: MoveSelectionProps) {
             }`}
           >
             <Card
-              className={`p-8 cursor-pointer transition-all duration-200 ${
+              className={`p-2 cursor-pointer transition-all duration-200 ${
                 selectedMove === move.id
                   ? "border-primary border-2 shadow-lg bg-primary/5"
                   : "border-border hover:border-primary/50 hover:shadow-md"
               }`}
             >
-              <div className="text-center space-y-4">
+              <div className="flex flex-row sm:flex-col text-center space-y-2 items-center justify-center">
                 {/* Emoji */}
                 <div
                   className={`text-7xl transition-transform duration-200 ${
@@ -120,11 +136,6 @@ export function MoveSelection({ handleSubmit }: MoveSelectionProps) {
             : "Select a Move"}
         </Button>
       </div>
-
-      {/* Helper Text */}
-      <p className="text-center text-sm text-muted-foreground mt-6">
-        Waiting for opponent to join...
-      </p>
     </div>
   );
 }

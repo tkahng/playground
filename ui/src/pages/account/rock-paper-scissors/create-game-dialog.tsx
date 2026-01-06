@@ -1,23 +1,7 @@
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Field,
-  FieldLabel,
-  FieldError,
-  FieldGroup,
-  FieldContent,
-  FieldDescription,
-  FieldSet,
-  FieldTitle,
-} from "@/components/ui/field";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { RadioGroupItem, RadioGroup } from "@/components/ui/radio-group";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useDialog } from "@/hooks/use-dialog";
@@ -29,6 +13,7 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
+import { Move, MoveSelection } from "./move";
 
 export const moves = ["rock", "paper", "scissors"] as const;
 
@@ -36,9 +21,9 @@ const searchFormSchema = z.object({
   email: z.string().email(),
 });
 
-const requestGameFormSchema = z.object({
-  move: z.enum(moves),
-});
+export type MoveProps = {
+  move: Move;
+};
 
 export function CreateGameDialog() {
   const { user } = useAuthProvider();
@@ -56,22 +41,8 @@ export function CreateGameDialog() {
     },
   });
 
-  const requestGameForm = useForm<z.infer<typeof requestGameFormSchema>>({
-    resolver: zodResolver(requestGameFormSchema),
-    defaultValues: {
-      move: "rock",
-    },
-  });
-
-  const emailRequestForm = useForm<z.infer<typeof requestGameFormSchema>>({
-    resolver: zodResolver(requestGameFormSchema),
-    defaultValues: {
-      move: "rock",
-    },
-  });
-
   const emailRequestMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof requestGameFormSchema>) => {
+    mutationFn: async (data: MoveProps) => {
       if (!user) {
         throw new Error("No user");
       }
@@ -96,13 +67,8 @@ export function CreateGameDialog() {
     },
   });
 
-  const onEmailRequestSubmit = (
-    data: z.infer<typeof requestGameFormSchema>,
-  ) => {
-    emailRequestMutation.mutate(data);
-  };
   const requestGameMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof requestGameFormSchema>) => {
+    mutationFn: async (data: MoveProps) => {
       if (!user) {
         throw new Error("No user");
       }
@@ -126,10 +92,6 @@ export function CreateGameDialog() {
       dialogProps.onOpenChange(false);
     },
   });
-
-  const onRequestSubmit = (data: z.infer<typeof requestGameFormSchema>) => {
-    requestGameMutation.mutate(data);
-  };
 
   const findPlayerMutation = useMutation({
     mutationFn: async (props: z.infer<typeof searchFormSchema>) => {
@@ -171,10 +133,6 @@ export function CreateGameDialog() {
           searchForm.reset();
         }}
       >
-        <DialogHeader>
-          <DialogTitle>Search for a friend</DialogTitle>
-        </DialogHeader>
-
         <div className="space-y-4">
           {/* search input */}
 
@@ -258,69 +216,13 @@ export function CreateGameDialog() {
             email &&
             !findPlayerMutation.isPending &&
             !findPlayerMutation.isError && (
-              <>
-                <div className="flex flex-col justify-center">
-                  <form
-                    id="request-game-email-form"
-                    className="rounded-lg border p-4 space-y-2 flex flex-col items-center justify-center"
-                    onSubmit={emailRequestForm.handleSubmit(
-                      onEmailRequestSubmit,
-                    )}
-                  >
-                    <p className="text-lg font-bold">{email}</p>
-
-                    <FieldGroup className="flex flex-col gap-2 items-center justify-center">
-                      <Controller
-                        name="move"
-                        control={emailRequestForm.control}
-                        render={({ field, fieldState }) => (
-                          <FieldSet data-invalid={fieldState.invalid}>
-                            <FieldDescription>
-                              Choose your move
-                            </FieldDescription>
-                            <RadioGroup
-                              name={field.name}
-                              value={field.value}
-                              className="flex flex-col sm:flex-row"
-                              onValueChange={field.onChange}
-                              aria-invalid={fieldState.invalid}
-                            >
-                              {moves.map((m) => (
-                                <FieldLabel
-                                  key={m}
-                                  htmlFor={`form-rhf-radiogroup-${m}`}
-                                >
-                                  <Field
-                                    orientation="horizontal"
-                                    data-invalid={fieldState.invalid}
-                                  >
-                                    <FieldContent>
-                                      <FieldTitle className="text-lg font-bold">
-                                        {m}
-                                      </FieldTitle>
-                                    </FieldContent>
-                                    <RadioGroupItem
-                                      value={m}
-                                      id={`form-rhf-radiogroup-${m}`}
-                                      aria-invalid={fieldState.invalid}
-                                    />
-                                  </Field>
-                                </FieldLabel>
-                              ))}
-                            </RadioGroup>
-                            {fieldState.invalid && (
-                              <FieldError errors={[fieldState.error]} />
-                            )}
-                          </FieldSet>
-                        )}
-                      />
-                    </FieldGroup>
-                  </form>
-                  <Button type="submit" form="request-game-email-form">
-                    Send game request
-                  </Button>
-                </div>
-              </>
+              <MoveSelection
+                handleSubmit={(move) =>
+                  emailRequestMutation.mutate({
+                    move,
+                  })
+                }
+              />
             )}
 
           {/* user found. select move */}
@@ -328,63 +230,11 @@ export function CreateGameDialog() {
             player &&
             !findPlayerMutation.isPending &&
             !findPlayerMutation.isError && (
-              <div>
-                <form
-                  id="request-game-form"
-                  className="rounded-lg border p-4 space-y-2 flex flex-col items-center justify-center"
-                  onSubmit={requestGameForm.handleSubmit(onRequestSubmit)}
-                >
-                  <p className="text-lg font-bold">{player.email}</p>
-
-                  <FieldGroup className="flex flex-col gap-2 items-center justify-center">
-                    <Controller
-                      name="move"
-                      control={requestGameForm.control}
-                      render={({ field, fieldState }) => (
-                        <FieldSet data-invalid={fieldState.invalid}>
-                          <FieldDescription>Choose your move</FieldDescription>
-                          <RadioGroup
-                            name={field.name}
-                            value={field.value}
-                            className="flex flex-col sm:flex-row"
-                            onValueChange={field.onChange}
-                            aria-invalid={fieldState.invalid}
-                          >
-                            {moves.map((m) => (
-                              <FieldLabel
-                                key={m}
-                                htmlFor={`form-rhf-radiogroup-${m}`}
-                              >
-                                <Field
-                                  orientation="horizontal"
-                                  data-invalid={fieldState.invalid}
-                                >
-                                  <FieldContent>
-                                    <FieldTitle className="text-lg font-bold">
-                                      {m}
-                                    </FieldTitle>
-                                  </FieldContent>
-                                  <RadioGroupItem
-                                    value={m}
-                                    id={`form-rhf-radiogroup-${m}`}
-                                    aria-invalid={fieldState.invalid}
-                                  />
-                                </Field>
-                              </FieldLabel>
-                            ))}
-                          </RadioGroup>
-                          {fieldState.invalid && (
-                            <FieldError errors={[fieldState.error]} />
-                          )}
-                        </FieldSet>
-                      )}
-                    />
-                  </FieldGroup>
-                </form>
-                <Button type="submit" form="request-game-form">
-                  Send game request
-                </Button>
-              </div>
+              <MoveSelection
+                handleSubmit={(move: Move) =>
+                  requestGameMutation.mutate({ move })
+                }
+              />
             )}
         </div>
       </DialogContent>

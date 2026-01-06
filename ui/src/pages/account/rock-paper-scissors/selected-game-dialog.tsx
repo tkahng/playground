@@ -1,42 +1,99 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import {
-  FieldGroup,
-  FieldSet,
-  FieldDescription,
-  FieldLabel,
-  Field,
-  FieldContent,
-  FieldTitle,
-  FieldError,
-} from "@/components/ui/field";
-import { RadioGroupItem, RadioGroup } from "@/components/ui/radio-group";
 import { rpsGameQueries } from "@/lib/rps-game-queries";
-import { PlayerRpsGame } from "@/schema.types";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm, Controller } from "react-hook-form";
+import { Participant, PlayerRpsGame } from "@/schema.types";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import z from "zod";
-import { moves } from "./create-game-dialog";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { Move, MoveSelection } from "./move";
+import { GameResult } from "./game-result";
 
 export const SelectedRpsGameDialog = ({
   dialogProps,
   onClose,
-  rpsGame,
+  gameId,
 }: {
   dialogProps: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
   };
   onClose: () => void;
-  rpsGame: PlayerRpsGame | null;
+  gameId: string | null;
 }) => {
-  const gameTime = new Date(rpsGame?.rpsGame.expires_at || 0);
-  // eslint-disable-next-line react-hooks/purity
-  const expired = gameTime.getTime() < Date.now();
+  const userInfo = useAuthProvider();
+  const {
+    data: selectedGame,
+    isLoading: selectedRpsGameLoading,
+    isError: isSelectedRpsGameError,
+    error: selectedRpsGameError,
+  } = useQuery({
+    enabled: !!gameId,
+    queryKey: [{ key: "find-rps-game", id: gameId }],
+    queryFn: async () => {
+      if (!userInfo.user?.tokens.access_token) {
+        throw new Error("No access token");
+      }
+      if (!gameId) {
+        throw new Error("No game ID");
+      }
+      const { data: game } = await rpsGameQueries.getRpsGame({
+        token: userInfo.user.tokens.access_token,
+        gameId: gameId,
+      });
+      if (!game) {
+        return {
+          data: null,
+        };
+      }
+      let player: Participant;
+      let opponent: Participant;
+      if (game.invited_participant.player?.email === userInfo.user.user.email) {
+        player = game.invited_participant;
+        opponent = game.requesting_participant;
+      } else {
+        player = game.requesting_participant;
+        opponent = game.invited_participant;
+      }
+      return {
+        data: {
+          rpsGame: game.rps_game,
+          player,
+          opponent,
+        },
+      };
+    },
+  });
+  if (selectedRpsGameLoading) {
+    return (
+      <Dialog {...dialogProps}>
+        <DialogContent
+          onCloseAutoFocus={() => {
+            onClose();
+          }}
+        >
+          <DialogTitle>Loading...</DialogTitle>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+  if (isSelectedRpsGameError) {
+    return (
+      <Dialog {...dialogProps}>
+        <DialogContent
+          onCloseAutoFocus={() => {
+            onClose();
+          }}
+        >
+          <DialogTitle>{selectedRpsGameError.message}</DialogTitle>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+  const expired =
+    new Date(selectedGame?.data?.rpsGame.expires_at || 0).getTime() <
+      // eslint-disable-next-line react-hooks/purity
+      Date.now() && selectedGame?.data?.rpsGame.status === "pending";
   return (
     <Dialog {...dialogProps}>
       <DialogContent
@@ -46,36 +103,50 @@ export const SelectedRpsGameDialog = ({
       >
         <DialogTitle>
           Your game against{" "}
-          {rpsGame?.opponent.player?.display_name ||
-            rpsGame?.opponent.player?.email}
+          {selectedGame?.data?.opponent.player?.display_name ||
+            selectedGame?.data?.opponent.player?.email}
         </DialogTitle>
 
         <div className="flex flex-col gap-4">
           {/* no game found */}
-          {!rpsGame && <NoPlayerView onOpenChange={dialogProps.onOpenChange} />}
+          {!selectedGame?.data && (
+            <NoPlayerView onOpenChange={dialogProps.onOpenChange} />
+          )}
 
           {/* game found with pending status and you have submitted your move */}
-          {rpsGame &&
+          {selectedGame?.data &&
             !expired &&
-            rpsGame.rpsGame.status === "pending" &&
-            rpsGame.player.status === "completed" && (
+            selectedGame.data.rpsGame.status === "pending" &&
+            selectedGame.data.player.status === "completed" && (
               <PendingGameView
                 onOpenChange={dialogProps.onOpenChange}
-                game={rpsGame}
+                game={selectedGame.data}
               />
             )}
 
           {/* game found with pending status and you have not submitted your move */}
-          {rpsGame &&
+          {selectedGame?.data &&
             !expired &&
-            rpsGame.rpsGame.status === "pending" &&
-            rpsGame.player.status === "pending" && (
+            selectedGame.data.rpsGame.status === "pending" &&
+            selectedGame.data.player.status === "pending" && (
               <SubmitMoveView
                 onOpenChange={dialogProps.onOpenChange}
-                game={rpsGame}
+                game={selectedGame.data}
               />
             )}
-          {rpsGame && expired && (
+          {selectedGame?.data &&
+            !expired &&
+            selectedGame.data.rpsGame.status === "completed" && (
+              <GameResult
+                {...{
+                  result: selectedGame?.data.player.result,
+                  opponent: selectedGame?.data.opponent.player?.email || "",
+                  playerMove: selectedGame.data.player.move,
+                  opponentMove: selectedGame.data.opponent.move,
+                }}
+              />
+            )}
+          {selectedGame && expired && (
             <ExpiredGameView onOpenChange={dialogProps.onOpenChange} />
           )}
         </div>
@@ -136,12 +207,7 @@ export const PendingGameView = ({
   );
 };
 
-const submitToGameFormSchema = z.object({
-  move: z.enum(moves),
-});
-
 export const SubmitMoveView = ({
-  onOpenChange,
   game,
 }: {
   onOpenChange: (open: boolean) => void;
@@ -149,15 +215,9 @@ export const SubmitMoveView = ({
 }) => {
   const { user } = useAuthProvider();
   const queryClient = useQueryClient();
-  const submitToGameForm = useForm<z.infer<typeof submitToGameFormSchema>>({
-    resolver: zodResolver(submitToGameFormSchema),
-    defaultValues: {
-      move: "rock",
-    },
-  });
 
   const submitToGameMutation = useMutation({
-    mutationFn: async (data: z.infer<typeof submitToGameFormSchema>) => {
+    mutationFn: async (data: { move: Move }) => {
       if (!user) {
         throw new Error("No user");
       }
@@ -174,70 +234,21 @@ export const SubmitMoveView = ({
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
+        queryKey: [{ key: "find-rps-game" }],
+      });
+      await queryClient.invalidateQueries({
         queryKey: [{ key: "rps-games" }],
       });
       toast.success("move submitted");
-      onOpenChange(false);
     },
   });
 
-  const onRequestSubmit = (data: z.infer<typeof submitToGameFormSchema>) => {
-    submitToGameMutation.mutate(data);
-  };
   return (
     <div>
-      <form
-        id="submit-game-form"
-        className="rounded-lg border p-4 space-y-2 flex flex-col items-center justify-center"
-        onSubmit={submitToGameForm.handleSubmit(onRequestSubmit)}
-      >
-        <p className="text-lg font-bold"> Submit your move</p>
-
-        <FieldGroup className="flex flex-col gap-2 items-center justify-center">
-          <Controller
-            name="move"
-            control={submitToGameForm.control}
-            render={({ field, fieldState }) => (
-              <FieldSet data-invalid={fieldState.invalid}>
-                <FieldDescription>Choose your move</FieldDescription>
-                <RadioGroup
-                  name={field.name}
-                  value={field.value}
-                  onValueChange={field.onChange}
-                  className="flex flex-col sm:flex-row"
-                  aria-invalid={fieldState.invalid}
-                >
-                  {moves.map((m) => (
-                    <FieldLabel key={m} htmlFor={`form-rhf-radiogroup-${m}`}>
-                      <Field
-                        orientation="horizontal"
-                        data-invalid={fieldState.invalid}
-                      >
-                        <FieldContent>
-                          <FieldTitle className="text-lg font-bold">
-                            {m}
-                          </FieldTitle>
-                        </FieldContent>
-                        <RadioGroupItem
-                          value={m}
-                          id={`form-rhf-radiogroup-${m}`}
-                          aria-invalid={fieldState.invalid}
-                        />
-                      </Field>
-                    </FieldLabel>
-                  ))}
-                </RadioGroup>
-                {fieldState.invalid && (
-                  <FieldError errors={[fieldState.error]} />
-                )}
-              </FieldSet>
-            )}
-          />
-        </FieldGroup>
-        <Button type="submit" form="submit-game-form">
-          Submit move
-        </Button>
-      </form>
+      <MoveSelection
+        opponentPlayer={game.opponent.player}
+        handleSubmit={(move) => submitToGameMutation.mutate({ move })}
+      />
     </div>
   );
 };
