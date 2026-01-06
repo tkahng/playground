@@ -188,24 +188,26 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 
 func (d *DbRpsGameService) updateGame(ctx context.Context, gameWithParticipants *RpsGameWithParticipants) (*RpsGameWithParticipants, error) {
 	gameToUpdate := gameWithParticipants.RpsGame
-	requestingPlayer := gameWithParticipants.RequestingParticipant
+	requestingParticipant := gameWithParticipants.RequestingParticipant
 	invitedParticipant := gameWithParticipants.InvitedParticipant
 	updatedGame, err := d.adapter.Gaming().UpdateRpsGame(ctx, gameToUpdate)
 	if err != nil {
 		return nil, err
 	}
 
-	updatedRequestingPlayer, err := d.adapter.Gaming().UpdateRpsParticipant(ctx, requestingPlayer)
+	updatedRequestingParticipant, err := d.adapter.Gaming().UpdateRpsParticipant(ctx, requestingParticipant)
 	if err != nil {
 		return nil, err
 	}
+	updatedRequestingParticipant.Player = requestingParticipant.Player
 	updatedInvitedParticipant, err := d.adapter.Gaming().UpdateRpsParticipant(ctx, invitedParticipant)
 	if err != nil {
 		return nil, err
 	}
+	updatedInvitedParticipant.Player = invitedParticipant.Player
 	updatedGameWithParticipants := &RpsGameWithParticipants{
 		RpsGame:               updatedGame,
-		RequestingParticipant: updatedRequestingPlayer,
+		RequestingParticipant: updatedRequestingParticipant,
 		InvitedParticipant:    updatedInvitedParticipant,
 	}
 	return updatedGameWithParticipants, nil
