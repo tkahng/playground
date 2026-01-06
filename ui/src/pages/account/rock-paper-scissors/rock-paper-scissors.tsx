@@ -4,21 +4,29 @@ import { rpsGameQueries } from "@/lib/rps-game-queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { useSearchParams } from "react-router";
-import { CreateGameDialog } from "./create-game-dialog";
-import { useQueryParams } from "@/hooks/use-query-param";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SelectedRpsGameDialog } from "./selected-game-dialog";
 import { Participant, PlayerRpsGame } from "@/schema.types";
 import { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { CreateGameDialog } from "./create-game-dialog";
 
 export default function RockPaperScissors() {
   const userInfo = useAuthProvider();
-  const { param, onClick: onClickGameId } = useQueryParams("game_id");
   const [searchParams, setSearchParams] = useSearchParams();
+  const gameId = searchParams.get("game_id");
+
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
+  const onClickGameId = (key: string | null) => {
+    if (key) {
+      searchParams.set("game_id", key);
+    } else {
+      searchParams.delete("game_id");
+    }
+    setSearchParams(searchParams);
+  };
   const onPaginationChange = (updater: Updater<PaginationState>) => {
     const newState =
       typeof updater === "function"
@@ -70,55 +78,15 @@ export default function RockPaperScissors() {
     },
   });
 
-  const [open, onOpenChange] = useState(!!param);
-  const {
-    data: selectedRpsGame,
-    isLoading: selectedRpsGameLoading,
-    isError: isSelectedRpsGameError,
-    error: selectedRpsGameError,
-  } = useQuery({
-    enabled: !!param,
-    queryKey: [{ key: "find-rps-game", id: param }],
-    queryFn: async () => {
-      if (!userInfo.user?.tokens.access_token) {
-        throw new Error("No access token");
-      }
-      if (!param) {
-        throw new Error("No game ID");
-      }
-      const { data: game } = await rpsGameQueries.getRpsGame({
-        token: userInfo.user.tokens.access_token,
-        gameId: param,
-      });
-      if (!game) {
-        return {
-          data: null,
-        };
-      }
-      let player: Participant;
-      let opponent: Participant;
-      if (game.invited_participant.player?.email === userInfo.user.user.email) {
-        player = game.invited_participant;
-        opponent = game.requesting_participant;
-      } else {
-        player = game.requesting_participant;
-        opponent = game.invited_participant;
-      }
-      return {
-        data: {
-          rpsGame: game.rps_game,
-          player,
-          opponent,
-        },
-      };
-    },
-  });
-  if (selectedRpsGameLoading) {
-    return <div>Loading...</div>;
-  }
-  if (isSelectedRpsGameError) {
-    return <div>Error: {selectedRpsGameError.message}</div>;
-  }
+  const [open, onOpenChange] = useState(!!gameId);
+  useEffect(() => {
+    if (gameId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      onOpenChange(true);
+    } else {
+      onOpenChange(false);
+    }
+  }, [gameId]);
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -175,7 +143,6 @@ export default function RockPaperScissors() {
         ]}
         onClick={(row) => {
           onClickGameId(row.original.rpsGame.id);
-          onOpenChange(true);
         }}
         data={data?.data || []}
         rowCount={data?.meta.total || 0}
@@ -185,7 +152,7 @@ export default function RockPaperScissors() {
       />
       <SelectedRpsGameDialog
         dialogProps={{ open, onOpenChange }}
-        rpsGame={selectedRpsGame?.data || null}
+        gameId={gameId}
         onClose={() => {
           onClickGameId(null);
         }}
