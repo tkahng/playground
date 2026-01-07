@@ -35,7 +35,7 @@ func TestDBGamingStore_CreateRpsGame(t *testing.T) {
 			if createdGame.Status != game.Status {
 				t.Errorf("CreateRpsGame.Status() = %v, want status %v", createdGame.Status, game.Status)
 			}
-			if !createdGame.ExpiresAt.UTC().Equal(game.ExpiresAt.UTC()) {
+			if !createdGame.ExpiresAt.UTC().Truncate(time.Microsecond).Equal(game.ExpiresAt.UTC().Truncate(time.Microsecond)) {
 				t.Errorf("CreateRpsGame.ExpiresAt() = %v, want expires at %v", createdGame.ExpiresAt, game.ExpiresAt)
 			}
 			if string(createdGame.Metadata) != string(game.Metadata) {
