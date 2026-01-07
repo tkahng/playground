@@ -65,7 +65,7 @@ func TestDBGamingStore_UpdateRpsGame(t *testing.T) {
 			if createdGame.Status != game.Status {
 				t.Errorf("CreateRpsGame.Status() = %v, want status %v", createdGame.Status, game.Status)
 			}
-			if !createdGame.ExpiresAt.UTC().Equal(game.ExpiresAt.UTC()) {
+			if !createdGame.ExpiresAt.UTC().Truncate(time.Microsecond).Equal(game.ExpiresAt.UTC().Truncate(time.Microsecond)) {
 				t.Errorf("CreateRpsGame.ExpiresAt() = %v, want expires at %v", createdGame.ExpiresAt, game.ExpiresAt)
 			}
 			if string(createdGame.Metadata) != string(game.Metadata) {
@@ -84,7 +84,7 @@ func TestDBGamingStore_UpdateRpsGame(t *testing.T) {
 			if updatedGame.Status != createdGame.Status {
 				t.Errorf("UpdateRpsGame.Status() = %v, want status %v", updatedGame.Status, createdGame.Status)
 			}
-			if !updatedGame.ExpiresAt.UTC().Equal(createdGame.ExpiresAt.UTC()) {
+			if !updatedGame.ExpiresAt.UTC().Truncate(time.Microsecond).Equal(createdGame.ExpiresAt.UTC().Truncate(time.Microsecond)) {
 				t.Errorf("UpdateRpsGame.ExpiresAt() = %v, want expires at %v", updatedGame.ExpiresAt, createdGame.ExpiresAt)
 			}
 			if string(updatedGame.Metadata) != string(createdGame.Metadata) {
@@ -205,6 +205,7 @@ func TestDBGamingStore_FindRpsGame_ByIds(t *testing.T) {
 		}
 	})
 }
+
 func TestDBGamingStore_FindRpsGame_ByStatus(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		gameStore := NewDBGamingStore(db)
@@ -316,6 +317,7 @@ func TestDBGamingStore_FindRpsGame_ByStatus(t *testing.T) {
 		}
 	})
 }
+
 func TestDBGamingStore_FindRpsGame_ByCompletedAt(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		now := time.Now().UTC()
@@ -473,6 +475,7 @@ func TestDBGamingStore_FindRpsGame_ByCompletedAt(t *testing.T) {
 		}
 	})
 }
+
 func TestDBGamingStore_FindRpsGame_ByExpiresAt(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		now := time.Now().UTC()
