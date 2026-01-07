@@ -1,4 +1,5 @@
 export const RouteMap = {
+  ROCK_PAPER_SCISSORS: "/rock-paper-scissors",
   ACCOUNT_ROCK_PAPER_SCISSORS: "/account/rock-paper-scissors",
   VERIFY_EMAIL: "/verify-email",
   FORGOT_PASSWORD: "/forgot-password",
