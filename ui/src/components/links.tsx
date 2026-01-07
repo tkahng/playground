@@ -36,6 +36,12 @@ export const RouteLinks = {
     current: (pathname: string) =>
       pathname === RouteMap.ACCOUNT_ROCK_PAPER_SCISSORS,
   },
+  ROCK_PAPER_SCISSORS: {
+    to: RouteMap.ROCK_PAPER_SCISSORS,
+    title: "Rock Paper Scissors",
+    current: (pathname: string) =>
+      pathname === RouteMap.ACCOUNT_ROCK_PAPER_SCISSORS,
+  },
   ACCOUNT_TEAMS: {
     to: RouteMap.ACCOUNT_OVERVIEW_TEAMS,
     title: "Teams",
@@ -127,6 +133,7 @@ export const landingLinks: LinkDto[] = [
   RouteLinks.PRICING,
   RouteLinks.ABOUT,
   RouteLinks.SAY_HELLO,
+  RouteLinks.ROCK_PAPER_SCISSORS,
 ];
 
 export const userDropdownLinks: LinkDto[] = [

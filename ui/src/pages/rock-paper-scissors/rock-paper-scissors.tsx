@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { GameResult } from "../account/rock-paper-scissors/game-result";
 import { ErrorCard } from "@/components/error-card";
 import { MoveSelection } from "../account/rock-paper-scissors/move";
+import { Spinner } from "@/components/ui/spinner";
+import { RockPaperScissorsLanding } from "./landing";
 
 export default function RockPaperScissorsPage() {
   const [played, setPlayed] = useState(false);
@@ -18,6 +20,7 @@ export default function RockPaperScissorsPage() {
     isLoading,
     error,
   } = useQuery({
+    enabled: !!token,
     queryKey: ["rps-game-with-token", token],
     retry: false,
     queryFn: async () => {
@@ -27,6 +30,7 @@ export default function RockPaperScissorsPage() {
       return rpsGameQueries.getRpsGameWithToken({ token });
     },
   });
+
   const mutation = useMutation({
     mutationFn: async ({
       token,
@@ -49,15 +53,16 @@ export default function RockPaperScissorsPage() {
       setGame(data.data ?? null);
     },
   });
-
-  if (!token) return <p>Missing token</p>;
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <ErrorCard />;
-  if (!rpsGame) return <p>Game not found</p>;
+  const isSelection = !played && rpsGame?.data;
+  const isResult = played && game;
+  const isLanding = !isSelection && !isResult;
+  if (isLoading) return <Spinner />;
+  if (error) return <ErrorCard message={error.message} />;
   return (
     <div className="flex flex-col gap-4 items-center justify-center">
       <div>
-        {!played && (
+        {isLanding && <RockPaperScissorsLanding />}
+        {isSelection && (
           <div>
             <MoveSelection
               handleSubmit={(move) => mutation.mutate({ token: token!, move })}
@@ -65,7 +70,7 @@ export default function RockPaperScissorsPage() {
             />
           </div>
         )}
-        {played && game && (
+        {isResult && (
           <div>
             <GameResult
               {...{
