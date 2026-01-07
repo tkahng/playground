@@ -40,7 +40,7 @@ func TestDBGamingStore_CreateRpsGameInvitation(t *testing.T) {
 			if createdInvite.ID == uuid.Nil {
 				t.Errorf("CreateRpsGameInvite.ID() = %v, want id not nil", createdInvite.ID)
 			}
-			if !createdInvite.ExpiresAt.UTC().Equal(invite.ExpiresAt.UTC()) {
+			if !createdInvite.ExpiresAt.UTC().Truncate(time.Microsecond).Equal(invite.ExpiresAt.UTC().Truncate(time.Microsecond)) {
 				t.Errorf("CreateRpsGameInvite.ExpiresAt() = %v, want expires at %v", createdInvite.ExpiresAt, invite.ExpiresAt)
 			}
 			if string(createdInvite.Metadata) != string(invite.Metadata) {
@@ -58,6 +58,7 @@ func TestDBGamingStore_CreateRpsGameInvitation(t *testing.T) {
 		}
 	})
 }
+
 func TestDBGamingStore_UpdateRpsGameInvitation(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		gameStore := NewDBGamingStore(db)
@@ -94,7 +95,7 @@ func TestDBGamingStore_UpdateRpsGameInvitation(t *testing.T) {
 			if updatedInvite.ID == uuid.Nil {
 				t.Errorf("CreateRpsGameInvite.ID() = %v, want id not nil", createdInvite.ID)
 			}
-			if !updatedInvite.ExpiresAt.UTC().Equal(createdInvite.ExpiresAt.UTC()) {
+			if !updatedInvite.ExpiresAt.UTC().Truncate(time.Microsecond).Equal(createdInvite.ExpiresAt.UTC().Truncate(time.Microsecond)) {
 				t.Errorf("CreateRpsGameInvite.ExpiresAt() = %v, want expires at %v", updatedInvite.ExpiresAt, createdInvite.ExpiresAt)
 			}
 			if string(updatedInvite.Metadata) != string(createdInvite.Metadata) {
@@ -112,6 +113,7 @@ func TestDBGamingStore_UpdateRpsGameInvitation(t *testing.T) {
 		}
 	})
 }
+
 func TestDBGamingStore_DeleteRpsGameInvitation(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		gameStore := NewDBGamingStore(db)
