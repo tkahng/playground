@@ -26,6 +26,7 @@ func NewAdapterDecorators() *StorageAdapterDecorator {
 		JobFunc:            &JobStoreDecorator{},
 		UserReactionFunc:   &DbUserReactionStoreDectorator{},
 		GamingFunc:         &DbGamingStoreDecorator{},
+		GisFunc:            &DBGisStoreDecorator{},
 	}
 }
 
@@ -50,6 +51,7 @@ func NewDbAdapterDecorators(db database.Dbx) *StorageAdapterDecorator {
 			Delegate: NewDbJobStore(db),
 		},
 		UserReactionFunc: NewDbUserReactionStoreDectorator(db),
+		GisFunc:          NewDBGisStoreDecorator(db),
 	}
 }
 
@@ -110,6 +112,15 @@ type StorageAdapterDecorator struct {
 	JobFunc            *JobStoreDecorator
 	GamingFunc         *DbGamingStoreDecorator
 	UserReactionFunc   *DbUserReactionStoreDectorator
+	GisFunc            *DBGisStoreDecorator
+}
+
+// Gis implements [StorageAdapterInterface].
+func (s *StorageAdapterDecorator) Gis() GisStore {
+	if s.GisFunc != nil {
+		return s.GisFunc
+	}
+	return s.Delegate.Gis()
 }
 
 // Gaming implements [StorageAdapterInterface].
