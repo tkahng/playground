@@ -46,8 +46,8 @@ func TestFindCountryByPoint(t *testing.T) {
 			},
 
 			{
-				name:    "Jeju-City",
-				city:    GetCityByName(t, "Jeju-City"),
+				name:    "Jeju",
+				city:    GetCityByName(t, "Jeju"),
 				want:    sk,
 				wantErr: false,
 			},
