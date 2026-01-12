@@ -31,12 +31,10 @@ func (s *DBGisStore) CreatePopulatedPlace(ctx context.Context, country *models.P
 func (s *DBGisStore) FindPopulatedPlaceByPoint(ctx context.Context, point *geom.Point) (*models.PopulatedPlace, error) {
 	query := `
 SELECT
-    *,
-    gis.ST_Distance(geom::gis.geometry, $1) AS distance_meters
+    *
 FROM
     gis.populated_places
-ORDER BY
-    distance_meters ASC
+ORDER BY gis.ST_Distance(geom::gis.geometry, $1) ASC
 LIMIT 1;
 	`
 
