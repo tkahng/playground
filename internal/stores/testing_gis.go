@@ -52,9 +52,24 @@ func MarshalCountries(t *testing.T, b []byte) []*models.Country {
 }
 
 func LoadCountriesToDB(t *testing.T, db database.Dbx) {
-	res := test.ReadFileFromDataFs(t, "data/countries.json")
+	res := test.ReadFileFromDataFs(t, "data/populated_places.json")
 	countries := MarshalCountries(t, res)
 	gisStore := NewGisStore(db)
 	err := gisStore.CreateManyCountries(t.Context(), countries)
+	require.NoError(t, err)
+}
+
+func MarshalPopulatedPlaces(t *testing.T, b []byte) []*models.PopulatedPlace {
+	var places []*models.PopulatedPlace
+	err := json.Unmarshal(b, &places)
+	require.NoError(t, err)
+	return places
+}
+
+func LoadPopulatedPlacesToDB(t *testing.T, db database.Dbx) {
+	res := test.ReadFileFromDataFs(t, "data/populated_places.json")
+	countries := MarshalPopulatedPlaces(t, res)
+	gisStore := NewGisStore(db)
+	err := gisStore.CreateManyPlaces(t.Context(), countries)
 	require.NoError(t, err)
 }
