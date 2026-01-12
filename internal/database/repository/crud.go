@@ -92,7 +92,8 @@ var (
 	RpsGameInviteBuilder = NewSQLBuilder[models.RpsGameInvite](
 		UuidV7Generator,
 	)
-	CountryBuilder = NewSQLBuilder[models.Country]()
+	CountryBuilder        = NewSQLBuilder[models.Country]()
+	PopulatedPlaceBuilder = NewSQLBuilder[models.PopulatedPlace]()
 )
 
 var (
@@ -126,4 +127,5 @@ var (
 	RpsParticipant     Repository[models.RpsParticipant]     = NewPostgresRepository(RpsParticipantBuilder)
 	RpsGameInvite      Repository[models.RpsGameInvite]      = NewPostgresRepository(RpsGameInviteBuilder)
 	Country            Repository[models.Country]            = NewPostgresRepository(CountryBuilder)
+	PopulatedPlace     Repository[models.PopulatedPlace]     = NewPostgresRepository(PopulatedPlaceBuilder)
 )
