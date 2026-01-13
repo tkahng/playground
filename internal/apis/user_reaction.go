@@ -76,27 +76,26 @@ func (api *Api) bindCreateUserReaction(aapi huma.API) {
 						slog.Any("error", err),
 						slog.Any("point", point),
 					)
-					return nil, err
+					err := newFunction(ip, reaction)
+					if err != nil {
+						return nil, err
+					}
 				}
 				if loc == nil {
-					return nil, huma.Error500InternalServerError("Failed to find populated place by point")
+					err := newFunction(ip, reaction)
+					if err != nil {
+						return nil, err
+					}
 				}
-				reaction.City = &loc.Name
-				reaction.Country = &loc.IsoA2
-				reaction.Geom = point
+				if loc != nil {
+					reaction.City = &loc.Name
+					reaction.Country = &loc.IsoA2
+					reaction.Geom = point
+				}
 			} else {
-				city, err := geocoder.City(ip)
+				err := newFunction(ip, reaction)
 				if err != nil {
 					return nil, err
-				}
-				if city == nil {
-					return nil, huma.Error500InternalServerError("Failed to find city by ip")
-				}
-				reaction.City = &city.City.Names.English
-				reaction.Country = &city.Country.ISOCode
-				if city.Location.Latitude != nil && city.Location.Longitude != nil {
-					point := geocoder.PointFromLonLat(*city.Location.Longitude, *city.Location.Latitude)
-					reaction.Geom = point
 				}
 			}
 
@@ -123,6 +122,23 @@ func (api *Api) bindCreateUserReaction(aapi huma.API) {
 			return nil, nil
 		},
 	)
+}
+
+func newFunction(ip string, reaction *models.UserReaction) error {
+	city, err := geocoder.City(ip)
+	if err != nil {
+		return err
+	}
+	if city == nil {
+		return huma.Error500InternalServerError("Failed to find city by ip")
+	}
+	reaction.City = &city.City.Names.English
+	reaction.Country = &city.Country.ISOCode
+	if city.Location.Latitude != nil && city.Location.Longitude != nil {
+		point := geocoder.PointFromLonLat(*city.Location.Longitude, *city.Location.Latitude)
+		reaction.Geom = point
+	}
+	return nil
 }
 
 func (api *Api) bindGetLatestUserReactionStats(aapi huma.API) {
