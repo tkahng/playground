@@ -35,8 +35,8 @@ type UserReactionInput struct {
 
 func (api *Api) bindCreateUserReaction(aapi huma.API) {
 	ipMiddleware := humamiddleware.HumaChiMiddleware(middleware.IpAddressMiddleware())
-	rateLimitByIp := humamiddleware.HumaChiMiddleware(httprate.LimitByIP(1, 1*time.Second))
-	geoCoder := geocoder.NewGeocoder()
+	rateLimitByIp := humamiddleware.HumaChiMiddleware(httprate.LimitByRealIP(5, 3*time.Second))
+
 	huma.Register(
 		aapi,
 		huma.Operation{
@@ -54,41 +54,64 @@ func (api *Api) bindCreateUserReaction(aapi huma.API) {
 		},
 		func(ctx context.Context, input *UserReactionInput) (*struct{}, error) {
 			ip := contextstore.GetContextIPAddress(ctx)
-			userInfo := contextstore.GetContextUserInfo(ctx)
-
+			if ip == "" && input.Body.Coordinates == nil {
+				return nil, huma.Error400BadRequest("ip address or coordinates is required")
+			}
 			reaction := new(models.UserReaction)
 			reaction.IpAddress = &ip
+			if input.Body.Coordinates != nil {
+				point := geocoder.PointFromLonLat(input.Body.Coordinates.Longitude, input.Body.Coordinates.Latitude)
+				loc, err := api.App().Adapter().Gis().FindPopulatedPlaceByPoint(ctx, point)
+				if err != nil {
+					api.App().Logger().Error(
+						"failed to find populated place by point",
+						slog.Any("error", err),
+						slog.Any("point", point),
+					)
+					return nil, err
+				}
+				if loc == nil {
+					return nil, huma.Error500InternalServerError("Failed to find populated place by point")
+				}
+				reaction.City = &loc.Name
+				reaction.Country = &loc.IsoA2
+				reaction.Geom = point
+			} else {
+				city, err := geocoder.City(ip)
+				if err != nil {
+					return nil, err
+				}
+				if city == nil {
+					return nil, huma.Error500InternalServerError("Failed to find city by ip")
+				}
+				reaction.City = &city.City.Names.English
+				reaction.Country = &city.Country.ISOCode
+				if city.Location.Latitude != nil && city.Location.Longitude != nil {
+					point := geocoder.PointFromLonLat(*city.Location.Longitude, *city.Location.Latitude)
+					reaction.Geom = point
+				}
+			}
+
+			userInfo := contextstore.GetContextUserInfo(ctx)
+
 			if userInfo != nil {
 				reaction.UserID = &userInfo.User.ID
 			}
-			locInput := geocoder.GeocodingInput{
-				IP: ip,
-			}
-			if input.Body.Coordinates != nil {
-				locInput.Coordinates = &geocoder.Coordinates{
-					Latitude:  input.Body.Coordinates.Latitude,
-					Longitude: input.Body.Coordinates.Longitude,
-				}
-			}
-			place, err := geoCoder.GetLocation(ctx, locInput)
-			if err != nil {
-				return nil, err
-			}
-			reaction.City = &place.City
-			reaction.Country = &place.Country
 
 			reaction.Type = input.Body.Type
-			reaction, err = api.App().Adapter().UserReaction().CreateUserReaction(ctx, reaction)
+
+			reaction, err := api.App().Adapter().UserReaction().CreateUserReaction(ctx, reaction)
 			if err != nil {
 				return nil, err
 			}
-			// utils.PrettyPrintJSON(reaction)
+
 			err = api.App().EventManager().EventBus().Publish(ctx, userreaction.UserReactionCreated{
 				UserReaction: reaction,
 			})
 			if err != nil {
 				return nil, err
 			}
+
 			return nil, nil
 		},
 	)
@@ -138,8 +161,7 @@ func (api *Api) bindGetLatestUserReactionStats(aapi huma.API) {
 	)
 }
 
-type UserReactionSseInput struct {
-}
+type UserReactionSseInput struct{}
 
 func (api *Api) bindUserReactionSse(humapi huma.API) {
 	handler := sse.ServeSSE(
