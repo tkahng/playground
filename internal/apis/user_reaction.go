@@ -15,6 +15,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/geocoder"
+	apphttp "github.com/tkahng/playground/internal/tools/http"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/sse"
 	"github.com/tkahng/playground/internal/userreaction"
@@ -35,7 +36,14 @@ type UserReactionInput struct {
 
 func (api *Api) bindCreateUserReaction(aapi huma.API) {
 	ipMiddleware := humamiddleware.HumaChiMiddleware(middleware.IpAddressMiddleware())
-	rateLimitByIp := humamiddleware.HumaChiMiddleware(httprate.LimitByRealIP(5, 3*time.Second))
+	rateLimitByIp := humamiddleware.HumaChiMiddleware(httprate.Limit(
+		5,
+		3*time.Second,
+		httprate.WithKeyFuncs(httprate.KeyByRealIP),
+		httprate.WithLimitHandler(func(w http.ResponseWriter, r *http.Request) {
+			apphttp.WriteErr(w, r, http.StatusTooManyRequests, "Too many requests")
+		}),
+	))
 
 	huma.Register(
 		aapi,
