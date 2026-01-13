@@ -12,9 +12,6 @@ type DBGisStore struct {
 	db database.Dbx
 }
 type GisStore interface {
-	CreateCountry(ctx context.Context, country *models.Country) (*models.Country, error)
-	CreateManyCountries(ctx context.Context, countries []*models.Country) error
-	FindCountryByPoint(ctx context.Context, point *geom.Point) (*models.Country, error)
 	CreatePopulatedPlace(ctx context.Context, place *models.PopulatedPlace) (*models.PopulatedPlace, error)
 	CreateManyPopulatedPlaces(ctx context.Context, places []*models.PopulatedPlace) error
 	FindPopulatedPlaceByPoint(ctx context.Context, point *geom.Point) (*models.PopulatedPlace, error)

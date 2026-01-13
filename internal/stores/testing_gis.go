@@ -17,22 +17,6 @@ type City struct {
 	Location *geom.Point
 }
 
-// TestCities contains sample city data for testing
-var TestCities = []City{
-	{
-		Name:     "Seoul",
-		Location: geom.NewPoint(geom.XY).MustSetCoords(geom.Coord{126.9780, 37.5665}).SetSRID(4326),
-	},
-	{
-		Name:     "Jeju",
-		Location: geom.NewPoint(geom.XY).MustSetCoords(geom.Coord{126.5219, 33.4996}).SetSRID(4326),
-	},
-	{
-		Name:     "Pyongyang",
-		Location: geom.NewPoint(geom.XY).MustSetCoords(geom.Coord{125.7625, 39.0392}).SetSRID(4326),
-	},
-}
-
 // TestNearCities contains sample points near cities for testing
 var TestNearCities = []City{
 	{
@@ -50,17 +34,6 @@ var TestNearCities = []City{
 }
 
 // GetCityByName returns a test city by name
-func GetCityByName(t *testing.T, name string) *City {
-	for _, city := range TestCities {
-		if city.Name == name {
-			return &city
-		}
-	}
-	t.Fatal("city not found")
-	return nil
-}
-
-// GetCityByName returns a test city by name
 func GetNearCityByName(t *testing.T, name string) *City {
 	for _, city := range TestNearCities {
 		if city.Name == name {
@@ -69,21 +42,6 @@ func GetNearCityByName(t *testing.T, name string) *City {
 	}
 	t.Fatal("city not found")
 	return nil
-}
-
-func MarshalCountries(t *testing.T, b []byte) []*models.Country {
-	var countries []*models.Country
-	err := json.Unmarshal(b, &countries)
-	require.NoError(t, err)
-	return countries
-}
-
-func LoadCountriesToDB(t *testing.T, db database.Dbx) {
-	res := test.ReadFileFromDataFs(t, "data/populated_places.json")
-	countries := MarshalCountries(t, res)
-	gisStore := NewGisStore(db)
-	err := gisStore.CreateManyCountries(t.Context(), countries)
-	require.NoError(t, err)
 }
 
 func MarshalPopulatedPlaces(t *testing.T, b []byte) []*models.PopulatedPlace {
