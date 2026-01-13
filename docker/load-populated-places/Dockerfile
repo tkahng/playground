@@ -21,6 +21,7 @@ CMD export PGPASSWORD=${DATABASE_PASSWORD} && \
   -update \
   -append \
   -nln gis.populated_places \
+  --config PG_USE_COPY YES \
   -nlt POINT \
   -makevalid \
   -where "scalerank IS NOT NULL AND labelrank IS NOT NULL AND labelrank >= 0 AND labelrank <= 10 AND featurecla <> '' AND name <> '' AND nameascii <> '' AND sov0name <> '' AND adm0name <> '' AND adm0_a3 <> '' AND ISO_A2 <> '-99' AND adm1name IS NOT NULL AND pop_max >= 0 AND min_zoom IS NOT NULL" \
