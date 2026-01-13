@@ -76,13 +76,13 @@ func (api *Api) bindCreateUserReaction(aapi huma.API) {
 						slog.Any("error", err),
 						slog.Any("point", point),
 					)
-					err := newFunction(ip, reaction)
+					err := useGeoIP(ip, reaction)
 					if err != nil {
 						return nil, err
 					}
 				}
 				if loc == nil {
-					err := newFunction(ip, reaction)
+					err := useGeoIP(ip, reaction)
 					if err != nil {
 						return nil, err
 					}
@@ -93,7 +93,7 @@ func (api *Api) bindCreateUserReaction(aapi huma.API) {
 					reaction.Geom = point
 				}
 			} else {
-				err := newFunction(ip, reaction)
+				err := useGeoIP(ip, reaction)
 				if err != nil {
 					return nil, err
 				}
@@ -124,7 +124,7 @@ func (api *Api) bindCreateUserReaction(aapi huma.API) {
 	)
 }
 
-func newFunction(ip string, reaction *models.UserReaction) error {
+func useGeoIP(ip string, reaction *models.UserReaction) error {
 	city, err := geocoder.City(ip)
 	if err != nil {
 		return err
