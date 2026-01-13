@@ -19,7 +19,17 @@
 
 # Go workspace file
 go.work
-go.work.sum
+.DS_Store
+migrate
+.env*
+tmp
+.data/
+# Added by goreleaser init:
+dist/
+.dev/
+.idea
+node_modules/
 
-# env file
-.env
+# log files
+
+*.log

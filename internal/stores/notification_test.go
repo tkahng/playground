@@ -1,0 +1,60 @@
+package stores_test
+
+import (
+	"context"
+	"testing"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores"
+)
+
+func TestNotificationStore_CreateNotification(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		store := stores.NewDbNotificationStore(db)
+
+		notification := &models.Notification{
+			Channel:   "test-channel",
+			Type:      "test-type",
+			CreatedAt: time.Now(),
+			Metadata:  map[string]any{"test": "test"},
+			Payload:   []byte("{\"key\": \"value\"}"),
+		}
+
+		got, err := store.CreateNotification(ctx, notification)
+		assert.NoError(t, err)
+		assert.NotNil(t, got)
+	})
+}
+
+func TestNotificationStore_CreateManyNotifications(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		store := stores.NewDbNotificationStore(db)
+
+		notifications := []models.Notification{
+			{
+				ID:        uuid.New(),
+				Channel:   "channel-1",
+				Type:      "type-1",
+				CreatedAt: time.Now(),
+				Metadata:  map[string]any{"test": "test"},
+				Payload:   []byte("{\"key\": \"value\"}"),
+			},
+			{
+				ID:        uuid.New(),
+				Channel:   "channel-2",
+				Type:      "type-2",
+				CreatedAt: time.Now(),
+				Metadata:  map[string]any{"test": "test"},
+				Payload:   []byte("{\"key\": \"value\"}"),
+			},
+		}
+
+		got, err := store.InsertManyNotifications(ctx, notifications)
+		assert.NoError(t, err)
+		assert.Equal(t, len(notifications), int(got))
+	})
+}

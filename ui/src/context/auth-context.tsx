@@ -1,0 +1,109 @@
+import { useNullableLocalStorage } from "@/hooks/use-local-storage";
+import { refreshToken, signIn, signUp as signUpApi } from "@/lib/api";
+import { SigninInput, SignupInput, UserInfoTokens } from "@/schema.types";
+import { jwtDecode } from "jwt-decode";
+import React from "react";
+
+export interface AuthContextType {
+  user: UserInfoTokens | null;
+  // setUser: (user: UserInfoTokens | null) => void;
+  signUp: (args: SignupInput) => Promise<UserInfoTokens>;
+  login: (args: SigninInput) => Promise<UserInfoTokens>;
+  logout: () => Promise<void>;
+  checkAuth: (refreshToken?: string) => Promise<void>;
+  getOrRefreshToken: (token?: string) => Promise<UserInfoTokens>;
+}
+
+export const AuthContext = React.createContext<AuthContextType>({
+  user: null,
+  // setUser: () => {},
+  signUp: async () => {
+    throw new Error("Not implemented");
+  },
+  login: async () => {
+    throw new Error("Not implemented");
+  },
+  logout: async () => {
+    throw new Error("Not implemented");
+  },
+  getOrRefreshToken: async () => {
+    throw new Error("Not implemented");
+  },
+  checkAuth: async () => {
+    throw new Error("Not implemented");
+  },
+});
+
+export const AuthProvider: React.FC<{
+  children: React.ReactNode;
+}> = ({ children }) => {
+  const [user, setUser] = useNullableLocalStorage<UserInfoTokens>(
+    "currentUser",
+    null
+  );
+  // const values = React.useMemo(() => {
+  const signUp2 = async (args: SignupInput): Promise<UserInfoTokens> => {
+    const data = await signUpApi(args);
+    setUser(data);
+    return data;
+  };
+  const login = async (args: SigninInput): Promise<UserInfoTokens> => {
+    const data = await signIn(args);
+    setUser(data);
+    return data;
+  };
+  const logout = async () => {
+    setUser(null);
+  };
+  const getOrRefreshToken = async (token?: string) => {
+    try {
+      if (token) {
+        const data = await refreshToken({ refresh_token: token });
+        setUser(data);
+        return data;
+      }
+      if (!user) {
+        return Promise.reject();
+      } else {
+        const decoded = jwtDecode(user.tokens.access_token);
+        if (!decoded?.exp) {
+          console.error("Token does not have an expiration time.");
+          setUser(null);
+          return Promise.reject();
+        }
+        const data = await refreshToken({
+          refresh_token: user.tokens.refresh_token,
+        });
+        setUser(data);
+        return data;
+      }
+    } catch (error) {
+      console.error("Error refreshing token:", error);
+      setUser(null);
+      return Promise.reject();
+    }
+  };
+  const checkAuth = async (refreshTokenParam?: string) => {
+    try {
+      await getOrRefreshToken(refreshTokenParam);
+    } catch (error) {
+      console.error("Error checking auth:", error);
+      return Promise.reject();
+    }
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        signUp: signUp2,
+        login,
+        logout,
+        checkAuth,
+        getOrRefreshToken,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};

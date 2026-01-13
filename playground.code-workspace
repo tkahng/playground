@@ -1,0 +1,167 @@
+{
+  "folders": [
+    {
+      "name": "playground",
+      "path": "."
+    },
+    {
+      "name": "ui",
+      "path": "ui"
+    }
+  ],
+  "settings": {
+    "[go]": {
+      "editor.defaultFormatter": "golang.go",
+      "editor.codeLens": true,
+      "editor.codeActionWidget.includeNearbyQuickFixes": true
+    },
+
+    "git.ignoredRepositories": ["/opt/homebrew/.git"],
+    "editor.formatOnSave": true,
+    "files.exclude": {
+      "ui": true,
+      "/opt/homebrew/": true
+    },
+
+    "go.lintTool": "golangci-lint-v2",
+    "go.lintFlags": [
+      "--path-mode=abs",
+      "--fast-only",
+      "--fix",
+      "-c",
+      ".golangci-lint.yml"
+    ],
+    "go.formatTool": "custom",
+    "go.alternateTools": {
+      "customFormatter": "golangci-lint-v2"
+    },
+    "go.lintOnSave": "workspace",
+    "go.formatFlags": ["fmt", "--stdin"],
+    "editor.linkedEditing": true,
+    "css.customData": [".vscode/tailwindcss.json"],
+    "[sql]": {
+      "editor.formatOnSave": true,
+      "editor.defaultFormatter": "mtxr.sqltools"
+    },
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSaveMode": "file",
+    "editor.formatOnPaste": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll": "always",
+      "source.organizeImports": "always"
+    },
+    "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek",
+    "go.inlayHints.assignVariableTypes": false,
+    "go.inlayHints.parameterNames": false,
+    "gitlens.codeLens.enabled": false,
+    "files.associations": {
+      "*.css": "tailwindcss",
+      "*.scss": "tailwindcss"
+    },
+    "gopls": {
+      "ui.semanticTokens": false
+      // "formatting.gofumpt": true
+    },
+    "editor.codeLens": true,
+
+    "go.coverOnSingleTestFile": true,
+    "go.coverOnSingleTest": true,
+    "go.coverShowCounts": true,
+    "go.testExplorer.showDynamicSubtestsInEditor": true,
+    "go.testFlags": ["-v", "-race"],
+    "go.testEnvVars": {
+      "DEBUG": "false"
+    },
+    "testing.followRunningTest": true,
+    "testing.showAllMessages": true,
+    "[typescript]": {
+      "editor.codeActionsOnSave": {
+        "source.fixAll": "always",
+        "source.organizeImports": "always"
+      },
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.codeLens": true,
+      "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
+    },
+    "typescript.referencesCodeLens.enabled": true,
+    "[typescriptreact]": {
+      "typescript.preferences.importModuleSpecifier": "non-relative",
+      "editor.codeActionsOnSave": {
+        "source.fixAll": "always",
+        "source.organizeImports": "always"
+      },
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.codeLens": true,
+      "editor.gotoLocation.multipleTypeDefinitions": "gotoAndPeek"
+    },
+    "sqltools.connections": [
+      {
+        "previewLimit": 50,
+        "server": "localhost",
+        "port": 5432,
+        "driver": "PostgreSQL",
+        "name": "playground",
+        "group": "playground",
+        "database": "playground",
+        "username": "postgres"
+      },
+      {
+        "previewLimit": 50,
+        "server": "localhost",
+        "port": 5432,
+        "driver": "PostgreSQL",
+        "name": "playground test",
+        "group": "playground",
+        "database": "playground_test",
+        "username": "postgres"
+      }
+    ],
+    "sqltools.results.reuseTabs": "connection",
+    "inlineSQL.enableDBIntegration": true,
+    "inlineSQL.lintSQLFiles": false,
+    "workbench.editor.enablePreviewFromCodeNavigation": true,
+    "workbench.editor.enablePreviewFromQuickOpen": true,
+    "workbench.editor.highlightModifiedTabs": true,
+    "yaml.schemas": {
+      "https://golangci-lint.run/jsonschema/golangci.jsonschema.json": "file:///Users/tkahng/GitHub/trk-go/authgo/.golangci-lint.yml"
+    },
+    "explorer.fileNesting.enabled": true,
+    "gitlens.views.repositories.pullRequests.enabled": false,
+    "gitlens.views.remotes.pullRequests.enabled": false,
+    "[yaml]": {
+      "editor.defaultFormatter": "redhat.vscode-yaml",
+      "editor.insertSpaces": true,
+      "editor.tabSize": 2,
+      "editor.autoIndent": "keep",
+      "diffEditor.ignoreTrimWhitespace": false,
+      "editor.defaultColorDecorators": "never",
+      "editor.quickSuggestions": {
+        "strings": true,
+        "other": true,
+        "comments": false
+      }
+    },
+    "editor.stickyScroll.defaultModel": "indentationModel",
+    "typescript.referencesCodeLens.showOnAllFunctions": true,
+    "typescript.preferences.importModuleSpecifier": "non-relative",
+    "javascript.referencesCodeLens.showOnAllFunctions": true,
+    "javascript.referencesCodeLens.enabled": true,
+    "files.watcherExclude": {
+      "**/.git/objects/**": true,
+      "**/.git/subtree-cache/**": true,
+      "**/.hg/store/**": true,
+      "**/.git/**": true,
+      "**/node_modules/**": true,
+      "**/.vscode/**": true,
+      "**/dist/**": true,
+      "**/tmp/**": true
+    },
+    "workbench.colorCustomizations": {
+      "terminal.findMatchBackground": "#ff00ffca", // Active match background (magenta)
+      "terminal.findMatchBorder": "#ff00e1", // Active match border (white)
+      "terminal.findMatchHighlightBackground": "#ff00fbbb", // Inactive matches background (green)
+      "terminal.overviewRuler.findMatchForeground": "#FF0000" // Overview ruler color (red)
+    },
+    "conventionalCommits.scopes": ["api", "store", "service", "database", "ui"]
+  }
+}

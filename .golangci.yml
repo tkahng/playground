@@ -1,0 +1,34 @@
+version: "2"
+linters:
+  settings:
+    exhaustruct:
+      exclude:
+        - '.+/cobra\.Command$'
+        - '.+/*\Decorator$'
+    errcheck:
+      exclude-functions:
+        - io/ioutil.ReadFile
+        - io.Copy(*bytes.Buffer)
+        - io.Copy(os.Stdout)
+
+  default: none
+  enable:
+    - asasalint
+    - asciicheck
+    - gomodguard
+    - goprintffuncname
+    - govet
+    - ineffassign
+    - misspell
+    - nakedret
+    - nolintlint
+    - prealloc
+    - reassign
+    - staticcheck
+    - unconvert
+    - unused
+    - whitespace
+formatters:
+  enable:
+    - gofmt
+    - goimports
