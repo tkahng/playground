@@ -1,4 +1,4 @@
-\restrict JiVZqljYZOcF0rMaPGZBkUFTgbtqMzsKl5ta7co2AmYelU24a07saejaDJzk6br
+\restrict 2T6rGWo6wnaoELxIAwzg8vR5u1X80ru6Cu1taactSYK1flxMlwVMoRrfNfE4gLm
 
 -- Dumped from database version 18.0 (Debian 18.0-1.pgdg13+3)
 -- Dumped by pg_dump version 18.1
@@ -663,39 +663,6 @@ CREATE TABLE gaming.rps_participants (
 
 
 --
--- Name: countries; Type: TABLE; Schema: gis; Owner: -
---
-
-CREATE TABLE gis.countries (
-    gid integer NOT NULL,
-    name character varying(29) NOT NULL,
-    iso_a2_eh character varying(5) NOT NULL,
-    iso_a3_eh character varying(3) NOT NULL,
-    geom gis.geometry(MultiPolygon,4326) NOT NULL
-);
-
-
---
--- Name: countries_gid_seq; Type: SEQUENCE; Schema: gis; Owner: -
---
-
-CREATE SEQUENCE gis.countries_gid_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: countries_gid_seq; Type: SEQUENCE OWNED BY; Schema: gis; Owner: -
---
-
-ALTER SEQUENCE gis.countries_gid_seq OWNED BY gis.countries.gid;
-
-
---
 -- Name: populated_places; Type: TABLE; Schema: gis; Owner: -
 --
 
@@ -830,7 +797,8 @@ CREATE TABLE sayhello.user_reactions (
     city text,
     metadata jsonb,
     created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
-    updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL
+    updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    geom gis.geometry(Point,4326)
 );
 
 
@@ -895,13 +863,6 @@ CREATE TABLE task.tasks (
     created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
     updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL
 );
-
-
---
--- Name: countries gid; Type: DEFAULT; Schema: gis; Owner: -
---
-
-ALTER TABLE ONLY gis.countries ALTER COLUMN gid SET DEFAULT nextval('gis.countries_gid_seq'::regclass);
 
 
 --
@@ -1208,14 +1169,6 @@ ALTER TABLE ONLY gaming.rps_participants
 
 
 --
--- Name: countries countries_pkey; Type: CONSTRAINT; Schema: gis; Owner: -
---
-
-ALTER TABLE ONLY gis.countries
-    ADD CONSTRAINT countries_pkey PRIMARY KEY (gid);
-
-
---
 -- Name: populated_places populated_places_pkey; Type: CONSTRAINT; Schema: gis; Owner: -
 --
 
@@ -1504,13 +1457,6 @@ CREATE INDEX idx_gaming_rps_participants_player_id ON gaming.rps_participants US
 
 
 --
--- Name: countries_geom_idx; Type: INDEX; Schema: gis; Owner: -
---
-
-CREATE INDEX countries_geom_idx ON gis.countries USING gist (geom);
-
-
---
 -- Name: populated_places_geom_idx; Type: INDEX; Schema: gis; Owner: -
 --
 
@@ -1529,6 +1475,13 @@ CREATE INDEX populated_places_geom_scalerank_idx ON gis.populated_places USING g
 --
 
 CREATE INDEX populated_places_scalerank_pop_idx ON gis.populated_places USING btree (scalerank, pop_max DESC);
+
+
+--
+-- Name: user_reactions_geom_idx; Type: INDEX; Schema: sayhello; Owner: -
+--
+
+CREATE INDEX user_reactions_geom_idx ON sayhello.user_reactions USING gist (geom);
 
 
 --
@@ -2071,7 +2024,7 @@ ALTER TABLE ONLY task.tasks
 -- PostgreSQL database dump complete
 --
 
-\unrestrict JiVZqljYZOcF0rMaPGZBkUFTgbtqMzsKl5ta7co2AmYelU24a07saejaDJzk6br
+\unrestrict 2T6rGWo6wnaoELxIAwzg8vR5u1X80ru6Cu1taactSYK1flxMlwVMoRrfNfE4gLm
 
 
 --
@@ -2105,5 +2058,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20251124084843'),
     ('20251124090932'),
     ('20260109174503'),
-    ('20260109180915'),
-    ('20260112091339');
+    ('20260112091339'),
+    ('20260112224708');
