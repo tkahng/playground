@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<{
 }> = ({ children }) => {
   const [user, setUser] = useNullableLocalStorage<UserInfoTokens>(
     "currentUser",
-    null
+    null,
   );
   // const values = React.useMemo(() => {
   const signUp2 = async (args: SignupInput): Promise<UserInfoTokens> => {

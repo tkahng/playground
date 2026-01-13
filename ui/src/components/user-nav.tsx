@@ -43,6 +43,7 @@ import { Team } from "@/schema.types";
 import { Check, CheckCircle, CircleX } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Link, useNavigate } from "react-router";
+import { Spinner } from "./ui/spinner";
 
 export function UserNav() {
   const { theme, setTheme } = useTheme();
@@ -77,7 +78,7 @@ export function UserNav() {
     );
   }
   if (teamsLoading) {
-    return <div>Loading...</div>;
+    return <Spinner />;
   }
   if (teamsIsError) {
     if (ApiError.isApiError(teamsError)) {
@@ -85,7 +86,12 @@ export function UserNav() {
         checkAuth();
       }
     }
-    return <div>Error: {teamsError?.message}</div>;
+    // return <div>Error: {teamsError?.message}</div>;
+    <>
+      <NavbarLink title="Sign In" to={RouteMap.SIGNIN} />
+      <NavbarLink title="Sign Up" to={RouteMap.SIGNUP} />
+      <ModeToggle />
+    </>;
   }
 
   return (

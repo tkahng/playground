@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useAuthProvider } from "./use-auth-provider";
 
 export const useUserTeamMembers = (
-  props?: operations["get-user-team-members"]["parameters"]["query"]
+  props?: operations["get-user-team-members"]["parameters"]["query"],
 ) => {
   const { user } = useAuthProvider();
   const { data, isLoading, error, isError } = useQuery({
@@ -31,6 +31,7 @@ export const useUserTeamMembers = (
       return { data: data || [], meta };
     },
     enabled: !!user?.tokens.access_token,
+    retry: false,
   });
   if (!user?.tokens.access_token) {
     return {
