@@ -1,0 +1,5 @@
+services:
+  populated-places-loader:
+    build: ./docker/load-populated-places/
+    env_file:
+      - .env
