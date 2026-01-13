@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ApiError } from "@/lib/error";
 import { getCountryName } from "@/lib/get-country-name";
 import { userReactionQueries } from "@/lib/user-reaction-queries";
 import { UserReactionsStatsWithReactions } from "@/schema.types";
@@ -18,7 +19,7 @@ import { toast } from "sonner";
 const maxItems = 3;
 function messageReducer(
   state: UserReactionsStatsWithReactions,
-  action: UserReactionsStatsWithReactions
+  action: UserReactionsStatsWithReactions,
 ) {
   return {
     ...state,
@@ -46,7 +47,7 @@ export default function SayHelloPage() {
     (evt) => {
       updateStats(JSON.parse(evt.data)?.user_reaction_stats);
     },
-    [updateStats]
+    [updateStats],
   );
   const { data: statsData, isLoading: isStatsLoading } = useQuery({
     queryKey: ["user-reactions-stats"],
@@ -66,8 +67,24 @@ export default function SayHelloPage() {
     onSuccess: async () => {
       toast.success("Success");
     },
-    onError: async () => {
-      toast.error("Error");
+    onError: async (err: ApiError) => {
+      switch (err.status) {
+        case 400:
+          toast.error("We are having trouble locating you", {
+            description: "Please make sure to allow location permissions",
+          });
+          break;
+        case 429:
+          toast.error("Too many hellos!", {
+            description: "Please try again after a breather or two.",
+          });
+          break;
+        default:
+          toast.error("Opps, something went wrong", {
+            description: "Please try again later.",
+          });
+          break;
+      }
     },
   });
   useEffect(() => {
@@ -231,7 +248,7 @@ export default function SayHelloPage() {
                       </span>
                     </div>
                   </div>
-                )
+                ),
               )}
             </div>
           </CardContent>
