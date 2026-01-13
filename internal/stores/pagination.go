@@ -1,5 +1,7 @@
 package stores
 
+import "github.com/Masterminds/squirrel"
+
 type Sortable interface {
 	Sort() (sortBy, sortOrder string)
 }
@@ -14,14 +16,8 @@ type SortParams struct {
 
 func (s *SortParams) Sort() (sortBy, sortOrder string) {
 	if s == nil {
-		return "", "" // default values
+		return "", ""
 	}
-	// if s.SortBy == "" {
-	// 	s.SortBy = "created_at" // default sort by
-	// }
-	// if s.SortOrder == "" {
-	// 	s.SortOrder = "desc" // default sort order
-	// }
 	return s.SortBy, s.SortOrder
 }
 
@@ -45,4 +41,17 @@ func (p *PaginatedInput) LimitOffset() (limit, offset int) {
 		p.Page = 0 // default value
 	}
 	return int(p.PerPage), int(p.Page) * int(p.PerPage)
+}
+
+func pagination(filter Paginable) (limit, offset int) {
+	if filter == nil {
+		return 10, 0 // default values
+	}
+	return filter.LimitOffset()
+}
+
+func queryPagination(q squirrel.SelectBuilder, filter Paginable) squirrel.SelectBuilder {
+	limit, offset := filter.LimitOffset()
+	q = q.Limit(uint64(limit)).Offset(uint64(offset))
+	return q
 }

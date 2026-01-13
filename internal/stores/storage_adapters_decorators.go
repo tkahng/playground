@@ -25,6 +25,8 @@ func NewAdapterDecorators() *StorageAdapterDecorator {
 		Delegate:           &StorageAdapter{},
 		JobFunc:            &JobStoreDecorator{},
 		UserReactionFunc:   &DbUserReactionStoreDectorator{},
+		GamingFunc:         &DbGamingStoreDecorator{},
+		GisFunc:            &DBGisStoreDecorator{},
 	}
 }
 
@@ -48,6 +50,8 @@ func NewDbAdapterDecorators(db database.Dbx) *StorageAdapterDecorator {
 		JobFunc: &JobStoreDecorator{
 			Delegate: NewDbJobStore(db),
 		},
+		UserReactionFunc: NewDbUserReactionStoreDectorator(db),
+		GisFunc:          NewDBGisStoreDecorator(db),
 	}
 }
 
@@ -106,7 +110,25 @@ type StorageAdapterDecorator struct {
 	RunInTxFunc        func(ctx context.Context, fn func(tx StorageAdapterInterface) error) error
 	RunInTxCtxFunc     func(ctx context.Context, fn func(ctx context.Context) error) error
 	JobFunc            *JobStoreDecorator
+	GamingFunc         *DbGamingStoreDecorator
 	UserReactionFunc   *DbUserReactionStoreDectorator
+	GisFunc            *DBGisStoreDecorator
+}
+
+// Gis implements [StorageAdapterInterface].
+func (s *StorageAdapterDecorator) Gis() GisStore {
+	if s.GisFunc != nil {
+		return s.GisFunc
+	}
+	return s.Delegate.Gis()
+}
+
+// Gaming implements [StorageAdapterInterface].
+func (s *StorageAdapterDecorator) Gaming() GamingStore {
+	if s.GamingFunc != nil {
+		return s.GamingFunc
+	}
+	return s.Delegate.Gaming()
 }
 
 // RunInTx implements StorageAdapterInterface.

@@ -1,6 +1,7 @@
 import AdminLayoutBase from "@/layouts/admin-layout-base";
 import AuthenticatedLayoutOutlet from "@/layouts/authenticated-layout-outlet";
 import DashboardLayout from "@/layouts/dashboard-layout";
+import PlayerLayout from "@/layouts/player-layout";
 import RootLayout from "@/layouts/root";
 import PermissionEdit from "@/pages/admin/permissions/permissions-edit";
 import PermissionListPage from "@/pages/admin/permissions/permissions-list";
@@ -62,6 +63,8 @@ import TeamMembersSettingPage from "./pages/teams/settings/team-members-settings
 import TeamNotifications from "./pages/teams/settings/team-notifications";
 import TeamSettingsRedirect from "./pages/teams/team-settings-redirect";
 import UserTeamInvitationRedirectPage from "./pages/teams/user-team-invitation-redirect-page";
+import RockPaperScissors from "@/pages/account/rock-paper-scissors/rock-paper-scissors";
+import RockPaperScissorsPage from "./pages/rock-paper-scissors/rock-paper-scissors";
 
 function TeamRoutes() {
   return (
@@ -143,6 +146,10 @@ function App() {
               <Route path="/about" element={<LandingAboutPage />} />
               <Route path="/contact" element={<LandingContactPage />} />
               <Route path="/say-hello" element={<SayHelloPage />} />
+              <Route
+                path="/rock-paper-scissors"
+                element={<RockPaperScissorsPage />}
+              />
             </Route>
             {/* auth routes */}
             <Route element={<PublicLayout />}>
@@ -198,6 +205,16 @@ function App() {
                     path="teams-invitations"
                     element={<InvitationsPage />}
                   />
+                </Route>
+                <Route
+                  element={<PageSectionLayout title="Rock Paper Scissors" />}
+                >
+                  <Route element={<PlayerLayout />}>
+                    <Route
+                      path="rock-paper-scissors"
+                      element={<RockPaperScissors />}
+                    />
+                  </Route>
                 </Route>
                 {/* <Route path="billing" element={<BillingSettingPage />} /> */}
 

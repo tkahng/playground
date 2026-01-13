@@ -22,7 +22,6 @@ require (
 	github.com/gorilla/websocket v1.5.3
 	github.com/jackc/pgx/v5 v5.7.6
 	github.com/joho/godotenv v1.5.1
-	github.com/resend/resend-go/v2 v2.28.0
 	github.com/spf13/cobra v1.10.1
 	github.com/stephenafamo/scan v0.7.0
 	github.com/stretchr/testify v1.11.1
@@ -84,6 +83,8 @@ require (
 	github.com/oschwald/maxminddb-golang/v2 v2.0.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
+	github.com/twpayne/go-geom v1.6.1
+	github.com/twpayne/pgx-geom v1.0.0
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.63.0 // indirect

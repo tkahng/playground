@@ -8,11 +8,25 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	pgxgeom "github.com/twpayne/pgx-geom"
 )
+
+func CreatePool(ctx context.Context, connString string) (*pgxpool.Pool, error) {
+	config, err := pgxpool.ParseConfig(connString)
+	if err != nil {
+		return nil, err
+	}
+	dbpool, err := pgxpool.NewWithConfig(ctx, config)
+	if err != nil {
+		return nil, err
+	}
+
+	return dbpool, nil
+}
 
 // CreateNewQueriesContext creates a new pool.
 func CreateNewQueriesContext(ctx context.Context, connString string) *Queries {
-	pool, err := getDbPool(ctx, connString)
+	pool, err := CreatePoolWithCustomDataTypes(ctx, connString)
 	if err != nil {
 		slog.Error("CreateNewQueriesContext: error creating pool.", "error", err)
 		panic(err.Error())
@@ -22,37 +36,30 @@ func CreateNewQueriesContext(ctx context.Context, connString string) *Queries {
 	}
 }
 
-func getDbPool(ctx context.Context, connString string) (*pgxpool.Pool, error) {
+func CreatePoolWithCustomDataTypes(ctx context.Context, connString string) (*pgxpool.Pool, error) {
 	// Set up a new pool with the custom types and the config.
-	config, err := pgxpool.ParseConfig(connString)
+	dbpool, err := CreatePool(ctx, connString)
 	if err != nil {
 		return nil, err
 	}
-	dbpool, err := pgxpool.NewWithConfig(ctx, config)
-
-	if err != nil {
-		return nil, err
-	}
-
+	config := dbpool.Config()
 	// Collect the custom data types once, store them in memory, and register them for every future connection.
 	customTypes, err := getCustomDataTypes(ctx, dbpool)
 	if err != nil {
 		return nil, err
 	}
 	config.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		_, err := conn.Exec(ctx, `SET search_path TO gis, public, postgis, "$user";`)
+		if err != nil {
+			return err
+		}
 		// var err error
 		for _, t := range customTypes {
 			conn.TypeMap().RegisterType(t)
 		}
-		// err = pgxvector.RegisterTypes(ctx, conn)
-		// if err != nil {
-		// 	fmt.Println(err)
-		// 	return err
-		// }
-		// if err = pgxgeom.Register(ctx, conn); err != nil {
-		// 	fmt.Println(err)
-		// 	return err
-		// }
+		if err := pgxgeom.Register(ctx, conn); err != nil {
+			return err
+		}
 		return nil
 	}
 	// Immediately close the old pool and open a new one with the new config.

@@ -93,7 +93,7 @@ export default function ResetPasswordPage() {
       return await confirmPasswordReset(
         data.token,
         data.password,
-        data.confirmPassword
+        data.confirmPassword,
       );
     },
     onSuccess: () => {
@@ -128,7 +128,7 @@ export default function ResetPasswordPage() {
 
     if (!token) {
       setError(
-        "Invalid or expired reset link. Please request a new password reset."
+        "Invalid or expired reset link. Please request a new password reset.",
       );
       return;
     }
@@ -145,6 +145,8 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     if (isCheckPasswordResetError) {
       const err = GetError(checkPasswordResetError);
+
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError(err?.detail || "An error occurred");
     }
   }, [isCheckPasswordResetError, checkPasswordResetError]);

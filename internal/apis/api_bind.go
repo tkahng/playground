@@ -31,6 +31,8 @@ func bindApis(appApi *Api) {
 	bindAdminApi(appApi)
 	// admin stripe products with prices
 	bindUserReactionApi(appApi)
+	// bind game api
+	bindGameApi(appApi)
 }
 func bindMiddlewares(api API) {
 	api.Api().UseMiddleware(humamiddleware.HumaOperationSecurityMiddleware())

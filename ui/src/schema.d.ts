@@ -823,6 +823,106 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/games/rps/invites/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * verify rps game invite
+         * @description verify rps game invite
+         */
+        post: operations["verify-rps-game-invite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/rps/requests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * send game request to registered player
+         * @description send game request to registered player
+         */
+        post: operations["send-game-request-to-registered-player"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/rps/requests/unregistered": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * send game request to unregistered player
+         * @description send game request to unregistered player
+         */
+        post: operations["send-game-request-to-unregistered-player"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/rps/token/submit-move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * submit move to rps game with token
+         * @description submit move to rps game with token
+         */
+        post: operations["submit-move-with-token"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/rps/{game-id}/submit-move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * submit move to rps game
+         * @description submit move to rps game
+         */
+        post: operations["submit-move-to-rps-game"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/media": {
         parameters: {
             query?: never;
@@ -879,6 +979,90 @@ export interface paths {
          * @description List of permissions
          */
         get: operations["permissions-list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/players": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get players.
+         * @description gets a list of players.
+         */
+        get: operations["get-players"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/players/current-player/games/rps": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * find current players rps games
+         * @description find current players rps games
+         */
+        get: operations["find-current-players-rps-games"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/players/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get my player.
+         * @description Gets a player for the user. Returns the player if there is one.
+         */
+        get: operations["get-my-player"];
+        /**
+         * Put user player.
+         * @description Creates a player for the user if there is none, otherwise updates the player. Returns the player.
+         */
+        put: operations["put-my-player"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/players/registered/email/{inviting-player-email}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * search registered player by email
+         * @description search registered player by email
+         */
+        get: operations["search-registered-player"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1841,6 +2025,16 @@ export interface components {
             data: components["schemas"]["PermissionSource"][] | null;
             meta: components["schemas"]["Meta"];
         };
+        ApiPaginatedResponsePlayer: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponsePlayer.json
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["Player"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
         ApiPaginatedResponseRole: {
             /**
              * Format: uri
@@ -1849,6 +2043,16 @@ export interface components {
              */
             readonly $schema?: string;
             data: components["schemas"]["Role"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
+        ApiPaginatedResponseRpsGameWithParticipants: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponseRpsGameWithParticipants.json
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["RpsGameWithParticipants"][] | null;
             meta: components["schemas"]["Meta"];
         };
         ApiPaginatedResponseStripeProduct: {
@@ -1920,6 +2124,24 @@ export interface components {
             readonly $schema?: string;
             data: components["schemas"]["UserAccountOutput"][] | null;
             meta: components["schemas"]["Meta"];
+        };
+        ApiSingleResponsePlayer: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiSingleResponsePlayer.json
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["Player"];
+        };
+        ApiSingleResponseRpsGameWithParticipants: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiSingleResponseRpsGameWithParticipants.json
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["RpsGameWithParticipants"];
         };
         ApiUser: {
             /**
@@ -2101,6 +2323,15 @@ export interface components {
              * @example https://example.com/errors/example
              */
             type: string;
+        };
+        GamePutPlayerMeArgs: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/GamePutPlayerMeArgs.json
+             */
+            readonly $schema?: string;
+            display_name: string | null;
         };
         GeolocationCoordinate: {
             /** Format: double */
@@ -2348,6 +2579,18 @@ export interface components {
         PingMessage: {
             message: string;
         };
+        Player: {
+            /** Format: date-time */
+            created_at: string;
+            display_name?: string;
+            email: string;
+            id: string;
+            metadata: string;
+            /** Format: date-time */
+            updated_at: string;
+            user?: components["schemas"]["ApiUser"];
+            user_id?: string;
+        };
         ReactionByCountry: {
             country: string;
             /** Format: int64 */
@@ -2408,6 +2651,75 @@ export interface components {
             readonly $schema?: string;
             /** Format: uuid */
             role_ids: string[] | null;
+        };
+        RpsGame: {
+            /** Format: date-time */
+            completed_at?: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            id: string;
+            metadata: string;
+            participants?: components["schemas"]["RpsParticipant"][] | null;
+            /**
+             * @default pending
+             * @enum {string}
+             */
+            status: "pending" | "cancelled" | "completed";
+            /** Format: date-time */
+            updated_at: string;
+        };
+        RpsGameRequestInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/RpsGameRequestInput.json
+             */
+            readonly $schema?: string;
+            /** Format: uuid */
+            inviting_player_id: string;
+            /** @enum {string} */
+            move: "rock" | "paper" | "scissors";
+        };
+        RpsGameWithParticipants: {
+            invited_participant: components["schemas"]["RpsParticipant"];
+            requesting_participant: components["schemas"]["RpsParticipant"];
+            rps_game: components["schemas"]["RpsGame"];
+        };
+        RpsParticipant: {
+            /** Format: date-time */
+            created_at: string;
+            game?: components["schemas"]["RpsGame"];
+            game_id: string;
+            id: string;
+            metadata: string;
+            /**
+             * @default rock
+             * @enum {string}
+             */
+            move: "rock" | "paper" | "scissors";
+            player?: components["schemas"]["Player"];
+            player_id: string;
+            /** Format: date-time */
+            responded_at?: string;
+            /**
+             * @default tie
+             * @enum {string}
+             */
+            result: "tie" | "win" | "lose";
+            /**
+             * @default pending
+             * @enum {string}
+             */
+            status: "pending" | "declined" | "completed";
+            /**
+             * @default host
+             * @enum {string}
+             */
+            type: "host" | "guest";
+            /** Format: date-time */
+            updated_at: string;
         };
         SigninDto: {
             /**
@@ -2578,6 +2890,31 @@ export interface components {
              */
             readonly $schema?: string;
             url: string;
+        };
+        SubmitMoveToGameInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/SubmitMoveToGameInput.json
+             */
+            readonly $schema?: string;
+            /** @enum {string} */
+            move: "rock" | "paper" | "scissors";
+            /** @enum {string} */
+            status: "pending" | "completed" | "cancelled";
+        };
+        SubmitMoveWithTokenInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/SubmitMoveWithTokenInput.json
+             */
+            readonly $schema?: string;
+            /** @enum {string} */
+            move: "rock" | "paper" | "scissors";
+            /** @enum {string} */
+            status: "pending" | "completed" | "cancelled";
+            token: string;
         };
         Task: {
             /**
@@ -2824,6 +3161,18 @@ export interface components {
             /** @example Bearer */
             token_type: string;
         };
+        UnregisteredPlayerInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/UnregisteredPlayerInput.json
+             */
+            readonly $schema?: string;
+            /** Format: email */
+            "inviting-player-email": string;
+            /** @enum {string} */
+            move: "rock" | "paper" | "scissors";
+        };
         UpdateMeInput: {
             /**
              * Format: uri
@@ -3004,6 +3353,15 @@ export interface components {
             roles?: components["schemas"]["Role"][] | null;
             /** Format: date-time */
             updated_at: string;
+        };
+        VerifyRpsGameInviteInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/VerifyRpsGameInviteInput.json
+             */
+            readonly $schema?: string;
+            token: string;
         };
     };
     responses: never;
@@ -5819,6 +6177,263 @@ export interface operations {
             };
         };
     };
+    "verify-rps-game-invite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyRpsGameInviteInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponseRpsGameWithParticipants"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "send-game-request-to-registered-player": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RpsGameRequestInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponseRpsGameWithParticipants"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "send-game-request-to-unregistered-player": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UnregisteredPlayerInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponseRpsGameWithParticipants"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "submit-move-with-token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitMoveWithTokenInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponseRpsGameWithParticipants"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "submit-move-to-rps-game": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "game-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitMoveToGameInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponseRpsGameWithParticipants"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "list-media": {
         parameters: {
             query?: {
@@ -6021,6 +6636,260 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-players": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+                ids?: string[] | null;
+                q?: string;
+                emails?: string[] | null;
+                display_names?: string[] | null;
+                user_ids?: string[] | null;
+                registered?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiPaginatedResponsePlayer"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "find-current-players-rps-games": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+                ids?: string[] | null;
+                statuses?: ("pending" | "cancelled" | "completed")[] | null;
+                completed_at?: string;
+                completed_at_op?: "eq" | "gt" | "gte" | "lt" | "lte";
+                expires_at?: string;
+                expires_at_op?: "eq" | "gt" | "gte" | "lt" | "lte";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiPaginatedResponseRpsGameWithParticipants"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-my-player": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponsePlayer"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "put-my-player": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GamePutPlayerMeArgs"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponsePlayer"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "search-registered-player": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "inviting-player-email": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponsePlayer"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

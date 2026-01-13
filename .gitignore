@@ -26,5 +26,10 @@ tmp
 .data/
 # Added by goreleaser init:
 dist/
-
+.dev/
 .idea
+node_modules/
+
+# log files
+
+*.log

@@ -25,6 +25,8 @@ type StorageAdapterInterface interface {
 	Rbac() DbRbacStoreInterface
 	Task() DbTaskStoreInterface
 	Job() JobStore
+	Gaming() GamingStore
+	Gis() GisStore
 	// WithTx(tx database.Dbx) *StorageAdapter
 	RunInTxCtx(ctx context.Context, fn func(txCtx context.Context) error) error
 	RunInTx(ctx context.Context, fn func(tx StorageAdapterInterface) error) error
@@ -47,6 +49,17 @@ type StorageAdapter struct {
 	notification   *DbNotificationStore
 	job            *DbJobStore
 	userReaction   *DbUserReactionStore
+	gaming         *DBGamingStore
+	gis            *DBGisStore
+}
+
+// Gis implements [StorageAdapterInterface].
+func (s *StorageAdapter) Gis() GisStore {
+	return s.gis
+}
+
+func (s *StorageAdapter) Gaming() GamingStore {
+	return s.gaming
 }
 
 // UserReaction implements StorageAdapterInterface.
@@ -57,9 +70,11 @@ func (s *StorageAdapter) UserReaction() UserReactionStore {
 func (s *StorageAdapter) Job() JobStore {
 	return s.job
 }
+
 func (s *StorageAdapter) Notification() NotificationStore {
 	return s.notification
 }
+
 func (s *StorageAdapter) Media() MediaStoreInterface {
 	return s.media
 }
@@ -104,6 +119,7 @@ func (s *StorageAdapter) RunInTx(ctx context.Context, fn func(tx StorageAdapterI
 			notification:   s.notification.WithTx(db),
 			job:            s.job.WithTx(db),
 			userReaction:   s.userReaction.WithTx(db),
+			gaming:         s.gaming.WithTx(db),
 		}
 		return fn(tx)
 	})
@@ -171,5 +187,7 @@ func NewStorageAdapter(db database.Dbx) *StorageAdapter {
 		media:          NewMediaStore(db),
 		notification:   NewDbNotificationStore(db),
 		userReaction:   NewDbUserReactionStore(db),
+		gaming:         NewDBGamingStore(db),
+		gis:            NewGisStore(db),
 	}
 }

@@ -77,6 +77,22 @@ var (
 	UserReactionBuilder = NewSQLBuilder[models.UserReaction](
 		UuidV7Generator,
 	)
+	PlayerBuilder = NewSQLBuilder[models.Player](
+		UuidV7Generator,
+	)
+	FrindshipBuilder = NewSQLBuilder[models.Frindship](
+		UuidV7Generator,
+	)
+	RpsGameBuilder = NewSQLBuilder[models.RpsGame](
+		UuidV7Generator,
+	)
+	RpsParticipantBuilder = NewSQLBuilder[models.RpsParticipant](
+		UuidV7Generator,
+	)
+	RpsGameInviteBuilder = NewSQLBuilder[models.RpsGameInvite](
+		UuidV7Generator,
+	)
+	PopulatedPlaceBuilder = NewSQLBuilder[models.PopulatedPlace]()
 )
 
 var (
@@ -104,4 +120,10 @@ var (
 	Notification       Repository[models.Notification]       = NewPostgresRepository(NotificationBuilder)
 	Job                Repository[models.JobRow]             = NewPostgresRepository(JobBuilder)
 	UserReaction       Repository[models.UserReaction]       = NewPostgresRepository(UserReactionBuilder)
+	Player             Repository[models.Player]             = NewPostgresRepository(PlayerBuilder)
+	Frindship          Repository[models.Frindship]          = NewPostgresRepository(FrindshipBuilder)
+	RpsGame            Repository[models.RpsGame]            = NewPostgresRepository(RpsGameBuilder)
+	RpsParticipant     Repository[models.RpsParticipant]     = NewPostgresRepository(RpsParticipantBuilder)
+	RpsGameInvite      Repository[models.RpsGameInvite]      = NewPostgresRepository(RpsGameInviteBuilder)
+	PopulatedPlace     Repository[models.PopulatedPlace]     = NewPostgresRepository(PopulatedPlaceBuilder)
 )

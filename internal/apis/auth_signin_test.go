@@ -18,18 +18,18 @@ func TestApi_SignIn(t *testing.T) {
 	// t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		testApi := SetupApi(t, ctx, db)
+		testApi := apis.SetupApi(t, ctx, db)
 
-		tests := []ApiScenario{
+		tests := []apis.ApiScenario{
 			{
 				Name:           "Test signin success",
 				Method:         http.MethodPost,
 				URL:            "/auth/signin",
 				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *TestApi {
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
 					return testApi
 				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario) {
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					_ = core.CreateUserWithOptions(
 						t,
 						testApi.App,
@@ -46,7 +46,7 @@ func TestApi_SignIn(t *testing.T) {
 					}
 					scenario.Body = strings.NewReader(string(data))
 				},
-				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *ApiScenario, res *httptest.ResponseRecorder) {
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 					var body apis.ApiOutput[*apis.ApiUserInfoTokens]
 					err := json.NewDecoder(res.Body).Decode(&body)
 					if err != nil {

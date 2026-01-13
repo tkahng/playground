@@ -1,7 +1,7 @@
-\restrict DdGXYZkZCIBgwXAeaofQXrBxWqOl0EQbfHS7JeCppIbcd2eScxaQGAOgnoZ1QUY
+\restrict 2T6rGWo6wnaoELxIAwzg8vR5u1X80ru6Cu1taactSYK1flxMlwVMoRrfNfE4gLm
 
 -- Dumped from database version 18.0 (Debian 18.0-1.pgdg13+3)
--- Dumped by pg_dump version 18.0
+-- Dumped by pg_dump version 18.1
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -34,6 +34,20 @@ CREATE SCHEMA auth;
 --
 
 CREATE SCHEMA billing;
+
+
+--
+-- Name: gaming; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA gaming;
+
+
+--
+-- Name: gis; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA gis;
 
 
 --
@@ -76,6 +90,20 @@ CREATE SCHEMA task;
 --
 
 CREATE SCHEMA utility;
+
+
+--
+-- Name: postgis; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS postgis WITH SCHEMA gis;
+
+
+--
+-- Name: EXTENSION postgis; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON EXTENSION postgis IS 'PostGIS geometry and geography spatial types and functions';
 
 
 --
@@ -547,6 +575,139 @@ CREATE TABLE billing.stripe_webhook_events (
 
 
 --
+-- Name: friendships; Type: TABLE; Schema: gaming; Owner: -
+--
+
+CREATE TABLE gaming.friendships (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    requesting_player_id uuid NOT NULL,
+    invited_player_id uuid NOT NULL,
+    status text DEFAULT 'pending'::text NOT NULL,
+    responded_at timestamp with time zone,
+    created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    CONSTRAINT friendships_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'accepted'::text, 'declined'::text])))
+);
+
+
+--
+-- Name: players; Type: TABLE; Schema: gaming; Owner: -
+--
+
+CREATE TABLE gaming.players (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    email text NOT NULL,
+    display_name text,
+    user_id uuid,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL
+);
+
+
+--
+-- Name: rps_game_invites; Type: TABLE; Schema: gaming; Owner: -
+--
+
+CREATE TABLE gaming.rps_game_invites (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    game_id uuid NOT NULL,
+    requesting_player_id uuid NOT NULL,
+    invited_player_id uuid NOT NULL,
+    token text NOT NULL,
+    expires_at timestamp with time zone NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    CONSTRAINT rps_game_invites_token CHECK (utility.not_empty(token))
+);
+
+
+--
+-- Name: rps_games; Type: TABLE; Schema: gaming; Owner: -
+--
+
+CREATE TABLE gaming.rps_games (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    completed_at timestamp with time zone,
+    expires_at timestamp with time zone NOT NULL,
+    status text DEFAULT 'pending'::text NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    CONSTRAINT rps_games_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'cancelled'::text, 'completed'::text])))
+);
+
+
+--
+-- Name: rps_participants; Type: TABLE; Schema: gaming; Owner: -
+--
+
+CREATE TABLE gaming.rps_participants (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    game_id uuid NOT NULL,
+    player_id uuid NOT NULL,
+    type text DEFAULT 'host'::text NOT NULL,
+    status text DEFAULT 'pending'::text NOT NULL,
+    move text DEFAULT 'rock'::text NOT NULL,
+    result text DEFAULT 'tie'::text NOT NULL,
+    responded_at timestamp with time zone,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    CONSTRAINT rps_participants_move_check CHECK ((move = ANY (ARRAY['rock'::text, 'paper'::text, 'scissors'::text]))),
+    CONSTRAINT rps_participants_result_check CHECK ((result = ANY (ARRAY['tie'::text, 'win'::text, 'lose'::text]))),
+    CONSTRAINT rps_participants_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'declined'::text, 'completed'::text]))),
+    CONSTRAINT rps_participants_type_check CHECK ((type = ANY (ARRAY['host'::text, 'guest'::text])))
+);
+
+
+--
+-- Name: populated_places; Type: TABLE; Schema: gis; Owner: -
+--
+
+CREATE TABLE gis.populated_places (
+    gid integer NOT NULL,
+    geom gis.geometry(Point,4326) NOT NULL,
+    scalerank numeric(2,0) NOT NULL,
+    labelrank numeric(2,0) NOT NULL,
+    featurecla character varying(50) NOT NULL,
+    name character varying(100) NOT NULL,
+    nameascii character varying(100) NOT NULL,
+    sov0name character varying(100) NOT NULL,
+    adm0name character varying(50) NOT NULL,
+    adm0_a3 character varying(3) NOT NULL,
+    adm1name character varying(100) NOT NULL,
+    iso_a2 character varying(5) NOT NULL,
+    pop_max numeric(12,0) NOT NULL,
+    min_zoom numeric(2,1) NOT NULL,
+    CONSTRAINT populated_places_labelrank_check CHECK (((labelrank >= (0)::numeric) AND (labelrank <= (10)::numeric))),
+    CONSTRAINT populated_places_pop_max_check CHECK ((pop_max >= (0)::numeric)),
+    CONSTRAINT populated_places_scalerank_check CHECK (((scalerank >= (0)::numeric) AND (scalerank <= (10)::numeric)))
+);
+
+
+--
+-- Name: populated_places_gid_seq; Type: SEQUENCE; Schema: gis; Owner: -
+--
+
+CREATE SEQUENCE gis.populated_places_gid_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: populated_places_gid_seq; Type: SEQUENCE OWNED BY; Schema: gis; Owner: -
+--
+
+ALTER SEQUENCE gis.populated_places_gid_seq OWNED BY gis.populated_places.gid;
+
+
+--
 -- Name: notifications; Type: TABLE; Schema: messaging; Owner: -
 --
 
@@ -636,7 +797,8 @@ CREATE TABLE sayhello.user_reactions (
     city text,
     metadata jsonb,
     created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
-    updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL
+    updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    geom gis.geometry(Point,4326)
 );
 
 
@@ -701,6 +863,13 @@ CREATE TABLE task.tasks (
     created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
     updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL
 );
+
+
+--
+-- Name: populated_places gid; Type: DEFAULT; Schema: gis; Owner: -
+--
+
+ALTER TABLE ONLY gis.populated_places ALTER COLUMN gid SET DEFAULT nextval('gis.populated_places_gid_seq'::regclass);
 
 
 --
@@ -928,6 +1097,86 @@ ALTER TABLE ONLY billing.stripe_webhook_events
 
 
 --
+-- Name: friendships friendships_pkey; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.friendships
+    ADD CONSTRAINT friendships_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: players players_email_key; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.players
+    ADD CONSTRAINT players_email_key UNIQUE (email);
+
+
+--
+-- Name: players players_pkey; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.players
+    ADD CONSTRAINT players_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: rps_game_invites rps_game_invites_pkey; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_game_invites
+    ADD CONSTRAINT rps_game_invites_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: rps_game_invites rps_game_invites_token_key; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_game_invites
+    ADD CONSTRAINT rps_game_invites_token_key UNIQUE (token);
+
+
+--
+-- Name: rps_games rps_games_pkey; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_games
+    ADD CONSTRAINT rps_games_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: rps_participants rps_participants_game_id_player_id_unique; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_participants
+    ADD CONSTRAINT rps_participants_game_id_player_id_unique UNIQUE (game_id, player_id);
+
+
+--
+-- Name: rps_participants rps_participants_game_id_type_unique; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_participants
+    ADD CONSTRAINT rps_participants_game_id_type_unique UNIQUE (game_id, type);
+
+
+--
+-- Name: rps_participants rps_participants_pkey; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_participants
+    ADD CONSTRAINT rps_participants_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: populated_places populated_places_pkey; Type: CONSTRAINT; Schema: gis; Owner: -
+--
+
+ALTER TABLE ONLY gis.populated_places
+    ADD CONSTRAINT populated_places_pkey PRIMARY KEY (gid);
+
+
+--
 -- Name: notifications notifications_pkey; Type: CONSTRAINT; Schema: messaging; Owner: -
 --
 
@@ -1082,6 +1331,160 @@ CREATE UNIQUE INDEX uniq_jobs_active_key ON app.jobs USING btree (unique_key) WH
 
 
 --
+-- Name: idx_gaming_friendships_invited_player_id; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_friendships_invited_player_id ON gaming.friendships USING btree (invited_player_id);
+
+
+--
+-- Name: idx_gaming_friendships_requesting_player_id; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_friendships_requesting_player_id ON gaming.friendships USING btree (requesting_player_id);
+
+
+--
+-- Name: idx_gaming_friendships_responded_at; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_friendships_responded_at ON gaming.friendships USING btree (responded_at);
+
+
+--
+-- Name: idx_gaming_friendships_status; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_friendships_status ON gaming.friendships USING btree (status);
+
+
+--
+-- Name: idx_gaming_friendships_status_invited_player_id_requesting_play; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_friendships_status_invited_player_id_requesting_play ON gaming.friendships USING btree (status, invited_player_id, requesting_player_id);
+
+
+--
+-- Name: idx_gaming_players_display_name; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_players_display_name ON gaming.players USING btree (display_name);
+
+
+--
+-- Name: idx_gaming_players_email; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_players_email ON gaming.players USING btree (email);
+
+
+--
+-- Name: idx_gaming_players_metadata_gin; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_players_metadata_gin ON gaming.players USING gin (metadata);
+
+
+--
+-- Name: idx_gaming_players_user_id; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_players_user_id ON gaming.players USING btree (user_id);
+
+
+--
+-- Name: idx_gaming_rps_game_invites_game_id; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_game_invites_game_id ON gaming.rps_game_invites USING btree (game_id);
+
+
+--
+-- Name: idx_gaming_rps_game_invites_invited_player_id; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_game_invites_invited_player_id ON gaming.rps_game_invites USING btree (invited_player_id);
+
+
+--
+-- Name: idx_gaming_rps_game_invites_requesting_player_id; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_game_invites_requesting_player_id ON gaming.rps_game_invites USING btree (requesting_player_id);
+
+
+--
+-- Name: idx_gaming_rps_games_completed_at; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_games_completed_at ON gaming.rps_games USING btree (completed_at);
+
+
+--
+-- Name: idx_gaming_rps_games_expires_at; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_games_expires_at ON gaming.rps_games USING btree (expires_at);
+
+
+--
+-- Name: idx_gaming_rps_games_metadata_gin; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_games_metadata_gin ON gaming.rps_games USING gin (metadata);
+
+
+--
+-- Name: idx_gaming_rps_games_status; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_games_status ON gaming.rps_games USING btree (status);
+
+
+--
+-- Name: idx_gaming_rps_participants_game_id; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_participants_game_id ON gaming.rps_participants USING btree (game_id);
+
+
+--
+-- Name: idx_gaming_rps_participants_player_id; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_participants_player_id ON gaming.rps_participants USING btree (player_id);
+
+
+--
+-- Name: populated_places_geom_idx; Type: INDEX; Schema: gis; Owner: -
+--
+
+CREATE INDEX populated_places_geom_idx ON gis.populated_places USING gist (geom);
+
+
+--
+-- Name: populated_places_geom_scalerank_idx; Type: INDEX; Schema: gis; Owner: -
+--
+
+CREATE INDEX populated_places_geom_scalerank_idx ON gis.populated_places USING gist (geom) WHERE (scalerank <= (4)::numeric);
+
+
+--
+-- Name: populated_places_scalerank_pop_idx; Type: INDEX; Schema: gis; Owner: -
+--
+
+CREATE INDEX populated_places_scalerank_pop_idx ON gis.populated_places USING btree (scalerank, pop_max DESC);
+
+
+--
+-- Name: user_reactions_geom_idx; Type: INDEX; Schema: sayhello; Owner: -
+--
+
+CREATE INDEX user_reactions_geom_idx ON sayhello.user_reactions USING gist (geom);
+
+
+--
 -- Name: permissions handle_auth_permissions_updated_at; Type: TRIGGER; Schema: auth; Owner: -
 --
 
@@ -1163,6 +1566,41 @@ CREATE TRIGGER handle_stripe_subscriptions_updated_at BEFORE UPDATE ON billing.s
 --
 
 CREATE TRIGGER handle_stripe_webhook_events_updated_at BEFORE UPDATE ON billing.stripe_webhook_events FOR EACH ROW EXECUTE FUNCTION utility.set_current_timestamp_updated_at();
+
+
+--
+-- Name: friendships handle_gaming_friendships_updated_at; Type: TRIGGER; Schema: gaming; Owner: -
+--
+
+CREATE TRIGGER handle_gaming_friendships_updated_at BEFORE UPDATE ON gaming.friendships FOR EACH ROW EXECUTE FUNCTION utility.set_current_timestamp_updated_at();
+
+
+--
+-- Name: players handle_gaming_players_updated_at; Type: TRIGGER; Schema: gaming; Owner: -
+--
+
+CREATE TRIGGER handle_gaming_players_updated_at BEFORE UPDATE ON gaming.players FOR EACH ROW EXECUTE FUNCTION utility.set_current_timestamp_updated_at();
+
+
+--
+-- Name: rps_game_invites handle_gaming_rps_game_invites_updated_at; Type: TRIGGER; Schema: gaming; Owner: -
+--
+
+CREATE TRIGGER handle_gaming_rps_game_invites_updated_at BEFORE UPDATE ON gaming.rps_game_invites FOR EACH ROW EXECUTE FUNCTION utility.set_current_timestamp_updated_at();
+
+
+--
+-- Name: rps_games handle_gaming_rps_games_updated_at; Type: TRIGGER; Schema: gaming; Owner: -
+--
+
+CREATE TRIGGER handle_gaming_rps_games_updated_at BEFORE UPDATE ON gaming.rps_games FOR EACH ROW EXECUTE FUNCTION utility.set_current_timestamp_updated_at();
+
+
+--
+-- Name: rps_participants handle_gaming_rps_participants_updated_at; Type: TRIGGER; Schema: gaming; Owner: -
+--
+
+CREATE TRIGGER handle_gaming_rps_participants_updated_at BEFORE UPDATE ON gaming.rps_participants FOR EACH ROW EXECUTE FUNCTION utility.set_current_timestamp_updated_at();
 
 
 --
@@ -1367,6 +1805,70 @@ ALTER TABLE ONLY billing.stripe_subscriptions
 
 
 --
+-- Name: friendships friendships_invited_player_id_fkey; Type: FK CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.friendships
+    ADD CONSTRAINT friendships_invited_player_id_fkey FOREIGN KEY (invited_player_id) REFERENCES gaming.players(id);
+
+
+--
+-- Name: friendships friendships_requesting_player_id_fkey; Type: FK CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.friendships
+    ADD CONSTRAINT friendships_requesting_player_id_fkey FOREIGN KEY (requesting_player_id) REFERENCES gaming.players(id);
+
+
+--
+-- Name: players players_user_id_fkey; Type: FK CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.players
+    ADD CONSTRAINT players_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: rps_game_invites rps_game_invites_game_id_fkey; Type: FK CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_game_invites
+    ADD CONSTRAINT rps_game_invites_game_id_fkey FOREIGN KEY (game_id) REFERENCES gaming.rps_games(id);
+
+
+--
+-- Name: rps_game_invites rps_game_invites_invited_player_id_fkey; Type: FK CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_game_invites
+    ADD CONSTRAINT rps_game_invites_invited_player_id_fkey FOREIGN KEY (invited_player_id) REFERENCES gaming.players(id);
+
+
+--
+-- Name: rps_game_invites rps_game_invites_requesting_player_id_fkey; Type: FK CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_game_invites
+    ADD CONSTRAINT rps_game_invites_requesting_player_id_fkey FOREIGN KEY (requesting_player_id) REFERENCES gaming.players(id);
+
+
+--
+-- Name: rps_participants rps_participants_game_id_fkey; Type: FK CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_participants
+    ADD CONSTRAINT rps_participants_game_id_fkey FOREIGN KEY (game_id) REFERENCES gaming.rps_games(id);
+
+
+--
+-- Name: rps_participants rps_participants_player_id_fkey; Type: FK CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_participants
+    ADD CONSTRAINT rps_participants_player_id_fkey FOREIGN KEY (player_id) REFERENCES gaming.players(id);
+
+
+--
 -- Name: notifications fk_notifications_team; Type: FK CONSTRAINT; Schema: messaging; Owner: -
 --
 
@@ -1522,7 +2024,7 @@ ALTER TABLE ONLY task.tasks
 -- PostgreSQL database dump complete
 --
 
-\unrestrict DdGXYZkZCIBgwXAeaofQXrBxWqOl0EQbfHS7JeCppIbcd2eScxaQGAOgnoZ1QUY
+\unrestrict 2T6rGWo6wnaoELxIAwzg8vR5u1X80ru6Cu1taactSYK1flxMlwVMoRrfNfE4gLm
 
 
 --
@@ -1551,4 +2053,10 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20250505071914'),
     ('20250523035749'),
     ('20250717035204'),
-    ('20250717035205');
+    ('20250717035205'),
+    ('20251124084842'),
+    ('20251124084843'),
+    ('20251124090932'),
+    ('20260109174503'),
+    ('20260112091339'),
+    ('20260112224708');

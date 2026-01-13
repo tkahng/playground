@@ -1,4 +1,4 @@
-package apis_test
+package apis
 
 import (
 	"bytes"
@@ -16,7 +16,6 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humachi"
 	"github.com/danielgtaylor/huma/v2/humatest"
 	"github.com/go-chi/chi/v5"
-	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
@@ -25,7 +24,7 @@ import (
 
 type TestApi struct {
 	TestApi humatest.TestAPI
-	Api     apis.Api
+	Api     Api
 	App     *core.BaseApp
 	Cfg     *conf.EnvConfig
 	Router  http.Handler
@@ -36,7 +35,7 @@ func SetupApi(t testing.TB, ctx context.Context, db database.Dbx) *TestApi {
 	cfg := conf.ZeroEnvConfig()
 	app := core.NewTestBaseApp(cfg, db)
 	router, api := NewHumaApi(t, app)
-	appApi := apis.NewAppApi(app, router, api)
+	appApi := NewAppApi(app, router, api)
 	appApi.RegisterRoutes()
 	testApi := &TestApi{
 		TestApi: api,
@@ -70,7 +69,7 @@ func NewHumaApi(tb testing.TB, app core.App, configs ...huma.Config) (chi.Router
 		})
 	}
 	r := chi.NewMux()
-	apis.AddBaseMiddlewares(app, r)
+	AddBaseMiddlewares(app, r)
 	return r, humatest.Wrap(tb, humachi.New(r, configs[0]))
 }
 

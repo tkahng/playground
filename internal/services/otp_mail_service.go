@@ -17,6 +17,7 @@ import (
 )
 
 type OtpMailService interface {
+	SendRpsGameInvitationEmail(ctx context.Context, params *workers.RpsGameInvitationJobArgs) error
 	SendOtpEmail(ctx context.Context, emailType mailer.EmailType, userId uuid.UUID) error
 	SendTeamInvitationEmail(ctx context.Context, params *workers.TeamInvitationJobArgs) error
 }
@@ -192,6 +193,46 @@ func (i *DbOtpMailService) SendTeamInvitationEmail(ctx context.Context, params *
 		From:    i.options.SenderAddress,
 		To:      params.Email,
 		Subject: fmt.Sprintf("Invitation to join %s", params.TeamName),
+		Body:    body,
+	}
+	return i.mail.Send(message)
+}
+func (i *DbOtpMailService) CreateRpsGameUrl(tokenhash string) (string, error) {
+	path, err := mailer.GetPathParams(
+		"/rock-paper-scissors",
+		tokenhash,
+		"",
+		"",
+	)
+	if err != nil {
+		return "", err
+	}
+	appUrl, err := url.Parse(i.options.AppUrl)
+	if err != nil {
+		return "", err
+	}
+	return appUrl.ResolveReference(path).String(), nil
+}
+
+// SendRpsGameInvitationEmail implements [OtpMailService].
+func (i *DbOtpMailService) SendRpsGameInvitationEmail(ctx context.Context, params *workers.RpsGameInvitationJobArgs) error {
+	if params == nil {
+		return fmt.Errorf("params is nil")
+	}
+	if params.Email == "" {
+		return fmt.Errorf("email is empty")
+	}
+
+	confUrl, err := i.CreateRpsGameUrl(params.TokenHash)
+	if err != nil {
+		return err
+	}
+	params.ConfirmationURL = confUrl
+	body := mailer.GenerateBody("body", string(mailer.DefaultRpsGameInviteMail), params)
+	message := &mailer.Message{
+		From:    i.options.SenderAddress,
+		To:      params.Email,
+		Subject: "Invitation to play a game of Rock Paper Scissors",
 		Body:    body,
 	}
 	return i.mail.Send(message)

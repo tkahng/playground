@@ -61,6 +61,16 @@ type BaseApp struct {
 	sseManager sse.Manager
 
 	eventManager events.EventManager
+
+	rpsGame services.RpsGameService
+}
+
+// RpsGame implements [App].
+func (b *BaseApp) RpsGame() services.RpsGameService {
+	if b.rpsGame == nil {
+		panic("rps game not initialized")
+	}
+	return b.rpsGame
 }
 
 func (b *BaseApp) Encrypt() services.Encryptor {
@@ -299,7 +309,7 @@ func NewApp(config *conf.EnvConfig) *BaseApp {
 
 	payment := services.NewPaymentClient(config.StripeConfig)
 
-	mailer := mailer.NewResendMailer(config.ResendConfig)
+	mailer := mailer.NewSmtpMailer(config.SmtpConfig)
 
 	logger := logger.GetDefaultLogger()
 
