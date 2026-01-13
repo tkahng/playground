@@ -16,6 +16,21 @@ type DBGisStoreDecorator struct {
 	FindCountryByPointFunc  func(ctx context.Context, point *geom.Point) (*models.Country, error)
 }
 
+// CreateManyPopulatedPlaces implements [GisStore].
+func (d *DBGisStoreDecorator) CreateManyPopulatedPlaces(ctx context.Context, places []*models.PopulatedPlace) error {
+	panic("unimplemented")
+}
+
+// FindPopulatedPlaceByPoint implements [GisStore].
+func (d *DBGisStoreDecorator) FindPopulatedPlaceByPoint(ctx context.Context, point *geom.Point) (*models.PopulatedPlace, error) {
+	panic("unimplemented")
+}
+
+// CreatePopulatedPlace implements [GisStore].
+func (d *DBGisStoreDecorator) CreatePopulatedPlace(ctx context.Context, place *models.PopulatedPlace) (*models.PopulatedPlace, error) {
+	panic("unimplemented")
+}
+
 func NewDBGisStoreDecorator(db database.Dbx) *DBGisStoreDecorator {
 	return &DBGisStoreDecorator{
 		Delegate: NewGisStore(db),

@@ -97,6 +97,6 @@ func LoadPopulatedPlacesToDB(t *testing.T, db database.Dbx) {
 	res := test.ReadFileFromDataFs(t, "data/populated_places.json")
 	countries := MarshalPopulatedPlaces(t, res)
 	gisStore := NewGisStore(db)
-	err := gisStore.CreateManyPlaces(t.Context(), countries)
+	err := gisStore.CreateManyPopulatedPlaces(t.Context(), countries)
 	require.NoError(t, err)
 }
