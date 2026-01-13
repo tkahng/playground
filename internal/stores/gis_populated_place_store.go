@@ -11,7 +11,7 @@ import (
 	"github.com/twpayne/go-geom"
 )
 
-func (s *DBGisStore) CreateManyPlaces(ctx context.Context, places []*models.PopulatedPlace) error {
+func (s *DBGisStore) CreateManyPopulatedPlaces(ctx context.Context, places []*models.PopulatedPlace) error {
 	res, err := repository.PopulatedPlace.PostExec(ctx, s.db, mapper.Map(places, func(t *models.PopulatedPlace) models.PopulatedPlace {
 		return *t
 	}))

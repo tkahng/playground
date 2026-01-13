@@ -16,7 +16,7 @@ func TestFindPopulatedPlaceByPoint(t *testing.T) {
 
 		res := test.ReadFileFromDataFs(t, "data/populated_places.json")
 		countries := MarshalPopulatedPlaces(t, res)
-		err := gisStore.CreateManyPlaces(ctx, countries)
+		err := gisStore.CreateManyPopulatedPlaces(ctx, countries)
 		require.NoError(t, err)
 
 		var seoul, pyongyang, jeju *models.PopulatedPlace
