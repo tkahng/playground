@@ -10,6 +10,7 @@ import { PaginationState, Updater } from "@tanstack/react-table";
 import { CheckCircle, XCircle } from "lucide-react";
 import { useSearchParams } from "react-router";
 import { InviteTeamMemberDialog } from "./invite-team-member-dialog";
+import { CenteredSpinner } from "@/components/centered-spinner";
 
 export default function TeamMembersSettingPage() {
   const { user } = useAuthProvider();
@@ -57,7 +58,7 @@ export default function TeamMembersSettingPage() {
   });
 
   if (isPending) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
 
   if (isError) {

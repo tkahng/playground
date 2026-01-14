@@ -33,9 +33,9 @@ export default function PricingTeam({ products, subscription }: Props) {
   const intervals = Array.from(
     new Set(
       products.flatMap((product) =>
-        product?.prices?.map((price) => price?.interval)
-      )
-    )
+        product?.prices?.map((price) => price?.interval),
+      ),
+    ),
   );
 
   const [billingInterval, setBillingInterval] = useState<BillingInterval>(tab);
@@ -73,7 +73,7 @@ export default function PricingTeam({ products, subscription }: Props) {
           <h1 className="text-4xl font-extrabold text-primary sm:text-center sm:text-6xl">
             Pricing Plans
           </h1>
-          <p className="max-w-2xl m-auto mt-5 text-xl text-secondary-foreground sm:text-center sm:text-2xl">
+          <div className="max-w-2xl m-auto mt-5 text-xl text-secondary-foreground sm:text-center sm:text-2xl">
             {/* <h2 className="font-extrabold">
               Upgrade your team by subscribing to one of our pricing plans.
             </h2> */}
@@ -90,7 +90,7 @@ export default function PricingTeam({ products, subscription }: Props) {
               Click here to learn how to use test credit cards.
             </a>
             <br />
-          </p>
+          </div>
           <div className="relative self-center mt-6 bg-primary-foreground rounded-lg p-0.5 flex sm:mt-8 border">
             {intervals.includes("month") && (
               <button
@@ -123,7 +123,7 @@ export default function PricingTeam({ products, subscription }: Props) {
         <div className="mt-12 space-y-0 sm:mt-16 flex flex-wrap justify-center gap-6 lg:max-w-4xl lg:mx-auto xl:max-w-none xl:mx-0">
           {products.map((product) => {
             const price = product?.prices?.find(
-              (price) => price.interval === billingInterval
+              (price) => price.interval === billingInterval,
             );
             if (!price) return null;
             const priceString = new Intl.NumberFormat("en-US", {
@@ -143,7 +143,7 @@ export default function PricingTeam({ products, subscription }: Props) {
                   },
                   "flex-1", // This makes the flex item grow to fill the space
                   "basis-1/3", // Assuming you want each card to take up roughly a third of the container's width
-                  "max-w-xs" // Sets a maximum width to the cards to prevent them from getting too large
+                  "max-w-xs", // Sets a maximum width to the cards to prevent them from getting too large
                 )}
               >
                 <div className="p-6">
@@ -179,7 +179,7 @@ export default function PricingTeam({ products, subscription }: Props) {
                           search:
                             "redirect_to=" +
                             encodeURIComponent(
-                              location.pathname + location.search
+                              location.pathname + location.search,
                             ),
                         }}
                       >

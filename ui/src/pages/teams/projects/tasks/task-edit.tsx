@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -175,7 +176,7 @@ export default function TaskEdit() {
     mutation.mutate(values);
   };
   if (isTaskLoading || isMembersLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isTaskError) {
     const err = GetError(taskError);
@@ -270,7 +271,7 @@ export default function TaskEdit() {
                               variant={"outline"}
                               className={cn(
                                 "w-[240px] pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
+                                !field.value && "text-muted-foreground",
                               )}
                             >
                               {field.value ? (
@@ -319,7 +320,7 @@ export default function TaskEdit() {
                               role="combobox"
                               className={cn(
                                 "w-[200px] justify-between",
-                                !field.value && "text-muted-foreground"
+                                !field.value && "text-muted-foreground",
                               )}
                             >
                               {field.value
@@ -353,7 +354,9 @@ export default function TaskEdit() {
                                   <Check
                                     className={cn(
                                       "ml-auto",
-                                      !field.value ? "opacity-100" : "opacity-0"
+                                      !field.value
+                                        ? "opacity-100"
+                                        : "opacity-0",
                                     )}
                                   />
                                 </CommandItem>
@@ -373,7 +376,7 @@ export default function TaskEdit() {
                                         "ml-auto",
                                         member.id === field.value
                                           ? "opacity-100"
-                                          : "opacity-0"
+                                          : "opacity-0",
                                       )}
                                     />
                                   </CommandItem>

@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { PlaygroundLandingHeader } from "@/components/playground-landing-header";
 import { PlaygroundMinimalFooter } from "@/components/playground-minimal-footer";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,7 @@ export default function PaymentSuccessPage() {
     },
   });
   if (isPending) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
 
   if (isError) {

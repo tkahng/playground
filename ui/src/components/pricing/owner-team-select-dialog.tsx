@@ -37,6 +37,7 @@ import { JSX, PropsWithChildren, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router";
 import { z } from "zod";
+import { CenteredSpinner } from "../centered-spinner";
 const formSchema = z.object({
   teamSlug: z.string().nullable(),
 });
@@ -67,7 +68,7 @@ export function OwnerTeamSelectDialog({
     console.log(values);
   };
   if (teamsLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner/>;
   }
   if (teamsError) {
     return <div>Error: {teamsError?.message}</div>;

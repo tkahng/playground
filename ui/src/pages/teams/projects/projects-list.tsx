@@ -7,6 +7,7 @@ import { PaginationState, Updater } from "@tanstack/react-table";
 import { NavLink, useSearchParams } from "react-router";
 import { CreateProjectAiDialog } from "./create-project-ai-dialog";
 import { CreateProjectDialog } from "./create-project-dialog";
+import { CenteredSpinner } from "@/components/centered-spinner";
 
 export default function ProjectListPage() {
   const { user } = useAuthProvider();
@@ -53,7 +54,7 @@ export default function ProjectListPage() {
   //   return <div>Error: {teamError.message}</div>;
   // }
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isError) {
     return <div>Error: {error.message}</div>;

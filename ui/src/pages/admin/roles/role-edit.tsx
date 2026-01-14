@@ -29,6 +29,7 @@ import { Link, useNavigate, useParams } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 import { RoleDeleteButton } from "./role-delete-button";
+import { CenteredSpinner } from "@/components/centered-spinner";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -86,7 +87,7 @@ export default function RoleEdit() {
       return deleteRolePermission(
         user!.tokens.access_token,
         roleId!,
-        permissionId
+        permissionId,
       );
     },
     onSuccess: () => {
@@ -120,7 +121,7 @@ export default function RoleEdit() {
   if (!user) {
     navigate(RouteMap.SIGNIN);
   }
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <CenteredSpinner />;
   if (error) return <p>Error: {error.message}</p>;
   if (!data) return <p>Role not found</p>;
 

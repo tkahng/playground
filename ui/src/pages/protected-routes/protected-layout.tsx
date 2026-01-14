@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { permissionsList } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
@@ -11,7 +12,7 @@ export default function ProtectedRouteLayout() {
     },
   });
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
 
   if (isError) {

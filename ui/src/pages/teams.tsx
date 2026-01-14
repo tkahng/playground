@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { CreateTeamDialog } from "@/components/create-team-dialog";
 import { CreateTeamDisabledTooltip } from "@/components/create-team-disabled-tooltip";
 import { DataTable } from "@/components/data-table";
@@ -51,7 +52,7 @@ export default function TeamSelect() {
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isError) {
     const err = GetError(error);

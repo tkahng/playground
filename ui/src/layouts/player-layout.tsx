@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -79,7 +80,7 @@ export default function PlayerLayout() {
     }
   }
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (!player) {
     return (

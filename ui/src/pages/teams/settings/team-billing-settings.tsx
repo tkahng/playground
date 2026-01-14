@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { teamSettingLinks } from "@/components/links";
 import TeamCustomerForm from "@/components/team-customer-form";
@@ -27,7 +28,7 @@ export default function TeamBillingSettingPage() {
     retry: false,
   });
   if (isPending) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isError) {
     return <div>Error: {error.message}</div>;

@@ -19,6 +19,7 @@ import { ChevronLeft, Trash } from "lucide-react";
 import { Link, useParams } from "react-router";
 import { toast } from "sonner";
 import { ProductPermissionsDialog } from "./product-permissions-dialog";
+import { CenteredSpinner } from "@/components/centered-spinner";
 
 export default function ProductEditPage() {
   const { user } = useAuthProvider();
@@ -43,7 +44,7 @@ export default function ProductEditPage() {
       return adminStripeProductPermissionsDelete(
         user.tokens.access_token,
         productId,
-        permissionId
+        permissionId,
       );
     },
     onSuccess: async () => {
@@ -55,7 +56,7 @@ export default function ProductEditPage() {
     },
   });
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isError) {
     return (
