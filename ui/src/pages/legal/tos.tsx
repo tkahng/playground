@@ -14,7 +14,7 @@ export default function TermsOfServicePage() {
         <Card>
           <CardHeader>
             <CardTitle>NexusAI Terms and Conditions</CardTitle>
-            <CardDescription>Last updated: Dec 10, 2025</CardDescription>
+            <CardDescription>Last updated: Dec 10, 2026</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <p>
