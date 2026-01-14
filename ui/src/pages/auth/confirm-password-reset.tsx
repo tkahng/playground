@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { z } from "zod";
+import { CenteredSpinner } from "@/components/centered-spinner";
 
 export const resetPasswordSchema = z.object({
   password: z.string().min(8),
@@ -152,7 +153,7 @@ export default function ResetPasswordPage() {
   }, [isCheckPasswordResetError, checkPasswordResetError]);
 
   if (isCheckPasswordResetPending) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isSuccess) {
     return (

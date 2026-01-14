@@ -28,6 +28,7 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { CreateTeamDialog } from "./create-team-dialog";
+import { CenteredSpinner } from "./centered-spinner";
 
 export default function TeamSwitcher() {
   const { teamSlug } = useParams<{ teamSlug: string }>();
@@ -46,7 +47,7 @@ export default function TeamSwitcher() {
     return <></>;
   }
   if (teamsLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (teamsIsError) {
     return <div>Error: {teamsError?.message}</div>;

@@ -21,6 +21,7 @@ import { useUpdateMemberLastSelectedAt } from "@/lib/mutation";
 import { Team } from "@/schema.types";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
+import { CenteredSpinner } from "../centered-spinner";
 
 export type TeamSelectProps = {
   onTeamSelect: (team: Team) => void;
@@ -36,7 +37,7 @@ export function TeamSelect({ onTeamSelect, props }: TeamSelectProps) {
   } = useUserTeamMembers({ sort_by: "last_selected_at", sort_order: "desc" });
   const mutation = useUpdateMemberLastSelectedAt();
   if (teamsLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (teamsError) {
     return <div>Error: {teamsError?.message}</div>;

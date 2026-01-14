@@ -7,6 +7,7 @@ import { PaginationState, Updater } from "@tanstack/react-table";
 import { CheckCircle, Circle } from "lucide-react";
 import { useSearchParams } from "react-router";
 import { TeamNotificationActionDropdown } from "./team-notifications-action";
+import { CenteredSpinner } from "@/components/centered-spinner";
 export default function TeamNotifications() {
   const { user } = useAuthProvider();
   const { teamMember, team } = useTeam();
@@ -43,7 +44,7 @@ export default function TeamNotifications() {
         user.tokens.access_token,
         teamMember.id,
         pageIndex,
-        pageSize
+        pageSize,
       );
       const data = notifications.data?.map((n) => {
         const payload = JSON.parse(n.payload) as {
@@ -65,7 +66,7 @@ export default function TeamNotifications() {
     },
   });
   if (isPending) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
 
   if (isError) {

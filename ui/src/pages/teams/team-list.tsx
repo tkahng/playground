@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { CreateTeamDialog } from "@/components/create-team-dialog";
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
@@ -49,7 +50,7 @@ export default function TeamListPage() {
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isError) {
     return <div>Error: {error?.message}</div>;

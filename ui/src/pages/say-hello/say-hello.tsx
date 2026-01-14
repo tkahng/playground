@@ -13,11 +13,12 @@ import { useEffect, useReducer } from "react";
 import TimeAgo from "react-timeago";
 import { toast } from "sonner";
 import { TopCountryCard } from "./top-country";
+import { CenteredSpinner } from "@/components/centered-spinner";
 
 const maxItems = 3;
 function messageReducer(
   state: UserReactionsStatsWithReactions,
-  action: UserReactionsStatsWithReactions
+  action: UserReactionsStatsWithReactions,
 ) {
   return {
     ...state,
@@ -45,7 +46,7 @@ export default function SayHelloPage() {
     (evt) => {
       updateStats(JSON.parse(evt.data)?.user_reaction_stats);
     },
-    [updateStats]
+    [updateStats],
   );
   const { data: statsData, isLoading: isStatsLoading } = useQuery({
     queryKey: ["user-reactions-stats"],
@@ -72,7 +73,7 @@ export default function SayHelloPage() {
     mutation.mutate();
   };
   if (isStatsLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   return (
     <div className="flex flex-col mx-auto max-w-4xl py-6">

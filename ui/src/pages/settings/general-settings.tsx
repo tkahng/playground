@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { settingsSidebarLinks } from "@/components/links";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,7 @@ export default function AccountSettingsPage() {
   const { user } = useAuthProvider();
   const { data, isLoading, isError, error } = useMeQuery();
   const credentialsAccount = data?.accounts?.find(
-    (account) => account.provider === "credentials"
+    (account) => account.provider === "credentials",
   );
   const queryClient = useQueryClient();
   const mutation = useMutation({
@@ -96,7 +97,7 @@ export default function AccountSettingsPage() {
       await resetPassword(
         user.tokens.access_token,
         formData.currentPassword,
-        formData.newPassword
+        formData.newPassword,
       );
       toast.success("Password reset successfully");
     },
@@ -162,7 +163,7 @@ export default function AccountSettingsPage() {
     },
   });
   const onResetPasswordSubmut = (
-    values: z.infer<typeof resetPasswordSchema>
+    values: z.infer<typeof resetPasswordSchema>,
   ) => {
     resetPasswordMutation.mutate(values);
   };
@@ -174,7 +175,7 @@ export default function AccountSettingsPage() {
       name: data?.name || "",
     });
   }, [data, form]);
-  if (isLoading) return <p>Loading...</p>;
+  if (isLoading) return <CenteredSpinner />;
   if (isError) return <p>Error: {error.message}</p>;
   if (!data) return <p>User not found</p>;
   return (

@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { DataTable } from "@/components/data-table";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { adminStripeSubscriptions } from "@/lib/api";
@@ -39,7 +40,7 @@ export default function SubscriptionsListPage() {
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isError) {
     return <div>Error: {error.message}</div>;
