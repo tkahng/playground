@@ -1,0 +1,312 @@
+package repository
+
+import (
+	"context"
+	"slices"
+	"testing"
+
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/shared"
+	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/tools/types"
+)
+
+func TestAuth_UserAccountRbac(t *testing.T) {
+	t.Parallel()
+	database.WithNewTestTx(t, func(ctx context.Context, dbx database.Dbx) {
+		var (
+			roles             *[]*models.Role                = &[]*models.Role{}
+			permissions       *[]*models.Permission          = &[]*models.Permission{}
+			roleNameMap       *map[string]*models.Role       = &map[string]*models.Role{}
+			permissionNameMap *map[string]*models.Permission = &map[string]*models.Permission{}
+		)
+
+		// init rbac
+		t.Run("initiating rbac. should not panic", func(t *testing.T) {
+			CreateRolesAndPermissions(t, ctx, dbx, shared.KnownRoleNamesPermissionsMap)
+		})
+
+		// find all 4 roles and 4 permissions
+		// map role names to roles, map permission names to permissions
+		t.Run("find all 4 roles and 4 permissions", func(t *testing.T) {
+			// find all roles
+			*roles = MustFindWithOptionsCtx(t, t.Context(), Role, dbx)
+
+			tempRoleNameMap := *roleNameMap
+			// map role names to roles
+			for _, role := range *roles {
+				tempRoleNameMap[role.Name] = role
+			}
+			// update the roleNameMap
+			*roleNameMap = tempRoleNameMap
+			// get the number of keys in the roleNameMap
+			if len(tempRoleNameMap) != 4 {
+				t.Errorf("expected 4 roles, got %d", len(tempRoleNameMap))
+			}
+
+			// find all permissions
+			*permissions = MustFindWithOptionsCtx(t, t.Context(), Permission, dbx)
+
+			tempPermissionNameMap := *permissionNameMap
+			// map permission names to permissions
+			for _, permission := range *permissions {
+				tempPermissionNameMap[permission.Name] = permission
+			}
+			// update the permissionNameMap
+			*permissionNameMap = tempPermissionNameMap
+
+			if len(tempPermissionNameMap) != 4 {
+				t.Errorf("expected 4 permissions, got %d", len(tempPermissionNameMap))
+			}
+		})
+
+		// populate all roles.permissions relation by querying the permission's roles names
+		// compare the roles.permissions relation with the knownRoleNamesPermissionsMap
+		t.Run("find each role's permissions by querying the permission's roles names, then assign them to the role's permissions relation field.", func(t *testing.T) {
+			// iterate over all roles
+			for _, role := range *roles {
+				// find each role's permissions by querying the permission's roles names
+				rolePermissions := MustFindWithOptionsCtx(
+					t,
+					t.Context(),
+					Permission,
+					dbx,
+					WithWhere(
+						&map[string]any{
+							"roles": map[string]any{
+								"name": map[string]any{
+									"_eq": role.Name,
+								},
+							},
+						},
+					),
+				)
+				// assigned the found permissions to the role
+				role.Permissions = rolePermissions
+			}
+			// check each role has at least one permission
+			for _, role := range *roles {
+				if len(role.Permissions) == 0 {
+					t.Fatalf("expected more than one permission per role, got 0")
+				}
+			}
+		})
+
+		// verify each role has the correct number and specific permissions
+		t.Run("verify each role has the correct number of permissions based on knownRoleNamesPermissionsMap", func(t *testing.T) {
+			tempRoleNameMap := *roleNameMap
+			for roleName, permissionNames := range shared.KnownRoleNamesPermissionsMap {
+				if role, ok := tempRoleNameMap[roleName]; ok {
+					if len(role.Permissions) != len(permissionNames) {
+						t.Errorf("expected role %s to have %d permissions, got %d", role.Name, len(permissionNames), len(role.Permissions))
+					}
+					for _, permissionName := range permissionNames {
+						if !slices.ContainsFunc(role.Permissions, func(permission *models.Permission) bool {
+							return permission.Name == permissionName
+						}) {
+							t.Errorf("expected role %s to have permission %s", role.Name, permissionName)
+						}
+					}
+				} else {
+					t.Fatalf("expected role %s to exist", roleName)
+				}
+			}
+		})
+
+		t.Run("find roles with basic permission", func(t *testing.T) {
+			// find roles with basic permission.
+			// there should be 4, each role should have basic permission
+			rolesWithBasicPermission := MustFindWithOptionsCtx(t, t.Context(), Role, dbx,
+				WithWhere(
+					&map[string]any{
+						"permissions": map[string]any{
+							"name": map[string]any{
+								"_eq": "basic",
+							},
+						},
+					},
+				))
+			// should be 4
+			if len(rolesWithBasicPermission) != 4 {
+				t.Errorf("expected 4 roles with basic permissions, got %d", len(rolesWithBasicPermission))
+			}
+			// every role name should be known
+			test.TestSliceEveryFunc(t, "every role name should be known", rolesWithBasicPermission, func(role *models.Role) bool {
+				return slices.Contains(shared.KnownRoleNames, role.Name)
+			})
+			// every role name should be unique
+			test.TestSliceEveryUniqueFunc(t, "all role names should be unique", rolesWithBasicPermission, func(role *models.Role) string {
+				return role.Name
+			})
+		})
+		t.Run("roles with advanced permission or with names basic and pro", func(t *testing.T) {
+			// roles with advanced permission and with names in basic and pro
+			//
+			// 2 roles with advanced permission(admin and advanced)
+			// 2 roles with names in basic and pro
+			basicProNames := []string{"basic", "pro"}
+			permAdvNamesInBasicProRoles := MustFindWithOptionsCtx(t, t.Context(), Role, dbx,
+				WithWhere(
+					&map[string]any{
+						"_or": []map[string]any{
+							{
+								"permissions": map[string]any{
+									"name": map[string]any{
+										"_eq": "advanced",
+									},
+								},
+							},
+							{
+								"name": map[string]any{
+									"_in": basicProNames,
+								},
+							},
+						},
+					},
+				),
+			)
+			// total 4
+			if len(permAdvNamesInBasicProRoles) != 4 {
+				t.Errorf("expected 4 roles with permissions, got %d", len(permAdvNamesInBasicProRoles))
+			}
+
+			var rolesWithAdvPerms, rolesWithBasicOrProName []*models.Role
+			for _, role := range permAdvNamesInBasicProRoles {
+				if slices.Contains(basicProNames, role.Name) {
+					rolesWithBasicOrProName = append(rolesWithBasicOrProName, role)
+				} else {
+					rolesWithAdvPerms = append(rolesWithAdvPerms, role)
+				}
+			}
+
+			if len(rolesWithBasicOrProName) != 2 {
+				t.Errorf("expected 2 roles of name basic or pro, got %d roles, names %v\n", len(rolesWithBasicOrProName), rolesWithBasicOrProName)
+			}
+			if len(rolesWithAdvPerms) != 2 {
+				t.Errorf("expected 2 roles with advanced permissions, got %d roles, names %v\n", len(rolesWithAdvPerms), rolesWithAdvPerms)
+			}
+		})
+	})
+}
+
+func TestMustCreateUserAndAccount(t *testing.T) {
+	t.Parallel()
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		tests := []struct {
+			name string // description of this test case
+			// Named input parameters for target function.
+			db        database.Dbx
+			fns       []func(*models.User, *models.UserAccount)
+			predicate func(*models.User, *models.UserAccount)
+		}{
+			{
+				name: "Create user and credential account",
+				db:   db,
+				fns: []func(user *models.User, account *models.UserAccount){
+					func(user *models.User, account *models.UserAccount) {
+						user.Name = types.Pointer("credential")
+						account.Type = models.ProviderTypeCredentials
+						account.Provider = models.ProvidersCredentials
+					},
+				},
+				predicate: func(user *models.User, account *models.UserAccount) {
+					if user == nil {
+						t.Errorf("expected user, got nil")
+					}
+					if account == nil {
+						t.Errorf("expected account, got nil")
+					}
+					if *user.Name != "credential" {
+						t.Errorf("expected user name to be credential, got %s", *user.Name)
+					}
+					if account.Type != models.ProviderTypeCredentials {
+						t.Errorf("expected account type to be credentials, got %s", account.Type)
+					}
+					if account.Provider != models.ProvidersCredentials {
+						t.Errorf("expected account provider to be credentials, got %s", account.Provider)
+					}
+				},
+			},
+			{
+				name: "create google account",
+				db:   db,
+				fns: []func(user *models.User, account *models.UserAccount){
+					func(user *models.User, account *models.UserAccount) {
+						user.Name = types.Pointer("google")
+						account.Type = models.ProviderTypeOAuth
+						account.Provider = models.ProvidersGoogle
+					},
+				},
+				predicate: func(user *models.User, account *models.UserAccount) {
+					if user == nil {
+						t.Errorf("expected user, got nil")
+					}
+					if account == nil {
+						t.Errorf("expected account, got nil")
+					}
+					if *user.Name != "google" {
+						t.Errorf("expected user name to be google, got %s", *user.Name)
+					}
+					if account.Type != models.ProviderTypeOAuth {
+						t.Errorf("expected account type to be oauth, got %s", account.Type)
+					}
+					if account.Provider != models.ProvidersGoogle {
+						t.Errorf("expected account provider to be google, got %s", account.Provider)
+					}
+				},
+			},
+			{
+				name: "create github account",
+				db:   db,
+				fns: []func(user *models.User, account *models.UserAccount){
+					func(user *models.User, account *models.UserAccount) {
+						user.Name = types.Pointer("github")
+						account.Type = models.ProviderTypeOAuth
+						account.Provider = models.ProvidersGithub
+					},
+				},
+				predicate: func(user *models.User, account *models.UserAccount) {
+					if user == nil {
+						t.Errorf("expected user, got nil")
+					}
+					if account == nil {
+						t.Errorf("expected account, got nil")
+					}
+					if *user.Name != "github" {
+						t.Errorf("expected user name to be github, got %s", *user.Name)
+					}
+					if account.Type != models.ProviderTypeOAuth {
+						t.Errorf("expected account type to be oauth, got %s", account.Type)
+					}
+					if account.Provider != models.ProvidersGithub {
+						t.Errorf("expected account provider to be github, got %s", account.Provider)
+					}
+				},
+			},
+		}
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				user, account := MustCreateUserAndAccount(t, ctx, tt.db, tt.fns...)
+				tt.predicate(user, account)
+			})
+		}
+	})
+}
+
+func TestMustCreateUserAndAccount_Randomize(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		var count int64 = 100
+		for range count {
+			MustCreateUserAndAccount(t, ctx, db)
+		}
+		userCount := MustCountAllCtx(t, ctx, User, db, &map[string]any{})
+		if userCount != count {
+			t.Errorf("expected at least 10 users, got %d", userCount)
+		}
+		countAcc := MustCountAllCtx(t, ctx, User, db, &map[string]any{})
+		if countAcc != count {
+			t.Errorf("expected at least 10 accounts, got %d", countAcc)
+		}
+	})
+}

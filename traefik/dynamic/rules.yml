@@ -1,0 +1,34 @@
+http:
+  routers:
+    backend:
+      rule: "PathPrefix(`/api`)"
+      service: backend
+      entryPoints:
+        - web
+      priority: 100 # Add this
+      middlewares:
+        - cloudflarewarp
+
+    frontend:
+      rule: "PathPrefix(`/`)"
+      service: frontend
+      entryPoints:
+        - web
+      priority: 1 # Add this
+
+  middlewares:
+    cloudflarewarp:
+      plugin:
+        cloudflarewarp:
+          disableDefault: false
+
+  services:
+    backend:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:8080"
+
+    frontend:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:5173"

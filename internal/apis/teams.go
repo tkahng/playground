@@ -1,0 +1,424 @@
+package apis
+
+import (
+	"context"
+	"fmt"
+	"log/slog"
+	"net/http"
+	"regexp"
+	"time"
+
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/middleware"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/shared"
+	"github.com/tkahng/playground/internal/tools/mapper"
+)
+
+type TeamInfo struct {
+	User   ApiUser    `json:"user"`
+	Team   Team       `json:"team"`
+	Member TeamMember `json:"member"`
+}
+
+// TeamMemberRole
+// enum:"owner,member,guest"
+type TeamMemberRole string
+
+func (role TeamMemberRole) String() string {
+	return string(role)
+}
+
+const (
+	TeamMemberRoleOwner  TeamMemberRole = "owner"
+	TeamMemberRoleMember TeamMemberRole = "member"
+	TeamMemberRoleGuest  TeamMemberRole = "guest"
+)
+
+type Team struct {
+	_              struct{}        `db:"teams" json:"-"`
+	ID             uuid.UUID       `db:"id" json:"id"`
+	Name           string          `db:"name" json:"name"`
+	Slug           string          `db:"slug" json:"slug"`
+	CreatedAt      time.Time       `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time       `db:"updated_at" json:"updated_at"`
+	Members        []*TeamMember   `db:"members" src:"id" dest:"team_id" table:"team_members" json:"members,omitempty"`
+	StripeCustomer *StripeCustomer `db:"stripe_customer" src:"id" dest:"team_id" table:"stripe_customers" json:"stripe_customer,omitempty" required:"false"`
+}
+type TeamWithMember struct {
+	Team
+	Member *TeamMember `json:"member,omitempty"`
+}
+
+func fromTeamModel(team *models.Team) *Team {
+	if team == nil {
+		return nil
+	}
+	return &Team{
+		ID:        team.ID,
+		Name:      team.Name,
+		Slug:      team.Slug,
+		CreatedAt: team.CreatedAt,
+		UpdatedAt: team.UpdatedAt,
+		Members:   mapper.Map(team.Members, fromTeamMemberModel),
+	}
+}
+
+var (
+	IsAlphaNumericAndDash *regexp.Regexp = regexp.MustCompile("^[A-Za-z0-9-]+$")
+)
+
+type CreateTeamInput struct {
+	Name string `json:"name" required:"true" minLength:"3"`
+	Slug string `json:"slug" required:"false" minLength:"3" regex:"^[A-Za-z0-9-]+$"`
+}
+
+type TeamOutput struct {
+	Body *Team `json:"body"`
+}
+type TeamWithMemberOutput struct {
+	Body *TeamWithMember `json:"body"`
+}
+type TeamInfoOutput struct {
+	Body *TeamInfo `json:"body"`
+}
+
+func (api *Api) CreateTeamBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "create-team",
+			Method:      http.MethodPost,
+			Path:        "/teams",
+			Summary:     "create-team",
+			Description: "create a new team",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.EmailVerifiedMiddleware(),
+			),
+		},
+		func(ctx context.Context, input *struct {
+			Body CreateTeamInput `json:"body" required:"true"`
+		}) (*TeamWithMemberOutput, error) {
+			if input.Body.Slug != "" {
+				if !IsAlphaNumericAndDash.MatchString(input.Body.Slug) {
+					return nil, huma.Error400BadRequest("invalid slug")
+				}
+			}
+			if ok, err := api.App().Adapter().TeamGroup().CheckTeamSlug(ctx, input.Body.Slug); !ok {
+				if err != nil {
+					slog.ErrorContext(
+						ctx,
+						"error occurred while checking slug",
+					)
+					return nil, fmt.Errorf("error occurred while checking slug")
+				}
+				return nil, huma.Error400BadRequest("slug already exists")
+			}
+			info := contextstore.GetContextUserInfo(ctx)
+			if info == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			user := &info.User
+			var teamInfo *models.TeamInfoModel
+			runInTxErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+				teamInfoTx, err := api.App().Team().CreateTeamWithOwner(
+					txCtx,
+					input.Body.Name,
+					input.Body.Slug,
+					user.ID,
+				)
+				if err != nil {
+					return err
+				}
+				if teamInfoTx == nil {
+					return huma.Error500InternalServerError("team not found")
+				}
+				team := &teamInfoTx.Team
+
+				_, err = api.App().Payment().CreateTeamCustomer(
+					txCtx,
+					team,
+					user,
+				)
+				if err != nil {
+					return err
+				}
+
+				teamInfo = teamInfoTx
+				return nil
+			})
+			if runInTxErr != nil {
+				return nil, runInTxErr
+			}
+			return &TeamWithMemberOutput{
+				Body: &TeamWithMember{
+					Team:   *fromTeamModel(&teamInfo.Team),
+					Member: fromTeamMemberModel(&teamInfo.Member),
+				},
+			}, nil
+		},
+	)
+}
+
+func (api *Api) CheckTeamSlugBind(
+	humaApi huma.API,
+) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "check-team-slug",
+			Method:      http.MethodPost,
+			Path:        "/teams/check-slug",
+			Summary:     "check-team-slug",
+			Description: "check if a team slug is available",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		api.CheckTeamSlug,
+	)
+}
+
+func (api *Api) CheckTeamSlug(
+	ctx context.Context,
+	input *struct {
+		Body struct {
+			Slug string `json:"slug" required:"true" minLength:"3" regex:"^[a-z0-9_-]+$"`
+		} `json:"body" required:"true"`
+	},
+) (
+	*struct {
+		Body struct {
+			Exists bool `json:"exists"`
+		}
+	},
+	error,
+) {
+	if !IsAlphaNumericAndDash.MatchString(input.Body.Slug) {
+		return nil, huma.Error400BadRequest("invalid slug")
+	}
+	exists, err := api.App().Adapter().TeamGroup().CheckTeamSlug(ctx, input.Body.Slug)
+	if err != nil {
+		return nil, err
+	}
+	return &struct {
+		Body struct {
+			Exists bool "json:\"exists\""
+		}
+	}{
+		Body: struct {
+			Exists bool `json:"exists"`
+		}{
+			Exists: exists,
+		},
+	}, nil
+}
+
+type TeamMemberListInput struct {
+	PaginatedInput
+	SortParams
+}
+
+func (api *Api) FindTeamInfoBySlugBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "get-team-by-slug",
+			Method:      http.MethodGet,
+			Path:        "/teams/slug/{team-slug}",
+			Summary:     "get-team-info-by-slug",
+			Description: "get a team by slug",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
+		},
+		func(ctx context.Context, input *struct {
+			Slug string `path:"team-slug" required:"true"`
+		}) (*TeamInfoOutput, error) {
+			info := contextstore.GetContextTeamInfo(ctx)
+			if info == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			return &TeamInfoOutput{
+				Body: &TeamInfo{
+					Team:   *fromTeamModel(&info.Team),
+					Member: *fromTeamMemberModel(&info.Member),
+					User:   *fromUserModel(&info.User),
+				},
+			}, nil
+		},
+	)
+}
+
+func (api *Api) UpdateTeamBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "update-team",
+			Method:      http.MethodPut,
+			Path:        "/teams/{team-id}",
+			Summary:     "update-team",
+			Description: "update a team by ID",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+			),
+		},
+		api.UpdateTeam,
+	)
+}
+
+type UpdateTeamInput struct {
+	TeamID string `path:"team-id" required:"true"`
+	Body   UpdateTeamDto
+}
+
+type UpdateTeamDto struct {
+	Name string `json:"name" required:"true" minLength:"3"`
+	Slug string `json:"slug" required:"true" minLength:"3"`
+}
+
+func (api *Api) UpdateTeam(
+	ctx context.Context,
+	input *UpdateTeamInput,
+) (
+	*TeamOutput,
+	error,
+) {
+	info := contextstore.GetContextTeamInfo(ctx)
+	if info == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	team, err := api.App().Team().UpdateTeam(ctx, info.Team.ID, input.Body.Name)
+	if err != nil {
+		return nil, err
+	}
+	if team == nil {
+		return nil, huma.Error500InternalServerError("team not found")
+	}
+	return &TeamOutput{
+		Body: fromTeamModel(team),
+	}, nil
+}
+
+func (api *Api) DeleteTeamBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "delete-team",
+			Method:      http.MethodDelete,
+			Path:        "/teams/{team-id}",
+			Summary:     "delete-team",
+			Description: "delete a team by ID",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+				middleware.TeamCanDelete(api.App()),
+			),
+		},
+		func(ctx context.Context, input *struct {
+			TeamID string `path:"team-id" required:"true"`
+		}) (*TeamOutput, error) {
+			info := contextstore.GetContextTeamInfo(ctx)
+			if info == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			err := api.App().Team().DeleteTeam(ctx, info.Team.ID, info.User.ID)
+			if err != nil {
+				slog.ErrorContext(ctx, "error deleting team", "teamId", info.Team.ID.String(), "userId", info.User.ID.String(), "error", err)
+				return nil, err
+			}
+			return nil, nil
+		},
+	)
+}
+
+func (api *Api) GetTeamBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "get-team",
+			Method:      http.MethodGet,
+			Path:        "/teams/{team-id}",
+			Summary:     "get-team",
+			Description: "get a team by ID",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: huma.Middlewares{},
+		},
+		func(ctx context.Context, input *struct {
+			TeamID string `path:"team-id" required:"true"`
+		}) (*TeamOutput, error) {
+			team := contextstore.GetContextTeam(ctx)
+			if team == nil {
+				return nil, huma.Error404NotFound("team not found")
+			}
+			return &TeamOutput{
+				Body: fromTeamModel(team),
+			}, nil
+		},
+	)
+}
+
+func (api *Api) UpdateLastSelectedTeam(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "update-select-team",
+			Method:      http.MethodPut,
+			Path:        "/teams/{team-id}/select",
+			Summary:     "update-selected-team",
+			Description: "updates the last selected team for a user",
+			Tags:        []string{"Teams"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+			),
+		},
+		func(ctx context.Context, input *struct {
+			TeamID string `path:"team-id" required:"true"`
+		}) (*struct{}, error) {
+			info := contextstore.GetContextTeamInfo(ctx)
+			if info == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			err := api.App().Adapter().TeamMember().UpdateTeamMemberSelectedAt(ctx, info.Team.ID, info.User.ID)
+			if err != nil {
+				slog.ErrorContext(ctx, "error deleting team", "teamId", info.Team.ID.String(), "userId", info.User.ID.String(), "error", err)
+				return nil, err
+			}
+			return nil, nil
+		},
+	)
+}

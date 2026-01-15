@@ -1,0 +1,219 @@
+package stores_test
+
+import (
+	"context"
+	"fmt"
+	"reflect"
+	"slices"
+	"testing"
+
+	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/tools/types"
+)
+
+func TestUserStore_CRUD(t *testing.T) {
+	t.Parallel()
+	test.SkipIfShort(t)
+
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
+		adapter := stores.NewStorageAdapter(dbxx)
+		store := stores.NewDbUserStore(dbxx)
+
+		// CreateUser
+		email := "testuser@example.com"
+		user, err := store.CreateUser(ctx, &models.User{
+			Email: email,
+			Name:  types.Pointer("Test User"),
+		})
+		if err != nil {
+			t.Fatalf("CreateUser() error = %v", err)
+		}
+		if user.Email != email {
+			t.Errorf("CreateUser() = %v, want email %v", user, email)
+		}
+
+		// FindUserByEmail
+		found, err := store.FindUser(ctx, &stores.UserFilter{
+			Emails: []string{email},
+		})
+
+		if err != nil || found == nil || found.ID != user.ID {
+			t.Errorf("FindUserByEmail() = %v, err = %v", found, err)
+		}
+
+		// AssignUserRoles (no roles)
+		err = store.AssignUserRoles(ctx, user.ID)
+		if err != nil {
+			t.Errorf("AssignUserRoles() with no roles error = %v", err)
+		}
+
+		// AssignUserRoles (with role)
+		roleName := "role1"
+		perm1 := "perm1"
+		perm2 := "perm2"
+		err = adapter.Rbac().EnsureRoleAndPermissions(ctx, roleName, perm1, perm2)
+		if err != nil {
+			t.Errorf("EnsureRoleAndPermissions() error = %v", err)
+		}
+		// Assume a role named "basic" exists in your DB for this test to pass
+		err = store.AssignUserRoles(ctx, user.ID, roleName)
+		if err != nil {
+			t.Errorf("AssignUserRoles() error = %v", err)
+		}
+
+		// UpdateUser
+		user.Name = types.Pointer("Updated Name")
+		err = store.UpdateUser(ctx, user)
+		if err != nil {
+			t.Errorf("UpdateUser() error = %v", err)
+		}
+
+		// GetUserInfo
+		info, err := store.GetUserInfo(ctx, email)
+		if err != nil || info == nil || info.User.ID != user.ID {
+			t.Errorf("GetUserInfo() = %v, err = %v", info, err)
+		}
+		if info != nil && info.User.Name != nil && *info.User.Name != "Updated Name" {
+			t.Errorf("GetUserInfo() name = %v, want 'Updated Name'", info.User.Name)
+		}
+		if !slices.Contains(info.Roles, roleName) {
+			t.Errorf("GetUserInfo() roles = %v, want %v", info.Roles, roleName)
+		}
+		if !slices.Contains(info.Permissions, perm1) {
+			t.Errorf("GetUserInfo() permissions = %v, want %v", info.Permissions, perm1)
+		}
+		if !slices.Contains(info.Permissions, perm2) {
+			t.Errorf("GetUserInfo() permissions = %v, want %v", info.Permissions, perm2)
+		}
+
+		// DeleteUser
+		err = store.DeleteUser(ctx, user.ID)
+		if err != nil {
+			t.Errorf("DeleteUser() error = %v", err)
+		}
+		deleted, err := store.FindUser(ctx, &stores.UserFilter{
+			Emails: []string{email},
+		})
+		if err != nil {
+			t.Errorf("FindUserByEmail() after delete error = %v", err)
+		}
+		if deleted != nil {
+			t.Errorf("User should be deleted, got = %v", deleted)
+		}
+	})
+}
+
+func TestUserStore_LoadUsersByUserIds(t *testing.T) {
+	t.Parallel()
+	test.SkipIfShort(t)
+
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
+		store := stores.NewDbUserStore(dbxx)
+		user1, err := store.CreateUser(ctx, &models.User{Email: "loaduser1@example.com"})
+		if err != nil {
+			t.Fatalf("CreateUser() error = %v", err)
+		}
+		user2, err := store.CreateUser(ctx, &models.User{Email: "loaduser2@example.com"})
+		if err != nil {
+			t.Fatalf("CreateUser() error = %v", err)
+		}
+		ids := []uuid.UUID{user1.ID, user2.ID}
+		users, err := store.LoadUsersByUserIds(ctx, ids...)
+		if err != nil {
+			t.Fatalf("LoadUsersByUserIds() error = %v", err)
+		}
+		if len(users) != 2 {
+			t.Errorf("LoadUsersByUserIds() = %v, want 2 users", len(users))
+		}
+		if users[0] == nil || users[1] == nil {
+			t.Errorf("Expected non-nil users, got: %v", users)
+		}
+	})
+}
+
+func TestUserStore_FindUserById(t *testing.T) {
+	t.Parallel()
+	test.SkipIfShort(t)
+
+	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
+		p := stores.NewDbUserStore(dbxx)
+		type fields struct {
+			db database.Dbx
+		}
+		type args struct {
+			ctx    context.Context
+			userId uuid.UUID
+		}
+		tests := []struct {
+			name    string
+			fields  fields
+			args    args
+			want    *models.User
+			wantErr bool
+		}{}
+		for i := range 10 {
+			user, err := p.CreateUser(
+				ctx,
+				&models.User{Email: fmt.Sprintf("testuser%d@example.com", i)},
+			)
+			if err != nil {
+				t.Fatalf("CreateUser() error = %v", err)
+			}
+			tests = append(tests, struct {
+				name    string
+				fields  fields
+				args    args
+				want    *models.User
+				wantErr bool
+			}{
+				name: fmt.Sprintf("FindUserByID-%s", user.ID.String()),
+				fields: fields{
+					db: dbxx,
+				},
+				args: args{
+					ctx:    ctx,
+					userId: user.ID,
+				},
+				want:    user,
+				wantErr: false,
+			})
+		}
+
+		tests = append(tests, struct {
+			name    string
+			fields  fields
+			args    args
+			want    *models.User
+			wantErr bool
+		}{
+			name: "NotFound",
+			fields: fields{
+				db: dbxx,
+			},
+			args: args{
+				ctx:    ctx,
+				userId: uuid.New(),
+			},
+			want:    nil,
+			wantErr: false,
+		})
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				p := stores.NewDbUserStore(tt.fields.db)
+				got, err := p.FindUserByID(tt.args.ctx, tt.args.userId)
+				if (err != nil) != tt.wantErr {
+					t.Errorf("PostgresUserStore.FindUserByID() error = %v, wantErr %v", err, tt.wantErr)
+					return
+				}
+				if !reflect.DeepEqual(got, tt.want) {
+					t.Errorf("PostgresUserStore.FindUserByID() = %v, want %v", got, tt.want)
+				}
+			})
+		}
+	})
+}

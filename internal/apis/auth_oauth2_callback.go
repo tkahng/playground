@@ -1,0 +1,182 @@
+package apis
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"net/url"
+	"time"
+
+	"github.com/danielgtaylor/huma/v2"
+	"github.com/tkahng/playground/internal/auth"
+	"github.com/tkahng/playground/internal/core"
+	"github.com/tkahng/playground/internal/models"
+	appHttp "github.com/tkahng/playground/internal/tools/http"
+	"github.com/tkahng/playground/internal/tools/types"
+)
+
+type OAuth2CallbackInput struct {
+	Code  string `json:"code" query:"code" required:"true" minLength:"1"`
+	State string `json:"state" query:"state" required:"true" minLength:"1"`
+}
+
+func (a *Api) bindOAuth2CallbackPost(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "oauth2-callback-post",
+			Method:      http.MethodPost,
+			Path:        "/auth/callback",
+			Summary:     "OAuth2 Callback (POST)",
+			Description: "Handle OAuth2 callback (POST)",
+			Tags:        []string{"Auth", "OAuth2"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		func(ctx context.Context, input *OAuth2CallbackInput) (*AuthenticatedInfoResponse, error) {
+			dto, err := OAuth2Callback(ctx, a, input)
+			if err != nil {
+				return nil, err
+			}
+			redirectUrl := dto.RedirectTo
+			uri, err := url.Parse(redirectUrl)
+			if err != nil {
+				return nil, err
+			}
+			q := uri.Query()
+			q.Add(string(models.TokenTypesRefreshToken), dto.Tokens.RefreshToken)
+			uri.RawQuery = q.Encode()
+
+			return &AuthenticatedInfoResponse{
+				Body: dto.ApiUserInfoTokens,
+			}, nil
+		},
+	)
+}
+
+type OAuth2CallbackGetResponse struct {
+	Status int
+	Url    string `header:"Location"`
+}
+
+func (a *Api) bindOath2CallbackGet(api huma.API) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "oauth2-callback-get",
+			Method:      http.MethodGet,
+			Path:        "/auth/callback",
+			Summary:     "OAuth2 Callback (GET)",
+			Description: "Handle OAuth2 callback (GET)",
+			Tags:        []string{"Auth", "OAuth2"},
+			Errors:      []int{http.StatusNotFound},
+		},
+		func(ctx context.Context, input *OAuth2CallbackInput) (*OAuth2CallbackGetResponse, error) {
+			dto, err := OAuth2Callback(ctx, a, input)
+			if err != nil {
+				return nil, err
+			}
+			uri, err := url.Parse(a.app.Config().AppUrl + "/auth/callback")
+			if err != nil {
+				return nil, err
+			}
+			q := uri.Query()
+			q.Add(string(models.TokenTypesRefreshToken), url.QueryEscape(dto.Tokens.RefreshToken))
+			if dto.RedirectTo != "" {
+				q.Add("redirect_to", appHttp.EncodeRedirectURL(dto.RedirectTo))
+			}
+			uri.RawQuery = q.Encode()
+
+			return &OAuth2CallbackGetResponse{
+				Status: http.StatusTemporaryRedirect,
+				Url:    uri.String(),
+			}, nil
+		},
+	)
+}
+
+func ToApiUserInfoTokens(userInfo *models.UserInfoTokens) *ApiUserInfoTokens {
+	if userInfo == nil {
+		return nil
+	}
+	return &ApiUserInfoTokens{
+		ApiUserInfo: ApiUserInfo{
+			User:        *fromUserModel(&userInfo.User),
+			Roles:       userInfo.Roles,
+			Permissions: userInfo.Permissions,
+			Providers:   userInfo.Providers,
+		},
+		Tokens: TokenDto{
+			AccessToken:  userInfo.Tokens.AccessToken,
+			ExpiresIn:    userInfo.Tokens.ExpiresIn,
+			TokenType:    userInfo.Tokens.TokenType,
+			RefreshToken: userInfo.Tokens.RefreshToken,
+		},
+	}
+}
+
+type CallbackOutput struct {
+	ApiUserInfoTokens
+	RedirectTo string `json:"redirect_to"`
+}
+
+func OAuth2Callback(ctx context.Context, api *Api, input *OAuth2CallbackInput) (*CallbackOutput, error) {
+	action := api.App().Auth()
+	parsedState, err := action.VerifyStateToken(ctx, input.State)
+	if err != nil {
+		return nil, err
+	}
+	if parsedState == nil {
+		return nil, fmt.Errorf("token not found")
+	}
+	if parsedState.Type != models.TokenTypesStateToken {
+		return nil, fmt.Errorf("invalid token type. want verification_token, got  %v", parsedState.Type)
+	}
+	authUser, err := action.FetchAuthUser(ctx, input.Code, parsedState)
+	if err != nil {
+		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
+	}
+	params := &auth.OAuth2SigninInput{
+		AvatarUrl:         &authUser.AvatarURL,
+		Email:             authUser.Email,
+		Name:              &authUser.Username,
+		EmailVerifiedAt:   types.Pointer(time.Now()),
+		Provider:          models.Providers(parsedState.Provider),
+		ProviderAccountID: authUser.Id,
+		AccessToken:       &authUser.AccessToken,
+		RefreshToken:      &authUser.RefreshToken,
+	}
+	user, err := OAuth2Signin(ctx, api.App(), params)
+	if err != nil {
+		return nil, fmt.Errorf("error at Oatuh2Callback: %w", err)
+	}
+	return &CallbackOutput{
+		ApiUserInfoTokens: *ToApiUserInfoTokens(user),
+		RedirectTo:        parsedState.RedirectTo,
+	}, nil
+}
+
+func OAuth2Signin(ctx context.Context, app core.App, input *auth.OAuth2SigninInput) (*models.UserInfoTokens, error) {
+	var output *models.UserInfoTokens
+	txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+		user, err := app.Auth().OAuth2Signin(txCtx, input)
+		if err != nil {
+			return err
+		}
+		existingCustomer, err := app.Payment().FindCustomerByUserId(txCtx, user.User.ID)
+		if err != nil {
+			return err
+		}
+		if existingCustomer == nil {
+			_, err = app.Payment().CreateUserCustomer(txCtx, &user.User)
+			if err != nil {
+				return err
+			}
+		}
+		output = user
+		return nil
+	})
+	if txErr != nil {
+		return nil, txErr
+	}
+	return output, nil
+}

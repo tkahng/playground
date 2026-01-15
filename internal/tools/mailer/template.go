@@ -1,0 +1,178 @@
+package mailer
+
+import (
+	"bytes"
+	"fmt"
+	"html/template"
+	"log"
+	"net/url"
+
+	"github.com/tkahng/playground/internal/tools/http"
+)
+
+type EmailType = string
+
+const (
+	EmailTypeVerify                EmailType = "verify"
+	EmailTypeConfirmPasswordReset  EmailType = "confirm-password-reset"
+	EmailTypeSecurityPasswordReset EmailType = "security-password-reset"
+	EmailTypeTeamInvite            EmailType = "team-invite"
+	RpsGameInvite                  EmailType = "rps-game-invite"
+	EmailTypeInvite                EmailType = "invite"
+)
+
+var (
+	RpsGameEmailPathMap = map[EmailType]SendMailParams{
+		RpsGameInvite: {
+			Type:         RpsGameInvite,
+			Subject:      "%s - You are invited to join a game",
+			TemplatePath: "/rps-game-invitation",
+			Template:     DefaultRpsGameInviteMail,
+		},
+	}
+	TeamEmailPathMap = map[EmailType]SendMailParams{
+		EmailTypeTeamInvite: {
+			Type:         EmailTypeTeamInvite,
+			Subject:      "%s - You are invited to join a team",
+			TemplatePath: "/team-invitation",
+			Template:     DefaultTeamInviteMail,
+		},
+	}
+)
+
+var (
+	EmailPathMap = map[EmailType]SendMailParams{
+		EmailTypeVerify: {
+			Type:         EmailTypeVerify,
+			Subject:      "%s - Verify your email address",
+			TemplatePath: "/confirm-verification",
+			Template:     DefaultConfirmationMail,
+		},
+		EmailTypeConfirmPasswordReset: {
+			Type:         EmailTypeConfirmPasswordReset,
+			Subject:      "%s - Confirm your password reset",
+			TemplatePath: "/password-reset",
+			Template:     DefaultRecoveryMail,
+		},
+		EmailTypeSecurityPasswordReset: {
+			Type:         EmailTypeSecurityPasswordReset,
+			Subject:      "%s - Reset your password",
+			TemplatePath: "/password-reset",
+			Template:     DefaultSecurityPasswordResetMail,
+		},
+	}
+)
+
+type SendMailParams struct {
+	Subject      string
+	Type         string
+	TemplatePath string
+	Template     string
+}
+
+func (p *SendMailParams) GeneratePath(baseUrl string, token string, tokenType string, redirectTo string) (string, error) {
+	appUrl, err := url.Parse(baseUrl)
+	if err != nil {
+		return "", err
+	}
+	path, err := GetPathParams(p.TemplatePath, token, tokenType, redirectTo)
+	if err != nil {
+		return "", nil
+	}
+
+	return appUrl.ResolveReference(path).String(), nil
+}
+
+func (p *SendMailParams) GetSubject(args ...string) string {
+	return fmt.Sprintf(p.Subject, args)
+}
+
+type CommonParams struct {
+	SiteURL         string `json:"site_url"`
+	ConfirmationURL string `json:"confirmation_url"`
+	Email           string `json:"email"`
+	Token           string `json:"token"`
+	TokenHash       string `json:"token_hash"`
+	RedirectTo      string `json:"redirect_to"`
+}
+
+func GetPathParams(filepath string, token, tokenType, redirectTo string) (*url.URL, error) {
+	path := &url.URL{}
+	if filepath != "" {
+		if p, err := url.Parse(filepath); err != nil {
+			return nil, err
+		} else {
+			path = p
+		}
+	}
+	q := path.Query()
+	q.Add("token", url.QueryEscape(token))
+	if tokenType != "" {
+		q.Add("token_type", url.QueryEscape(tokenType))
+	}
+	if redirectTo != "" {
+		q.Add("redirect_to", http.EncodeRedirectURL(redirectTo))
+	}
+	path.RawQuery = q.Encode()
+	return path, nil
+}
+
+func GenerateBody[T any](name string, mailTemplate string, params T) string {
+	tmpl, err := template.New(name).Parse(mailTemplate)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var body bytes.Buffer
+	err = tmpl.Execute(&body, params)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return body.String()
+}
+
+const DefaultInviteMail = `<h2>You have been invited</h2>
+<p>You have been invited to create a user on {{ .SiteURL }}. Follow this link to accept the invite:</p>
+<p><a href="{{ .ConfirmationURL }}">Accept the invite</a></p>
+`
+
+const DefaultTeamInviteMail = `<h2>You have been invited</h2>
+<p>You have been invited to joint team {{ .TeamName }} by {{ .InvitedByEmail }}. Follow this link to accept the invite:</p>
+<p><a href="{{ .ConfirmationURL }}">Accept the invite</a></p>`
+
+const DefaultRpsGameInviteMail = `<h2>You have been invited to play a game of Rock Paper Scissors</h2>
+<p>You have been invited play a game of Rock Paper Scissors with {{ .InvitedByEmail }}. Follow this link to accept the invite:</p>
+<p><a href="{{ .ConfirmationURL }}">Accept the invite</a></p>`
+
+const DefaultConfirmationMail = `<h2>Confirm your email</h2>
+
+<p>Enter the code:</p>
+<h3>{{ .Token }}</h3>
+
+<p>Or follow this link to confirm your email:</p>
+<p><a href="{{ .ConfirmationURL }}">Confirm your email address</a></p>
+`
+
+const DefaultSecurityPasswordResetMail = `<h2>Your password has been reset due to security concerns</h2>
+<p>We noticed that you signed in with a social provider while you were already signed in with an unverified email/password account.</p>
+<p>For your security, we have reset your password to a temporary password.</p>
+<p>If you wish to sign in with your email/password account, please reset your password by clicking the link below:</p>
+<p><a href="{{ .ConfirmationURL }}">Reset password</a></p>
+`
+
+const DefaultRecoveryMail = `<h2>Reset password</h2>
+<p>Follow this link to reset the your password:</p>
+<p><a href="{{ .ConfirmationURL }}">Reset password</a></p>
+`
+
+const DefaultultMagicLinkMail = `<h2>Magic Link</h2>
+<p>Follow this link to login:</p>
+<p><a href="{{ .ConfirmationURL }}">Log In</a></p>
+`
+
+const DefaultultEmailChangeMail = `<h2>Confirm email address change</h2>
+<p>Follow this link to confirm the update of your email address from {{ .Email }} to {{ .NewEmail }}:</p>
+<p><a href="{{ .ConfirmationURL }}">Change email address</a></p>
+`
+
+const DefaultultReauthenticateMail = `<h2>Confirm reauthentication</h2>
+<p>Enter the code: {{ .Token }}</p>`
