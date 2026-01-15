@@ -141,7 +141,7 @@ export default function Landing() {
             Dive into the features and see what's possible
           </p>
           <Button asChild size="lg">
-            <Link to="/features">Get Started</Link>
+            <Link to="/signup">Get Started</Link>
           </Button>
         </div>
       </section>

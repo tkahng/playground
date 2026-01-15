@@ -52,7 +52,7 @@ function FeatureCard(feature: Feature) {
         </h4>
         <p className="text-muted-foreground">
           {feature.mainContent.map((item) => (
-            <span>{item}</span>
+            <span key={item}>{item}</span>
           ))}
         </p>
         {feature.detailLink && (
