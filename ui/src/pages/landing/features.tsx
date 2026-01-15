@@ -33,7 +33,7 @@ function FeatureCard(feature: Feature) {
       className="flex flex-col md:flex-row items-center gap-x-12 gap-y-6 md:even:flex-row-reverse"
     >
       {feature.featureImageComponent ? (
-        <div className="w-fit bg-muted rounded-xl border">
+        <div className="w-fit bg-muted rounded-xl">
           {feature.featureImageComponent}
         </div>
       ) : (
