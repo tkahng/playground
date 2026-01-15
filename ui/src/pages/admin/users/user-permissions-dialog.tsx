@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -55,7 +56,7 @@ export function UserPermissionDialog({
       }
       const { data } = await getUserPermissions2(
         user.tokens.access_token,
-        userId
+        userId,
       );
       return data;
     },
@@ -96,7 +97,7 @@ export function UserPermissionDialog({
   }, [data, form]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
 
   if (error) {

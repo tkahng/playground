@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { protectedApi } from "@/lib/api";
 import { GetError } from "@/lib/error";
@@ -19,7 +20,7 @@ export default function ProtectedRoutePage() {
     retry: false,
   });
   if (isPending) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
 
   if (isError) {

@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -76,9 +77,9 @@ export function ProductPermissionsDialog({
         productId,
         {
           permission_ids: values.permissions.map(
-            (permission) => permission.value
+            (permission) => permission.value,
           ),
-        }
+        },
       );
       setDialogOpen(false);
     },
@@ -108,7 +109,7 @@ export function ProductPermissionsDialog({
   }, [data, form]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
 
   if (error) {

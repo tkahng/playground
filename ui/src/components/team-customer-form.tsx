@@ -11,6 +11,7 @@ import { ReactNode, useState } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 import PricingMini from "./pricing/pricing-mini";
+import { CenteredSpinner } from "./centered-spinner";
 
 type SubscriptionWithPriceAndProduct = SubscriptionWithPrice;
 
@@ -59,13 +60,13 @@ export default function TeamCustomerForm({ subscription }: Props) {
     }
     const redirectUrl = await createTeamBillingPortalSession(
       user.tokens.access_token,
-      team?.id
+      team?.id,
     );
     window.location.href = redirectUrl;
     setIsSubmitting(false);
   };
   if (isPendingProducts) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isErrorProducts) {
     return <div>{errorProducts.message}</div>;

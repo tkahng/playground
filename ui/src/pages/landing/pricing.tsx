@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import PricingTeam from "@/components/pricing/pricing-team";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { getProductsWithPrices } from "@/lib/api";
@@ -22,7 +23,7 @@ export default function PricingPage() {
     },
   });
   if (isPendingProducts) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isErrorProducts) {
     return <div>Error: {errorProducts.message}</div>;

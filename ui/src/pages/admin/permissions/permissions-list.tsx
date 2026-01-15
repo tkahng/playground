@@ -12,6 +12,7 @@ import { PaginationState, Updater } from "@tanstack/react-table";
 import { NavLink, useSearchParams } from "react-router";
 import { CreatePermissionDialog } from "./create-permission-dialog";
 import { PermissionsActionDropdown } from "./permissions-action-dropdown";
+import { CenteredSpinner } from "@/components/centered-spinner";
 
 export default function PermissionListPage() {
   const { user } = useAuthProvider();
@@ -62,7 +63,7 @@ export default function PermissionListPage() {
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isError) {
     return <div>Error: {error.message}</div>;

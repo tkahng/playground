@@ -10,6 +10,7 @@ import { ChevronLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { ProjectEditDialog } from "./edit-project-dialog";
+import { CenteredSpinner } from "@/components/centered-spinner";
 
 export default function ProjectEdit() {
   const queryClient = useQueryClient();
@@ -55,10 +56,10 @@ export default function ProjectEdit() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input]);
 
-  if (isProjectLoading) return <p>Loading...</p>;
+  if (isProjectLoading) return <CenteredSpinner />;
   if (error) return <p>Error: {error.message}</p>;
   if (!project) return <p>Project not found</p>;
-  if (isTasksLoading) return <p>Loading...</p>;
+  if (isTasksLoading) return <CenteredSpinner />;
   if (tasksError) return <p>Error: {tasksError.message}</p>;
   return (
     <div className="flex-1 space-y-6 w-full px-8">

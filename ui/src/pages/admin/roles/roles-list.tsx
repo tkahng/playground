@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ export default function RolesListPage() {
     },
   });
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isError) {
     return <div>Error: {error?.message}</div>;

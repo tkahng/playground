@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { Separator } from "@/components/ui/separator";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
@@ -34,7 +35,7 @@ export default function TaskProjectSidebar() {
           per_page: 5,
           sort_by: "updated_at",
           sort_order: "desc",
-        }
+        },
       );
       if (!data?.data) {
         throw new Error("No projects found");
@@ -43,7 +44,7 @@ export default function TaskProjectSidebar() {
     },
   });
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isError) {
     return <div>Error: {error?.message}</div>;
@@ -65,7 +66,7 @@ export default function TaskProjectSidebar() {
               pathname.startsWith(`/projects/${item.id}`)
                 ? "underline"
                 : "text-muted-foreground",
-              "text-md font-normal hover:text-primary transition-colors hover:bg-muted rounded-md p-2"
+              "text-md font-normal hover:text-primary transition-colors hover:bg-muted rounded-md p-2",
             )}
           >
             <span>{item.name}</span>
@@ -78,7 +79,7 @@ export default function TaskProjectSidebar() {
           <Link
             to={`/projects`}
             className={cn(
-              "text-sm font-normal hover:text-primary transition-colors hover:bg-muted rounded-md p-2 flex"
+              "text-sm font-normal hover:text-primary transition-colors hover:bg-muted rounded-md p-2 flex",
             )}
           >
             View all projects

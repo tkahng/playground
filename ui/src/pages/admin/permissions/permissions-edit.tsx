@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import {
@@ -85,7 +86,7 @@ export default function PermissionEdit() {
   if (!user) {
     navigate(RouteMap.SIGNIN);
   }
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <CenteredSpinner />;
   if (error) return <p>Error: {error.message}</p>;
   if (!permission) return <p>Role not found</p>;
 

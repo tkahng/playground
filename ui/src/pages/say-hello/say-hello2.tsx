@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiError } from "@/lib/error";
@@ -95,11 +96,11 @@ export default function SayHelloPage() {
     mutation.mutate();
   };
   if (state.loading) {
-    return <p>loading... (you may need to enable permissions)</p>;
+    return <CenteredSpinner />;
   }
 
   if (isStatsLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
 
   return (

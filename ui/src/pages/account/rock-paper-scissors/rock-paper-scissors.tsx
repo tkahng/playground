@@ -11,6 +11,7 @@ import { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { CreateGameDialog } from "./create-game-dialog";
+import { CenteredSpinner } from "@/components/centered-spinner";
 
 export default function RockPaperScissors() {
   const userInfo = useAuthProvider();
@@ -88,7 +89,7 @@ export default function RockPaperScissors() {
     }
   }, [gameId]);
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isError) {
     return <div>Error: {error.message}</div>;

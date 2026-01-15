@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DataTable } from "@/components/data-table";
 import { accountSidebarLinks } from "@/components/links";
@@ -37,7 +38,7 @@ export default function InvitationsPage() {
       const teams = await getUserTeamInvitations(
         user.tokens.access_token,
         pageIndex,
-        pageSize
+        pageSize,
       );
       return teams;
     },
@@ -48,7 +49,7 @@ export default function InvitationsPage() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isError) {
     return <div>Error: {error?.message}</div>;
@@ -57,7 +58,7 @@ export default function InvitationsPage() {
     return <div>No data</div>;
   }
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isError) {
     const err = GetError(error);

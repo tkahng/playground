@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { CreateTeamDialog } from "@/components/create-team-dialog";
 import { CreateTeamDisabledTooltip } from "@/components/create-team-disabled-tooltip";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
@@ -54,7 +55,7 @@ export default function AccountTeamsPage() {
   });
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (isError) {
     const err = GetError(error);

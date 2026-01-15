@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -99,7 +100,7 @@ export function UserRolesDialog({
   }, [data, form]);
 
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
 
   if (error) {

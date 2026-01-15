@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { teamLinks } from "@/components/links";
 import { MainNav } from "@/components/main-nav";
 import { PlaygroundMinimalFooter } from "@/components/playground-minimal-footer";
@@ -63,7 +64,7 @@ export default function TeamDashboardLayout() {
     );
   }
   if (isLoading) {
-    return <div>Loading team...</div>;
+    return <CenteredSpinner />;
   }
   if (!team) {
     return <div>No team found.</div>;

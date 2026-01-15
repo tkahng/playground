@@ -1,3 +1,4 @@
+import { CenteredSpinner } from "@/components/centered-spinner";
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
@@ -113,7 +114,7 @@ export default function UserEdit() {
   }
 
   const credentialsAccount = data?.accounts?.find(
-    (account) => account.provider === "credentials"
+    (account) => account.provider === "credentials",
   );
 
   const resetPasswordMutation = useMutation({
@@ -127,7 +128,7 @@ export default function UserEdit() {
       return adminResetUserPassword(
         user.tokens.access_token,
         userId,
-        values.password
+        values.password,
       );
     },
     onSuccess: async () => {
@@ -183,7 +184,7 @@ export default function UserEdit() {
       return removeUserPermission(
         user.tokens.access_token,
         userId,
-        permissionId
+        permissionId,
       );
     },
     onSuccess: async () => {
@@ -209,7 +210,7 @@ export default function UserEdit() {
   }, [data, form]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <CenteredSpinner />;
   }
   if (error) {
     return <div>Error: {error.message}</div>;
@@ -318,7 +319,7 @@ export default function UserEdit() {
                   <h1>Reset Password</h1>
                   <form
                     onSubmit={resetPasswordForm.handleSubmit(
-                      onResetPasswordSubmut
+                      onResetPasswordSubmut,
                     )}
                     className="space-y-6"
                   >
@@ -437,7 +438,7 @@ export default function UserEdit() {
                         <DeleteButton
                           onDelete={() => {
                             deleteUserPermissionMutation.mutate(
-                              row.original.id
+                              row.original.id,
                             );
                           }}
                           disabled={!row.original.is_directly_assigned}
