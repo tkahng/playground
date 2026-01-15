@@ -10,12 +10,15 @@ import SayHelloDark from "@/assets/say-hello-preview-dark.png";
 import SayHelloLight from "@/assets/say-hello-preview-light.png";
 import TeamDark from "@/assets/team-dark.png";
 import TeamLight from "@/assets/team-light.png";
+import ChooseYourMoveDark from "@/assets/choose-your-move-dark.png";
+import ChooseYourMoveLight from "@/assets/choose-your-move-light.png";
 import { ThemedImage } from "@/components/themed-image";
 import {
   Banknote,
   Hand,
   IdCard,
   ListTodo,
+  Scissors,
   ShieldUser,
   Users,
 } from "lucide-react";
@@ -43,7 +46,7 @@ export const features: Feature[] = [
     ],
     fragment: "say-hello",
     path: "/features",
-    landingLink: "/features#say-hello",
+    landingLink: "/say-hello",
     landingLinkText: "Try Saying Hello!",
     detailLink: "/say-hello",
     detailLinkText: "Try Saying Hello",
@@ -51,6 +54,28 @@ export const features: Feature[] = [
       <ThemedImage
         dark={SayHelloDark}
         light={SayHelloLight}
+        className="max-h-100"
+      />
+    ),
+  },
+  {
+    title: "Rock Paper Scissors",
+    icon: <Scissors />,
+    shortContent: [
+      "Challenge your friends! Send a game request with your move, they submit theirs, and see who wins.",
+    ],
+    mainContent: [
+      `This is a fun game that allows you to challenge your friends and see who wins. It's a great way to test out the basic functionality of the website and get a feel for how things work.`,
+    ],
+    path: "/features",
+    fragment: "rps",
+    landingLink: "/rock-paper-scissors",
+    detailLink: "/rock-paper-scissors",
+    detailLinkText: "Play Now",
+    featureImageComponent: (
+      <ThemedImage
+        dark={ChooseYourMoveDark}
+        light={ChooseYourMoveLight}
         className="max-h-100"
       />
     ),
