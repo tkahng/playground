@@ -1,21 +1,39 @@
-import { DataTable } from "@/components/data-table";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
-import { taskProjectList } from "@/lib/task-queries";
-import { useQuery } from "@tanstack/react-query";
-import { PaginationState, Updater } from "@tanstack/react-table";
-import { NavLink, useSearchParams } from "react-router";
-import { CreateProjectAiDialog } from "./create-project-ai-dialog";
+import { deleteTaskProject, taskProjectList } from "@/lib/task-queries";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CreateProjectDialog } from "./create-project-dialog";
 import { CenteredSpinner } from "@/components/centered-spinner";
+import { CreateProjectAiDialog } from "./create-project-ai-dialog.tsx";
+import { ProjectCard } from "./project-card.tsx";
+import { ErrorCard } from "@/components/error-card.tsx";
+import { ApiError } from "@/lib/error.ts";
+import { toast } from "sonner";
+import {
+  getCoreRowModel,
+  getPaginationRowModel,
+  PaginationState,
+  Updater,
+  useReactTable,
+  Table as ReactTable,
+} from "@tanstack/react-table";
+import { useSearchParams } from "react-router";
+import { Button } from "@/components/ui/button.tsx";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+} from "@/components/ui/pagination.tsx";
 
 export default function ProjectListPage() {
   const { user } = useAuthProvider();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { team } = useTeam();
+  const teamId = team?.id;
+  const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
-  const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
-  // const queryClient = useQueryClient();
+  const pageSize = parseInt(searchParams.get("per_page") || "6", 10);
   const onPaginationChange = (updater: Updater<PaginationState>) => {
     const newState =
       typeof updater === "function"
@@ -29,9 +47,8 @@ export default function ProjectListPage() {
     }
   };
 
-  const teamId = team?.id;
   const { data, error, isError, isLoading } = useQuery({
-    queryKey: ["projects-list", pageIndex, pageSize],
+    queryKey: [{ key: "projects-list", page: pageIndex, per_page: pageSize }],
     queryFn: async () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
@@ -39,6 +56,7 @@ export default function ProjectListPage() {
       if (!teamId) {
         throw new Error("Current team member team ID is required");
       }
+
       const data = await taskProjectList(user.tokens.access_token, teamId, {
         page: pageIndex,
         per_page: pageSize,
@@ -50,71 +68,128 @@ export default function ProjectListPage() {
     },
     enabled: !!user?.tokens.access_token && !!teamId,
   });
-  // if (teamError) {
-  //   return <div>Error: {teamError.message}</div>;
-  // }
+  const projects = data?.data || [];
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const table = useReactTable({
+    onPaginationChange,
+    data: projects,
+    columns: [],
+    rowCount: data?.meta.total,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true,
+    state: {
+      pagination: {
+        pageIndex,
+        pageSize,
+      },
+    },
+  });
+  const mutation = useMutation({
+    mutationFn: async ({ projectId }: { projectId: string }) => {
+      if (!user?.tokens.access_token) {
+        throw new ApiError("Missing access token");
+      }
+      await deleteTaskProject({
+        token: user.tokens.access_token,
+        projectId: projectId,
+      });
+    },
+    onSuccess: async () => {
+      queryClient.invalidateQueries({
+        queryKey: [{ key: "projects-list" }],
+      });
+      toast.success("Project deleted");
+    },
+    onError: (error: ApiError) => {
+      queryClient.invalidateQueries({
+        queryKey: [{ key: "projects-list" }],
+      });
+      toast.error(error.message, {
+        description: error.detail,
+      });
+    },
+  });
+  if (!team) {
+    return <ErrorCard title="Team not found" />;
+  }
   if (isLoading) {
     return <CenteredSpinner />;
   }
   if (isError) {
     return <div>Error: {error.message}</div>;
   }
-  const projects = data?.data || [];
-  const rowCount = data?.meta.total || 0;
-
   return (
-    // <div className="flex w-full flex-col items-center justify-center">
-    <div className="py-12 px-4 @lg:px-6 @xl:px-12 @2xl:px-20 @3xl:px-24">
-      <div className="flex items-center justify-between">
-        <p>
-          Create and manage Projects for your applications. Projects contain
-          collections of Tasks and can be assigned to Users.
-        </p>
-        <CreateProjectDialog />
-        <CreateProjectAiDialog />
+    <div className="mx-auto max-w-6xl px-4 py-12">
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Your Projects</h1>
+          <p className="mt-1 text-muted-foreground">
+            Manage your projects and track progress across teams.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <CreateProjectDialog />
+          <CreateProjectAiDialog />
+        </div>
       </div>
 
-      <DataTable
-        columns={[
-          {
-            accessorKey: "name",
-            header: "Name",
-            cell: ({ row }) => {
-              return (
-                <NavLink
-                  to={`/teams/${team?.slug}/projects/${row.original.id}`}
-                  className="hover:underline text-blue-500"
-                >
-                  {row.original.name}
-                </NavLink>
-              );
-            },
-          },
-          {
-            accessorKey: "description",
-            header: "Description",
-            cell: ({ row }) => {
-              return (
-                <span className="truncate overflow-hidden whitespace-nowrap">
-                  {row.original.description}
-                </span>
-              );
-            },
-          },
-          {
-            accessorKey: "updated_at",
-            header: "Updated At",
-            cell: ({ row }) => {
-              return new Date(row.original.updated_at).toLocaleDateString();
-            },
-          },
-        ]}
-        data={projects}
-        rowCount={rowCount}
-        paginationState={{ pageIndex, pageSize }}
-        onPaginationChange={onPaginationChange}
-        paginationEnabled
-      />
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {table.getRowModel().rows.map(({ original: project }) => (
+          <ProjectCard
+            team={team}
+            key={project.id}
+            project={project}
+            onDelete={(projectId) => mutation.mutate({ projectId })}
+          />
+        ))}
+      </div>
+      <DataTableFooter table={table} />
     </div>
+  );
+}
+
+export function DataTableFooter<TData>({
+  table,
+}: {
+  table: ReactTable<TData>;
+}) {
+  return (
+    <>
+      {table.getPageCount() > 1 && (
+        <div className="mt-10">
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                  className="gap-1 bg-transparent"
+                >
+                  <ChevronLeft className="size-4" />
+                  <span className="hidden sm:inline">Previous</span>
+                </Button>
+              </PaginationItem>
+
+              <PaginationItem>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                  className="gap-1 bg-transparent"
+                >
+                  <span className="hidden sm:inline">Next</span>
+                  <ChevronRight className="size-4" />
+                </Button>
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
+      )}
+    </>
   );
 }
