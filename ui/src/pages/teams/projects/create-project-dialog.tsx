@@ -26,11 +26,14 @@ import {
 } from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
+import { ApiError } from "@/lib/error";
 import { taskProjectCreate } from "@/lib/task-queries";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -44,27 +47,31 @@ export function CreateProjectDialog() {
   const { user } = useAuthProvider();
   const { team: currentTeam } = useTeam();
   const [isDialogOpen, setDialogOpen] = useState(false);
-  const queryClient = useQueryClient();
-
+  const navigate = useNavigate();
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof formSchema>) => {
       if (!user?.tokens.access_token) {
-        throw new Error("Missing access token or role ID");
+        throw new ApiError("Missing access token or role ID");
       }
       if (!currentTeam?.id) {
-        throw new Error("Current team member team ID is required");
+        throw new ApiError("Current team member team ID is required");
       }
-      await taskProjectCreate(user.tokens.access_token, currentTeam.id, values);
+      return await taskProjectCreate(
+        user.tokens.access_token,
+        currentTeam.id,
+        values,
+      );
     },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: ["projects-list"],
-      });
+    onSuccess: async (data) => {
       setDialogOpen(false);
       toast.success("Project created successfully");
+
+      navigate(`/teams/${currentTeam?.slug}/projects/${data?.id}`);
     },
-    onError: (error) => {
-      toast.error(error.message);
+    onError: (error: ApiError) => {
+      toast.error(error.message, {
+        description: error.detail,
+      });
     },
   });
   const form = useForm<z.infer<typeof formSchema>>({
@@ -82,7 +89,10 @@ export function CreateProjectDialog() {
   return (
     <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">Create Project</Button>
+        <Button variant="outline" className="gap-2 bg-transparent">
+          <Plus className="size-4" />
+          New Project
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

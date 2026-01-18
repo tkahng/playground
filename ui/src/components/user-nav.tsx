@@ -199,8 +199,8 @@ export function UserNav() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          {links2.map((link) => (
-            <>
+          {links2.map((link, index) => (
+            <div key={index}>
               <DropdownMenuItem key={link.to}>
                 <Link to={link.to} className="w-full">
                   <div className="flex flex-row gap-2 items-center">
@@ -209,7 +209,7 @@ export function UserNav() {
                   </div>
                 </Link>
               </DropdownMenuItem>
-            </>
+            </div>
           ))}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
