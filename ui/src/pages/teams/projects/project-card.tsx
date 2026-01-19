@@ -60,12 +60,15 @@ export function ProjectCard({ project, team, onDelete }: ProjectCardProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
-                {/* <DropdownMenuItem onClick={handleEdit}> */}
-                {/*   <Pencil className="size-4" /> */}
-                {/*   Edit */}
-                {/* </DropdownMenuItem> */}
-                {/* <DropdownMenuSeparator /> */}
-                <DropdownMenuItem onClick={handleDelete} variant="destructive">
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDeleteConfirmOpen(true);
+                    setDropdownOpen(false);
+                  }}
+                >
                   <Trash2 className="size-4" />
                   Delete
                 </DropdownMenuItem>
@@ -89,9 +92,11 @@ export function ProjectCard({ project, team, onDelete }: ProjectCardProps) {
                   <DialogClose asChild>
                     <Button
                       variant="outline"
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
                         console.log("cancel");
-                        // editDialog.props.onOpenChange(false);
+                        setDeleteConfirmOpen(false);
                       }}
                     >
                       Cancel
@@ -108,20 +113,12 @@ export function ProjectCard({ project, team, onDelete }: ProjectCardProps) {
           </div>
           <CardDescription className="flex items-center gap-4 pt-1">
             <ProjectStatusBadge status={project.status} />
-            {/* <span className="flex items-center gap-1.5"> */}
-            {/*   <LayoutGrid className="size-3.5" /> */}
-            {/*   {project.status} */}
-            {/* </span> */}
-            {/* <span className="flex items-center gap-1.5"> */}
-            {/*   <Users className="size-3.5" /> */}
-            {/*   {project.status} members */}
-            {/* </span> */}
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="size-3.5" />
-            Updated {project.updated_at}
+            Updated: {new Date(project.updated_at).toLocaleDateString()}
           </div>
         </CardContent>
       </Card>
