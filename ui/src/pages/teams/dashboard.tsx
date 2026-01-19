@@ -1,5 +1,5 @@
 import { CenteredSpinner } from "@/components/centered-spinner";
-import { DataTableFooter } from "@/components/data-table";
+import { DataTablePagination } from "@/components/data-table-pagination";
 import { ErrorCard } from "@/components/error-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -186,7 +186,7 @@ export default function TeamDashboard() {
             />
           ))}
         </div>
-        <DataTableFooter table={table} />
+        <DataTablePagination table={table} />
       </div>
     </div>
   );
