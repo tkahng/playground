@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router";
-import { LayoutGrid, Clock, MoreHorizontal, Trash2 } from "lucide-react";
+import { Clock, MoreHorizontal, Trash2 } from "lucide-react";
 
 import {
   Card,
@@ -26,6 +26,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useState } from "react";
+import { ProjectStatusBadge } from "./status";
 
 interface ProjectCardProps {
   team: Team;
@@ -106,10 +107,11 @@ export function ProjectCard({ project, team, onDelete }: ProjectCardProps) {
             </ConfirmDialog>
           </div>
           <CardDescription className="flex items-center gap-4 pt-1">
-            <span className="flex items-center gap-1.5">
-              <LayoutGrid className="size-3.5" />
-              {project.status}
-            </span>
+            <ProjectStatusBadge status={project.status} />
+            {/* <span className="flex items-center gap-1.5"> */}
+            {/*   <LayoutGrid className="size-3.5" /> */}
+            {/*   {project.status} */}
+            {/* </span> */}
             {/* <span className="flex items-center gap-1.5"> */}
             {/*   <Users className="size-3.5" /> */}
             {/*   {project.status} members */}
