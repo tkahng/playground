@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/stephenafamo/scan"
 	"github.com/stephenafamo/scan/pgxscan"
 )
@@ -23,6 +22,7 @@ func QueryWithBuilder[T any](ctx context.Context, db Dbx, query QueryBuilder) ([
 	}
 	return QueryAll[T](ctx, db, sql, args...)
 }
+
 func ExecWithBuilder(ctx context.Context, db Dbx, query QueryBuilder) (int64, error) {
 	sql, args, err := query.ToSql()
 	if err != nil {
@@ -42,10 +42,12 @@ func Count(ctx context.Context, db Dbx, query string, args ...any) (int64, error
 	ctxDbx := GetContextOrDefaultDbx(ctx, db)
 	return pgxscan.One(ctx, ctxDbx, scan.SingleColumnMapper[int64], query, args...)
 }
+
 func QueryOneSingleColumn[T any](ctx context.Context, db Dbx, query string, args ...any) (T, error) {
 	ctxDbx := GetContextOrDefaultDbx(ctx, db)
 	return pgxscan.One(ctx, ctxDbx, scan.SingleColumnMapper[T], query, args...)
 }
+
 func QueryManySingleColumn[T any](ctx context.Context, db Dbx, query string, args ...any) ([]T, error) {
 	ctxDbx := GetContextOrDefaultDbx(ctx, db)
 	return pgxscan.All(ctx, ctxDbx, scan.SingleColumnMapper[T], query, args...)
@@ -62,39 +64,4 @@ func Exec(ctx context.Context, db Dbx, query string, args ...any) (int64, error)
 
 type CountOutput struct {
 	Count int64
-}
-
-func PgxQueryRowsToStruct[T any](ctx context.Context, db Dbx, query QueryBuilder) ([]*T, error) {
-	ctxDbx := GetContextOrDefaultDbx(ctx, db)
-	sql, args, err := query.ToSql()
-	if err != nil {
-		return nil, err
-	}
-	slog.DebugContext(ctx, "PgxQueryRowsToStruct:", slog.String("query", sql), slog.Any("args", args))
-	r, err := ctxDbx.Query(ctx, sql, args...)
-	if err != nil {
-		return nil, err
-	}
-	return pgx.CollectRows(r, pgx.RowToAddrOfStructByNameLax[T])
-}
-func PgxQuerySingleScalar[T comparable](ctx context.Context, db Dbx, query QueryBuilder) (T, error) {
-	ctxDbx := GetContextOrDefaultDbx(ctx, db)
-	var zero T
-	sql, args, err := query.ToSql()
-	if err != nil {
-		return zero, err
-	}
-	slog.DebugContext(ctx, "PgxQuerySingleScalar:", slog.String("query", sql), slog.Any("args", args))
-	r, err := ctxDbx.Query(ctx, sql, args...)
-	if err != nil {
-		return zero, err
-	}
-	res, err := pgx.CollectRows(r, pgx.RowTo[T])
-	if err != nil {
-		return zero, err
-	}
-	if len(res) == 0 {
-		return zero, nil
-	}
-	return res[0], nil
 }

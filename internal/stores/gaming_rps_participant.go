@@ -57,6 +57,7 @@ func rpsParticipantsSortSelect(qs squirrel.SelectBuilder, filter Sortable) squir
 	}
 	return qs
 }
+
 func rpsParticipantsFilterSelect(q squirrel.SelectBuilder, filter *RpsParticipantFilter) squirrel.SelectBuilder {
 	if filter == nil {
 		return q // return original query if no filter is provided
@@ -104,7 +105,7 @@ func (s *DBGamingStore) FindRpsParticipants(ctx context.Context, filter *RpsPart
 	q = rpsParticipantsFilterSelect(q, filter)
 	q = rpsParticipantsSortSelect(q, filter)
 	q = queryPagination(q, filter)
-	data, err := database.PgxQueryRowsToStruct[models.RpsParticipant](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := database.PgxQueryWithBuilder[models.RpsParticipant](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
@@ -153,6 +154,7 @@ func (s *DBGamingStore) CreateRpsParticipant(ctx context.Context, rpsParticipant
 	}
 	return repository.RpsParticipant.PostOne(ctx, s.db, rpsParticipant)
 }
+
 func (s *DBGamingStore) CreateRpsParticipants(ctx context.Context, rpsParticipants []*models.RpsParticipant) ([]*models.RpsParticipant, error) {
 	participants := []models.RpsParticipant{}
 	for _, rpsParticipant := range rpsParticipants {

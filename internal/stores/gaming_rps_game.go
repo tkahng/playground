@@ -70,6 +70,7 @@ func filterRpsGames(qs squirrel.SelectBuilder, filter *RpsGameFilter) squirrel.S
 	}
 	return qs
 }
+
 func rpsgamesSortSelect(qs squirrel.SelectBuilder, filter Sortable) squirrel.SelectBuilder {
 	if filter == nil {
 		return qs // return original query if no filter is provided
@@ -95,7 +96,7 @@ func (s *DBGamingStore) FindRpsGame(ctx context.Context, filter *RpsGameFilter) 
 	q = filterRpsGames(q, filter)
 	q = rpsgamesSortSelect(q, filter)
 
-	data, err := database.PgxQueryRowsToStruct[models.RpsGame](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := database.PgxQueryWithBuilder[models.RpsGame](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
@@ -104,13 +105,14 @@ func (s *DBGamingStore) FindRpsGame(ctx context.Context, filter *RpsGameFilter) 
 	}
 	return nil, nil
 }
+
 func (s *DBGamingStore) FindRpsGames(ctx context.Context, filter *RpsGameFilter) ([]*models.RpsGame, error) {
 	q := squirrel.Select(repository.RpsGameBuilder.ColumnNames()...).From("gaming.rps_games")
 	q = filterRpsGames(q, filter)
 	q = rpsgamesSortSelect(q, filter)
 	q = queryPagination(q, filter)
 
-	data, err := database.PgxQueryRowsToStruct[models.RpsGame](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := database.PgxQueryWithBuilder[models.RpsGame](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}

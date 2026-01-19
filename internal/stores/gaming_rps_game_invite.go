@@ -38,6 +38,7 @@ func filterSelectRpsGameInvites(qs squirrel.SelectBuilder, filter *RpsGameInvite
 	}
 	return qs
 }
+
 func filterDeleteRpsGameInvites(qs squirrel.DeleteBuilder, filter *RpsGameInviteFilter) squirrel.DeleteBuilder {
 	if filter == nil {
 		return qs
@@ -127,7 +128,7 @@ func (s *DBGamingStore) FindRpsGameInvites(ctx context.Context, filter *RpsGameI
 	q = rpGameInviteSortSelect(q, filter)
 	q = queryPagination(q, filter)
 
-	data, err := database.PgxQueryRowsToStruct[models.RpsGameInvite](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := database.PgxQueryWithBuilder[models.RpsGameInvite](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}

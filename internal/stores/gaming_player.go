@@ -67,6 +67,7 @@ func (s *DBGamingStore) playerFilterSelect(qs squirrel.SelectBuilder, filter *Pl
 	}
 	return qs
 }
+
 func (s *DBGamingStore) playerFilterDelete(qs squirrel.DeleteBuilder, filter *PlayersFilter) squirrel.DeleteBuilder {
 	if filter == nil {
 		return qs
@@ -137,7 +138,7 @@ func (s *DBGamingStore) FindPlayers(ctx context.Context, filter *PlayersFilter) 
 	q = s.playerSortSelect(q, filter)
 	q = queryPagination(q, filter)
 
-	data, err := database.PgxQueryRowsToStruct[models.Player](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := database.PgxQueryWithBuilder[models.Player](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}

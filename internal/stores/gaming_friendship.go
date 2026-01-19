@@ -60,6 +60,7 @@ func (s *DBGamingStore) friendshipFilterSelect(sq squirrel.SelectBuilder, filter
 
 	return sq
 }
+
 func (s *DBGamingStore) friendshipFilterDelete(sq squirrel.DeleteBuilder, filter *FriendshipFilter) squirrel.DeleteBuilder {
 	if filter == nil {
 		return sq
@@ -140,7 +141,7 @@ func (s *DBGamingStore) FindFriendships(ctx context.Context, filter *FriendshipF
 	q = s.friendshipSortSelect(q, filter)
 	q = queryPagination(q, filter)
 
-	data, err := database.PgxQueryRowsToStruct[models.Frindship](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	data, err := database.PgxQueryWithBuilder[models.Frindship](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return nil, err
 	}
