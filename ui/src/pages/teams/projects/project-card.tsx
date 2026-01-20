@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "react-router";
-import { LayoutGrid, Clock, MoreHorizontal, Trash2 } from "lucide-react";
+import { Clock, MoreHorizontal, Trash2 } from "lucide-react";
 
 import {
   Card,
@@ -26,6 +26,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { useState } from "react";
+import { ProjectStatusBadge } from "./status";
 
 interface ProjectCardProps {
   team: Team;
@@ -59,12 +60,15 @@ export function ProjectCard({ project, team, onDelete }: ProjectCardProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
-                {/* <DropdownMenuItem onClick={handleEdit}> */}
-                {/*   <Pencil className="size-4" /> */}
-                {/*   Edit */}
-                {/* </DropdownMenuItem> */}
-                {/* <DropdownMenuSeparator /> */}
-                <DropdownMenuItem onClick={handleDelete} variant="destructive">
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setDeleteConfirmOpen(true);
+                    setDropdownOpen(false);
+                  }}
+                >
                   <Trash2 className="size-4" />
                   Delete
                 </DropdownMenuItem>
@@ -88,9 +92,10 @@ export function ProjectCard({ project, team, onDelete }: ProjectCardProps) {
                   <DialogClose asChild>
                     <Button
                       variant="outline"
-                      onClick={() => {
-                        console.log("cancel");
-                        // editDialog.props.onOpenChange(false);
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDeleteConfirmOpen(false);
                       }}
                     >
                       Cancel
@@ -106,20 +111,13 @@ export function ProjectCard({ project, team, onDelete }: ProjectCardProps) {
             </ConfirmDialog>
           </div>
           <CardDescription className="flex items-center gap-4 pt-1">
-            <span className="flex items-center gap-1.5">
-              <LayoutGrid className="size-3.5" />
-              {project.status}
-            </span>
-            {/* <span className="flex items-center gap-1.5"> */}
-            {/*   <Users className="size-3.5" /> */}
-            {/*   {project.status} members */}
-            {/* </span> */}
+            <ProjectStatusBadge status={project.status} />
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="size-3.5" />
-            Updated {project.updated_at}
+            Updated: {new Date(project.updated_at).toLocaleDateString()}
           </div>
         </CardContent>
       </Card>

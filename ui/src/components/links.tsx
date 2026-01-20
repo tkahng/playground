@@ -175,7 +175,6 @@ export const userDashboardLinks: LinkDto[] = [
 
 export const teamLinks = (slug: string): LinkDto[] => [
   createTeamDashboardLink(slug),
-  createTeamProjectsLink(slug),
   createTeamSettingsLink(slug),
   createTeamNotificationsLink(slug),
 ];
