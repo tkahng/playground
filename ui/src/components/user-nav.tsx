@@ -86,7 +86,6 @@ export function UserNav() {
         checkAuth();
       }
     }
-    // return <div>Error: {teamsError?.message}</div>;
     <div className="flex items-center gap-4">
       <NavbarLink title="Sign In" to={RouteMap.SIGNIN} />
       <NavbarLink title="Sign Up" to={RouteMap.SIGNUP} />

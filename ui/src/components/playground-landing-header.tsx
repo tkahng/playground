@@ -21,6 +21,7 @@ export function PlaygroundLandingHeader({
   rightLinks?: LinkDto[];
 }) {
   const { pathname } = useLocation();
+  const combinedLinks = [...(leftLinks?.length ? leftLinks : [])];
   return (
     <header>
       <nav className={cn("flex h-14 items-center box-border justify-between")}>
@@ -71,43 +72,45 @@ export function PlaygroundLandingHeader({
             : null}
         </div>
         <div className="lg:hidden flex grow items-center space-x-4">
-          <Sheet>
-            <SheetTrigger asChild className="lg:hidden">
-              <Button variant="ghost" size="icon">
-                <Menu className="h-6 w-6" />
-                <span className="sr-only">Toggle menu</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent
-              side="left"
-              className="w-75 sm:w-100 px-4 md:px-6 lg:px-8 py-2"
-            >
-              <SheetTitle className="sr-only">Menu</SheetTitle>
-              <div className="h-8"></div>
-              <nav className="flex flex-col gap-4">
-                {[...(leftLinks?.length ? leftLinks : [])].map((item) => (
-                  <SheetClose asChild key={item.to}>
-                    <Link
-                      key={item.to}
-                      to={item.to}
-                      className={cn(
-                        item.current
-                          ? item.current(pathname)
-                            ? "underline"
-                            : "text-muted-foreground"
-                          : item.to === pathname
-                            ? "underline"
-                            : "text-muted-foreground",
-                        "text-sm font-medium underline-offset-4 hover:underline",
-                      )}
-                    >
-                      {item.title}
-                    </Link>
-                  </SheetClose>
-                ))}
-              </nav>
-            </SheetContent>
-          </Sheet>
+          {!!combinedLinks.length && (
+            <Sheet>
+              <SheetTrigger asChild className="lg:hidden">
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-6 w-6" />
+                  <span className="sr-only">Toggle menu</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent
+                side="left"
+                className="w-75 sm:w-100 px-4 md:px-6 lg:px-8 py-2"
+              >
+                <SheetTitle className="sr-only">Menu</SheetTitle>
+                <div className="h-8"></div>
+                <nav className="flex flex-col gap-4">
+                  {[...(leftLinks?.length ? leftLinks : [])].map((item) => (
+                    <SheetClose asChild key={item.to}>
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        className={cn(
+                          item.current
+                            ? item.current(pathname)
+                              ? "underline"
+                              : "text-muted-foreground"
+                            : item.to === pathname
+                              ? "underline"
+                              : "text-muted-foreground",
+                          "text-sm font-medium underline-offset-4 hover:underline",
+                        )}
+                      >
+                        {item.title}
+                      </Link>
+                    </SheetClose>
+                  ))}
+                </nav>
+              </SheetContent>
+            </Sheet>
+          )}
           <PlaygroundLogo />
         </div>
         <UserNav />
