@@ -4,7 +4,7 @@ import { RouteLinks, userDropdownLinks } from "@/components/links";
 import { ModeToggle } from "@/components/mode-toggle";
 import { RouteMap } from "@/components/route-map";
 import { themes } from "@/components/themes";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -70,11 +70,11 @@ export function UserNav() {
   };
   if (!auth) {
     return (
-      <>
+      <div className="flex items-center gap-4">
         <NavbarLink title="Sign In" to={RouteMap.SIGNIN} />
         <NavbarLink title="Sign Up" to={RouteMap.SIGNUP} />
         <ModeToggle />
-      </>
+      </div>
     );
   }
   if (teamsLoading) {
@@ -86,12 +86,11 @@ export function UserNav() {
         checkAuth();
       }
     }
-    // return <div>Error: {teamsError?.message}</div>;
-    <>
+    <div className="flex items-center gap-4">
       <NavbarLink title="Sign In" to={RouteMap.SIGNIN} />
       <NavbarLink title="Sign Up" to={RouteMap.SIGNUP} />
       <ModeToggle />
-    </>;
+    </div>;
   }
 
   return (
@@ -102,8 +101,9 @@ export function UserNav() {
           className="relative h-8 w-8 rounded-full shadow-sm border-2"
         >
           <Avatar>
-            <AvatarImage src="https://avatars.githubusercontent.com/u/124599?v=4" />
-            <AvatarFallback>SC</AvatarFallback>
+            <AvatarFallback>
+              {auth.user.email.charAt(0).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -199,8 +199,8 @@ export function UserNav() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          {links2.map((link) => (
-            <>
+          {links2.map((link, index) => (
+            <div key={index}>
               <DropdownMenuItem key={link.to}>
                 <Link to={link.to} className="w-full">
                   <div className="flex flex-row gap-2 items-center">
@@ -209,7 +209,7 @@ export function UserNav() {
                   </div>
                 </Link>
               </DropdownMenuItem>
-            </>
+            </div>
           ))}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

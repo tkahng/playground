@@ -133,3 +133,5 @@ export type PlayerRpsGame = {
 };
 
 export type Participant = components["schemas"]["RpsParticipant"];
+
+export type Project = components["schemas"]["TaskProject"];
