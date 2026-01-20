@@ -70,11 +70,11 @@ export function UserNav() {
   };
   if (!auth) {
     return (
-      <>
+      <div className="flex items-center gap-4">
         <NavbarLink title="Sign In" to={RouteMap.SIGNIN} />
         <NavbarLink title="Sign Up" to={RouteMap.SIGNUP} />
         <ModeToggle />
-      </>
+      </div>
     );
   }
   if (teamsLoading) {
@@ -87,11 +87,11 @@ export function UserNav() {
       }
     }
     // return <div>Error: {teamsError?.message}</div>;
-    <>
+    <div className="flex items-center gap-4">
       <NavbarLink title="Sign In" to={RouteMap.SIGNIN} />
       <NavbarLink title="Sign Up" to={RouteMap.SIGNUP} />
       <ModeToggle />
-    </>;
+    </div>;
   }
 
   return (
