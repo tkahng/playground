@@ -95,7 +95,6 @@ export function ProjectCard({ project, team, onDelete }: ProjectCardProps) {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log("cancel");
                         setDeleteConfirmOpen(false);
                       }}
                     >
