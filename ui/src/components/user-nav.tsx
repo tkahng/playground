@@ -4,7 +4,7 @@ import { RouteLinks, userDropdownLinks } from "@/components/links";
 import { ModeToggle } from "@/components/mode-toggle";
 import { RouteMap } from "@/components/route-map";
 import { themes } from "@/components/themes";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -102,8 +102,9 @@ export function UserNav() {
           className="relative h-8 w-8 rounded-full shadow-sm border-2"
         >
           <Avatar>
-            <AvatarImage src="https://avatars.githubusercontent.com/u/124599?v=4" />
-            <AvatarFallback>SC</AvatarFallback>
+            <AvatarFallback>
+              {auth.user.email.charAt(0).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
