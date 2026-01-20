@@ -2,7 +2,6 @@ import { CenteredSpinner } from "@/components/centered-spinner";
 import { DataTablePagination } from "@/components/data-table-pagination";
 import { ErrorCard } from "@/components/error-card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
 import { ApiError } from "@/lib/error";
@@ -16,11 +15,12 @@ import {
   getPaginationRowModel,
 } from "@tanstack/react-table";
 import { UserPlus } from "lucide-react";
-import { Link, useSearchParams } from "react-router";
+import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { CreateProjectAiDialog } from "./projects/create-project-ai-dialog";
 import { CreateProjectDialog } from "./projects/create-project-dialog";
 import { ProjectCard } from "./projects/project-card";
+import { Separator } from "@/components/ui/separator";
 
 export default function TeamDashboard() {
   const { user } = useAuthProvider();
@@ -125,7 +125,7 @@ export default function TeamDashboard() {
             Welcome to <span className="font-extrabold">{team.name}</span>
           </h1>
           <p className="text-muted-foreground">
-            Manage your team's AI usage and collaboration
+            Manage your team's projects, tasks, and members.
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -135,47 +135,17 @@ export default function TeamDashboard() {
           </Button>
         </div>
       </div>
-      <Card>
-        <CardContent className="m-8">
-          <p>This is your Team's dashboard!</p>
-          <br />
-          <p>
-            While we work on polishing this page, here are some things to try:
-          </p>
-          <ul className="list-disc mx-6">
-            <li>
-              Create a project with AI. Go to the{" "}
-              <Link
-                to={`/teams/${team.slug}/projects`}
-                className="text-primary hover:text-accent-foreground underline hover:no-underline"
-              >
-                Team Projects page
-              </Link>
-              , click on the Create Project with AI button, and describe your
-              project. It will generate a list of tasks for it!
-            </li>
-            <li>
-              Invite a team member! Send invitations to your team via
-              email.{" "}
-            </li>
-            <li>Assign project tasks to your team mates, or your self.</li>
-          </ul>
-        </CardContent>
-      </Card>
-      <div className="mx-auto max-w-6xl px-4 py-12">
+      <Separator />
+      <div className="mt-8 mx-auto max-w-6xl">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Your Projects</h1>
-            <p className="mt-1 text-muted-foreground">
-              Manage your projects and track progress across teams.
-            </p>
+            <h2 className="text-2xl font-bold tracking-tight">Your Projects</h2>
           </div>
           <div className="flex items-center gap-3">
             <CreateProjectDialog />
             <CreateProjectAiDialog />
           </div>
         </div>
-
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {table.getRowModel().rows.map(({ original: project }) => (
             <ProjectCard
