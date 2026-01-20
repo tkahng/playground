@@ -114,12 +114,15 @@ export default function VerifyEmailPage() {
                             Verification code
                           </FieldLabel>
                           <InputOTP
+                            inputMode="numeric"
+                            autoComplete="one-time-code"
                             maxLength={6}
                             id="otp"
                             required
                             name={field.name}
                             value={field.value}
                             onChange={field.onChange}
+                            onComplete={form.handleSubmit(onUpdateSubmit)}
                           >
                             <InputOTPGroup className="gap-2.5 *:data-[slot=input-otp-slot]:rounded-md *:data-[slot=input-otp-slot]:border">
                               <InputOTPSlot index={0} />
