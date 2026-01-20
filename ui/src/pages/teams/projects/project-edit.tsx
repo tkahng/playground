@@ -64,7 +64,7 @@ export default function ProjectEdit() {
   return (
     <div className="flex-1 space-y-6 w-full px-8">
       <Link
-        to={`/teams/${team?.slug}/projects`}
+        to={`/teams/${team?.slug}/dashboard`}
         className="flex items-center gap-2 text-sm text-muted-foreground"
       >
         <ChevronLeft className="h-4 w-4" />
