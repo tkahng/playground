@@ -125,6 +125,8 @@ export function CreateProjectAiDialog() {
   }, [mutation.isPending, generatingPhases.length]);
 
   const handleSubmit = () => {
+    if (!prompt.trim()) return;
+    if (mutation.isPending) return; // guard against double click
     mutation.mutate({ input: prompt });
   };
 
@@ -153,6 +155,12 @@ export function CreateProjectAiDialog() {
           step === "error" && "sm:max-w-md",
         )}
         showCloseButton={step === "input" || step === "error"}
+        onInteractOutside={(e) => {
+          if (step === "generating") e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+          if (step === "generating") e.preventDefault();
+        }}
       >
         {/* Input Step */}
         <div
@@ -206,11 +214,20 @@ export function CreateProjectAiDialog() {
 
               <Button
                 onClick={handleSubmit}
-                disabled={!prompt.trim()}
+                disabled={!prompt.trim() || mutation.isPending}
                 className="w-full gap-2"
               >
-                Generate Project
-                <ArrowRight className="size-4" />
+                {mutation.isPending ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    Generate Project
+                    <ArrowRight className="size-4" />
+                  </>
+                )}
               </Button>
             </div>
           </div>
