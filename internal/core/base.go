@@ -63,6 +63,8 @@ type BaseApp struct {
 	eventManager events.EventManager
 
 	rpsGame services.RpsGameService
+	ledger  services.LedgerService
+	betting services.BettingService
 }
 
 // RpsGame implements [App].
@@ -71,6 +73,22 @@ func (b *BaseApp) RpsGame() services.RpsGameService {
 		panic("rps game not initialized")
 	}
 	return b.rpsGame
+}
+
+// Ledger implements [App].
+func (b *BaseApp) Ledger() services.LedgerService {
+	if b.ledger == nil {
+		panic("ledger service not initialized")
+	}
+	return b.ledger
+}
+
+// Betting implements [App].
+func (b *BaseApp) Betting() services.BettingService {
+	if b.betting == nil {
+		panic("betting service not initialized")
+	}
+	return b.betting
 }
 
 func (b *BaseApp) Encrypt() services.Encryptor {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
@@ -40,6 +41,9 @@ type PaymentService interface {
 
 	CreateBillingPortalSession(ctx context.Context, stripeCustomerId string) (string, error)
 	CreateCheckoutSession(ctx context.Context, stripeCustomerId string, priceId string) (string, error)
+	// CreatePointsCheckoutSession creates a Stripe checkout URL for a one-time points purchase.
+	// The points amount is derived from the price's metadata key "points_amount".
+	CreatePointsCheckoutSession(ctx context.Context, userID uuid.UUID, stripeCustomerID string, priceID string) (string, error)
 
 	// FindSubscriptionWithPriceBySessionId(ctx context.Context, sessionId string) (*models.StripeSubscription, error)
 
@@ -58,6 +62,9 @@ type PaymentClient interface {
 	Config() *conf.StripeConfig
 	CreateBillingPortalSession(customerId string, configurationId string, retunrUrl string) (*stripe.BillingPortalSession, error)
 	CreateCheckoutSession(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error)
+	// CreatePointsCheckoutSession creates a one-time payment checkout session for purchasing points.
+	// userID and pointsAmount are stored as session metadata for fulfillment in the webhook.
+	CreatePointsCheckoutSession(customerID, userID string, pointsAmount int64, priceID string) (*stripe.CheckoutSession, error)
 	CreateCustomer(email string, name *string, metadata *map[string]string) (*stripe.Customer, error)
 	CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error)
 	FindAllPrices() ([]*stripe.Price, error)
@@ -625,4 +632,35 @@ func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, stripe
 		return "", errors.New("failed to create checkout session")
 	}
 	return url.URL, nil
+}
+
+// CreatePointsCheckoutSession creates a one-time payment Stripe Checkout URL for purchasing points.
+// The points amount is read from the price's metadata key "points_amount" so the client cannot manipulate it.
+func (srv *StripeService) CreatePointsCheckoutSession(ctx context.Context, userID uuid.UUID, stripeCustomerID string, priceID string) (string, error) {
+	price, err := srv.adapter.Price().FindPrice(ctx, &stores.StripePriceFilter{
+		Ids:    []string{priceID},
+		Active: types.OptionalParam[bool]{IsSet: true, Value: true},
+	})
+	if err != nil {
+		return "", err
+	}
+	if price == nil {
+		return "", errors.New("price not found or inactive")
+	}
+	if price.Type != models.StripePricingTypeOneTime {
+		return "", errors.New("price must be a one-time payment price")
+	}
+	pointsStr, ok := price.Metadata["points_amount"]
+	if !ok || pointsStr == "" {
+		return "", errors.New("price is missing required metadata key: points_amount")
+	}
+	pointsAmount, err := strconv.ParseInt(pointsStr, 10, 64)
+	if err != nil || pointsAmount <= 0 {
+		return "", fmt.Errorf("invalid points_amount in price metadata: %s", pointsStr)
+	}
+	sesh, err := srv.client.CreatePointsCheckoutSession(stripeCustomerID, userID.String(), pointsAmount, priceID)
+	if err != nil {
+		return "", err
+	}
+	return sesh.URL, nil
 }

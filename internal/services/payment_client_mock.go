@@ -111,21 +111,22 @@ var (
 var mockPaymentErr = errors.New("this is a test payment client")
 
 type MockPaymentClient struct {
-	SubscriptionItems                 []*stripe.SubscriptionItem
-	CustomerByEmail                   map[string]*stripe.Customer
-	Customers                         []*stripe.Customer
-	ConfigFunc                        func() *conf.StripeConfig
-	CreateBillingPortalSessionFunc    func(customerId string, configurationId string, retunrUrl string) (*stripe.BillingPortalSession, error)
-	CreateCheckoutSessionFunc         func(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error)
-	CreateCustomerFunc                func(email string, name *string, metadata *map[string]string) (*stripe.Customer, error)
-	CreatePortalConfigurationFunc     func(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error)
-	FindAllPricesFunc                 func() ([]*stripe.Price, error)
-	FindAllProductsFunc               func() ([]*stripe.Product, error)
-	FindCheckoutSessionByStripeIdFunc func(stripeId string) (*stripe.CheckoutSession, error)
-	FindOrCreateCustomerFunc          func(email string, name *string) (*stripe.Customer, error)
-	FindSubscriptionByStripeIdFunc    func(stripeId string) (*stripe.Subscription, error)
-	UpdateCustomerFunc                func(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error)
-	UpdateItemQuantityFunc            func(itemId string, priceId string, count int64) (*stripe.SubscriptionItem, error)
+	SubscriptionItems                    []*stripe.SubscriptionItem
+	CustomerByEmail                      map[string]*stripe.Customer
+	Customers                            []*stripe.Customer
+	ConfigFunc                           func() *conf.StripeConfig
+	CreateBillingPortalSessionFunc       func(customerId string, configurationId string, retunrUrl string) (*stripe.BillingPortalSession, error)
+	CreateCheckoutSessionFunc            func(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error)
+	CreatePointsCheckoutSessionFunc      func(customerID, userID string, pointsAmount int64, priceID string) (*stripe.CheckoutSession, error)
+	CreateCustomerFunc                   func(email string, name *string, metadata *map[string]string) (*stripe.Customer, error)
+	CreatePortalConfigurationFunc        func(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error)
+	FindAllPricesFunc                    func() ([]*stripe.Price, error)
+	FindAllProductsFunc                  func() ([]*stripe.Product, error)
+	FindCheckoutSessionByStripeIdFunc    func(stripeId string) (*stripe.CheckoutSession, error)
+	FindOrCreateCustomerFunc             func(email string, name *string) (*stripe.Customer, error)
+	FindSubscriptionByStripeIdFunc       func(stripeId string) (*stripe.Subscription, error)
+	UpdateCustomerFunc                   func(customerId string, params *stripe.CustomerParams) (*stripe.Customer, error)
+	UpdateItemQuantityFunc               func(itemId string, priceId string, count int64) (*stripe.SubscriptionItem, error)
 }
 
 func (t *MockPaymentClient) GetCustomerByFunc(fn func(*stripe.Customer) bool) *stripe.Customer {
@@ -172,6 +173,14 @@ func (t *MockPaymentClient) CreateBillingPortalSession(customerId string, config
 func (t *MockPaymentClient) CreateCheckoutSession(customerId string, priceId string, quantity int64, trialDays *int64) (*stripe.CheckoutSession, error) {
 	if t.CreateCheckoutSessionFunc != nil {
 		return t.CreateCheckoutSessionFunc(customerId, priceId, quantity, trialDays)
+	}
+	return nil, mockPaymentErr
+}
+
+// CreatePointsCheckoutSession implements PaymentClient.
+func (t *MockPaymentClient) CreatePointsCheckoutSession(customerID, userID string, pointsAmount int64, priceID string) (*stripe.CheckoutSession, error) {
+	if t.CreatePointsCheckoutSessionFunc != nil {
+		return t.CreatePointsCheckoutSessionFunc(customerID, userID, pointsAmount, priceID)
 	}
 	return nil, mockPaymentErr
 }

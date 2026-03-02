@@ -13,7 +13,9 @@ import (
 func TestDbRpsGameService_RequestGame_Success(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
-		rpsService := NewDbRpsGameService(adapter)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
 		player1 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("player1@gmail.com"))
 		player2 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("player2@gmail.com"))
 		requestInput := &RpsGameRequestInput{
@@ -48,7 +50,10 @@ func TestDbRpsGameService_RequestGame_Success(t *testing.T) {
 func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Win(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
-		rpsService := NewDbRpsGameService(adapter)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
 		player1 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("player1@gmail.com"))
 		player2 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("player2@gmail.com"))
 		requestInput := &RpsGameRequestInput{
@@ -86,10 +91,13 @@ func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Win(t *test
 		}
 	})
 }
+
 func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Lose(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
-		rpsService := NewDbRpsGameService(adapter)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
 		player1 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("player1@gmail.com"))
 		player2 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("player2@gmail.com"))
 		requestInput := &RpsGameRequestInput{
@@ -127,10 +135,13 @@ func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Lose(t *tes
 		}
 	})
 }
+
 func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Tie(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
-		rpsService := NewDbRpsGameService(adapter)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
 		player1 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("player1@gmail.com"))
 		player2 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("player2@gmail.com"))
 		requestInput := &RpsGameRequestInput{
@@ -168,10 +179,13 @@ func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Tie(t *test
 		}
 	})
 }
+
 func TestDbRpsGameService_RespondToGameRequest_Fail_Expired(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
-		rpsService := NewDbRpsGameService(adapter)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
 		player1 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("player1@gmail.com"))
 		player2 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("player2@gmail.com"))
 		requestInput := &RpsGameRequestInput{

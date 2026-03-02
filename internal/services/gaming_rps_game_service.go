@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -29,6 +30,7 @@ type RpsGameService interface {
 
 type DbRpsGameService struct {
 	adapter stores.StorageAdapterInterface
+	betting BettingService
 }
 
 // CreatePlayerByParams implements [RpsGameService].
@@ -67,9 +69,10 @@ func (d *DbRpsGameService) PlayerCanPlayWithPlayer(ctx context.Context, requesti
 
 var _ RpsGameService = (*DbRpsGameService)(nil)
 
-func NewDbRpsGameService(adapter stores.StorageAdapterInterface) *DbRpsGameService {
+func NewDbRpsGameService(adapter stores.StorageAdapterInterface, betting BettingService) *DbRpsGameService {
 	return &DbRpsGameService{
 		adapter: adapter,
+		betting: betting,
 	}
 }
 
@@ -78,18 +81,38 @@ type RpsGameRequestInput struct {
 	InvitedPlayerID      uuid.UUID
 	RequestingPlayerMove models.RpsParticipantMove
 	DurationSeconds      int64
+	// BetAmount is the number of points each player wagers.
+	// nil means no bet. The requesting player (host) must have sufficient balance.
+	BetAmount *int64
+	// HostUserID is required when BetAmount is set; it identifies the wallet owner.
+	HostUserID *uuid.UUID
 }
 
 func (d *DbRpsGameService) RequestGame(ctx context.Context, input *RpsGameRequestInput) (*RpsGameWithParticipants, error) {
+	// Validate betting prerequisites.
+	if input.BetAmount != nil {
+		if *input.BetAmount <= 0 {
+			return nil, errors.New("bet amount must be positive")
+		}
+		if input.HostUserID == nil {
+			return nil, errors.New("bet requires a registered host user (HostUserID)")
+		}
+		if d.betting == nil {
+			return nil, errors.New("betting service is not available")
+		}
+	}
+
 	gameWithParticipants := &RpsGameWithParticipants{}
 	game, err := d.adapter.Gaming().CreateRpsGame(ctx, &models.RpsGame{
 		ExpiresAt: time.Now().UTC().Add(time.Duration(input.DurationSeconds) * time.Second).UTC(),
 		Status:    models.RpsGameStatusPending,
+		BetAmount: input.BetAmount,
 	})
 	if err != nil {
 		return nil, err
 	}
 	gameWithParticipants.RpsGame = game
+
 	participantsInput := []*models.RpsParticipant{
 		{
 			PlayerID: input.RequestingPlayerID,
@@ -121,6 +144,21 @@ func (d *DbRpsGameService) RequestGame(ctx context.Context, input *RpsGameReques
 			gameWithParticipants.RequestingParticipant = p
 		}
 	}
+
+	// Place the host's bet escrow if a bet amount is set.
+	if input.BetAmount != nil && input.HostUserID != nil {
+		hostPending, err := d.betting.PlaceHostBet(ctx, game.ID, *input.HostUserID, *input.BetAmount)
+		if err != nil {
+			return nil, fmt.Errorf("place host bet: %w", err)
+		}
+		game.HostBetTransferID = &hostPending.ID
+		updatedGame, err := d.adapter.Gaming().UpdateRpsGame(ctx, game)
+		if err != nil {
+			return nil, fmt.Errorf("save host bet transfer id: %w", err)
+		}
+		gameWithParticipants.RpsGame = updatedGame
+	}
+
 	return gameWithParticipants, nil
 }
 
@@ -145,36 +183,67 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 	if gameWithParticipants.InvitedParticipant.PlayerID != input.InvitedPlayerID {
 		return nil, errors.New("invited player does not match")
 	}
+
+	game := gameWithParticipants.RpsGame
+	hasBet := game.BetAmount != nil && *game.BetAmount > 0
+
 	switch input.Status {
 	case models.RpsGameStatusCancelled:
-		// if game is cancelled, set the game status to cancelled
-		// and set the invited player status to declined
-		gameWithParticipants.RpsGame.Status = models.RpsGameStatusCancelled
+		game.Status = models.RpsGameStatusCancelled
 		gameWithParticipants.InvitedParticipant.Status = models.RpsParticipantStatusDeclined
+
+		// Refund the host's pending escrow if a bet was placed.
+		if hasBet && game.HostBetTransferID != nil && d.betting != nil {
+			if err := d.betting.RefundHostBet(ctx, *game.HostBetTransferID); err != nil {
+				return nil, fmt.Errorf("refund host bet on cancel: %w", err)
+			}
+		}
+
 	case models.RpsGameStatusCompleted:
-		// if game is completed, set the game status to completed
-		// and set the invited player status to completed
 		gameWithParticipants.InvitedParticipant.Move = input.Move
-		gameWithParticipants.RpsGame.Status = models.RpsGameStatusCompleted
+		game.Status = models.RpsGameStatusCompleted
 		gameWithParticipants.RequestingParticipant.Status = models.RpsParticipantStatusCompleted
 		gameWithParticipants.InvitedParticipant.Status = models.RpsParticipantStatusCompleted
-		if gameWithParticipants.RequestingParticipant.Move == gameWithParticipants.InvitedParticipant.Move {
-			// if the requesting player move is the same as the invited player move, set the result to tie
+
+		// Determine game result.
+		hostMove := gameWithParticipants.RequestingParticipant.Move
+		guestMove := gameWithParticipants.InvitedParticipant.Move
+		if hostMove == guestMove {
 			gameWithParticipants.RequestingParticipant.Result = models.RpsParticipantResultTie
 			gameWithParticipants.InvitedParticipant.Result = models.RpsParticipantResultTie
-		} else if (gameWithParticipants.RequestingParticipant.Move == models.RpsParticipantMoveRock && gameWithParticipants.InvitedParticipant.Move == models.RpsParticipantMoveScissors) || (gameWithParticipants.RequestingParticipant.Move == models.RpsParticipantMovePaper && gameWithParticipants.InvitedParticipant.Move == models.RpsParticipantMoveRock) || (gameWithParticipants.RequestingParticipant.Move == models.RpsParticipantMoveScissors && gameWithParticipants.InvitedParticipant.Move == models.RpsParticipantMovePaper) {
-			// check for all requesting player wins.
-			// |requesting player move| |invited player move|
-			// |rock| |scissors|
-			// |paper| |rock|
-			// |scissors| |paper|
+		} else if (hostMove == models.RpsParticipantMoveRock && guestMove == models.RpsParticipantMoveScissors) ||
+			(hostMove == models.RpsParticipantMovePaper && guestMove == models.RpsParticipantMoveRock) ||
+			(hostMove == models.RpsParticipantMoveScissors && guestMove == models.RpsParticipantMovePaper) {
 			gameWithParticipants.RequestingParticipant.Result = models.RpsParticipantResultWin
 			gameWithParticipants.InvitedParticipant.Result = models.RpsParticipantResultLose
 		} else {
-			// otherwise, the invited player wins
 			gameWithParticipants.RequestingParticipant.Result = models.RpsParticipantResultLose
 			gameWithParticipants.InvitedParticipant.Result = models.RpsParticipantResultWin
 		}
+
+		// Settle the bet if one was placed.
+		if hasBet && game.HostBetTransferID != nil && d.betting != nil {
+			hostPlayer := gameWithParticipants.RequestingParticipant.Player
+			if hostPlayer == nil || hostPlayer.UserID == nil {
+				return nil, errors.New("host player must be a registered user to settle a bet")
+			}
+			guestPlayer := gameWithParticipants.InvitedParticipant.Player
+			if guestPlayer == nil || guestPlayer.UserID == nil {
+				return nil, errors.New("guest player must be a registered user to settle a bet")
+			}
+			if err := d.betting.PlaceGuestAndSettle(ctx, PlaceGuestAndSettleInput{
+				GameID:                input.GameID,
+				GuestUserID:           *guestPlayer.UserID,
+				HostUserID:            *hostPlayer.UserID,
+				BetAmount:             *game.BetAmount,
+				HostPendingTransferID: *game.HostBetTransferID,
+				HostResult:            gameWithParticipants.RequestingParticipant.Result,
+				GuestResult:           gameWithParticipants.InvitedParticipant.Result,
+			}); err != nil {
+				return nil, fmt.Errorf("settle bet: %w", err)
+			}
+		}
+
 	default:
 		return nil, errors.New("invalid status")
 	}

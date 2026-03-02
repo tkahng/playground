@@ -290,12 +290,13 @@ func bindSubmitMoveToRpsGameApi(api huma.API, app core.App) {
 			}
 			var rpsGameWithParticipants *services.RpsGameWithParticipants
 			txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
-				rpsGameWithParticipants, err = app.RpsGame().RespondToGameRequest(txCtx, &services.GameRequestResponse{
+				resp := &services.GameRequestResponse{
 					GameID:          game.RpsGame.ID,
 					InvitedPlayerID: currentPlayer.ID,
 					Move:            models.RpsParticipantMove(input.Body.Move),
 					Status:          models.RpsGameStatus(input.Body.Status),
-				})
+				}
+				rpsGameWithParticipants, err = app.RpsGame().RespondToGameRequest(txCtx, resp)
 				return err
 			})
 			if txErr != nil {
@@ -432,6 +433,7 @@ func bindSendGameRequestToUnRegisteredPlayerApi(api huma.API, app core.App) {
 type RpsGameRequestInput struct {
 	InvitingPlayerId uuid.UUID          `json:"inviting_player_id" required:"true" format:"uuid"`
 	Move             RpsParticipantMove `json:"move" required:"true" enum:"rock,paper,scissors"`
+	BetAmount        *int64             `json:"bet_amount,omitempty" required:"false" minimum:"1" doc:"Optional points wager. If set, the host must have sufficient balance."`
 }
 
 func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
@@ -487,12 +489,17 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 			}
 			var rpsGameWithParticipants *services.RpsGameWithParticipants
 			txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
-				rpsGameWithParticipants, err = app.RpsGame().RequestGame(txCtx, &services.RpsGameRequestInput{
+				reqInput := &services.RpsGameRequestInput{
 					RequestingPlayerID:   currentPlayer.ID,
 					InvitedPlayerID:      player.ID,
 					RequestingPlayerMove: models.RpsParticipantMove(input.Body.Move),
 					DurationSeconds:      3 * 24 * 60 * 60,
-				})
+				}
+				if input.Body.BetAmount != nil {
+					reqInput.BetAmount = input.Body.BetAmount
+					reqInput.HostUserID = &user.User.ID
+				}
+				rpsGameWithParticipants, err = app.RpsGame().RequestGame(txCtx, reqInput)
 				return err
 			})
 			if txErr != nil {

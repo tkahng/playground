@@ -16,15 +16,22 @@ const (
 )
 
 type RpsGame struct {
-	_            struct{}          `db:"rps_games" schema:"gaming" json:"-"`
-	ID           uuid.UUID         `db:"id,pk" json:"id"`
-	CompletedAt  *time.Time        `db:"completed_at" json:"completed_at,omitempty"`
-	ExpiresAt    time.Time         `db:"expires_at" json:"expires_at"`
-	Status       RpsGameStatus     `db:"status" json:"status" default:"pending" enum:"pending,cancelled,completed"`
-	Metadata     []byte            `db:"metadata" json:"metadata"`
-	CreatedAt    time.Time         `db:"created_at" json:"created_at"`
-	UpdatedAt    time.Time         `db:"updated_at" json:"updated_at"`
-	Participants []*RpsParticipant `db:"rps_participants" src:"id" dest:"game_id" table:"gaming.rps_participants" json:"participants,omitempty"`
+	_                   struct{}          `db:"rps_games" schema:"gaming" json:"-"`
+	ID                  uuid.UUID         `db:"id,pk" json:"id"`
+	CompletedAt         *time.Time        `db:"completed_at" json:"completed_at,omitempty"`
+	ExpiresAt           time.Time         `db:"expires_at" json:"expires_at"`
+	Status              RpsGameStatus     `db:"status" json:"status" default:"pending" enum:"pending,cancelled,completed"`
+	Metadata            []byte            `db:"metadata" json:"metadata"`
+	// BetAmount is the number of points wagered by each player.
+	// nil means no bet is associated with this game.
+	BetAmount           *int64            `db:"bet_amount" json:"bet_amount,omitempty"`
+	// HostBetTransferID is the pending ledger transfer ID for the host's escrow bet.
+	HostBetTransferID   *uuid.UUID        `db:"host_bet_transfer_id" json:"host_bet_transfer_id,omitempty"`
+	// GuestBetTransferID is the pending ledger transfer ID for the guest's escrow bet.
+	GuestBetTransferID  *uuid.UUID        `db:"guest_bet_transfer_id" json:"guest_bet_transfer_id,omitempty"`
+	CreatedAt           time.Time         `db:"created_at" json:"created_at"`
+	UpdatedAt           time.Time         `db:"updated_at" json:"updated_at"`
+	Participants        []*RpsParticipant `db:"rps_participants" src:"id" dest:"game_id" table:"gaming.rps_participants" json:"participants,omitempty"`
 }
 
 // enum:"pending,declined,completed"
