@@ -35,6 +35,20 @@ Google and Github oauth is supported, with more supported with adding configurat
 
 Inspired by Supabase's [GoTrue](https://github.com/supabase/auth), a unified endpoint for OAuth2.0 Callbacks with state token is used. All providers point to `/api/auth/callback`, with each state parameter containing a jwt with necessary information for authentication.
 
+# Points
+
+Users can purchase points via Stripe and spend them on in-app features such as wagering on RPS games.
+
+Points are stored in a double-entry ledger. Each user has a wallet account; transfers between accounts are atomic and enforce a no-overdraft constraint.
+
+**Purchasing points**
+
+Points are sold as one-time Stripe products. Each Stripe price must have a `points_amount` metadata key containing the integer number of points granted. The server derives the grant from this metadata — the client only supplies a `price_id`. After Stripe confirms payment via webhook, the points are credited to the user's wallet automatically.
+
+**Wagering on RPS games**
+
+When requesting a game, the host may set a `bet_amount`. The host's points are held in escrow immediately. When the guest responds, the guest's points are also debited and the pot is awarded to the winner (or returned to both on a tie). If the guest declines, the host's escrow is refunded in full.
+
 # Projects and Tasks
 
 # Permission Model
