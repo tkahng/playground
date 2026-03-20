@@ -73,11 +73,11 @@ const (
 
 // Well-known transfer codes.
 const (
-	TransferCodePurchase   = "purchase"    // Points bought via Stripe
-	TransferCodeBetEscrow  = "bet_escrow"  // Bet placed, funds moved to escrow (pending)
-	TransferCodeBetWin     = "bet_win"     // Winner receives escrow funds
-	TransferCodeBetRefund  = "bet_refund"  // Tie: escrow returned to each player
-	TransferCodeBetVoid    = "bet_void"    // Void a pending bet (decline / expiry)
+	TransferCodePurchase  = "purchase"   // Points bought via Stripe
+	TransferCodeBetEscrow = "bet_escrow" // Bet placed, funds moved to escrow (pending)
+	TransferCodeBetWin    = "bet_win"    // Winner receives escrow funds
+	TransferCodeBetRefund = "bet_refund" // Tie: escrow returned to each player
+	TransferCodeBetVoid   = "bet_void"   // Void a pending bet (decline / expiry)
 )
 
 // Well-known reference types.
