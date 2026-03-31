@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/stripe/stripe-go/v82"
+	stripe "github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/services"
@@ -358,5 +358,96 @@ func TestStripeService_VerifyAndUpdateTeamSubscriptionQuantity(t *testing.T) {
 		}
 		err := service.VerifyAndUpdateTeamSubscriptionQuantity(ctx, teamId)
 		assert.Error(t, err)
+	})
+}
+
+func TestStripeService_CreatePointsCheckoutSession(t *testing.T) {
+	t.Run("succeeds with valid points price", func(t *testing.T) {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			adapter := stores.NewDbAdapterDecorators(db)
+			client := services.NewMockPaymentClient()
+			service := services.NewPaymentService(client, adapter)
+
+			userInfo := stores.CreateUserWithOptions(t, adapter)
+			user := &userInfo.User
+
+			// Seed a one-time price with points_amount metadata.
+			err := adapter.Price().UpsertPrice(ctx, &models.StripePrice{
+				ID:        services.PointsPrice100.ID,
+				ProductID: services.PointsProduct.ID,
+				Active:    true,
+				Type:      models.StripePricingTypeOneTime,
+				Currency:  "usd",
+				Metadata:  map[string]string{"points_amount": "100"},
+			})
+			assert.NoError(t, err)
+
+			returnedURL := "https://checkout.stripe.com/pay/cs_test_abc"
+			client.CreatePointsCheckoutSessionFunc = func(customerID, userID string, pointsAmount int64, priceID string) (*stripe.CheckoutSession, error) {
+				return &stripe.CheckoutSession{URL: returnedURL}, nil
+			}
+
+			url, err := service.CreatePointsCheckoutSession(ctx, user.ID, "cus_test", services.PointsPrice100.ID)
+			assert.NoError(t, err)
+			assert.Equal(t, returnedURL, url)
+		})
+	})
+
+	t.Run("fails when price does not exist", func(t *testing.T) {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			adapter := stores.NewDbAdapterDecorators(db)
+			client := services.NewMockPaymentClient()
+			service := services.NewPaymentService(client, adapter)
+
+			userInfo := stores.CreateUserWithOptions(t, adapter)
+			_, err := service.CreatePointsCheckoutSession(ctx, userInfo.User.ID, "cus_test", "price_does_not_exist")
+			assert.Error(t, err)
+		})
+	})
+
+	t.Run("fails when price is recurring not one-time", func(t *testing.T) {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			adapter := stores.NewDbAdapterDecorators(db)
+			client := services.NewMockPaymentClient()
+			service := services.NewPaymentService(client, adapter)
+
+			userInfo := stores.CreateUserWithOptions(t, adapter)
+
+			err := adapter.Price().UpsertPrice(ctx, &models.StripePrice{
+				ID:        "price_recurring_test",
+				ProductID: services.ProProduct.ID,
+				Active:    true,
+				Type:      models.StripePricingTypeRecurring,
+				Currency:  "usd",
+				Metadata:  map[string]string{"points_amount": "100"},
+			})
+			assert.NoError(t, err)
+
+			_, err = service.CreatePointsCheckoutSession(ctx, userInfo.User.ID, "cus_test", "price_recurring_test")
+			assert.Error(t, err)
+		})
+	})
+
+	t.Run("fails when price missing points_amount metadata", func(t *testing.T) {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			adapter := stores.NewDbAdapterDecorators(db)
+			client := services.NewMockPaymentClient()
+			service := services.NewPaymentService(client, adapter)
+
+			userInfo := stores.CreateUserWithOptions(t, adapter)
+
+			err := adapter.Price().UpsertPrice(ctx, &models.StripePrice{
+				ID:        "price_no_points_meta",
+				ProductID: services.ProProduct.ID,
+				Active:    true,
+				Type:      models.StripePricingTypeOneTime,
+				Currency:  "usd",
+				Metadata:  map[string]string{},
+			})
+			assert.NoError(t, err)
+
+			_, err = service.CreatePointsCheckoutSession(ctx, userInfo.User.ID, "cus_test", "price_no_points_meta")
+			assert.Error(t, err)
+		})
 	})
 }

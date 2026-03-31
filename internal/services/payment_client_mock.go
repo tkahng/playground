@@ -96,6 +96,25 @@ var (
 )
 
 var (
+	PointsProduct = &stripe.Product{
+		ID:     "prod_points_100",
+		Name:   "100 Points",
+		Active: true,
+	}
+	PointsPrice100 = &stripe.Price{
+		ID:         "price_points_100",
+		Product:    PointsProduct,
+		Active:     true,
+		Currency:   stripe.CurrencyUSD,
+		Type:       stripe.PriceTypeOneTime,
+		UnitAmount: 99,
+		Metadata: map[string]string{
+			"points_amount": "100",
+		},
+	}
+)
+
+var (
 	Products = []*stripe.Product{
 		ProProduct,
 		AdvancedProduct,

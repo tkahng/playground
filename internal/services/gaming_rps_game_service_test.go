@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
@@ -214,3 +215,272 @@ func TestDbRpsGameService_RespondToGameRequest_Fail_Expired(t *testing.T) {
 		}
 	})
 }
+
+// mustFundPlayerWallet is a test helper that credits a user-linked player's wallet.
+func mustFundPlayerWallet(t *testing.T, ctx context.Context, adapter stores.StorageAdapterInterface, ledger LedgerService, userID *uuid.UUID, amount int64) {
+	t.Helper()
+	issuance, err := ledger.GetSystemAccount(ctx, models.SystemAccountPointsIssuance)
+	if err != nil {
+		t.Fatalf("mustFundPlayerWallet: get issuance account: %v", err)
+	}
+	wallet, err := ledger.GetOrCreateUserWallet(ctx, *userID)
+	if err != nil {
+		t.Fatalf("mustFundPlayerWallet: get wallet: %v", err)
+	}
+	_, err = ledger.PostTransfer(ctx, PostTransferInput{
+		LedgerCode:      "POINTS",
+		DebitAccountID:  issuance.ID,
+		CreditAccountID: wallet.ID,
+		Amount:          amount,
+		TransferCode:    models.TransferCodePurchase,
+	})
+	if err != nil {
+		t.Fatalf("mustFundPlayerWallet: post transfer: %v", err)
+	}
+}
+
+func TestDbRpsGameService_Betting_HostWins(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		// Players must have linked user IDs for betting.
+		host := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("bethost@example.com"),
+			stores.WithUserID(uuid.New()),
+		)
+		guest := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("betguest@example.com"),
+			stores.WithUserID(uuid.New()),
+		)
+
+		mustFundPlayerWallet(t, ctx, adapter, ledger, host.UserID, 500)
+		mustFundPlayerWallet(t, ctx, adapter, ledger, guest.UserID, 500)
+
+		betAmount := int64(100)
+		game, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      60 * 60 * 24,
+			BetAmount:            &betAmount,
+			HostUserID:           host.UserID,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame() error = %v", err)
+		}
+		if game.RpsGame.HostBetTransferID == nil {
+			t.Fatal("expected HostBetTransferID to be set after RequestGame with bet")
+		}
+
+		// Scissors loses to Rock → host wins.
+		responded, err := rpsService.RespondToGameRequest(ctx, &GameRequestResponse{
+			InvitedPlayerID: guest.ID,
+			GameID:          game.RpsGame.ID,
+			Status:          models.RpsGameStatusCompleted,
+			Move:            models.RpsParticipantMoveScissors,
+		})
+		if err != nil {
+			t.Fatalf("RespondToGameRequest() error = %v", err)
+		}
+		if responded.RequestingParticipant.Result != models.RpsParticipantResultWin {
+			t.Errorf("host result = %v, want win", responded.RequestingParticipant.Result)
+		}
+
+		hostBal, _ := ledger.GetUserBalance(ctx, *host.UserID)
+		guestBal, _ := ledger.GetUserBalance(ctx, *guest.UserID)
+		if hostBal != 600 {
+			t.Errorf("host balance = %d, want 600", hostBal)
+		}
+		if guestBal != 400 {
+			t.Errorf("guest balance = %d, want 400", guestBal)
+		}
+	})
+}
+
+func TestDbRpsGameService_Betting_GuestWins(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		host := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("bethost2@example.com"),
+			stores.WithUserID(uuid.New()),
+		)
+		guest := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("betguest2@example.com"),
+			stores.WithUserID(uuid.New()),
+		)
+
+		mustFundPlayerWallet(t, ctx, adapter, ledger, host.UserID, 500)
+		mustFundPlayerWallet(t, ctx, adapter, ledger, guest.UserID, 500)
+
+		betAmount := int64(100)
+		game, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      60 * 60 * 24,
+			BetAmount:            &betAmount,
+			HostUserID:           host.UserID,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame() error = %v", err)
+		}
+
+		// Paper beats Rock → guest wins.
+		responded, err := rpsService.RespondToGameRequest(ctx, &GameRequestResponse{
+			InvitedPlayerID: guest.ID,
+			GameID:          game.RpsGame.ID,
+			Status:          models.RpsGameStatusCompleted,
+			Move:            models.RpsParticipantMovePaper,
+		})
+		if err != nil {
+			t.Fatalf("RespondToGameRequest() error = %v", err)
+		}
+		if responded.InvitedParticipant.Result != models.RpsParticipantResultWin {
+			t.Errorf("guest result = %v, want win", responded.InvitedParticipant.Result)
+		}
+
+		hostBal, _ := ledger.GetUserBalance(ctx, *host.UserID)
+		guestBal, _ := ledger.GetUserBalance(ctx, *guest.UserID)
+		if hostBal != 400 {
+			t.Errorf("host balance = %d, want 400", hostBal)
+		}
+		if guestBal != 600 {
+			t.Errorf("guest balance = %d, want 600", guestBal)
+		}
+	})
+}
+
+func TestDbRpsGameService_Betting_Tie_BothRefunded(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		host := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("bethost3@example.com"),
+			stores.WithUserID(uuid.New()),
+		)
+		guest := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("betguest3@example.com"),
+			stores.WithUserID(uuid.New()),
+		)
+
+		mustFundPlayerWallet(t, ctx, adapter, ledger, host.UserID, 500)
+		mustFundPlayerWallet(t, ctx, adapter, ledger, guest.UserID, 500)
+
+		betAmount := int64(100)
+		game, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      60 * 60 * 24,
+			BetAmount:            &betAmount,
+			HostUserID:           host.UserID,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame() error = %v", err)
+		}
+
+		// Rock vs Rock → tie.
+		_, err = rpsService.RespondToGameRequest(ctx, &GameRequestResponse{
+			InvitedPlayerID: guest.ID,
+			GameID:          game.RpsGame.ID,
+			Status:          models.RpsGameStatusCompleted,
+			Move:            models.RpsParticipantMoveRock,
+		})
+		if err != nil {
+			t.Fatalf("RespondToGameRequest() error = %v", err)
+		}
+
+		hostBal, _ := ledger.GetUserBalance(ctx, *host.UserID)
+		guestBal, _ := ledger.GetUserBalance(ctx, *guest.UserID)
+		if hostBal != 500 {
+			t.Errorf("host balance after tie = %d, want 500", hostBal)
+		}
+		if guestBal != 500 {
+			t.Errorf("guest balance after tie = %d, want 500", guestBal)
+		}
+	})
+}
+
+func TestDbRpsGameService_Betting_GuestCancels_HostRefunded(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		host := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("bethost4@example.com"),
+			stores.WithUserID(uuid.New()),
+		)
+		guest := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("betguest4@example.com"),
+			stores.WithUserID(uuid.New()),
+		)
+
+		mustFundPlayerWallet(t, ctx, adapter, ledger, host.UserID, 500)
+
+		betAmount := int64(100)
+		game, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      60 * 60 * 24,
+			BetAmount:            &betAmount,
+			HostUserID:           host.UserID,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame() error = %v", err)
+		}
+
+		_, err = rpsService.RespondToGameRequest(ctx, &GameRequestResponse{
+			InvitedPlayerID: guest.ID,
+			GameID:          game.RpsGame.ID,
+			Status:          models.RpsGameStatusCancelled,
+		})
+		if err != nil {
+			t.Fatalf("RespondToGameRequest() cancel error = %v", err)
+		}
+
+		// Host's pending hold should have been released.
+		avail, _ := ledger.GetUserAvailableBalance(ctx, *host.UserID)
+		if avail != 500 {
+			t.Errorf("host available balance after cancel = %d, want 500", avail)
+		}
+	})
+}
+
+func TestDbRpsGameService_Betting_RequestGame_WithoutHostUserID_Fails(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		host := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("nouser@example.com"))
+		guest := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("nouser2@example.com"))
+
+		betAmount := int64(50)
+		_, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      3600,
+			BetAmount:            &betAmount,
+			HostUserID:           nil, // missing — should fail
+		})
+		if err == nil {
+			t.Fatal("expected error when BetAmount set but HostUserID is nil")
+		}
+	})
+}
+
