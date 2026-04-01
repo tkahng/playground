@@ -3,12 +3,13 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
+import { Switch } from "@/components/ui/switch";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useDialog } from "@/hooks/use-dialog";
 import { rpsGameQueries } from "@/lib/rps-game-queries";
 import { Player } from "@/schema.types";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -34,6 +35,18 @@ export function CreateGameDialog() {
   const [searched, setSearched] = useState(false);
   const [emailRequest, setEmailRequest] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
+  const [betEnabled, setBetEnabled] = useState(false);
+  const [betAmount, setBetAmount] = useState<number | undefined>(undefined);
+
+  const { data: balanceData } = useQuery({
+    queryKey: [{ key: "ledger-balance" }],
+    enabled: !!user?.tokens.access_token,
+    queryFn: async () => {
+      if (!user?.tokens.access_token) throw new Error("No access token");
+      return rpsGameQueries.getLedgerBalance({ token: user.tokens.access_token });
+    },
+  });
+
   const searchForm = useForm<z.infer<typeof searchFormSchema>>({
     resolver: zodResolver(searchFormSchema),
     defaultValues: {
@@ -79,6 +92,7 @@ export function CreateGameDialog() {
         token: user?.tokens.access_token,
         move: data.move,
         playerId: player.id,
+        betAmount: betEnabled ? betAmount : undefined,
       });
     },
     onError: (error) => {
@@ -130,6 +144,8 @@ export function CreateGameDialog() {
           setPlayer(null);
           setEmailRequest(false);
           setSearched(false);
+          setBetEnabled(false);
+          setBetAmount(undefined);
           searchForm.reset();
         }}
       >
@@ -234,7 +250,45 @@ export function CreateGameDialog() {
                 handleSubmit={(move: Move) =>
                   requestGameMutation.mutate({ move })
                 }
-              />
+              >
+                <div className="border-t pt-3 mt-2 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="bet-toggle" className="text-sm cursor-pointer">
+                      Add a bet?
+                    </label>
+                    <Switch
+                      id="bet-toggle"
+                      checked={betEnabled}
+                      onCheckedChange={(checked) => {
+                        setBetEnabled(checked);
+                        if (!checked) setBetAmount(undefined);
+                      }}
+                    />
+                  </div>
+                  {betEnabled && (
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground">
+                        Available balance:{" "}
+                        {balanceData?.available_balance !== undefined
+                          ? `${balanceData.available_balance} pts`
+                          : "..."}
+                      </p>
+                      <Input
+                        type="number"
+                        min={1}
+                        max={balanceData?.available_balance}
+                        value={betAmount ?? ""}
+                        onChange={(e) =>
+                          setBetAmount(
+                            e.target.value ? parseInt(e.target.value, 10) : undefined
+                          )
+                        }
+                        placeholder="Enter bet amount"
+                      />
+                    </div>
+                  )}
+                </div>
+              </MoveSelection>
             )}
         </div>
       </DialogContent>
