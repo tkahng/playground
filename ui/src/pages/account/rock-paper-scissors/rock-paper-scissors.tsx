@@ -81,6 +81,7 @@ export default function RockPaperScissors() {
 
   const { data: balanceData } = useQuery({
     queryKey: [{ key: "ledger-balance" }],
+    enabled: !!userInfo.user?.tokens.access_token,
     queryFn: async () => {
       if (!userInfo.user?.tokens.access_token) {
         throw new Error("No access token");

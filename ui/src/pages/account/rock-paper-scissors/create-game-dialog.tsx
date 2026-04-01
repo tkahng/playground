@@ -105,6 +105,9 @@ export function CreateGameDialog() {
       await queryClient.invalidateQueries({
         queryKey: [{ key: "rps-games" }],
       });
+      await queryClient.invalidateQueries({
+        queryKey: [{ key: "ledger-balance" }],
+      });
       toast.success("Game request sent");
       dialogProps.onOpenChange(false);
     },

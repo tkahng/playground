@@ -239,6 +239,9 @@ export const SubmitMoveView = ({
       await queryClient.invalidateQueries({
         queryKey: [{ key: "rps-games" }],
       });
+      await queryClient.invalidateQueries({
+        queryKey: [{ key: "ledger-balance" }],
+      });
       toast.success("move submitted");
     },
   });
