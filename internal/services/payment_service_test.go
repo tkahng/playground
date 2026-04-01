@@ -371,8 +371,15 @@ func TestStripeService_CreatePointsCheckoutSession(t *testing.T) {
 			userInfo := stores.CreateUserWithOptions(t, adapter)
 			user := &userInfo.User
 
-			// Seed a one-time price with points_amount metadata.
-			err := adapter.Price().UpsertPrice(ctx, &models.StripePrice{
+			// Seed the product first (FK), then the price.
+			err := adapter.Product().UpsertProduct(ctx, &models.StripeProduct{
+				ID:       services.PointsProduct.ID,
+				Name:     services.PointsProduct.Name,
+				Active:   services.PointsProduct.Active,
+				Metadata: map[string]string{},
+			})
+			assert.NoError(t, err)
+			err = adapter.Price().UpsertPrice(ctx, &models.StripePrice{
 				ID:        services.PointsPrice100.ID,
 				ProductID: services.PointsProduct.ID,
 				Active:    true,
@@ -413,7 +420,14 @@ func TestStripeService_CreatePointsCheckoutSession(t *testing.T) {
 
 			userInfo := stores.CreateUserWithOptions(t, adapter)
 
-			err := adapter.Price().UpsertPrice(ctx, &models.StripePrice{
+			err := adapter.Product().UpsertProduct(ctx, &models.StripeProduct{
+				ID:       services.ProProduct.ID,
+				Name:     services.ProProduct.Name,
+				Active:   services.ProProduct.Active,
+				Metadata: map[string]string{},
+			})
+			assert.NoError(t, err)
+			err = adapter.Price().UpsertPrice(ctx, &models.StripePrice{
 				ID:        "price_recurring_test",
 				ProductID: services.ProProduct.ID,
 				Active:    true,
@@ -436,7 +450,14 @@ func TestStripeService_CreatePointsCheckoutSession(t *testing.T) {
 
 			userInfo := stores.CreateUserWithOptions(t, adapter)
 
-			err := adapter.Price().UpsertPrice(ctx, &models.StripePrice{
+			err := adapter.Product().UpsertProduct(ctx, &models.StripeProduct{
+				ID:       services.ProProduct.ID,
+				Name:     services.ProProduct.Name,
+				Active:   services.ProProduct.Active,
+				Metadata: map[string]string{},
+			})
+			assert.NoError(t, err)
+			err = adapter.Price().UpsertPrice(ctx, &models.StripePrice{
 				ID:        "price_no_points_meta",
 				ProductID: services.ProProduct.ID,
 				Active:    true,

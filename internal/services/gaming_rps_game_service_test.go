@@ -249,11 +249,11 @@ func TestDbRpsGameService_Betting_HostWins(t *testing.T) {
 		// Players must have linked user IDs for betting.
 		host := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
 			stores.WithPlayerEmail("bethost@example.com"),
-			stores.WithUserID(uuid.New()),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "bethost@example.com").ID),
 		)
 		guest := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
 			stores.WithPlayerEmail("betguest@example.com"),
-			stores.WithUserID(uuid.New()),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "betguest@example.com").ID),
 		)
 
 		mustFundPlayerWallet(t, ctx, adapter, ledger, host.UserID, 500)
@@ -309,11 +309,11 @@ func TestDbRpsGameService_Betting_GuestWins(t *testing.T) {
 
 		host := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
 			stores.WithPlayerEmail("bethost2@example.com"),
-			stores.WithUserID(uuid.New()),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "bethost2@example.com").ID),
 		)
 		guest := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
 			stores.WithPlayerEmail("betguest2@example.com"),
-			stores.WithUserID(uuid.New()),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "betguest2@example.com").ID),
 		)
 
 		mustFundPlayerWallet(t, ctx, adapter, ledger, host.UserID, 500)
@@ -366,11 +366,11 @@ func TestDbRpsGameService_Betting_Tie_BothRefunded(t *testing.T) {
 
 		host := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
 			stores.WithPlayerEmail("bethost3@example.com"),
-			stores.WithUserID(uuid.New()),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "bethost3@example.com").ID),
 		)
 		guest := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
 			stores.WithPlayerEmail("betguest3@example.com"),
-			stores.WithUserID(uuid.New()),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "betguest3@example.com").ID),
 		)
 
 		mustFundPlayerWallet(t, ctx, adapter, ledger, host.UserID, 500)
@@ -420,11 +420,11 @@ func TestDbRpsGameService_Betting_GuestCancels_HostRefunded(t *testing.T) {
 
 		host := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
 			stores.WithPlayerEmail("bethost4@example.com"),
-			stores.WithUserID(uuid.New()),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "bethost4@example.com").ID),
 		)
 		guest := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
 			stores.WithPlayerEmail("betguest4@example.com"),
-			stores.WithUserID(uuid.New()),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "betguest4@example.com").ID),
 		)
 
 		mustFundPlayerWallet(t, ctx, adapter, ledger, host.UserID, 500)
@@ -484,3 +484,11 @@ func TestDbRpsGameService_Betting_RequestGame_WithoutHostUserID_Fails(t *testing
 	})
 }
 
+func mustCreateUser(t *testing.T, ctx context.Context, adapter stores.StorageAdapterInterface, email string) *models.User {
+	t.Helper()
+	user, err := adapter.User().CreateUser(ctx, &models.User{Email: email})
+	if err != nil {
+		t.Fatalf("mustCreateUser(%s): %v", email, err)
+	}
+	return user
+}
