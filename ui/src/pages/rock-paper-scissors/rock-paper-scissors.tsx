@@ -67,7 +67,7 @@ export default function RockPaperScissorsPage() {
             {rpsGame.data.rps_game.bet_amount ? (
               <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-center">
                 <p className="font-semibold text-amber-800">
-                  🪙 This game has a {rpsGame.data.rps_game.bet_amount} pt bet
+                  🪙 This game has a {rpsGame.data.rps_game.bet_amount} pts bet
                 </p>
                 <p className="mt-1 text-sm text-amber-700">
                   Accepting will deduct {rpsGame.data.rps_game.bet_amount} pts from

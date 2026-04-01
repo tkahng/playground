@@ -10,7 +10,7 @@ interface GameResultProps {
   playerMove: Move;
   opponentMove: Move;
   betAmount?: number;
-  betResult?: "win" | "lose" | "tie";
+  betResult?: Result;
 }
 
 const moveEmojis: Record<Move, string> = {
