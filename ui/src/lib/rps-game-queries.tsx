@@ -164,7 +164,7 @@ export class RpsGameQueries {
       body: {
         inviting_player_id: playerId,
         move,
-        ...(betAmount ? { bet_amount: betAmount } : {}),
+        ...(betAmount !== undefined ? { bet_amount: betAmount } : {}),
       },
     });
     if (error) {
