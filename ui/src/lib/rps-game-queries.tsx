@@ -150,10 +150,12 @@ export class RpsGameQueries {
     token,
     move,
     playerId,
+    betAmount,
   }: {
     token: string;
     move: "rock" | "paper" | "scissors";
     playerId: string;
+    betAmount?: number;
   }) {
     const { data, error } = await client.POST(`/api/games/rps/requests`, {
       headers: {
@@ -162,6 +164,7 @@ export class RpsGameQueries {
       body: {
         inviting_player_id: playerId,
         move,
+        ...(betAmount ? { bet_amount: betAmount } : {}),
       },
     });
     if (error) {
@@ -211,6 +214,17 @@ export class RpsGameQueries {
         },
       },
     );
+    if (error) {
+      throw ApiError.fromErrorModel(error);
+    }
+    return data;
+  }
+  async getLedgerBalance({ token }: { token: string }) {
+    const { data, error } = await client.GET(`/api/ledger/balance`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     if (error) {
       throw ApiError.fromErrorModel(error);
     }
