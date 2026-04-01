@@ -2800,6 +2800,11 @@ export interface components {
             role_ids: string[] | null;
         };
         RpsGame: {
+            /**
+             * Format: int64
+             * @description Optional points wager. If set, the host must have sufficient balance.
+             */
+            bet_amount?: number;
             /** Format: date-time */
             completed_at?: string;
             /** Format: date-time */
@@ -4004,6 +4009,7 @@ export interface operations {
                 q?: string;
                 ids?: string[] | null;
                 active?: boolean;
+                metadata_type?: "subscription" | "points";
             };
             header?: never;
             path?: never;
@@ -7258,6 +7264,7 @@ export interface operations {
                 per_page?: number;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
+                metadata_type?: "subscription" | "points";
             };
             header?: never;
             path?: never;
