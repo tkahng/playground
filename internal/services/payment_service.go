@@ -559,6 +559,9 @@ func (srv *StripeService) CreateCheckoutSession(ctx context.Context, stripeCusto
 	if valPrice == nil {
 		return "", errors.New("price is not valid")
 	}
+	if valPrice.Metadata[models.StripeProductTypeMetadataKey] != string(models.StripeProductTypeSubscription) {
+		return "", errors.New("price is not a subscription price")
+	}
 	sesh, err := srv.client.CreateCheckoutSession(stripeCustomerId, priceId, count, trialDays)
 	if err != nil {
 		return "", err
@@ -586,7 +589,8 @@ func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, stripe
 		PaginatedInput: stores.PaginatedInput{
 			PerPage: 100,
 		},
-		Active: types.OptionalParam[bool]{IsSet: true, Value: true},
+		Active:       types.OptionalParam[bool]{IsSet: true, Value: true},
+		MetadataType: types.OptionalParam[models.StripeProductType]{IsSet: true, Value: models.StripeProductTypeSubscription},
 	})
 	if err != nil {
 		return "", err
@@ -649,6 +653,9 @@ func (srv *StripeService) CreatePointsCheckoutSession(ctx context.Context, userI
 	}
 	if price.Type != models.StripePricingTypeOneTime {
 		return "", errors.New("price must be a one-time payment price")
+	}
+	if price.Metadata[models.StripeProductTypeMetadataKey] != string(models.StripeProductTypePoints) {
+		return "", errors.New("price is not a points price")
 	}
 	pointsStr, ok := price.Metadata["points_amount"]
 	if !ok || pointsStr == "" {

@@ -63,11 +63,12 @@ func listPriceOrderByMap(input *StripePriceFilter) *map[string]string {
 type StripePriceFilter struct {
 	PaginatedInput
 	SortParams
-	Q          string                                        `query:"q,omitempty" required:"false"`
-	Ids        []string                                      `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
-	Active     types.OptionalParam[bool]                     `query:"active,omitempty" required:"false"`
-	ProductIds []string                                      `query:"product_ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
-	Type       types.OptionalParam[models.StripePricingType] `query:"type,omitempty" required:"false" enum:"recurring,one_time"`
+	Q            string                                        `query:"q,omitempty" required:"false"`
+	Ids          []string                                      `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
+	Active       types.OptionalParam[bool]                     `query:"active,omitempty" required:"false"`
+	ProductIds   []string                                      `query:"product_ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
+	Type         types.OptionalParam[models.StripePricingType] `query:"type,omitempty" required:"false" enum:"recurring,one_time"`
+	MetadataType types.OptionalParam[models.StripeProductType] `query:"metadata_type,omitempty" required:"false" enum:"subscription,points"`
 }
 
 func listPriceFilterFuncMap(filter *StripePriceFilter) *map[string]any {
@@ -100,10 +101,42 @@ func listPriceFilterFuncMap(filter *StripePriceFilter) *map[string]any {
 	return &param
 }
 
+func listPriceFilterFuncQuery(q squirrel.SelectBuilder, filter *StripePriceFilter) squirrel.SelectBuilder {
+	if filter == nil {
+		return q
+	}
+	if filter.Active.IsSet {
+		q = q.Where("active = ?", filter.Active.Value)
+	}
+	if len(filter.Ids) > 0 {
+		q = q.Where(squirrel.Eq{"id": filter.Ids})
+	}
+	if len(filter.ProductIds) > 0 {
+		q = q.Where(squirrel.Eq{"product_id": filter.ProductIds})
+	}
+	if filter.Type.IsSet {
+		q = q.Where("type = ?", string(filter.Type.Value))
+	}
+	if filter.MetadataType.IsSet {
+		q = q.Where("metadata->>'type' = ?", string(filter.MetadataType.Value))
+	}
+	return q
+}
+
 // ListPrices implements PaymentStore.
 func (s *DbPriceStore) ListPrices(ctx context.Context, input *StripePriceFilter) ([]*models.StripePrice, error) {
-	dbx := s.db
+	if input != nil && input.MetadataType.IsSet {
+		q := squirrel.Select("billing.stripe_prices.*").From("billing.stripe_prices")
+		q = queryPagination(q, input)
+		q = listPriceFilterFuncQuery(q, input)
+		data, err := database.QueryWithBuilder[*models.StripePrice](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+		if err != nil {
+			return nil, err
+		}
+		return data, nil
+	}
 
+	dbx := s.db
 	limit, offset := input.LimitOffset()
 	param := listPriceFilterFuncMap(input)
 	sort := listPriceOrderByMap(input)
@@ -122,6 +155,19 @@ func (s *DbPriceStore) ListPrices(ctx context.Context, input *StripePriceFilter)
 }
 
 func (s *DbPriceStore) CountPrices(ctx context.Context, filter *StripePriceFilter) (int64, error) {
+	if filter != nil && filter.MetadataType.IsSet {
+		q := squirrel.Select("COUNT(*)").From("billing.stripe_prices")
+		q = listPriceFilterFuncQuery(q, filter)
+		data, err := database.QueryWithBuilder[database.CountOutput](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+		if err != nil {
+			return 0, err
+		}
+		if len(data) == 0 {
+			return 0, nil
+		}
+		return data[0].Count, nil
+	}
+
 	filermap := listPriceFilterFuncMap(filter)
 	data, err := repository.StripePrice.Count(ctx, s.db, filermap)
 	if err != nil {

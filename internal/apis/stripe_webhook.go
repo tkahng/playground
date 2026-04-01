@@ -88,7 +88,12 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to unmarshal session", err)
 		}
-		if cs.Mode == stripe.CheckoutSessionModePayment && cs.Metadata["purchase_type"] == "points" {
+		switch cs.Mode {
+		case stripe.CheckoutSessionModePayment:
+			if cs.Metadata["purchase_type"] != "points" {
+				slog.WarnContext(ctx, "unhandled payment-mode checkout session", slog.String("session_id", cs.ID), slog.String("purchase_type", cs.Metadata["purchase_type"]))
+				return nil, nil
+			}
 			// Points one-time purchase fulfillment.
 			userIDStr, ok := cs.Metadata["user_id"]
 			if !ok {
@@ -117,13 +122,19 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 				return nil, huma.Error400BadRequest("failed to fulfill points purchase", txErr)
 			}
 			return nil, nil
+		case stripe.CheckoutSessionModeSubscription:
+			if cs.Subscription == nil {
+				return nil, huma.Error400BadRequest("subscription checkout session missing subscription")
+			}
+			err = payment.UpsertSubscriptionByIds(ctx, cs.Customer.ID, cs.Subscription.ID)
+			if err != nil {
+				return nil, huma.Error400BadRequest("failed to upsert checkout session complete", err)
+			}
+			return nil, nil
+		default:
+			slog.WarnContext(ctx, "unhandled checkout session mode", slog.String("session_id", cs.ID), slog.String("mode", string(cs.Mode)))
+			return nil, nil
 		}
-		// Subscription checkout session.
-		err = payment.UpsertSubscriptionByIds(ctx, cs.Customer.ID, cs.Subscription.ID)
-		if err != nil {
-			return nil, huma.Error400BadRequest("failed to upsert checkout session complete", err)
-		}
-		return nil, nil
 	case stripe.EventTypeCustomerSubscriptionCreated, stripe.EventTypeCustomerSubscriptionUpdated, stripe.EventTypeCustomerSubscriptionDeleted:
 		subscription, err := utils.UnmarshalJSON[stripe.Subscription](event.Data.Raw)
 		if err != nil {

@@ -385,7 +385,7 @@ func TestStripeService_CreatePointsCheckoutSession(t *testing.T) {
 				Active:    true,
 				Type:      models.StripePricingTypeOneTime,
 				Currency:  "usd",
-				Metadata:  map[string]string{"points_amount": "100"},
+				Metadata:  map[string]string{"points_amount": "100", models.StripeProductTypeMetadataKey: string(models.StripeProductTypePoints)},
 			})
 			assert.NoError(t, err)
 
