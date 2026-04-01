@@ -88,6 +88,9 @@ export function CreateGameDialog() {
       if (!player) {
         throw new Error("No player");
       }
+      if (betEnabled && (betAmount === undefined || betAmount < 1)) {
+        throw new Error("Please enter a valid bet amount");
+      }
       return rpsGameQueries.requestGame({
         token: user?.tokens.access_token,
         move: data.move,
@@ -278,11 +281,12 @@ export function CreateGameDialog() {
                         min={1}
                         max={balanceData?.available_balance}
                         value={betAmount ?? ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const parsed = parseInt(e.target.value, 10);
                           setBetAmount(
-                            e.target.value ? parseInt(e.target.value, 10) : undefined
-                          )
-                        }
+                            e.target.value && Number.isFinite(parsed) ? parsed : undefined
+                          );
+                        }}
                         placeholder="Enter bet amount"
                       />
                     </div>
