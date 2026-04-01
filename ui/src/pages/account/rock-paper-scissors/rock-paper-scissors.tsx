@@ -79,6 +79,18 @@ export default function RockPaperScissors() {
     },
   });
 
+  const { data: balanceData } = useQuery({
+    queryKey: [{ key: "ledger-balance" }],
+    queryFn: async () => {
+      if (!userInfo.user?.tokens.access_token) {
+        throw new Error("No access token");
+      }
+      return rpsGameQueries.getLedgerBalance({
+        token: userInfo.user.tokens.access_token,
+      });
+    },
+  });
+
   const [open, onOpenChange] = useState(!!gameId);
   useEffect(() => {
     if (gameId) {
@@ -97,7 +109,14 @@ export default function RockPaperScissors() {
 
   return (
     <div>
-      <h1>Rock Paper Scissors</h1>
+      <div className="flex items-center gap-3 mb-1">
+        <h1>Rock Paper Scissors</h1>
+        {balanceData && (
+          <span className="inline-flex items-center gap-1.5 bg-indigo-100 text-indigo-700 rounded-full px-3 py-0.5 text-sm font-medium">
+            🪙 {balanceData.available_balance} pts
+          </span>
+        )}
+      </div>
       <div className="flex items-center justify-between">
         <p>Start a new Game with a friend</p>
         <CreateGameDialog />
@@ -139,6 +158,37 @@ export default function RockPaperScissors() {
               return new Date(
                 row.original.rpsGame.created_at,
               ).toLocaleDateString();
+            },
+          },
+          {
+            header: "Bet",
+            cell: ({ row }) => {
+              const betAmount = row.original.rpsGame.bet_amount;
+              if (!betAmount) {
+                return <span className="text-muted-foreground">—</span>;
+              }
+              const state = CalculateGameState(row.original);
+              if (state === GameState.Win) {
+                return (
+                  <span className="text-green-600 font-semibold">+{betAmount} pts</span>
+                );
+              }
+              if (state === GameState.Lose) {
+                return (
+                  <span className="text-red-600 font-semibold">−{betAmount} pts</span>
+                );
+              }
+              if (
+                state === GameState.Tie ||
+                state === GameState.Cancelled ||
+                state === GameState.Expired
+              ) {
+                return <span className="text-muted-foreground">refunded</span>;
+              }
+              // Pending or Submitted
+              return (
+                <span className="text-amber-600">{betAmount} pts at stake</span>
+              );
             },
           },
         ]}
