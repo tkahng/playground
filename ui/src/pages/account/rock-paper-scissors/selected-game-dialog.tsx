@@ -138,12 +138,12 @@ export const SelectedRpsGameDialog = ({
             !expired &&
             selectedGame.data.rpsGame.status === "completed" && (
               <GameResult
-                {...{
-                  result: selectedGame?.data.player.result,
-                  opponent: selectedGame?.data.opponent.player?.email || "",
-                  playerMove: selectedGame.data.player.move,
-                  opponentMove: selectedGame.data.opponent.move,
-                }}
+                result={selectedGame.data.player.result}
+                opponent={selectedGame.data.opponent.player?.email || ""}
+                playerMove={selectedGame.data.player.move}
+                opponentMove={selectedGame.data.opponent.move}
+                betAmount={selectedGame.data.rpsGame.bet_amount}
+                betResult={selectedGame.data.player.result}
               />
             )}
           {selectedGame && expired && (
