@@ -64,6 +64,17 @@ export default function RockPaperScissorsPage() {
         {isLanding && <RockPaperScissorsLanding />}
         {isSelection && (
           <div>
+            {rpsGame.data.rps_game.bet_amount ? (
+              <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-center">
+                <p className="font-semibold text-amber-800">
+                  🪙 This game has a {rpsGame.data.rps_game.bet_amount} pt bet
+                </p>
+                <p className="mt-1 text-sm text-amber-700">
+                  Accepting will deduct {rpsGame.data.rps_game.bet_amount} pts from
+                  your balance
+                </p>
+              </div>
+            ) : null}
             <MoveSelection
               handleSubmit={(move) => mutation.mutate({ token: token!, move })}
               opponentPlayer={rpsGame?.data.requesting_participant?.player}
@@ -73,12 +84,12 @@ export default function RockPaperScissorsPage() {
         {isResult && (
           <div>
             <GameResult
-              {...{
-                result: game.invited_participant.result,
-                opponent: game.requesting_participant.player?.email || "",
-                playerMove: game.invited_participant.move,
-                opponentMove: game.requesting_participant.move,
-              }}
+              result={game.invited_participant.result}
+              opponent={game.requesting_participant.player?.email || ""}
+              playerMove={game.invited_participant.move}
+              opponentMove={game.requesting_participant.move}
+              betAmount={game.rps_game.bet_amount}
+              betResult={game.invited_participant.result}
             />
           </div>
         )}
