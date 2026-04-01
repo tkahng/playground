@@ -30,11 +30,13 @@ const moves = [
 export type MoveSelectionProps = {
   handleSubmit: (move: Move) => void;
   opponentPlayer?: Player | null;
+  children?: React.ReactNode;
 };
 
 export function MoveSelection({
   handleSubmit,
   opponentPlayer,
+  children,
 }: MoveSelectionProps) {
   const [selectedMove, setSelectedMove] = useState<Move | null>(null);
 
@@ -122,6 +124,9 @@ export function MoveSelection({
           </button>
         ))}
       </div>
+
+      {/* Optional slot — rendered between move cards and submit button */}
+      {children}
 
       {/* Submit Button */}
       <div className="flex justify-center">
