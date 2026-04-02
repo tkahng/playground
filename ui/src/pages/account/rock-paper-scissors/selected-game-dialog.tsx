@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { rpsGameQueries } from "@/lib/rps-game-queries";
 import { Participant, PlayerRpsGame } from "@/schema.types";
@@ -182,27 +181,35 @@ export const NoPlayerView = ({
 };
 
 export const PendingGameView = ({
+  onOpenChange,
   game,
 }: {
   onOpenChange: (open: boolean) => void;
   game: PlayerRpsGame;
 }) => {
-  const parti = [game.player, game.opponent];
+  const opponentName =
+    game.opponent.player?.display_name || game.opponent.player?.email || "your opponent";
+  const betAmount = game.rpsGame.bet_amount;
+
   return (
-    <div>
-      <p className="font-bold text-lg">
-        Result:{" "}
-        {game.rpsGame.status === "completed"
-          ? game.player.result
-          : game.rpsGame.status}
-      </p>
-      <div className="flex flex-row gap-4">
-        {parti.map((m) => (
-          <Card key={m.id} className="grow flex">
-            Move: {m.move}
-          </Card>
-        ))}
+    <div className="flex flex-col items-center gap-4 py-4 text-center">
+      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted">
+        <span className="text-3xl">⏳</span>
       </div>
+      <div>
+        <p className="text-lg font-semibold">Waiting for {opponentName}</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          Your move is locked in. The result will appear once they respond.
+        </p>
+      </div>
+      {betAmount != null && betAmount > 0 && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+          🪙 {betAmount} pts on the line
+        </div>
+      )}
+      <Button variant="outline" onClick={() => onOpenChange(false)}>
+        Close
+      </Button>
     </div>
   );
 };
