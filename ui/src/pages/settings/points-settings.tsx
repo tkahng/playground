@@ -36,7 +36,6 @@ export default function PointsSettingsPage() {
     mutationFn: ({ price_id }: { price_id: string }) =>
       createPointsCheckoutSession(token!, { price_id }),
     onSuccess: (data) => {
-      setLoadingPriceId(null);
       window.location.href = data.url;
     },
     onError: (error: Error) => {
@@ -98,15 +97,19 @@ export default function PointsSettingsPage() {
         </div>
 
         {prices.length === 0 ? (
-          <p className="text-muted-foreground">No points packages available.</p>
+          <p className="text-muted-foreground">
+            No points packages available.{" "}
+            <a href="/admin/products" className="underline">
+              Manage in admin
+            </a>
+          </p>
         ) : (
           <div className="grid grid-cols-3 gap-4">
             {prices.map((price, index) => {
               const label = CARD_LABELS[index] ?? `Package ${index + 1}`;
               const isPopular = index === 1;
-              const pointsAmount = price.metadata?.points_amount
-                ? parseInt(price.metadata.points_amount, 10) || null
-                : null;
+              const parsed = parseInt(price.metadata?.points_amount ?? "", 10);
+              const pointsAmount = isNaN(parsed) ? null : parsed;
               const isLoading = loadingPriceId === price.id;
 
               return (
