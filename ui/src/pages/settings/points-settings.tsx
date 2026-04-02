@@ -3,10 +3,7 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { settingsSidebarLinks } from "@/components/links";
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import {
-  createPointsCheckoutSession,
-  getProductsWithPrices,
-} from "@/lib/api";
+import { createPointsCheckoutSession, getProductsWithPrices } from "@/lib/api";
 import { rpsGameQueries } from "@/lib/rps-game-queries";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -70,7 +67,7 @@ export default function PointsSettingsPage() {
   // but this ensures stale cache data doesn't include non-points products.
   const pointsProducts =
     productsQuery.data?.data?.filter(
-      (p) => p.metadata?.metadata_type === "points"
+      (p) => p.metadata?.metadata_type === "points",
     ) ?? [];
 
   const prices = pointsProducts
