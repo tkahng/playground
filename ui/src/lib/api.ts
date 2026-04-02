@@ -672,13 +672,17 @@ export const removeUserPermission = async (
   return data;
 };
 
-export const getProductsWithPrices = async (token?: string) => {
+export const getProductsWithPrices = async (
+  token?: string,
+  metadata_type?: "subscription" | "points"
+) => {
   const { data, error } = await client.GET("/api/stripe/products", {
     headers: token
       ? {
           Authorization: `Bearer ${token}`,
         }
       : {},
+    params: { query: { metadata_type } },
   });
   if (error) {
     throw ApiError.fromErrorModel(error);
@@ -759,6 +763,27 @@ export const createCheckoutSession = async (
       },
     }
   );
+  if (error) {
+    throw ApiError.fromErrorModel(error);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+
+export const createPointsCheckoutSession = async (
+  token: string,
+  { price_id }: { price_id: string }
+) => {
+  const { data, error } = await client.POST("/api/ledger/points/checkout", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: {
+      price_id,
+    },
+  });
   if (error) {
     throw ApiError.fromErrorModel(error);
   }
