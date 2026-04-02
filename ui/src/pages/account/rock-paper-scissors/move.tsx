@@ -31,12 +31,14 @@ export type MoveSelectionProps = {
   handleSubmit: (move: Move) => void;
   opponentPlayer?: Player | null;
   children?: React.ReactNode;
+  disabled?: boolean;
 };
 
 export function MoveSelection({
   handleSubmit,
   opponentPlayer,
   children,
+  disabled = false,
 }: MoveSelectionProps) {
   const [selectedMove, setSelectedMove] = useState<Move | null>(null);
 
@@ -133,7 +135,7 @@ export function MoveSelection({
         <Button
           size="lg"
           className="min-w-64 text-lg h-12"
-          disabled={!selectedMove}
+          disabled={!selectedMove || disabled}
           onClick={() => handleSubmit(selectedMove || "rock")}
         >
           {selectedMove

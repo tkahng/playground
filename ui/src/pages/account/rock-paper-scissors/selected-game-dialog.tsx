@@ -216,6 +216,17 @@ export const SubmitMoveView = ({
   const { user } = useAuthProvider();
   const queryClient = useQueryClient();
 
+  const balanceQuery = useQuery({
+    queryKey: [{ key: "ledger-balance" }],
+    queryFn: () =>
+      rpsGameQueries.getLedgerBalance({ token: user!.tokens.access_token }),
+    enabled: !!user,
+  });
+
+  const betAmount = game.rpsGame.bet_amount ?? 0;
+  const availableBalance = balanceQuery.data?.available_balance ?? 0;
+  const insufficientFunds = betAmount > 0 && availableBalance < betAmount;
+
   const submitToGameMutation = useMutation({
     mutationFn: async (data: { move: Move }) => {
       if (!user) {
@@ -251,7 +262,18 @@ export const SubmitMoveView = ({
       <MoveSelection
         opponentPlayer={game.opponent.player}
         handleSubmit={(move) => submitToGameMutation.mutate({ move })}
-      />
+        disabled={insufficientFunds}
+      >
+        {insufficientFunds && (
+          <p className="text-center text-sm text-destructive mb-2">
+            You need {betAmount} pts to accept this bet but only have{" "}
+            {availableBalance} pts.{" "}
+            <a href="/account/settings/points" className="underline">
+              Buy points
+            </a>
+          </p>
+        )}
+      </MoveSelection>
     </div>
   );
 };
