@@ -76,6 +76,7 @@ export const RouteLinks = {
   },
   GENERAL_SETTINGS: { to: RouteMap.SETTINGS, title: "General" },
   BILLING_SETTINGS: { to: RouteMap.BILLING_SETTINGS, title: "Billing" },
+  POINTS_SETTINGS: { to: RouteMap.POINTS_SETTINGS, title: "Points" },
   ADMIN: {
     to: RouteMap.ADMIN,
     title: "Admin",
@@ -163,7 +164,8 @@ export const accountSidebarLinks: LinkDto[] = [
 ];
 export const settingsSidebarLinks: LinkDto[] = [
   RouteLinks.GENERAL_SETTINGS,
-  // RouteLinks.BILLING_SETTINGS,
+  RouteLinks.BILLING_SETTINGS,
+  RouteLinks.POINTS_SETTINGS,
 ];
 
 export const userDashboardLinks: LinkDto[] = [
