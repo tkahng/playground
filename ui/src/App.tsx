@@ -51,6 +51,8 @@ import ProtectedRoutePage from "./pages/protected-routes/protected-route-page";
 import ProtectedRouteIndex from "./pages/protected-routes/route-index";
 import SayHelloPage from "./pages/say-hello/say-hello2";
 import AccountSettingsPage from "./pages/settings/general-settings";
+import BillingSettingPage from "./pages/settings/billing-settings";
+import PointsSettingsPage from "./pages/settings/points-settings";
 import TeamSelect from "./pages/teams";
 import TeamDashboard from "./pages/teams/dashboard";
 import ProjectEdit from "./pages/teams/projects/project-edit";
@@ -209,14 +211,16 @@ function App() {
                     />
                   </Route>
                 </Route>
-                {/* <Route path="billing" element={<BillingSettingPage />} /> */}
-
                 <Route element={<PageSectionLayout title="Account Settings" />}>
                   <Route path="settings" element={<AccountSettingsPage />} />
-                  {/* <Route
+                  <Route
                     path="settings/billing"
                     element={<BillingSettingPage />}
-                  /> */}
+                  />
+                  <Route
+                    path="settings/points"
+                    element={<PointsSettingsPage />}
+                  />
                 </Route>
               </Route>
               <Route
