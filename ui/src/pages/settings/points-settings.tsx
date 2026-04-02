@@ -36,6 +36,7 @@ export default function PointsSettingsPage() {
     mutationFn: ({ price_id }: { price_id: string }) =>
       createPointsCheckoutSession(token!, { price_id }),
     onSuccess: (data) => {
+      setLoadingPriceId(null);
       window.location.href = data.url;
     },
     onError: (error: Error) => {
@@ -66,6 +67,8 @@ export default function PointsSettingsPage() {
     );
   }
 
+  // Client-side guard: the API already filters by metadata_type=points,
+  // but this ensures stale cache data doesn't include non-points products.
   const pointsProducts =
     productsQuery.data?.data?.filter(
       (p) => p.metadata?.metadata_type === "points"
@@ -102,7 +105,7 @@ export default function PointsSettingsPage() {
               const label = CARD_LABELS[index] ?? `Package ${index + 1}`;
               const isPopular = index === 1;
               const pointsAmount = price.metadata?.points_amount
-                ? parseInt(price.metadata.points_amount, 10)
+                ? parseInt(price.metadata.points_amount, 10) || null
                 : null;
               const isLoading = loadingPriceId === price.id;
 
