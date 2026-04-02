@@ -67,7 +67,7 @@ export default function PointsSettingsPage() {
   // but this ensures stale cache data doesn't include non-points products.
   const pointsProducts =
     productsQuery.data?.data?.filter(
-      (p) => p.metadata?.metadata_type === "points",
+      (p) => p.metadata?.type === "points",
     ) ?? [];
 
   const prices = pointsProducts

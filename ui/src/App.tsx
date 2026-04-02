@@ -20,6 +20,7 @@ import Features from "@/pages/landing/features";
 import Landing from "@/pages/landing/landing";
 import PricingPage from "@/pages/landing/pricing";
 import PaymentSuccessPage from "@/pages/payment/payment-success";
+import PointsPaymentSuccessPage from "@/pages/payment/points-payment-success";
 import { BrowserRouter, Route, Routes } from "react-router";
 import {
   adminHeaderLinks,
@@ -174,6 +175,7 @@ function App() {
             <Route element={<AuthenticatedLayoutOutlet />}>
               <Route path={RouteMap.PAYMENT}>
                 <Route path="success" element={<PaymentSuccessPage />} />
+                <Route path="points-success" element={<PointsPaymentSuccessPage />} />
               </Route>
             </Route>
             {/* authenticated minimal layout */}

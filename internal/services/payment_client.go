@@ -178,7 +178,7 @@ func (c *StripeClient) CreatePointsCheckoutSession(customerID, userID string, po
 			"user_id":       userID,
 			"points_amount": fmt.Sprintf("%d", pointsAmount),
 		},
-		SuccessURL: stripe.String(c.config.StripeAppUrl + "/payment/success?sessionId={CHECKOUT_SESSION_ID}"),
+		SuccessURL: stripe.String(c.config.StripeAppUrl + "/payment/points-success?sessionId={CHECKOUT_SESSION_ID}"),
 		CancelURL:  stripe.String(c.config.StripeAppUrl + "/payment/cancel"),
 	}
 	return session.New(sessionParams)
