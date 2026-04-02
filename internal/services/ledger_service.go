@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/models"
@@ -20,7 +21,6 @@ type PostTransferInput struct {
 	ReferenceType   *string
 	ReferenceID     *uuid.UUID
 	PendingID       *uuid.UUID
-	Flags           int
 	Metadata        []byte
 }
 
@@ -94,7 +94,7 @@ func (s *DbLedgerService) GetOrCreateUserWallet(ctx context.Context, userID uuid
 		EntityType: "user",
 		EntityID:   &userID,
 		LedgerCode: "POINTS",
-		Flags:      models.AccountFlagDebitsMustNotExceedCredits,
+		Constraints: []models.AccountConstraint{models.AccountConstraintDebitsMustNotExceedCredits},
 		Metadata:   []byte("{}"),
 	})
 }
@@ -129,9 +129,9 @@ func (s *DbLedgerService) GetUserAvailableBalance(ctx context.Context, userID uu
 	return wallet.AvailableBalance(), nil
 }
 
-// checkDebitConstraint verifies that posting a debit to `account` by `amount` will not violate flags.
+// checkDebitConstraint verifies that posting a debit to `account` by `amount` will not violate constraints.
 func checkDebitConstraint(account *models.LedgerAccount, amount int64) error {
-	if account.Flags&models.AccountFlagDebitsMustNotExceedCredits != 0 {
+	if slices.Contains(account.Constraints, models.AccountConstraintDebitsMustNotExceedCredits) {
 		// After posting: debits_posted + amount must not exceed credits_posted.
 		if account.DebitsPosted+amount > account.CreditsPosted {
 			return fmt.Errorf("insufficient balance in account %s: available %d, requested %d",
@@ -143,7 +143,7 @@ func checkDebitConstraint(account *models.LedgerAccount, amount int64) error {
 
 // checkAvailableBalanceConstraint verifies available balance before creating a pending hold.
 func checkAvailableBalanceConstraint(account *models.LedgerAccount, amount int64) error {
-	if account.Flags&models.AccountFlagDebitsMustNotExceedCredits != 0 {
+	if slices.Contains(account.Constraints, models.AccountConstraintDebitsMustNotExceedCredits) {
 		if account.AvailableBalance() < amount {
 			return fmt.Errorf("insufficient available balance in account %s: available %d, requested %d",
 				account.Code, account.AvailableBalance(), amount)
@@ -197,7 +197,6 @@ func (s *DbLedgerService) PostTransfer(ctx context.Context, input PostTransferIn
 		CreditAccountID: input.CreditAccountID,
 		Amount:          input.Amount,
 		PendingID:       input.PendingID,
-		Flags:           input.Flags,
 		Status:          models.LedgerTransferStatusPosted,
 		TransferCode:    input.TransferCode,
 		ReferenceType:   input.ReferenceType,
@@ -254,7 +253,6 @@ func (s *DbLedgerService) CreatePendingTransfer(ctx context.Context, input PostT
 		DebitAccountID:  input.DebitAccountID,
 		CreditAccountID: input.CreditAccountID,
 		Amount:          input.Amount,
-		Flags:           input.Flags | models.TransferFlagPending,
 		Status:          models.LedgerTransferStatusPending,
 		TransferCode:    input.TransferCode,
 		ReferenceType:   input.ReferenceType,

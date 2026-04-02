@@ -6,14 +6,16 @@ import (
 	"github.com/google/uuid"
 )
 
-// LedgerAccountFlags is a bitfield controlling account behaviour.
+// AccountConstraint is a named constraint applied to a ledger account.
+type AccountConstraint string
+
 const (
-	// AccountFlagDebitsMustNotExceedCredits prevents overdraft.
+	// AccountConstraintDebitsMustNotExceedCredits prevents overdraft.
 	// Use on user-facing wallet accounts.
-	AccountFlagDebitsMustNotExceedCredits int = 1 << 0
-	// AccountFlagCreditsMustNotExceedDebits is the inverse constraint.
-	// Use on system issuance accounts.
-	AccountFlagCreditsMustNotExceedDebits int = 1 << 1
+	AccountConstraintDebitsMustNotExceedCredits AccountConstraint = "debits_must_not_exceed_credits"
+	// AccountConstraintCreditsMustNotExceedDebits prevents the account from
+	// issuing more than it has received. Use on system issuance accounts.
+	AccountConstraintCreditsMustNotExceedDebits AccountConstraint = "credits_must_not_exceed_debits"
 )
 
 // LedgerAccount is a node in the double-entry ledger.
@@ -30,7 +32,7 @@ type LedgerAccount struct {
 	EntityType     string     `db:"entity_type" json:"entity_type"`
 	EntityID       *uuid.UUID `db:"entity_id" json:"entity_id,omitempty"`
 	LedgerCode     string     `db:"ledger_code" json:"ledger_code"`
-	Flags          int        `db:"flags" json:"flags"`
+	Constraints    []AccountConstraint `db:"constraints" json:"constraints"`
 	DebitsPending  int64      `db:"debits_pending" json:"debits_pending"`
 	CreditsPending int64      `db:"credits_pending" json:"credits_pending"`
 	DebitsPosted   int64      `db:"debits_posted" json:"debits_posted"`
@@ -59,17 +61,6 @@ const (
 	LedgerTransferStatusVoided  LedgerTransferStatus = "voided"
 )
 
-// Transfer-flag bit positions.
-const (
-	// TransferFlagPending marks a two-phase pending transfer (holds available balance).
-	TransferFlagPending int = 1 << 0
-	// TransferFlagPostPending converts a pending transfer to posted.
-	TransferFlagPostPending int = 1 << 1
-	// TransferFlagVoidPending releases a pending transfer with no net effect.
-	TransferFlagVoidPending int = 1 << 2
-	// TransferFlagLinked marks a transfer as part of an atomic linked group.
-	TransferFlagLinked int = 1 << 3
-)
 
 // Well-known transfer codes.
 const (
@@ -107,7 +98,6 @@ type LedgerTransfer struct {
 	CreditAccountID uuid.UUID            `db:"credit_account_id" json:"credit_account_id"`
 	Amount          int64                `db:"amount" json:"amount"`
 	PendingID       *uuid.UUID           `db:"pending_id" json:"pending_id,omitempty"`
-	Flags           int                  `db:"flags" json:"flags"`
 	Status          LedgerTransferStatus `db:"status" json:"status"`
 	TransferCode    string               `db:"transfer_code" json:"transfer_code"`
 	ReferenceType   *string              `db:"reference_type" json:"reference_type,omitempty"`

@@ -113,7 +113,7 @@ export default function RockPaperScissors() {
       <div className="flex items-center gap-3 mb-1">
         <h1>Rock Paper Scissors</h1>
         {balanceData && (
-          <span className="inline-flex items-center gap-1.5 bg-indigo-100 text-indigo-700 rounded-full px-3 py-0.5 text-sm font-medium">
+          <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-0.5 text-sm font-medium">
             🪙 {balanceData.available_balance} pts
           </span>
         )}
@@ -171,12 +171,16 @@ export default function RockPaperScissors() {
               const state = CalculateGameState(row.original);
               if (state === GameState.Win) {
                 return (
-                  <span className="text-green-600 font-semibold">+{betAmount} pts</span>
+                  <span className="text-green-600 font-semibold">
+                    +{betAmount} pts
+                  </span>
                 );
               }
               if (state === GameState.Lose) {
                 return (
-                  <span className="text-red-600 font-semibold">−{betAmount} pts</span>
+                  <span className="text-red-600 font-semibold">
+                    −{betAmount} pts
+                  </span>
                 );
               }
               if (

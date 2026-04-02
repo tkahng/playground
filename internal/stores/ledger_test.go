@@ -13,11 +13,11 @@ import (
 func makeIssuanceAccount(t *testing.T, ctx context.Context, s *DBLedgerStore) *models.LedgerAccount {
 	t.Helper()
 	acc, err := s.CreateAccount(ctx, &models.LedgerAccount{
-		Code:       "system:issuance:" + uuid.NewString(),
-		EntityType: "system",
-		LedgerCode: "POINTS",
-		Flags:      0,
-		Metadata:   []byte("{}"),
+		Code:        "system:issuance:" + uuid.NewString(),
+		EntityType:  "system",
+		LedgerCode:  "POINTS",
+		Constraints: []models.AccountConstraint{},
+		Metadata:    []byte("{}"),
 	})
 	if err != nil {
 		t.Fatalf("makeIssuanceAccount: %v", err)
@@ -30,12 +30,12 @@ func makeWalletAccount(t *testing.T, ctx context.Context, s *DBLedgerStore) *mod
 	t.Helper()
 	userID := uuid.New()
 	acc, err := s.CreateAccount(ctx, &models.LedgerAccount{
-		Code:       models.UserWalletCode(userID),
-		EntityType: "user",
-		EntityID:   &userID,
-		LedgerCode: "POINTS",
-		Flags:      models.AccountFlagDebitsMustNotExceedCredits,
-		Metadata:   []byte("{}"),
+		Code:        models.UserWalletCode(userID),
+		EntityType:  "user",
+		EntityID:    &userID,
+		LedgerCode:  "POINTS",
+		Constraints: []models.AccountConstraint{models.AccountConstraintDebitsMustNotExceedCredits},
+		Metadata:    []byte("{}"),
 	})
 	if err != nil {
 		t.Fatalf("makeWalletAccount: %v", err)
@@ -50,12 +50,12 @@ func TestDBLedgerStore_CreateAccount(t *testing.T) {
 		s := NewDBLedgerStore(db)
 		userID := uuid.New()
 		acc, err := s.CreateAccount(ctx, &models.LedgerAccount{
-			Code:       models.UserWalletCode(userID),
-			EntityType: "user",
-			EntityID:   &userID,
-			LedgerCode: "POINTS",
-			Flags:      models.AccountFlagDebitsMustNotExceedCredits,
-			Metadata:   []byte("{}"),
+			Code:        models.UserWalletCode(userID),
+			EntityType:  "user",
+			EntityID:    &userID,
+			LedgerCode:  "POINTS",
+			Constraints: []models.AccountConstraint{models.AccountConstraintDebitsMustNotExceedCredits},
+			Metadata:    []byte("{}"),
 		})
 		if err != nil {
 			t.Fatalf("CreateAccount() error = %v", err)
@@ -199,7 +199,6 @@ func TestDBLedgerStore_CreateTransfer_Pending(t *testing.T) {
 			DebitAccountID:  src.ID,
 			CreditAccountID: escrow.ID,
 			Amount:          50,
-			Flags:           models.TransferFlagPending,
 			Status:          models.LedgerTransferStatusPending,
 			TransferCode:    models.TransferCodeBetEscrow,
 			Metadata:        []byte("{}"),
@@ -224,7 +223,6 @@ func TestDBLedgerStore_UpdateTransferStatus(t *testing.T) {
 			DebitAccountID:  src.ID,
 			CreditAccountID: dst.ID,
 			Amount:          75,
-			Flags:           models.TransferFlagPending,
 			Status:          models.LedgerTransferStatusPending,
 			TransferCode:    models.TransferCodeBetEscrow,
 			Metadata:        []byte("{}"),
@@ -247,7 +245,6 @@ func TestDBLedgerStore_UpdateTransferStatus(t *testing.T) {
 			DebitAccountID:  src.ID,
 			CreditAccountID: dst.ID,
 			Amount:          25,
-			Flags:           models.TransferFlagPending,
 			Status:          models.LedgerTransferStatusPending,
 			TransferCode:    models.TransferCodeBetEscrow,
 			Metadata:        []byte("{}"),
@@ -288,7 +285,6 @@ func TestDBLedgerStore_FindTransfers_ByStatus(t *testing.T) {
 			DebitAccountID:  src.ID,
 			CreditAccountID: dst.ID,
 			Amount:          50,
-			Flags:           models.TransferFlagPending,
 			Status:          models.LedgerTransferStatusPending,
 			TransferCode:    models.TransferCodeBetEscrow,
 			Metadata:        []byte("{}"),
