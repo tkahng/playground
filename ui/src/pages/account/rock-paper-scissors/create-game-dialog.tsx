@@ -274,12 +274,14 @@ export function CreateGameDialog() {
                   </div>
                   {betEnabled && (
                     <div className="space-y-1">
-                      <p className="text-xs text-muted-foreground">
-                        Available balance:{" "}
-                        {balanceData?.available_balance !== undefined
-                          ? `${balanceData.available_balance} pts`
-                          : "..."}
-                      </p>
+                      {(balanceData === undefined || (balanceData.available_balance ?? 0) > 0) && (
+                        <p className="text-xs text-muted-foreground">
+                          Available balance:{" "}
+                          {balanceData?.available_balance !== undefined
+                            ? `${balanceData.available_balance} pts`
+                            : "..."}
+                        </p>
+                      )}
                       {balanceData === undefined ? null : (balanceData.available_balance ?? 0) <= 0 ? (
                         <p className="text-xs text-amber-600">
                           You have 0 pts.{" "}
