@@ -28,6 +28,9 @@ type PostTransferInput struct {
 // All balance-mutating methods must be called inside a database transaction
 // (via adapter.RunInTx or adapter.RunInTxCtx) to maintain atomicity.
 type LedgerService interface {
+	// GetUserWallet returns the points wallet for a user, or nil if it doesn't exist.
+	GetUserWallet(ctx context.Context, userID uuid.UUID) (*models.LedgerAccount, error)
+
 	// GetOrCreateUserWallet returns (or lazily creates) the points wallet for a user.
 	GetOrCreateUserWallet(ctx context.Context, userID uuid.UUID) (*models.LedgerAccount, error)
 
@@ -79,6 +82,11 @@ func (s *DbLedgerService) ledger() stores.LedgerStore {
 	return s.adapter.Ledger()
 }
 
+// GetUserWallet returns the wallet for a user, or nil if it doesn't exist.
+func (s *DbLedgerService) GetUserWallet(ctx context.Context, userID uuid.UUID) (*models.LedgerAccount, error) {
+	return s.ledger().FindAccountByCode(ctx, models.UserWalletCode(userID))
+}
+
 // GetOrCreateUserWallet returns the wallet for a user, creating it if it doesn't exist.
 func (s *DbLedgerService) GetOrCreateUserWallet(ctx context.Context, userID uuid.UUID) (*models.LedgerAccount, error) {
 	code := models.UserWalletCode(userID)
@@ -111,20 +119,26 @@ func (s *DbLedgerService) GetSystemAccount(ctx context.Context, code string) (*m
 	return acc, nil
 }
 
-// GetUserBalance returns the settled balance of a user's wallet.
+// GetUserBalance returns the settled balance of a user's wallet, or 0 if no wallet exists.
 func (s *DbLedgerService) GetUserBalance(ctx context.Context, userID uuid.UUID) (int64, error) {
-	wallet, err := s.GetOrCreateUserWallet(ctx, userID)
+	wallet, err := s.GetUserWallet(ctx, userID)
 	if err != nil {
 		return 0, err
+	}
+	if wallet == nil {
+		return 0, nil
 	}
 	return wallet.Balance(), nil
 }
 
-// GetUserAvailableBalance returns the balance minus any pending holds.
+// GetUserAvailableBalance returns the balance minus any pending holds, or 0 if no wallet exists.
 func (s *DbLedgerService) GetUserAvailableBalance(ctx context.Context, userID uuid.UUID) (int64, error) {
-	wallet, err := s.GetOrCreateUserWallet(ctx, userID)
+	wallet, err := s.GetUserWallet(ctx, userID)
 	if err != nil {
 		return 0, err
+	}
+	if wallet == nil {
+		return 0, nil
 	}
 	return wallet.AvailableBalance(), nil
 }

@@ -82,9 +82,17 @@ func bindGetLedgerTransactionsApi(api huma.API, app core.App) {
 			if user == nil {
 				return nil, huma.Error401Unauthorized("unauthorized")
 			}
-			wallet, err := app.Ledger().GetOrCreateUserWallet(ctx, user.User.ID)
+			wallet, err := app.Ledger().GetUserWallet(ctx, user.User.ID)
 			if err != nil {
 				return nil, err
+			}
+			if wallet == nil {
+				return &ApiPaginatedOutput[*models.LedgerTransfer]{
+					Body: ApiPaginatedResponse[*models.LedgerTransfer]{
+						Data: []*models.LedgerTransfer{},
+						Meta: ApiGenerateMeta(&input.PaginatedInput, 0),
+					},
+				}, nil
 			}
 			filter := &stores.LedgerTransferFilter{
 				AccountIds:    []uuid.UUID{wallet.ID},
@@ -168,8 +176,42 @@ func bindCreatePointsCheckoutApi(api huma.API, app core.App) {
 	)
 }
 
+type LedgerWalletOutput struct {
+	Body *models.LedgerAccount
+}
+
+func bindCreateLedgerWalletApi(api huma.API, app core.App) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "create-ledger-wallet",
+			Method:      http.MethodPost,
+			Path:        "/ledger/wallet",
+			Summary:     "create points wallet",
+			Description: "Creates the points wallet for the current user. Idempotent — returns the existing wallet if one already exists.",
+			Tags:        []string{"Ledger"},
+			Errors:      []int{http.StatusUnauthorized},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+		},
+		func(ctx context.Context, _ *struct{}) (*LedgerWalletOutput, error) {
+			user := contextstore.GetContextUserInfo(ctx)
+			if user == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			wallet, err := app.Ledger().GetOrCreateUserWallet(ctx, user.User.ID)
+			if err != nil {
+				return nil, err
+			}
+			return &LedgerWalletOutput{Body: wallet}, nil
+		},
+	)
+}
+
 func bindLedgerApi(api huma.API, app core.App) {
 	bindGetLedgerBalanceApi(api, app)
 	bindGetLedgerTransactionsApi(api, app)
 	bindCreatePointsCheckoutApi(api, app)
+	bindCreateLedgerWalletApi(api, app)
 }
