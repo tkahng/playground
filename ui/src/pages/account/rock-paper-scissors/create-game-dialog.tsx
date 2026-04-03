@@ -280,7 +280,7 @@ export function CreateGameDialog() {
                           ? `${balanceData.available_balance} pts`
                           : "..."}
                       </p>
-                      {(balanceData?.available_balance ?? 0) <= 0 ? (
+                      {balanceData === undefined ? null : (balanceData.available_balance ?? 0) <= 0 ? (
                         <p className="text-xs text-amber-600">
                           You have 0 pts.{" "}
                           <a
