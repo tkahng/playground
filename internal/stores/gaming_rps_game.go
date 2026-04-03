@@ -3,6 +3,7 @@ package stores
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"slices"
 	"strings"
@@ -21,6 +22,8 @@ type RpsGameStore interface {
 	CountRpsGames(ctx context.Context, filter *RpsGameFilter) (int64, error)
 	FindRpsGames(ctx context.Context, filter *RpsGameFilter) ([]*models.RpsGame, error)
 	FindRpsGame(ctx context.Context, filter *RpsGameFilter) (*models.RpsGame, error)
+	FindRpsGameForUpdate(ctx context.Context, gameID uuid.UUID) (*models.RpsGame, error)
+	FindExpiredPendingBetGames(ctx context.Context) ([]*models.RpsGame, error)
 	CreateRpsGame(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
 	UpdateRpsGame(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
 }
@@ -148,4 +151,31 @@ func (s *DBGamingStore) CreateRpsGame(ctx context.Context, game *models.RpsGame)
 // UpdateRpsGame implements [GamingStore].
 func (s *DBGamingStore) UpdateRpsGame(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error) {
 	return repository.RpsGame.PutOne(ctx, s.db, game)
+}
+
+// FindRpsGameForUpdate fetches a game row and holds a row-level lock for the
+// duration of the surrounding transaction. Call this inside RunInTxCtx to
+// prevent concurrent double-settlement.
+func (s *DBGamingStore) FindRpsGameForUpdate(ctx context.Context, gameID uuid.UUID) (*models.RpsGame, error) {
+	cols := strings.Join(repository.RpsGameBuilder.ColumnNames(), ", ")
+	query := fmt.Sprintf("SELECT %s FROM gaming.rps_games WHERE id = $1 FOR UPDATE", cols)
+	data, err := database.QueryAll[*models.RpsGame](ctx, s.db, query, gameID)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) == 0 {
+		return nil, nil
+	}
+	return data[0], nil
+}
+
+// FindExpiredPendingBetGames returns pending games with a host bet escrow whose
+// expiry time has passed. These need their host escrow refunded and status set to cancelled.
+func (s *DBGamingStore) FindExpiredPendingBetGames(ctx context.Context) ([]*models.RpsGame, error) {
+	cols := strings.Join(repository.RpsGameBuilder.ColumnNames(), ", ")
+	query := fmt.Sprintf(
+		"SELECT %s FROM gaming.rps_games WHERE status = $1 AND expires_at < clock_timestamp() AND host_bet_transfer_id IS NOT NULL",
+		cols,
+	)
+	return database.QueryAll[*models.RpsGame](ctx, s.db, query, string(models.RpsGameStatusPending))
 }

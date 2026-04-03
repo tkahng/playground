@@ -20,7 +20,12 @@ type BettingService interface {
 
 	// PlaceGuestAndSettle creates the guest's pending escrow transfer, posts both
 	// pending holds, then distributes the escrow based on the game result.
-	PlaceGuestAndSettle(ctx context.Context, input PlaceGuestAndSettleInput) error
+	// Returns the guest's pending transfer ID for audit trail storage.
+	PlaceGuestAndSettle(ctx context.Context, input PlaceGuestAndSettleInput) (uuid.UUID, error)
+
+	// EnsureGuestCanAffordBet returns an error if the guest's available balance
+	// is less than amount. Must be called before PlaceGuestAndSettle.
+	EnsureGuestCanAffordBet(ctx context.Context, guestUserID uuid.UUID, amount int64) error
 
 	// RefundHostBet voids the host's pending bet (e.g., guest declined or game expired).
 	RefundHostBet(ctx context.Context, hostPendingTransferID uuid.UUID) error
@@ -81,23 +86,24 @@ func (s *DbBettingService) PlaceHostBet(ctx context.Context, gameID, hostUserID 
 }
 
 // PlaceGuestAndSettle finalises the bet: places guest's escrow, posts both holds, distributes funds.
+// Returns the guest's pending transfer ID for audit trail storage.
 // Must be called inside a transaction.
-func (s *DbBettingService) PlaceGuestAndSettle(ctx context.Context, input PlaceGuestAndSettleInput) error {
+func (s *DbBettingService) PlaceGuestAndSettle(ctx context.Context, input PlaceGuestAndSettleInput) (uuid.UUID, error) {
 	if input.BetAmount <= 0 {
-		return errors.New("bet amount must be positive")
+		return uuid.Nil, errors.New("bet amount must be positive")
 	}
 
 	guestWallet, err := s.ledger.GetOrCreateUserWallet(ctx, input.GuestUserID)
 	if err != nil {
-		return fmt.Errorf("guest wallet: %w", err)
+		return uuid.Nil, fmt.Errorf("guest wallet: %w", err)
 	}
 	hostWallet, err := s.ledger.GetOrCreateUserWallet(ctx, input.HostUserID)
 	if err != nil {
-		return fmt.Errorf("host wallet: %w", err)
+		return uuid.Nil, fmt.Errorf("host wallet: %w", err)
 	}
 	escrow, err := s.ledger.GetSystemAccount(ctx, models.SystemAccountGameEscrow)
 	if err != nil {
-		return fmt.Errorf("escrow account: %w", err)
+		return uuid.Nil, fmt.Errorf("escrow account: %w", err)
 	}
 
 	refType := models.ReferenceTypeRpsGame
@@ -113,15 +119,15 @@ func (s *DbBettingService) PlaceGuestAndSettle(ctx context.Context, input PlaceG
 		ReferenceID:     &input.GameID,
 	})
 	if err != nil {
-		return fmt.Errorf("place guest bet: %w", err)
+		return uuid.Nil, fmt.Errorf("place guest bet: %w", err)
 	}
 
 	// Step 2: post both pending holds (funds are now fully in escrow).
 	if _, err = s.ledger.PostPendingTransfer(ctx, input.HostPendingTransferID); err != nil {
-		return fmt.Errorf("post host pending: %w", err)
+		return uuid.Nil, fmt.Errorf("post host pending: %w", err)
 	}
 	if _, err = s.ledger.PostPendingTransfer(ctx, guestPending.ID); err != nil {
-		return fmt.Errorf("post guest pending: %w", err)
+		return uuid.Nil, fmt.Errorf("post guest pending: %w", err)
 	}
 
 	// Step 3: distribute escrow according to game result.
@@ -140,7 +146,7 @@ func (s *DbBettingService) PlaceGuestAndSettle(ctx context.Context, input PlaceG
 			ReferenceID:     &input.GameID,
 		})
 		if err != nil {
-			return fmt.Errorf("pay host: %w", err)
+			return uuid.Nil, fmt.Errorf("pay host: %w", err)
 		}
 
 	case input.GuestResult == models.RpsParticipantResultWin:
@@ -155,7 +161,7 @@ func (s *DbBettingService) PlaceGuestAndSettle(ctx context.Context, input PlaceG
 			ReferenceID:     &input.GameID,
 		})
 		if err != nil {
-			return fmt.Errorf("pay guest: %w", err)
+			return uuid.Nil, fmt.Errorf("pay guest: %w", err)
 		}
 
 	default:
@@ -170,7 +176,7 @@ func (s *DbBettingService) PlaceGuestAndSettle(ctx context.Context, input PlaceG
 			ReferenceID:     &input.GameID,
 		})
 		if err != nil {
-			return fmt.Errorf("refund host: %w", err)
+			return uuid.Nil, fmt.Errorf("refund host: %w", err)
 		}
 		_, err = s.ledger.PostTransfer(ctx, PostTransferInput{
 			LedgerCode:      "POINTS",
@@ -182,10 +188,22 @@ func (s *DbBettingService) PlaceGuestAndSettle(ctx context.Context, input PlaceG
 			ReferenceID:     &input.GameID,
 		})
 		if err != nil {
-			return fmt.Errorf("refund guest: %w", err)
+			return uuid.Nil, fmt.Errorf("refund guest: %w", err)
 		}
 	}
 
+	return guestPending.ID, nil
+}
+
+// EnsureGuestCanAffordBet returns an error if the guest's available balance is less than amount.
+func (s *DbBettingService) EnsureGuestCanAffordBet(ctx context.Context, guestUserID uuid.UUID, amount int64) error {
+	wallet, err := s.ledger.GetOrCreateUserWallet(ctx, guestUserID)
+	if err != nil {
+		return fmt.Errorf("guest wallet: %w", err)
+	}
+	if wallet.AvailableBalance() < amount {
+		return fmt.Errorf("insufficient balance: need %d pts but have %d pts available", amount, wallet.AvailableBalance())
+	}
 	return nil
 }
 

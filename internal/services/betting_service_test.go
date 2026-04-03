@@ -200,7 +200,7 @@ func TestDbBettingService_PlaceGuestAndSettle_HostWins(t *testing.T) {
 			t.Fatalf("PlaceHostBet() error = %v", err)
 		}
 
-		err = betting.PlaceGuestAndSettle(ctx, PlaceGuestAndSettleInput{
+		_, err = betting.PlaceGuestAndSettle(ctx, PlaceGuestAndSettleInput{
 			GameID:                gameID,
 			GuestUserID:           guestUserID,
 			HostUserID:            hostUserID,
@@ -242,7 +242,7 @@ func TestDbBettingService_PlaceGuestAndSettle_GuestWins(t *testing.T) {
 			t.Fatalf("PlaceHostBet() error = %v", err)
 		}
 
-		err = betting.PlaceGuestAndSettle(ctx, PlaceGuestAndSettleInput{
+		_, err = betting.PlaceGuestAndSettle(ctx, PlaceGuestAndSettleInput{
 			GameID:                gameID,
 			GuestUserID:           guestUserID,
 			HostUserID:            hostUserID,
@@ -284,7 +284,7 @@ func TestDbBettingService_PlaceGuestAndSettle_Tie(t *testing.T) {
 			t.Fatalf("PlaceHostBet() error = %v", err)
 		}
 
-		err = betting.PlaceGuestAndSettle(ctx, PlaceGuestAndSettleInput{
+		_, err = betting.PlaceGuestAndSettle(ctx, PlaceGuestAndSettleInput{
 			GameID:                gameID,
 			GuestUserID:           guestUserID,
 			HostUserID:            hostUserID,

@@ -131,8 +131,8 @@ func getRpsGameInviteFromTokenQuery(app core.App, ctx context.Context, token str
 	if rpsGameInvite == nil {
 		return nil, huma.Error400BadRequest("invalid token")
 	}
-	if !rpsGameInvite.ExpiresAt.UTC().Before(time.Now().UTC()) {
-		return nil, huma.Error400BadRequest("invalid token")
+	if rpsGameInvite.ExpiresAt.UTC().Before(time.Now().UTC()) {
+		return nil, huma.Error400BadRequest("token expired")
 	}
 	return rpsGameInvite, nil
 }
@@ -363,6 +363,7 @@ func SendRpsGameRequestToUnregisteredPlayer(app core.App, ctx context.Context, i
 			RequestingPlayerID: currentPlayer.ID,
 			InvitedPlayerID:    rpsGameWithParticipants.InvitedParticipant.PlayerID,
 			Token:              security.GenerateTokenKey(),
+			ExpiresAt:          rpsGameWithParticipants.RpsGame.ExpiresAt,
 		})
 		if err != nil {
 			return err

@@ -146,8 +146,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		}
 		return nil, nil
 	default:
-		slog.WarnContext(ctx, "⚠️  Unhandled Stripe event type", slog.String("event_type", string(event.Type)))
-		return nil, huma.Error400BadRequest("unhandled event type")
+		slog.InfoContext(ctx, "stripe webhook: ignoring unhandled event type", slog.String("type", string(event.Type)))
+		return nil, nil
 	}
-	// return nil, huma.Error400BadRequest("unhandled event type")
 }

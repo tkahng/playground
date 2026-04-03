@@ -26,6 +26,9 @@ type RpsGameService interface {
 	FindRpsGameWithParticipants(ctx context.Context, gameID uuid.UUID) (*RpsGameWithParticipants, error)
 	RequestGame(ctx context.Context, input *RpsGameRequestInput) (*RpsGameWithParticipants, error)
 	RespondToGameRequest(ctx context.Context, input *GameRequestResponse) (*RpsGameWithParticipants, error)
+	// ExpireGamesAndRefundBets finds all pending bet games whose expiry has passed,
+	// marks each cancelled, and voids the host's pending escrow transfer.
+	ExpireGamesAndRefundBets(ctx context.Context) (int, error)
 }
 
 type DbRpsGameService struct {
@@ -89,6 +92,9 @@ type RpsGameRequestInput struct {
 }
 
 func (d *DbRpsGameService) RequestGame(ctx context.Context, input *RpsGameRequestInput) (*RpsGameWithParticipants, error) {
+	if input.RequestingPlayerID == input.InvitedPlayerID {
+		return nil, errors.New("cannot challenge yourself")
+	}
 	// Validate betting prerequisites.
 	if input.BetAmount != nil {
 		if *input.BetAmount <= 0 {
@@ -170,6 +176,15 @@ type GameRequestResponse struct {
 }
 
 func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *GameRequestResponse) (*RpsGameWithParticipants, error) {
+	// Lock the game row first to prevent concurrent double-settlement.
+	lockedGame, err := d.adapter.Gaming().FindRpsGameForUpdate(ctx, input.GameID)
+	if err != nil {
+		return nil, err
+	}
+	if lockedGame == nil {
+		return nil, errors.New("game not found")
+	}
+
 	gameWithParticipants, err := d.FindRpsGameWithParticipants(ctx, input.GameID)
 	if err != nil {
 		return nil, err
@@ -231,7 +246,11 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 			if guestPlayer == nil || guestPlayer.UserID == nil {
 				return nil, errors.New("guest player must be a registered user to settle a bet")
 			}
-			if err := d.betting.PlaceGuestAndSettle(ctx, PlaceGuestAndSettleInput{
+			// Server-side guest balance check before committing.
+			if err := d.betting.EnsureGuestCanAffordBet(ctx, *guestPlayer.UserID, *game.BetAmount); err != nil {
+				return nil, fmt.Errorf("guest cannot cover bet: %w", err)
+			}
+			guestTransferID, err := d.betting.PlaceGuestAndSettle(ctx, PlaceGuestAndSettleInput{
 				GameID:                input.GameID,
 				GuestUserID:           *guestPlayer.UserID,
 				HostUserID:            *hostPlayer.UserID,
@@ -239,9 +258,11 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 				HostPendingTransferID: *game.HostBetTransferID,
 				HostResult:            gameWithParticipants.RequestingParticipant.Result,
 				GuestResult:           gameWithParticipants.InvitedParticipant.Result,
-			}); err != nil {
+			})
+			if err != nil {
 				return nil, fmt.Errorf("settle bet: %w", err)
 			}
+			game.GuestBetTransferID = &guestTransferID
 		}
 
 	default:
@@ -286,6 +307,44 @@ type RpsGameWithParticipants struct {
 	RpsGame               *models.RpsGame
 	RequestingParticipant *models.RpsParticipant
 	InvitedParticipant    *models.RpsParticipant
+}
+
+// ExpireGamesAndRefundBets finds all pending bet games whose expiry has passed,
+// marks each cancelled, and voids the host's pending escrow transfer.
+func (d *DbRpsGameService) ExpireGamesAndRefundBets(ctx context.Context) (int, error) {
+	expiredGames, err := d.adapter.Gaming().FindExpiredPendingBetGames(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("find expired bet games: %w", err)
+	}
+
+	processed := 0
+	for _, game := range expiredGames {
+		txErr := d.adapter.RunInTxCtx(ctx, func(txCtx context.Context) error {
+			// Re-fetch with lock inside the transaction.
+			locked, err := d.adapter.Gaming().FindRpsGameForUpdate(txCtx, game.ID)
+			if err != nil {
+				return err
+			}
+			if locked == nil || locked.Status != models.RpsGameStatusPending {
+				return nil // already handled by another process
+			}
+			locked.Status = models.RpsGameStatusCancelled
+			if _, err := d.adapter.Gaming().UpdateRpsGame(txCtx, locked); err != nil {
+				return fmt.Errorf("cancel expired game %s: %w", game.ID, err)
+			}
+			if game.HostBetTransferID != nil && d.betting != nil {
+				if err := d.betting.RefundHostBet(txCtx, *game.HostBetTransferID); err != nil {
+					return fmt.Errorf("refund host bet for expired game %s: %w", game.ID, err)
+				}
+			}
+			return nil
+		})
+		if txErr != nil {
+			return processed, txErr
+		}
+		processed++
+	}
+	return processed, nil
 }
 
 func (d *DbRpsGameService) FindRpsGameWithParticipants(ctx context.Context, gameID uuid.UUID) (*RpsGameWithParticipants, error) {
