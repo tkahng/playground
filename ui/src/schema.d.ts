@@ -983,6 +983,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ledger/wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * create points wallet
+         * @description Creates the points wallet for the current user. Idempotent — returns the existing wallet if one already exists.
+         */
+        post: operations["create-ledger-wallet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/media": {
         parameters: {
             query?: never;
@@ -2486,7 +2506,14 @@ export interface components {
             user_reaction_stats: components["schemas"]["UserReactionStats"];
         };
         LedgerAccount: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/LedgerAccount.json
+             */
+            readonly $schema?: string;
             code: string;
+            constraints: string[] | null;
             /** Format: date-time */
             created_at: string;
             /** Format: int64 */
@@ -2499,8 +2526,6 @@ export interface components {
             debits_posted: number;
             entity_id?: string;
             entity_type: string;
-            /** Format: int64 */
-            flags: number;
             id: string;
             ledger_code: string;
             metadata: string;
@@ -2528,8 +2553,6 @@ export interface components {
             credit_account_id: string;
             debit_account?: components["schemas"]["LedgerAccount"];
             debit_account_id: string;
-            /** Format: int64 */
-            flags: number;
             id: string;
             ledger_code: string;
             metadata: string;
@@ -6669,6 +6692,44 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "create-ledger-wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LedgerAccount"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

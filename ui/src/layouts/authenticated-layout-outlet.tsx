@@ -1,4 +1,5 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { createLedgerWallet } from "@/lib/api";
 import { useEffect, useRef } from "react";
 import {
   createSearchParams,
@@ -10,21 +11,19 @@ import {
 export default function AuthenticatedLayoutOutlet() {
   const location = useLocation();
   const { pathname } = location;
-  const { user, checkAuth } = useAuthProvider();
+  const { user, checkAuth, getOrRefreshToken } = useAuthProvider();
   // const { team, teamMember } = useTeam();
   const isMounted = useRef(false);
   useEffect(() => {
     if (!isMounted.current) {
       isMounted.current = true;
-      checkAuth()
-        .then(() => {
-          // isMounted.current = false;
+      getOrRefreshToken()
+        .then((u) => {
+          createLedgerWallet(u.tokens.access_token).catch(() => {});
         })
-        .catch(() => {
-          // isMounted.current = false;
-        });
+        .catch(() => {});
     }
-  }, [checkAuth, location, user]);
+  }, [checkAuth, getOrRefreshToken, location, user]);
 
   if (!user) {
     if (pathname.startsWith("/team-invitation")) {

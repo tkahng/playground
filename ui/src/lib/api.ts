@@ -772,6 +772,21 @@ export const createCheckoutSession = async (
   return data;
 };
 
+export const createLedgerWallet = async (token: string) => {
+  const { data, error } = await client.POST("/api/ledger/wallet", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  if (error) {
+    throw ApiError.fromErrorModel(error);
+  }
+  if (!data) {
+    throw new Error("No data");
+  }
+  return data;
+};
+
 export const createPointsCheckoutSession = async (
   token: string,
   { price_id }: { price_id: string }
