@@ -4,6 +4,7 @@ import { Field, FieldLabel, FieldError } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
+import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useDialog } from "@/hooks/use-dialog";
 import { rpsGameQueries } from "@/lib/rps-game-queries";
@@ -279,19 +280,33 @@ export function CreateGameDialog() {
                           ? `${balanceData.available_balance} pts`
                           : "..."}
                       </p>
-                      <Input
-                        type="number"
-                        min={1}
-                        max={balanceData?.available_balance}
-                        value={betAmount ?? ""}
-                        onChange={(e) => {
-                          const parsed = parseInt(e.target.value, 10);
-                          setBetAmount(
-                            e.target.value && Number.isFinite(parsed) ? parsed : undefined
-                          );
-                        }}
-                        placeholder="Enter bet amount"
-                      />
+                      {(balanceData?.available_balance ?? 0) <= 0 ? (
+                        <p className="text-xs text-amber-600">
+                          You have 0 pts.{" "}
+                          <a
+                            href={RouteMap.POINTS_SETTINGS}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-amber-700"
+                          >
+                            Buy Points →
+                          </a>
+                        </p>
+                      ) : (
+                        <Input
+                          type="number"
+                          min={1}
+                          max={balanceData?.available_balance}
+                          value={betAmount ?? ""}
+                          onChange={(e) => {
+                            const parsed = parseInt(e.target.value, 10);
+                            setBetAmount(
+                              e.target.value && Number.isFinite(parsed) ? parsed : undefined
+                            );
+                          }}
+                          placeholder="Enter bet amount"
+                        />
+                      )}
                     </div>
                   )}
                 </div>
