@@ -3,14 +3,19 @@ package workers
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/tkahng/playground/internal/jobs"
+	"github.com/tkahng/playground/internal/tools/types"
 )
+
+const RpsGameExpirySweepKind = "rps_game_expiry_sweep"
+const RpsGameExpirySweepInterval = time.Minute
 
 type RpsGameExpiryJobArgs struct{}
 
 func (j RpsGameExpiryJobArgs) Kind() string {
-	return "rps_game_expiry_sweep"
+	return RpsGameExpirySweepKind
 }
 
 // RpsGameExpiryServiceInterface is the subset of RpsGameService needed by the expiry worker.
@@ -19,14 +24,26 @@ type RpsGameExpiryServiceInterface interface {
 }
 
 type RpsGameExpiryWorker struct {
-	rpsGame RpsGameExpiryServiceInterface
+	rpsGame  RpsGameExpiryServiceInterface
+	enqueuer jobs.Enqueuer
 }
 
-func NewRpsGameExpiryWorker(rpsGame RpsGameExpiryServiceInterface) jobs.Worker[RpsGameExpiryJobArgs] {
-	return &RpsGameExpiryWorker{rpsGame: rpsGame}
+func NewRpsGameExpiryWorker(rpsGame RpsGameExpiryServiceInterface, enqueuer jobs.Enqueuer) jobs.Worker[RpsGameExpiryJobArgs] {
+	return &RpsGameExpiryWorker{rpsGame: rpsGame, enqueuer: enqueuer}
 }
 
-// Work voids pending escrow for any expired bet games.
+// SeedRpsGameExpiryJob enqueues the first sweep job. Idempotent — the unique_key
+// prevents a duplicate if a pending or processing job already exists.
+func SeedRpsGameExpiryJob(ctx context.Context, enqueuer jobs.Enqueuer) error {
+	return enqueuer.Enqueue(ctx, &jobs.EnqueueParams{
+		Args:        &RpsGameExpiryJobArgs{},
+		RunAfter:    time.Now(),
+		MaxAttempts: 1,
+		UniqueKey:   types.Pointer(RpsGameExpirySweepKind),
+	})
+}
+
+// Work voids pending escrow for any expired bet games, then schedules the next run.
 func (w *RpsGameExpiryWorker) Work(ctx context.Context, job *jobs.Job[RpsGameExpiryJobArgs]) error {
 	processed, err := w.rpsGame.ExpireGamesAndRefundBets(ctx)
 	if err != nil {
@@ -35,5 +52,17 @@ func (w *RpsGameExpiryWorker) Work(ctx context.Context, job *jobs.Job[RpsGameExp
 	if processed > 0 {
 		slog.InfoContext(ctx, "rps expiry sweep: refunded expired bet games", slog.Int("count", processed))
 	}
+
+	// Self-schedule the next run. Use context.Background so a job-level timeout
+	// on the current execution does not cancel the re-enqueue write.
+	if err := w.enqueuer.Enqueue(context.Background(), &jobs.EnqueueParams{
+		Args:        &RpsGameExpiryJobArgs{},
+		RunAfter:    time.Now().Add(RpsGameExpirySweepInterval),
+		MaxAttempts: 1,
+		UniqueKey:   types.Pointer(RpsGameExpirySweepKind),
+	}); err != nil {
+		slog.ErrorContext(ctx, "rps expiry sweep: failed to schedule next run", slog.Any("error", err))
+	}
+
 	return nil
 }

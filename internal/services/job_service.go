@@ -22,7 +22,7 @@ type JobService interface {
 	EnqueueRefreshSubscriptionQuantityJob(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error
 	EnqueueOtpMailJob(ctx context.Context, args *workers.OtpEmailJobArgs) error
 	EnqueueTeamInvitationJob(ctx context.Context, args *workers.TeamInvitationJobArgs) error
-	RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier)
+	RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier, rpsGame workers.RpsGameExpiryServiceInterface)
 }
 
 type DbJobService struct {
@@ -102,7 +102,7 @@ func (d *DbJobService) EnqueueTeamInvitationJob(ctx context.Context, args *worke
 }
 
 // RegisterWorkers implements JobService.
-func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier) {
+func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier, rpsGame workers.RpsGameExpiryServiceInterface) {
 	jobs.RegisterWorker(d.manager, workers.NewOtpEmailWorker(mail))
 	jobs.RegisterWorker(d.manager, workers.NewTeamInvitationWorker(mail))
 	jobs.RegisterWorker(d.manager, workers.NewRpsGameInvitationWorker(mail))
@@ -111,6 +111,7 @@ func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService Payme
 	jobs.RegisterWorker(d.manager, NewAssignedToTaskWorker(notification))
 	jobs.RegisterWorker(d.manager, NewTaskDueTodayWorker(notification))
 	jobs.RegisterWorker(d.manager, NewTaskCompletedWorker(notification))
+	jobs.RegisterWorker(d.manager, workers.NewRpsGameExpiryWorker(rpsGame, d.manager))
 }
 
 // EnqueueOtpMailJob implements JobService.
@@ -132,7 +133,7 @@ type JobServiceDecorator struct {
 	Delegate                                  JobService
 	EnqueueOtpMailJobFunc                     func(ctx context.Context, job *workers.OtpEmailJobArgs) error
 	EnqueueTeamInvitationFunc                 func(ctx context.Context, job *workers.TeamInvitationJobArgs) error
-	RegisterWorkersFunc                       func(mail OtpMailService, paymentService PaymentService, notification Notifier)
+	RegisterWorkersFunc                       func(mail OtpMailService, paymentService PaymentService, notification Notifier, rpsGame workers.RpsGameExpiryServiceInterface)
 	EnqueueTeamMemberAddedJobFunc             func(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error
 	WithTxFunc                                func(db database.Dbx) JobService
 	EnqueueRefreshSubscriptionQuantityJobFunc func(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error
@@ -222,11 +223,11 @@ func (j *JobServiceDecorator) EnqueueTeamInvitationJob(ctx context.Context, args
 }
 
 // RegisterWorkers implements JobService.
-func (j *JobServiceDecorator) RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier) {
+func (j *JobServiceDecorator) RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier, rpsGame workers.RpsGameExpiryServiceInterface) {
 	if j.RegisterWorkersFunc != nil {
-		j.RegisterWorkersFunc(mail, paymentService, notification)
+		j.RegisterWorkersFunc(mail, paymentService, notification, rpsGame)
 	}
-	j.Delegate.RegisterWorkers(mail, paymentService, notification)
+	j.Delegate.RegisterWorkers(mail, paymentService, notification, rpsGame)
 }
 
 // EnqueueOtpMailJob implements JobService.

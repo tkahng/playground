@@ -2,7 +2,6 @@ package core
 
 import (
 	"context"
-
 	"log/slog"
 
 	"github.com/tkahng/playground/internal/auth"
@@ -12,6 +11,7 @@ import (
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/workers"
 	"github.com/tkahng/playground/internal/token"
 
 	"github.com/tkahng/playground/internal/tools/filesystem"
@@ -317,6 +317,9 @@ func (app *BaseApp) RunBackgroundProcesses(firstCtx context.Context) {
 			return
 		}
 	}()
+	if err := workers.SeedRpsGameExpiryJob(firstCtx, app.JobManager()); err != nil {
+		app.Logger().ErrorContext(firstCtx, "failed to seed rps expiry job", slog.Any("error", err))
+	}
 }
 
 func NewApp(config *conf.EnvConfig) *BaseApp {
