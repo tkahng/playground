@@ -710,6 +710,119 @@ func TestDbRpsGameService_ExpireGamesAndRefundBets_IgnoresNoBetGames(t *testing.
 	})
 }
 
+func TestDbRpsGameService_CreatePlayerByParams_Success(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		user := mustCreateUser(t, ctx, adapter, "newplayer@example.com")
+		player, err := rpsService.CreatePlayerByParams(ctx, &PlayerFindParams{
+			Email:  "newplayer@example.com",
+			UserID: &user.ID,
+		})
+		if err != nil {
+			t.Fatalf("CreatePlayerByParams() error = %v", err)
+		}
+		if player == nil {
+			t.Fatal("CreatePlayerByParams() returned nil player")
+		}
+		if player.Email != "newplayer@example.com" {
+			t.Errorf("player.Email = %q, want %q", player.Email, "newplayer@example.com")
+		}
+		if player.UserID == nil || *player.UserID != user.ID {
+			t.Errorf("player.UserID = %v, want %v", player.UserID, user.ID)
+		}
+	})
+}
+
+func TestDbRpsGameService_FindPlayerByParams_Found(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		// Create a player first.
+		stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("findme@example.com"))
+
+		found, err := rpsService.FindPlayerByParams(ctx, &PlayerFindParams{Email: "findme@example.com"})
+		if err != nil {
+			t.Fatalf("FindPlayerByParams() error = %v", err)
+		}
+		if found == nil {
+			t.Fatal("FindPlayerByParams() returned nil, want player")
+		}
+		if found.Email != "findme@example.com" {
+			t.Errorf("found.Email = %q, want %q", found.Email, "findme@example.com")
+		}
+	})
+}
+
+func TestDbRpsGameService_FindPlayerByParams_NotFound(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		found, err := rpsService.FindPlayerByParams(ctx, &PlayerFindParams{Email: "nobody@example.com"})
+		if err != nil {
+			t.Fatalf("FindPlayerByParams() error = %v", err)
+		}
+		if found != nil {
+			t.Errorf("FindPlayerByParams() returned %v, want nil", found)
+		}
+	})
+}
+
+func TestDbRpsGameService_PlayerCanPlayWithPlayer_DeclinedFriendship(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		p1 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("decline_p1@example.com"))
+		p2 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("decline_p2@example.com"))
+
+		// MustCreateFriendship(store, invitedPlayer=p2, requestingPlayer=p1)
+		// PlayerCanPlayWithPlayer filters by RequestingPlayerIds=[p1], InvitedPlayerIds=[p2]
+		stores.MustCreateFriendship(t, ctx, adapter.Gaming(), p2, p1, stores.WithStatus(models.FriendshipStatusDeclined))
+
+		canPlay, err := rpsService.PlayerCanPlayWithPlayer(ctx, p1.ID, p2.ID)
+		if err != nil {
+			t.Fatalf("PlayerCanPlayWithPlayer() error = %v", err)
+		}
+		if canPlay {
+			t.Error("PlayerCanPlayWithPlayer() = true, want false for declined friendship")
+		}
+	})
+}
+
+func TestDbRpsGameService_PlayerCanPlayWithPlayer_AcceptedFriendship(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		p1 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("accept_p1@example.com"))
+		p2 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("accept_p2@example.com"))
+
+		stores.MustCreateFriendship(t, ctx, adapter.Gaming(), p2, p1, stores.WithStatus(models.FriendshipStatusAccepted))
+
+		canPlay, err := rpsService.PlayerCanPlayWithPlayer(ctx, p1.ID, p2.ID)
+		if err != nil {
+			t.Fatalf("PlayerCanPlayWithPlayer() error = %v", err)
+		}
+		if !canPlay {
+			t.Error("PlayerCanPlayWithPlayer() = false, want true for accepted friendship")
+		}
+	})
+}
+
 func mustCreateUser(t *testing.T, ctx context.Context, adapter stores.StorageAdapterInterface, email string) *models.User {
 	t.Helper()
 	user, err := adapter.User().CreateUser(ctx, &models.User{Email: email})

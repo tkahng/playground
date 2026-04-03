@@ -477,3 +477,114 @@ func TestDBGamingStore_FindRpsParticipant(t *testing.T) {
 		}
 	})
 }
+
+func TestDBGamingStore_FindRpsParticipant_Single(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		gameStore := NewDBGamingStore(db)
+
+		game, err := gameStore.CreateRpsGame(ctx, &models.RpsGame{
+			Status:   models.RpsGameStatusPending,
+			ExpiresAt: time.Now().UTC().Add(time.Hour),
+			Metadata:  []byte("{}"),
+		})
+		if err != nil {
+			t.Fatalf("CreateRpsGame error: %v", err)
+		}
+		player, err := gameStore.CreatePlayer(ctx, &models.Player{Email: "single_p@example.com"})
+		if err != nil {
+			t.Fatalf("CreatePlayer error: %v", err)
+		}
+		created, err := gameStore.CreateRpsParticipant(ctx, &models.RpsParticipant{
+			GameID:   game.ID,
+			PlayerID: player.ID,
+			Move:     models.RpsParticipantMoveRock,
+			Type:     models.RpsParticipantTypeHost,
+			Status:   models.RpsParticipantStatusPending,
+			Result:   models.RpsParticipantResultTie,
+		})
+		if err != nil {
+			t.Fatalf("CreateRpsParticipant error: %v", err)
+		}
+
+		// FindRpsParticipant (single) by game ID.
+		found, err := gameStore.FindRpsParticipant(ctx, &RpsParticipantFilter{
+			RpsGameIds: []uuid.UUID{game.ID},
+		})
+		if err != nil {
+			t.Fatalf("FindRpsParticipant() error = %v", err)
+		}
+		if found == nil {
+			t.Fatal("FindRpsParticipant() returned nil, want participant")
+		}
+		if found.ID != created.ID {
+			t.Errorf("FindRpsParticipant() ID = %v, want %v", found.ID, created.ID)
+		}
+
+		// FindRpsParticipant for non-existent game returns nil.
+		missing, err := gameStore.FindRpsParticipant(ctx, &RpsParticipantFilter{
+			RpsGameIds: []uuid.UUID{uuid.New()},
+		})
+		if err != nil {
+			t.Fatalf("FindRpsParticipant(missing) error = %v", err)
+		}
+		if missing != nil {
+			t.Errorf("FindRpsParticipant(missing) = %v, want nil", missing)
+		}
+	})
+}
+
+func TestDBGamingStore_CountRpsParticipants(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		gameStore := NewDBGamingStore(db)
+
+		game, err := gameStore.CreateRpsGame(ctx, &models.RpsGame{
+			Status:   models.RpsGameStatusPending,
+			ExpiresAt: time.Now().UTC().Add(time.Hour),
+			Metadata:  []byte("{}"),
+		})
+		if err != nil {
+			t.Fatalf("CreateRpsGame error: %v", err)
+		}
+		for i, pType := range []models.RpsParticipantType{models.RpsParticipantTypeHost, models.RpsParticipantTypeGuest} {
+			player, err := gameStore.CreatePlayer(ctx, &models.Player{
+				Email: fmt.Sprintf("count_p%d@example.com", i),
+			})
+			if err != nil {
+				t.Fatalf("CreatePlayer error: %v", err)
+			}
+			_, err = gameStore.CreateRpsParticipant(ctx, &models.RpsParticipant{
+				GameID:   game.ID,
+				PlayerID: player.ID,
+				Move:     models.RpsParticipantMoveRock,
+				Type:     pType,
+				Status:   models.RpsParticipantStatusPending,
+				Result:   models.RpsParticipantResultTie,
+			})
+			if err != nil {
+				t.Fatalf("CreateRpsParticipant error: %v", err)
+			}
+		}
+
+		count, err := gameStore.CountRpsParticipants(ctx, &RpsParticipantFilter{
+			RpsGameIds: []uuid.UUID{game.ID},
+		})
+		if err != nil {
+			t.Fatalf("CountRpsParticipants() error = %v", err)
+		}
+		if count != 2 {
+			t.Errorf("CountRpsParticipants() = %d, want 2", count)
+		}
+
+		// Filter by status with no matches.
+		count, err = gameStore.CountRpsParticipants(ctx, &RpsParticipantFilter{
+			RpsGameIds: []uuid.UUID{game.ID},
+			Statuses:   []models.RpsParticipantStatus{models.RpsParticipantStatusCompleted},
+		})
+		if err != nil {
+			t.Fatalf("CountRpsParticipants(completed) error = %v", err)
+		}
+		if count != 0 {
+			t.Errorf("CountRpsParticipants(completed) = %d, want 0", count)
+		}
+	})
+}

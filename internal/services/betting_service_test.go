@@ -129,6 +129,73 @@ func TestFulfillPointsPurchase_DifferentSessions_BothCredited(t *testing.T) {
 
 // --- BettingService direct tests ---
 
+func TestDbBettingService_RefundBothBets_VoidsBothHolds(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+
+		hostUserID := uuid.New()
+		guestUserID := uuid.New()
+		gameID := uuid.New()
+
+		mustFundWallet(t, ctx, adapter, ledger, hostUserID, 500)
+		mustFundWallet(t, ctx, adapter, ledger, guestUserID, 500)
+
+		// Place host escrow hold.
+		hostPending, err := betting.PlaceHostBet(ctx, gameID, hostUserID, 100)
+		if err != nil {
+			t.Fatalf("PlaceHostBet() error = %v", err)
+		}
+
+		// Place guest escrow hold by manually creating a pending transfer for the guest.
+		guestWallet, err := ledger.GetOrCreateUserWallet(ctx, guestUserID)
+		if err != nil {
+			t.Fatalf("GetOrCreateUserWallet() error = %v", err)
+		}
+		systemAccount, err := ledger.GetSystemAccount(ctx, models.SystemAccountGameEscrow)
+		if err != nil {
+			t.Fatalf("GetSystemAccount() error = %v", err)
+		}
+		guestPending, err := ledger.CreatePendingTransfer(ctx, PostTransferInput{
+			LedgerCode:      "POINTS",
+			DebitAccountID:  guestWallet.ID,
+			CreditAccountID: systemAccount.ID,
+			Amount:          100,
+			TransferCode:    models.TransferCodeBetEscrow,
+		})
+		if err != nil {
+			t.Fatalf("CreatePendingTransfer() for guest error = %v", err)
+		}
+
+		// Both holds should be active.
+		hostAvail, _ := ledger.GetUserAvailableBalance(ctx, hostUserID)
+		guestAvail, _ := ledger.GetUserAvailableBalance(ctx, guestUserID)
+		if hostAvail != 400 {
+			t.Errorf("host available before refund = %d, want 400", hostAvail)
+		}
+		if guestAvail != 400 {
+			t.Errorf("guest available before refund = %d, want 400", guestAvail)
+		}
+
+		// Void both bets.
+		if err := betting.RefundBothBets(ctx, hostPending.ID, guestPending.ID); err != nil {
+			t.Fatalf("RefundBothBets() error = %v", err)
+		}
+
+		// Both holds should be released.
+		hostAvail, _ = ledger.GetUserAvailableBalance(ctx, hostUserID)
+		guestAvail, _ = ledger.GetUserAvailableBalance(ctx, guestUserID)
+		if hostAvail != 500 {
+			t.Errorf("host available after refund = %d, want 500", hostAvail)
+		}
+		if guestAvail != 500 {
+			t.Errorf("guest available after refund = %d, want 500", guestAvail)
+		}
+	})
+}
+
+
 func TestDbBettingService_PlaceHostBet_InsufficientBalance(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
