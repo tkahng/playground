@@ -162,8 +162,14 @@ func TestLedgerService_MoneyConservation_BetSettle_HostWins(t *testing.T) {
 			t.Fatalf("GetSystemAccount escrow: %v", err)
 		}
 		escrowBefore := escrow.Balance()
-		hostBalanceBefore, _ := ledger.GetUserBalance(ctx, hostUserID)
-		guestBalanceBefore, _ := ledger.GetUserBalance(ctx, guestUserID)
+		hostBalanceBefore, err := ledger.GetUserBalance(ctx, hostUserID)
+		if err != nil {
+			t.Fatalf("GetUserBalance hostBefore: %v", err)
+		}
+		guestBalanceBefore, err := ledger.GetUserBalance(ctx, guestUserID)
+		if err != nil {
+			t.Fatalf("GetUserBalance guestBefore: %v", err)
+		}
 		totalBefore := hostBalanceBefore + guestBalanceBefore + escrowBefore
 
 		// Place host bet.
@@ -237,8 +243,14 @@ func TestLedgerService_MoneyConservation_BetSettle_Tie(t *testing.T) {
 			t.Fatalf("GetSystemAccount escrow: %v", err)
 		}
 		escrowBefore := escrow.Balance()
-		hostBalanceBefore, _ := ledger.GetUserBalance(ctx, hostUserID)
-		guestBalanceBefore, _ := ledger.GetUserBalance(ctx, guestUserID)
+		hostBalanceBefore, err := ledger.GetUserBalance(ctx, hostUserID)
+		if err != nil {
+			t.Fatalf("GetUserBalance hostBefore: %v", err)
+		}
+		guestBalanceBefore, err := ledger.GetUserBalance(ctx, guestUserID)
+		if err != nil {
+			t.Fatalf("GetUserBalance guestBefore: %v", err)
+		}
 		totalBefore := hostBalanceBefore + guestBalanceBefore + escrowBefore
 
 		hostPending, err := betting.PlaceHostBet(ctx, gameID, hostUserID, betAmount)
@@ -313,8 +325,14 @@ func TestLedgerService_MoneyConservation_BetRefund_BothVoided(t *testing.T) {
 			t.Fatalf("GetSystemAccount escrow: %v", err)
 		}
 		escrowBefore := escrow.Balance()
-		hostBalanceBefore, _ := ledger.GetUserBalance(ctx, hostUserID)
-		guestBalanceBefore, _ := ledger.GetUserBalance(ctx, guestUserID)
+		hostBalanceBefore, err := ledger.GetUserBalance(ctx, hostUserID)
+		if err != nil {
+			t.Fatalf("GetUserBalance hostBefore: %v", err)
+		}
+		guestBalanceBefore, err := ledger.GetUserBalance(ctx, guestUserID)
+		if err != nil {
+			t.Fatalf("GetUserBalance guestBefore: %v", err)
+		}
 		totalBefore := hostBalanceBefore + guestBalanceBefore + escrowBefore
 
 		hostPending, err := betting.PlaceHostBet(ctx, gameID, hostUserID, betAmount)
