@@ -162,6 +162,9 @@ func TestLedgerService_MoneyConservation_BetSettle_HostWins(t *testing.T) {
 			t.Fatalf("GetSystemAccount escrow: %v", err)
 		}
 		escrowBefore := escrow.Balance()
+		hostBalanceBefore, _ := ledger.GetUserBalance(ctx, hostUserID)
+		guestBalanceBefore, _ := ledger.GetUserBalance(ctx, guestUserID)
+		totalBefore := hostBalanceBefore + guestBalanceBefore + escrowBefore
 
 		// Place host bet.
 		hostPending, err := betting.PlaceHostBet(ctx, gameID, hostUserID, betAmount)
@@ -208,6 +211,10 @@ func TestLedgerService_MoneyConservation_BetSettle_HostWins(t *testing.T) {
 		if escrow.Balance() != escrowBefore {
 			t.Errorf("escrow net balance = %d, want %d (must return to prior state)", escrow.Balance(), escrowBefore)
 		}
+		totalAfter := hostBalance + guestBalance + escrow.Balance()
+		if totalAfter != totalBefore {
+			t.Errorf("total system balance = %d, want %d (money conservation violated)", totalAfter, totalBefore)
+		}
 	})
 }
 
@@ -230,6 +237,9 @@ func TestLedgerService_MoneyConservation_BetSettle_Tie(t *testing.T) {
 			t.Fatalf("GetSystemAccount escrow: %v", err)
 		}
 		escrowBefore := escrow.Balance()
+		hostBalanceBefore, _ := ledger.GetUserBalance(ctx, hostUserID)
+		guestBalanceBefore, _ := ledger.GetUserBalance(ctx, guestUserID)
+		totalBefore := hostBalanceBefore + guestBalanceBefore + escrowBefore
 
 		hostPending, err := betting.PlaceHostBet(ctx, gameID, hostUserID, betAmount)
 		if err != nil {
@@ -272,6 +282,10 @@ func TestLedgerService_MoneyConservation_BetSettle_Tie(t *testing.T) {
 		if escrow.Balance() != escrowBefore {
 			t.Errorf("escrow balance = %d, want %d", escrow.Balance(), escrowBefore)
 		}
+		totalAfter := hostBalance + guestBalance + escrow.Balance()
+		if totalAfter != totalBefore {
+			t.Errorf("total system balance = %d, want %d (money conservation violated)", totalAfter, totalBefore)
+		}
 	})
 }
 
@@ -298,6 +312,10 @@ func TestLedgerService_MoneyConservation_BetRefund_BothVoided(t *testing.T) {
 		if err != nil {
 			t.Fatalf("GetSystemAccount escrow: %v", err)
 		}
+		escrowBefore := escrow.Balance()
+		hostBalanceBefore, _ := ledger.GetUserBalance(ctx, hostUserID)
+		guestBalanceBefore, _ := ledger.GetUserBalance(ctx, guestUserID)
+		totalBefore := hostBalanceBefore + guestBalanceBefore + escrowBefore
 
 		hostPending, err := betting.PlaceHostBet(ctx, gameID, hostUserID, betAmount)
 		if err != nil {
@@ -351,6 +369,19 @@ func TestLedgerService_MoneyConservation_BetRefund_BothVoided(t *testing.T) {
 		}
 		if guestAvail != 500 {
 			t.Errorf("guest available = %d, want 500", guestAvail)
+		}
+
+		// Escrow must return to its prior balance (net=0 for this game).
+		escrow, err = ledger.GetSystemAccount(ctx, models.SystemAccountGameEscrow)
+		if err != nil {
+			t.Fatalf("re-fetch escrow: %v", err)
+		}
+		if escrow.Balance() != escrowBefore {
+			t.Errorf("escrow balance = %d, want %d (escrow must net to zero)", escrow.Balance(), escrowBefore)
+		}
+		totalAfter := hostBalance + guestBalance + escrow.Balance()
+		if totalAfter != totalBefore {
+			t.Errorf("total system balance = %d, want %d (money conservation violated)", totalAfter, totalBefore)
 		}
 	})
 }
