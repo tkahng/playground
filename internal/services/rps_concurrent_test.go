@@ -168,10 +168,13 @@ func TestRpsGame_ConcurrentExpiry_OnlyOneRefunds(t *testing.T) {
 			t.Fatalf("setup: %v", err)
 		}
 
-		// Record host balance before expiry.
-		hostBalBefore, err := ledger.GetUserBalance(ctx, hostUserID)
+		// Record available balance before expiry: should be 500-100=400 (pending hold active).
+		hostAvailBefore, err := ledger.GetUserAvailableBalance(ctx, hostUserID)
 		if err != nil {
-			t.Fatalf("GetUserBalance before: %v", err)
+			t.Fatalf("GetUserAvailableBalance before: %v", err)
+		}
+		if hostAvailBefore != 400 {
+			t.Fatalf("available balance before expiry = %d, want 400 (setup check)", hostAvailBefore)
 		}
 
 		// Race: two goroutines call ExpireGamesAndRefundBets simultaneously.
@@ -197,13 +200,14 @@ func TestRpsGame_ConcurrentExpiry_OnlyOneRefunds(t *testing.T) {
 			}
 		}
 
-		// Host balance must be fully restored (refunded exactly once).
-		hostBalAfter, err := ledger.GetUserBalance(ctx, hostUserID)
+		// Available balance must be fully restored to 500 (hold voided exactly once).
+		// GetUserBalance (settled) is unchanged by void; only AvailableBalance reflects the release.
+		hostAvailAfter, err := ledger.GetUserAvailableBalance(ctx, hostUserID)
 		if err != nil {
-			t.Fatalf("GetUserBalance after: %v", err)
+			t.Fatalf("GetUserAvailableBalance after: %v", err)
 		}
-		if hostBalAfter != hostBalBefore {
-			t.Errorf("host balance after concurrent expiry = %d, want %d (refunded exactly once)", hostBalAfter, hostBalBefore)
+		if hostAvailAfter != 500 {
+			t.Errorf("available balance after concurrent expiry = %d, want 500 (refunded exactly once)", hostAvailAfter)
 		}
 	})
 }
