@@ -4,9 +4,9 @@
 
 **Goal:** Add comprehensive tests covering constraint enforcement, money conservation, pending transfer lifecycle, betting integrity, and concurrency for the RPS/betting/ledger system.
 
-**Architecture:** Six new test files: one smoke test for the `WithNewDatabase2` helper (in `internal/database/`), four non-concurrent service test files (in `internal/services/`), and one concurrent test file (in `internal/services/`, blocked on the smoke test). All non-concurrent tests use `WithNewTestTx`; concurrent tests use `WithNewDatabase2` with goroutines and per-goroutine `RunInTxCtx` transactions.
+**Architecture:** Six new test files: one smoke test for the `WithNewDatabase` helper (in `internal/database/`), four non-concurrent service test files (in `internal/services/`), and one concurrent test file (in `internal/services/`, blocked on the smoke test). All non-concurrent tests use `WithNewTestTx`; concurrent tests use `WithNewDatabase` with goroutines and per-goroutine `RunInTxCtx` transactions.
 
-**Tech Stack:** Go stdlib `testing`, `github.com/google/uuid`, `sync.WaitGroup`, existing `database.WithNewTestTx`, `database.WithNewDatabase2`, `stores.NewDbAdapterDecorators`, service constructors (`NewDbLedgerService`, `NewDbBettingService`, `NewDbRpsGameService`), and store test helpers (`stores.MustCreatePlayer`, `stores.WithUserID`, `mustFundWallet`).
+**Tech Stack:** Go stdlib `testing`, `github.com/google/uuid`, `sync.WaitGroup`, existing `database.WithNewTestTx`, `database.WithNewDatabase`, `stores.NewDbAdapterDecorators`, service constructors (`NewDbLedgerService`, `NewDbBettingService`, `NewDbRpsGameService`), and store test helpers (`stores.MustCreatePlayer`, `stores.WithUserID`, `mustFundWallet`).
 
 ---
 
@@ -16,7 +16,7 @@ Before reading tasks, internalize these codebase patterns:
 
 - **Package:** All service tests are `package services` (same package, not `_test`). Database helper tests are `package database`.
 - **Test transaction:** `database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) { ... })` — wraps in a single rolled-back transaction. Use for all non-concurrent tests.
-- **Isolated DB:** `database.WithNewDatabase2(t, func(ctx context.Context, db database.Dbx) { ... })` — clones `playground_test` template to a fresh DB; real commits. Use for concurrent tests.
+- **Isolated DB:** `database.WithNewDatabase(t, func(ctx context.Context, db database.Dbx) { ... })` — clones `playground_test` template to a fresh DB; real commits. Use for concurrent tests.
 - **Setup pattern:** `adapter := stores.NewDbAdapterDecorators(db)`, `ledger := NewDbLedgerService(adapter)`, `betting := NewDbBettingService(adapter, ledger)`, `rpsService := NewDbRpsGameService(adapter, betting)`.
 - **Fund a wallet:** `mustFundWallet(t, ctx, adapter, ledger, userID, amount)` — defined in `internal/services/betting_service_test.go`, available to all files in the same package.
 - **Player with a user ID (required for betting):** `stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("x@example.com"), stores.WithUserID(userID))`.
@@ -25,10 +25,10 @@ Before reading tasks, internalize these codebase patterns:
 
 ---
 
-## Task 1: Smoke test for `WithNewDatabase2`
+## Task 1: Smoke test for `WithNewDatabase`
 
 **Files:**
-- Create: `internal/database/with_new_database2_test.go`
+- Create: `internal/database/with_new_database_test.go`
 
 **Gate:** Tasks 2–5 can run in parallel. Task 6 (concurrent tests) must NOT be started until both tests in this task pass.
 
@@ -42,10 +42,10 @@ import (
 	"testing"
 )
 
-// TestWithNewDatabase2_IsConnected verifies that WithNewDatabase2 produces a
+// TestWithNewDatabase_IsConnected verifies that WithNewDatabase produces a
 // working connection to a freshly-cloned database.
-func TestWithNewDatabase2_IsConnected(t *testing.T) {
-	WithNewDatabase2(t, func(ctx context.Context, db Dbx) {
+func TestWithNewDatabase_IsConnected(t *testing.T) {
+	WithNewDatabase(t, func(ctx context.Context, db Dbx) {
 		var n int
 		if err := db.QueryRow(ctx, "SELECT 1").Scan(&n); err != nil {
 			t.Fatalf("SELECT 1: %v", err)
@@ -56,10 +56,10 @@ func TestWithNewDatabase2_IsConnected(t *testing.T) {
 	})
 }
 
-// TestWithNewDatabase2_HasMigratedSchema verifies that all migrations ran on the
+// TestWithNewDatabase_HasMigratedSchema verifies that all migrations ran on the
 // template database by checking that the ledger schema and seeded system accounts exist.
-func TestWithNewDatabase2_HasMigratedSchema(t *testing.T) {
-	WithNewDatabase2(t, func(ctx context.Context, db Dbx) {
+func TestWithNewDatabase_HasMigratedSchema(t *testing.T) {
+	WithNewDatabase(t, func(ctx context.Context, db Dbx) {
 		// Verify ledger schema exists.
 		var schemaCount int
 		if err := db.QueryRow(ctx,
@@ -90,25 +90,25 @@ func TestWithNewDatabase2_HasMigratedSchema(t *testing.T) {
 
 ```bash
 cd /Users/tkahng/github/tkahng/go/playground
-go test ./internal/database/ -run "TestWithNewDatabase2" -v -count=1
+go test ./internal/database/ -run "TestWithNewDatabase" -v -count=1
 ```
 
 Expected output:
 ```
---- PASS: TestWithNewDatabase2_IsConnected
---- PASS: TestWithNewDatabase2_HasMigratedSchema
+--- PASS: TestWithNewDatabase_IsConnected
+--- PASS: TestWithNewDatabase_HasMigratedSchema
 PASS
 ```
 
-If either test fails, **stop and fix `WithNewDatabase2` before proceeding to Task 6.** Common failure modes:
+If either test fails, **stop and fix `WithNewDatabase` before proceeding to Task 6.** Common failure modes:
 - `playground_test` template does not exist → run migrations on it: `DATABASE_DB=playground_test dbmate up`
 - Pool config error → check `conf.ZeroEnvConfig()` and env vars
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add internal/database/with_new_database2_test.go
-git commit -m "test: smoke test for WithNewDatabase2 helper"
+git add internal/database/with_new_database_test.go
+git commit -m "test: smoke test for WithNewDatabase helper"
 ```
 
 ---
@@ -1251,10 +1251,10 @@ git commit -m "test: betting integrity — pot conservation, available balance c
 
 ```bash
 cd /Users/tkahng/github/tkahng/go/playground
-go test ./internal/database/ -run "TestWithNewDatabase2" -v -count=1
+go test ./internal/database/ -run "TestWithNewDatabase" -v -count=1
 ```
 
-Expected: 2 PASS. If not, fix `WithNewDatabase2` first.
+Expected: 2 PASS. If not, fix `WithNewDatabase` first.
 
 - [ ] **Step 2: Write the test file**
 
@@ -1277,7 +1277,7 @@ import (
 // simultaneously call RespondToGameRequest for the same game, exactly one succeeds and
 // one fails. This relies on the FindRpsGameForUpdate row-level lock.
 func TestRpsGame_ConcurrentGuestResponses_OnlyOneSucceeds(t *testing.T) {
-	database.WithNewDatabase2(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewDatabase(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
 		betting := NewDbBettingService(adapter, ledger)
@@ -1384,7 +1384,7 @@ func TestRpsGame_ConcurrentGuestResponses_OnlyOneSucceeds(t *testing.T) {
 // simultaneously call ExpireGamesAndRefundBets, the host bet is refunded exactly once
 // (no double-refund). This relies on the re-fetch-with-lock inside ExpireGamesAndRefundBets.
 func TestRpsGame_ConcurrentExpiry_OnlyOneRefunds(t *testing.T) {
-	database.WithNewDatabase2(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewDatabase(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
 		betting := NewDbBettingService(adapter, ledger)
@@ -1471,7 +1471,7 @@ func TestRpsGame_ConcurrentExpiry_OnlyOneRefunds(t *testing.T) {
 // load, the available-balance constraint is correctly enforced. With a 100-point wallet and
 // 10 goroutines each requesting a 20-point hold, exactly 5 succeed and 5 fail.
 func TestLedger_ConcurrentPendingTransfers_BalanceConsistency(t *testing.T) {
-	database.WithNewDatabase2(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewDatabase(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
 
@@ -1563,7 +1563,7 @@ cd /Users/tkahng/github/tkahng/go/playground
 go test ./internal/services/ -run "TestRpsGame_Concurrent|TestLedger_Concurrent" -v -count=1 -timeout 60s
 ```
 
-Expected: 3 PASS. These tests may be slower than others (real DB cloning). If they flap (non-deterministic pass/fail), increase the timeout and investigate DB connection setup in `WithNewDatabase2`.
+Expected: 3 PASS. These tests may be slower than others (real DB cloning). If they flap (non-deterministic pass/fail), increase the timeout and investigate DB connection setup in `WithNewDatabase`.
 
 - [ ] **Step 4: Commit**
 
