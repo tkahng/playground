@@ -8,7 +8,7 @@ import (
 // TestWithNewDatabase2_IsConnected verifies that WithNewDatabase2 produces a
 // working connection to a freshly-cloned database.
 func TestWithNewDatabase2_IsConnected(t *testing.T) {
-	WithNewDatabase2(t, func(ctx context.Context, db Dbx) {
+	WithNewDatabase(t, func(ctx context.Context, db Dbx) {
 		var n int
 		if err := db.QueryRow(ctx, "SELECT 1").Scan(&n); err != nil {
 			t.Fatalf("SELECT 1: %v", err)
@@ -22,7 +22,7 @@ func TestWithNewDatabase2_IsConnected(t *testing.T) {
 // TestWithNewDatabase2_HasMigratedSchema verifies that all migrations ran on the
 // template database by checking that the ledger schema and seeded system accounts exist.
 func TestWithNewDatabase2_HasMigratedSchema(t *testing.T) {
-	WithNewDatabase2(t, func(ctx context.Context, db Dbx) {
+	WithNewDatabase(t, func(ctx context.Context, db Dbx) {
 		// Verify ledger schema exists.
 		var schemaCount int
 		if err := db.QueryRow(ctx,

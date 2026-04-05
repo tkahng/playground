@@ -16,7 +16,7 @@ import (
 // simultaneously call RespondToGameRequest for the same game, exactly one succeeds and
 // one fails. This relies on the FindRpsGameForUpdate row-level lock.
 func TestRpsGame_ConcurrentGuestResponses_OnlyOneSucceeds(t *testing.T) {
-	database.WithNewDatabase2(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewDatabase(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
 		betting := NewDbBettingService(adapter, ledger)
@@ -123,7 +123,7 @@ func TestRpsGame_ConcurrentGuestResponses_OnlyOneSucceeds(t *testing.T) {
 // simultaneously call ExpireGamesAndRefundBets, the host bet is refunded exactly once
 // (no double-refund). This relies on the re-fetch-with-lock inside ExpireGamesAndRefundBets.
 func TestRpsGame_ConcurrentExpiry_OnlyOneRefunds(t *testing.T) {
-	database.WithNewDatabase2(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewDatabase(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
 		betting := NewDbBettingService(adapter, ledger)
@@ -216,7 +216,7 @@ func TestRpsGame_ConcurrentExpiry_OnlyOneRefunds(t *testing.T) {
 // load, the available-balance constraint is correctly enforced. With a 100-point wallet and
 // 10 goroutines each requesting a 20-point hold, exactly 5 succeed and 5 fail.
 func TestLedger_ConcurrentPendingTransfers_BalanceConsistency(t *testing.T) {
-	database.WithNewDatabase2(t, func(ctx context.Context, db database.Dbx) {
+	database.WithNewDatabase(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
 
