@@ -1,7 +1,7 @@
-\restrict 2T6rGWo6wnaoELxIAwzg8vR5u1X80ru6Cu1taactSYK1flxMlwVMoRrfNfE4gLm
+\restrict dbmate
 
 -- Dumped from database version 18.0 (Debian 18.0-1.pgdg13+3)
--- Dumped by pg_dump version 18.1
+-- Dumped by pg_dump version 18.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -48,6 +48,13 @@ CREATE SCHEMA gaming;
 --
 
 CREATE SCHEMA gis;
+
+
+--
+-- Name: ledger; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA ledger;
 
 
 --
@@ -635,6 +642,9 @@ CREATE TABLE gaming.rps_games (
     metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
     created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
     updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    bet_amount bigint,
+    host_bet_transfer_id uuid,
+    guest_bet_transfer_id uuid,
     CONSTRAINT rps_games_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'cancelled'::text, 'completed'::text])))
 );
 
@@ -705,6 +715,55 @@ CREATE SEQUENCE gis.populated_places_gid_seq
 --
 
 ALTER SEQUENCE gis.populated_places_gid_seq OWNED BY gis.populated_places.gid;
+
+
+--
+-- Name: accounts; Type: TABLE; Schema: ledger; Owner: -
+--
+
+CREATE TABLE ledger.accounts (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    code text NOT NULL,
+    entity_type text NOT NULL,
+    entity_id uuid,
+    ledger_code text DEFAULT 'POINTS'::text NOT NULL,
+    constraints text[] DEFAULT '{}'::text[] CONSTRAINT accounts_flags_not_null NOT NULL,
+    debits_pending bigint DEFAULT 0 NOT NULL,
+    credits_pending bigint DEFAULT 0 NOT NULL,
+    debits_posted bigint DEFAULT 0 NOT NULL,
+    credits_posted bigint DEFAULT 0 NOT NULL,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    CONSTRAINT accounts_credits_pending_check CHECK ((credits_pending >= 0)),
+    CONSTRAINT accounts_credits_posted_check CHECK ((credits_posted >= 0)),
+    CONSTRAINT accounts_debits_pending_check CHECK ((debits_pending >= 0)),
+    CONSTRAINT accounts_debits_posted_check CHECK ((debits_posted >= 0))
+);
+
+
+--
+-- Name: transfers; Type: TABLE; Schema: ledger; Owner: -
+--
+
+CREATE TABLE ledger.transfers (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    ledger_code text DEFAULT 'POINTS'::text NOT NULL,
+    debit_account_id uuid NOT NULL,
+    credit_account_id uuid NOT NULL,
+    amount bigint NOT NULL,
+    pending_id uuid,
+    status text DEFAULT 'posted'::text NOT NULL,
+    transfer_code text NOT NULL,
+    reference_type text,
+    reference_id uuid,
+    timeout_at timestamp with time zone,
+    metadata jsonb DEFAULT '{}'::jsonb NOT NULL,
+    created_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    updated_at timestamp with time zone DEFAULT clock_timestamp() NOT NULL,
+    CONSTRAINT transfers_amount_check CHECK ((amount > 0)),
+    CONSTRAINT transfers_status_check CHECK ((status = ANY (ARRAY['pending'::text, 'posted'::text, 'voided'::text])))
+);
 
 
 --
@@ -1177,6 +1236,30 @@ ALTER TABLE ONLY gis.populated_places
 
 
 --
+-- Name: accounts accounts_code_key; Type: CONSTRAINT; Schema: ledger; Owner: -
+--
+
+ALTER TABLE ONLY ledger.accounts
+    ADD CONSTRAINT accounts_code_key UNIQUE (code);
+
+
+--
+-- Name: accounts accounts_pkey; Type: CONSTRAINT; Schema: ledger; Owner: -
+--
+
+ALTER TABLE ONLY ledger.accounts
+    ADD CONSTRAINT accounts_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: transfers transfers_pkey; Type: CONSTRAINT; Schema: ledger; Owner: -
+--
+
+ALTER TABLE ONLY ledger.transfers
+    ADD CONSTRAINT transfers_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: notifications notifications_pkey; Type: CONSTRAINT; Schema: messaging; Owner: -
 --
 
@@ -1415,6 +1498,13 @@ CREATE INDEX idx_gaming_rps_game_invites_requesting_player_id ON gaming.rps_game
 
 
 --
+-- Name: idx_gaming_rps_games_bet_amount; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_games_bet_amount ON gaming.rps_games USING btree (bet_amount) WHERE (bet_amount IS NOT NULL);
+
+
+--
 -- Name: idx_gaming_rps_games_completed_at; Type: INDEX; Schema: gaming; Owner: -
 --
 
@@ -1426,6 +1516,20 @@ CREATE INDEX idx_gaming_rps_games_completed_at ON gaming.rps_games USING btree (
 --
 
 CREATE INDEX idx_gaming_rps_games_expires_at ON gaming.rps_games USING btree (expires_at);
+
+
+--
+-- Name: idx_gaming_rps_games_guest_bet_transfer_id; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_games_guest_bet_transfer_id ON gaming.rps_games USING btree (guest_bet_transfer_id) WHERE (guest_bet_transfer_id IS NOT NULL);
+
+
+--
+-- Name: idx_gaming_rps_games_host_bet_transfer_id; Type: INDEX; Schema: gaming; Owner: -
+--
+
+CREATE INDEX idx_gaming_rps_games_host_bet_transfer_id ON gaming.rps_games USING btree (host_bet_transfer_id) WHERE (host_bet_transfer_id IS NOT NULL);
 
 
 --
@@ -1475,6 +1579,69 @@ CREATE INDEX populated_places_geom_scalerank_idx ON gis.populated_places USING g
 --
 
 CREATE INDEX populated_places_scalerank_pop_idx ON gis.populated_places USING btree (scalerank, pop_max DESC);
+
+
+--
+-- Name: idx_ledger_accounts_code; Type: INDEX; Schema: ledger; Owner: -
+--
+
+CREATE INDEX idx_ledger_accounts_code ON ledger.accounts USING btree (code);
+
+
+--
+-- Name: idx_ledger_accounts_entity; Type: INDEX; Schema: ledger; Owner: -
+--
+
+CREATE INDEX idx_ledger_accounts_entity ON ledger.accounts USING btree (entity_type, entity_id);
+
+
+--
+-- Name: idx_ledger_accounts_ledger_code; Type: INDEX; Schema: ledger; Owner: -
+--
+
+CREATE INDEX idx_ledger_accounts_ledger_code ON ledger.accounts USING btree (ledger_code);
+
+
+--
+-- Name: idx_ledger_transfers_credit_account; Type: INDEX; Schema: ledger; Owner: -
+--
+
+CREATE INDEX idx_ledger_transfers_credit_account ON ledger.transfers USING btree (credit_account_id);
+
+
+--
+-- Name: idx_ledger_transfers_debit_account; Type: INDEX; Schema: ledger; Owner: -
+--
+
+CREATE INDEX idx_ledger_transfers_debit_account ON ledger.transfers USING btree (debit_account_id);
+
+
+--
+-- Name: idx_ledger_transfers_ledger_code; Type: INDEX; Schema: ledger; Owner: -
+--
+
+CREATE INDEX idx_ledger_transfers_ledger_code ON ledger.transfers USING btree (ledger_code);
+
+
+--
+-- Name: idx_ledger_transfers_pending_id; Type: INDEX; Schema: ledger; Owner: -
+--
+
+CREATE INDEX idx_ledger_transfers_pending_id ON ledger.transfers USING btree (pending_id) WHERE (pending_id IS NOT NULL);
+
+
+--
+-- Name: idx_ledger_transfers_reference; Type: INDEX; Schema: ledger; Owner: -
+--
+
+CREATE INDEX idx_ledger_transfers_reference ON ledger.transfers USING btree (reference_type, reference_id);
+
+
+--
+-- Name: idx_ledger_transfers_status; Type: INDEX; Schema: ledger; Owner: -
+--
+
+CREATE INDEX idx_ledger_transfers_status ON ledger.transfers USING btree (status);
 
 
 --
@@ -1601,6 +1768,20 @@ CREATE TRIGGER handle_gaming_rps_games_updated_at BEFORE UPDATE ON gaming.rps_ga
 --
 
 CREATE TRIGGER handle_gaming_rps_participants_updated_at BEFORE UPDATE ON gaming.rps_participants FOR EACH ROW EXECUTE FUNCTION utility.set_current_timestamp_updated_at();
+
+
+--
+-- Name: accounts handle_ledger_accounts_updated_at; Type: TRIGGER; Schema: ledger; Owner: -
+--
+
+CREATE TRIGGER handle_ledger_accounts_updated_at BEFORE UPDATE ON ledger.accounts FOR EACH ROW EXECUTE FUNCTION utility.set_current_timestamp_updated_at();
+
+
+--
+-- Name: transfers handle_ledger_transfers_updated_at; Type: TRIGGER; Schema: ledger; Owner: -
+--
+
+CREATE TRIGGER handle_ledger_transfers_updated_at BEFORE UPDATE ON ledger.transfers FOR EACH ROW EXECUTE FUNCTION utility.set_current_timestamp_updated_at();
 
 
 --
@@ -1853,6 +2034,22 @@ ALTER TABLE ONLY gaming.rps_game_invites
 
 
 --
+-- Name: rps_games rps_games_guest_bet_transfer_id_fkey; Type: FK CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_games
+    ADD CONSTRAINT rps_games_guest_bet_transfer_id_fkey FOREIGN KEY (guest_bet_transfer_id) REFERENCES ledger.transfers(id);
+
+
+--
+-- Name: rps_games rps_games_host_bet_transfer_id_fkey; Type: FK CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_games
+    ADD CONSTRAINT rps_games_host_bet_transfer_id_fkey FOREIGN KEY (host_bet_transfer_id) REFERENCES ledger.transfers(id);
+
+
+--
 -- Name: rps_participants rps_participants_game_id_fkey; Type: FK CONSTRAINT; Schema: gaming; Owner: -
 --
 
@@ -1866,6 +2063,30 @@ ALTER TABLE ONLY gaming.rps_participants
 
 ALTER TABLE ONLY gaming.rps_participants
     ADD CONSTRAINT rps_participants_player_id_fkey FOREIGN KEY (player_id) REFERENCES gaming.players(id);
+
+
+--
+-- Name: transfers transfers_credit_account_id_fkey; Type: FK CONSTRAINT; Schema: ledger; Owner: -
+--
+
+ALTER TABLE ONLY ledger.transfers
+    ADD CONSTRAINT transfers_credit_account_id_fkey FOREIGN KEY (credit_account_id) REFERENCES ledger.accounts(id);
+
+
+--
+-- Name: transfers transfers_debit_account_id_fkey; Type: FK CONSTRAINT; Schema: ledger; Owner: -
+--
+
+ALTER TABLE ONLY ledger.transfers
+    ADD CONSTRAINT transfers_debit_account_id_fkey FOREIGN KEY (debit_account_id) REFERENCES ledger.accounts(id);
+
+
+--
+-- Name: transfers transfers_pending_id_fkey; Type: FK CONSTRAINT; Schema: ledger; Owner: -
+--
+
+ALTER TABLE ONLY ledger.transfers
+    ADD CONSTRAINT transfers_pending_id_fkey FOREIGN KEY (pending_id) REFERENCES ledger.transfers(id);
 
 
 --
@@ -2024,7 +2245,7 @@ ALTER TABLE ONLY task.tasks
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 2T6rGWo6wnaoELxIAwzg8vR5u1X80ru6Cu1taactSYK1flxMlwVMoRrfNfE4gLm
+\unrestrict dbmate
 
 
 --
@@ -2059,4 +2280,7 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20251124090932'),
     ('20260109174503'),
     ('20260112091339'),
-    ('20260112224708');
+    ('20260112224708'),
+    ('20260228000001'),
+    ('20260228000002'),
+    ('20260402000001');
