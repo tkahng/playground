@@ -59,6 +59,9 @@ func TestBettingInvariant_MultiGame_TotalSystemConservation(t *testing.T) {
 			t.Fatalf("GetSystemAccount escrow: %v", err)
 		}
 		escrowStart := escrow.Balance()
+		if escrowStart != 0 {
+			t.Fatalf("escrow account has unexpected pre-existing balance %d; test assumes a clean starting state", escrowStart)
+		}
 
 		betPtr := func(v int64) *int64 { return &v }
 
@@ -197,6 +200,8 @@ func TestBettingInvariant_MultiGame_TotalSystemConservation(t *testing.T) {
 				t.Fatalf("game5 RequestGame: %v", err)
 			}
 		}
+		// Game 5's expiry timer started at creation (before games 0–4 ran).
+		// Even if games 0–4 were slow, the game is already expired by now.
 		time.Sleep(2 * time.Second)
 		if _, err := rpsService.ExpireGamesAndRefundBets(ctx); err != nil {
 			t.Fatalf("ExpireGamesAndRefundBets: %v", err)
