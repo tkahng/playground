@@ -363,8 +363,10 @@ func TestBettingInvariant_EscrowNetsZeroAfterEachGame(t *testing.T) {
 				t.Fatalf("game3 RequestGame: %v", err)
 			}
 			time.Sleep(2 * time.Second)
-			if _, err = rpsService.ExpireGamesAndRefundBets(ctx); err != nil {
+			if n, err := rpsService.ExpireGamesAndRefundBets(ctx); err != nil {
 				t.Fatalf("game3 ExpireGamesAndRefundBets: %v", err)
+			} else if n != 1 {
+				t.Errorf("game3 ExpireGamesAndRefundBets processed = %d, want 1", n)
 			}
 			assertEscrowAtStart("after game3 (expired)")
 		}
@@ -462,8 +464,10 @@ func TestBettingInvariant_NoOrphanPendingAfterAllPaths(t *testing.T) {
 				t.Fatalf("path3 RequestGame: %v", err)
 			}
 			time.Sleep(2 * time.Second)
-			if _, err = rpsService.ExpireGamesAndRefundBets(ctx); err != nil {
+			if n, err := rpsService.ExpireGamesAndRefundBets(ctx); err != nil {
 				t.Fatalf("path3 ExpireGamesAndRefundBets: %v", err)
+			} else if n != 1 {
+				t.Errorf("path3 ExpireGamesAndRefundBets processed = %d, want 1", n)
 			}
 		}
 
