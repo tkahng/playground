@@ -345,7 +345,8 @@ func TestBetting_GuestCanRetry_AfterInsufficientFunds(t *testing.T) {
 			t.Fatal("expected error when guest has no funds, got nil")
 		}
 
-		// Game must still be pending after failed attempt.
+		// Game must still be pending: RespondToGameRequest checks balance before calling
+		// updateGame, so a balance error aborts before any state is persisted.
 		currentGame, err := adapter.Gaming().FindRpsGame(ctx, &stores.RpsGameFilter{Ids: []uuid.UUID{game.RpsGame.ID}})
 		if err != nil {
 			t.Fatalf("FindRpsGame: %v", err)
@@ -375,6 +376,14 @@ func TestBetting_GuestCanRetry_AfterInsufficientFunds(t *testing.T) {
 		})
 		if err != nil {
 			t.Fatalf("RespondToGameRequest after funding guest: %v", err)
+		}
+
+		finalGame, err := adapter.Gaming().FindRpsGame(ctx, &stores.RpsGameFilter{Ids: []uuid.UUID{game.RpsGame.ID}})
+		if err != nil {
+			t.Fatalf("FindRpsGame after retry: %v", err)
+		}
+		if finalGame.Status != models.RpsGameStatusCompleted {
+			t.Errorf("game status after retry = %v, want completed", finalGame.Status)
 		}
 
 		pendingCount, err := ledger.CountTransfers(ctx, &stores.LedgerTransferFilter{
