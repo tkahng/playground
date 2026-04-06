@@ -249,3 +249,234 @@ func TestBettingInvariant_MultiGame_TotalSystemConservation(t *testing.T) {
 		}
 	})
 }
+
+// TestBettingInvariant_EscrowNetsZeroAfterEachGame verifies that the escrow
+// account returns to its starting balance immediately after each individual game
+// settles, not just in aggregate. This catches a leak in one game being masked
+// by another game's accounting.
+func TestBettingInvariant_EscrowNetsZeroAfterEachGame(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		escrow, err := ledger.GetSystemAccount(ctx, models.SystemAccountGameEscrow)
+		if err != nil {
+			t.Fatalf("GetSystemAccount: %v", err)
+		}
+		escrowStart := escrow.Balance()
+		if escrowStart != 0 {
+			t.Fatalf("escrow account has unexpected pre-existing balance %d; test assumes a clean starting state", escrowStart)
+		}
+
+		assertEscrowAtStart := func(label string) {
+			t.Helper()
+			e, err := ledger.GetSystemAccount(ctx, models.SystemAccountGameEscrow)
+			if err != nil {
+				t.Fatalf("%s: re-fetch escrow: %v", label, err)
+			}
+			if e.Balance() != escrowStart {
+				t.Errorf("%s: escrow = %d, want %d", label, e.Balance(), escrowStart)
+			}
+		}
+
+		betPtr := func(v int64) *int64 { return &v }
+
+		makePlayerPair := func(tag string) (host, guest *models.Player) {
+			hUser := mustCreateUser(t, ctx, adapter, tag+"_h@example.com")
+			gUser := mustCreateUser(t, ctx, adapter, tag+"_g@example.com")
+			h := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+				stores.WithPlayerEmail(tag+"_h@example.com"),
+				stores.WithUserID(hUser.ID),
+			)
+			g := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+				stores.WithPlayerEmail(tag+"_g@example.com"),
+				stores.WithUserID(gUser.ID),
+			)
+			mustFundPlayerWallet(t, ctx, adapter, ledger, h.UserID, 500)
+			mustFundPlayerWallet(t, ctx, adapter, ledger, g.UserID, 500)
+			return h, g
+		}
+
+		// Game 1: complete (host wins) — escrow must return to start immediately.
+		{
+			h, g := makePlayerPair("ezg1")
+			game, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+				RequestingPlayerID:   h.ID,
+				InvitedPlayerID:      g.ID,
+				RequestingPlayerMove: models.RpsParticipantMoveRock,
+				DurationSeconds:      3600,
+				BetAmount:            betPtr(100),
+				HostUserID:           h.UserID,
+			})
+			if err != nil {
+				t.Fatalf("game1 RequestGame: %v", err)
+			}
+			if _, err = rpsService.RespondToGameRequest(ctx, &GameRequestResponse{
+				InvitedPlayerID: g.ID,
+				GameID:          game.RpsGame.ID,
+				Status:          models.RpsGameStatusCompleted,
+				Move:            models.RpsParticipantMoveScissors,
+			}); err != nil {
+				t.Fatalf("game1 Respond: %v", err)
+			}
+			assertEscrowAtStart("after game1 (host wins)")
+		}
+
+		// Game 2: cancelled — escrow must return to start immediately.
+		{
+			h, g := makePlayerPair("ezg2")
+			game, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+				RequestingPlayerID:   h.ID,
+				InvitedPlayerID:      g.ID,
+				RequestingPlayerMove: models.RpsParticipantMoveRock,
+				DurationSeconds:      3600,
+				BetAmount:            betPtr(100),
+				HostUserID:           h.UserID,
+			})
+			if err != nil {
+				t.Fatalf("game2 RequestGame: %v", err)
+			}
+			if _, err = rpsService.RespondToGameRequest(ctx, &GameRequestResponse{
+				InvitedPlayerID: g.ID,
+				GameID:          game.RpsGame.ID,
+				Status:          models.RpsGameStatusCancelled,
+			}); err != nil {
+				t.Fatalf("game2 Respond: %v", err)
+			}
+			assertEscrowAtStart("after game2 (cancelled)")
+		}
+
+		// Game 3: expired — escrow must return to start after sweep.
+		{
+			h, g := makePlayerPair("ezg3")
+			_, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+				RequestingPlayerID:   h.ID,
+				InvitedPlayerID:      g.ID,
+				RequestingPlayerMove: models.RpsParticipantMoveRock,
+				DurationSeconds:      1,
+				BetAmount:            betPtr(100),
+				HostUserID:           h.UserID,
+			})
+			if err != nil {
+				t.Fatalf("game3 RequestGame: %v", err)
+			}
+			time.Sleep(2 * time.Second)
+			if _, err = rpsService.ExpireGamesAndRefundBets(ctx); err != nil {
+				t.Fatalf("game3 ExpireGamesAndRefundBets: %v", err)
+			}
+			assertEscrowAtStart("after game3 (expired)")
+		}
+	})
+}
+
+// TestBettingInvariant_NoOrphanPendingAfterAllPaths verifies that after running
+// all three terminal game paths (complete / cancel / expire), the ledger transfer
+// table contains zero pending bet_escrow rows. This is a direct audit of the
+// transfer table — stronger than checking balances alone.
+func TestBettingInvariant_NoOrphanPendingAfterAllPaths(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		betPtr := func(v int64) *int64 { return &v }
+
+		makePlayerPair := func(tag string) (host, guest *models.Player) {
+			hUser := mustCreateUser(t, ctx, adapter, tag+"_h@example.com")
+			gUser := mustCreateUser(t, ctx, adapter, tag+"_g@example.com")
+			h := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+				stores.WithPlayerEmail(tag+"_h@example.com"),
+				stores.WithUserID(hUser.ID),
+			)
+			g := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+				stores.WithPlayerEmail(tag+"_g@example.com"),
+				stores.WithUserID(gUser.ID),
+			)
+			mustFundPlayerWallet(t, ctx, adapter, ledger, h.UserID, 500)
+			mustFundPlayerWallet(t, ctx, adapter, ledger, g.UserID, 500)
+			return h, g
+		}
+
+		// Path 1: complete (host wins).
+		{
+			h, g := makePlayerPair("orp1")
+			game, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+				RequestingPlayerID:   h.ID,
+				InvitedPlayerID:      g.ID,
+				RequestingPlayerMove: models.RpsParticipantMoveRock,
+				DurationSeconds:      3600,
+				BetAmount:            betPtr(100),
+				HostUserID:           h.UserID,
+			})
+			if err != nil {
+				t.Fatalf("path1 RequestGame: %v", err)
+			}
+			if _, err = rpsService.RespondToGameRequest(ctx, &GameRequestResponse{
+				InvitedPlayerID: g.ID,
+				GameID:          game.RpsGame.ID,
+				Status:          models.RpsGameStatusCompleted,
+				Move:            models.RpsParticipantMoveScissors,
+			}); err != nil {
+				t.Fatalf("path1 Respond: %v", err)
+			}
+		}
+
+		// Path 2: cancelled.
+		{
+			h, g := makePlayerPair("orp2")
+			game, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+				RequestingPlayerID:   h.ID,
+				InvitedPlayerID:      g.ID,
+				RequestingPlayerMove: models.RpsParticipantMoveRock,
+				DurationSeconds:      3600,
+				BetAmount:            betPtr(100),
+				HostUserID:           h.UserID,
+			})
+			if err != nil {
+				t.Fatalf("path2 RequestGame: %v", err)
+			}
+			if _, err = rpsService.RespondToGameRequest(ctx, &GameRequestResponse{
+				InvitedPlayerID: g.ID,
+				GameID:          game.RpsGame.ID,
+				Status:          models.RpsGameStatusCancelled,
+			}); err != nil {
+				t.Fatalf("path2 Respond: %v", err)
+			}
+		}
+
+		// Path 3: expired.
+		{
+			h, g := makePlayerPair("orp3")
+			_, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+				RequestingPlayerID:   h.ID,
+				InvitedPlayerID:      g.ID,
+				RequestingPlayerMove: models.RpsParticipantMoveRock,
+				DurationSeconds:      1,
+				BetAmount:            betPtr(100),
+				HostUserID:           h.UserID,
+			})
+			if err != nil {
+				t.Fatalf("path3 RequestGame: %v", err)
+			}
+			time.Sleep(2 * time.Second)
+			if _, err = rpsService.ExpireGamesAndRefundBets(ctx); err != nil {
+				t.Fatalf("path3 ExpireGamesAndRefundBets: %v", err)
+			}
+		}
+
+		// No pending bet_escrow transfers anywhere in the ledger.
+		count, err := ledger.CountTransfers(ctx, &stores.LedgerTransferFilter{
+			TransferCodes: []string{models.TransferCodeBetEscrow},
+			Statuses:      []models.LedgerTransferStatus{models.LedgerTransferStatusPending},
+		})
+		if err != nil {
+			t.Fatalf("CountTransfers: %v", err)
+		}
+		if count != 0 {
+			t.Errorf("orphaned pending bet_escrow transfers = %d, want 0", count)
+		}
+	})
+}
