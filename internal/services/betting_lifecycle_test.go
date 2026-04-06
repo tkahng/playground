@@ -40,6 +40,17 @@ func TestBetting_NoPendingTransfers_AfterCancel(t *testing.T) {
 		if err != nil {
 			t.Fatalf("RequestGame() error = %v", err)
 		}
+		if game.RpsGame.HostBetTransferID == nil {
+			t.Fatal("expected HostBetTransferID to be set after RequestGame with bet")
+		}
+
+		availMid, err := ledger.GetUserAvailableBalance(ctx, *host.UserID)
+		if err != nil {
+			t.Fatalf("GetUserAvailableBalance (mid): %v", err)
+		}
+		if availMid != 400 {
+			t.Errorf("host available balance after bet escrow = %d, want 400", availMid)
+		}
 
 		_, err = rpsService.RespondToGameRequest(ctx, &GameRequestResponse{
 			InvitedPlayerID: guest.ID,
@@ -99,6 +110,9 @@ func TestBetting_NoPendingTransfers_AfterExpiry(t *testing.T) {
 		})
 		if err != nil {
 			t.Fatalf("RequestGame() error = %v", err)
+		}
+		if game.RpsGame.HostBetTransferID == nil {
+			t.Fatal("expected HostBetTransferID to be set after RequestGame with bet")
 		}
 
 		time.Sleep(2 * time.Second)
