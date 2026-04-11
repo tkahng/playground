@@ -66,9 +66,8 @@ export default function PointsSettingsPage() {
   // Client-side guard: the API already filters by metadata_type=points,
   // but this ensures stale cache data doesn't include non-points products.
   const pointsProducts =
-    productsQuery.data?.data?.filter(
-      (p) => p.metadata?.type === "points",
-    ) ?? [];
+    productsQuery.data?.data?.filter((p) => p.metadata?.type === "points") ??
+    [];
 
   const prices = pointsProducts
     .flatMap((p) => p.prices ?? [])
