@@ -26,20 +26,20 @@ const (
 //   - Balance           = credits_posted - debits_posted
 //   - Available balance = Balance - debits_pending
 type LedgerAccount struct {
-	_              struct{}   `db:"accounts" schema:"ledger" json:"-"`
-	ID             uuid.UUID  `db:"id,pk" json:"id"`
-	Code           string     `db:"code" json:"code"`
-	EntityType     string     `db:"entity_type" json:"entity_type"`
-	EntityID       *uuid.UUID `db:"entity_id" json:"entity_id,omitempty"`
-	LedgerCode     string     `db:"ledger_code" json:"ledger_code"`
+	_              struct{}            `db:"accounts" schema:"ledger" json:"-"`
+	ID             uuid.UUID           `db:"id,pk" json:"id"`
+	Code           string              `db:"code" json:"code"`
+	EntityType     string              `db:"entity_type" json:"entity_type"`
+	EntityID       *uuid.UUID          `db:"entity_id" json:"entity_id,omitempty"`
+	LedgerCode     string              `db:"ledger_code" json:"ledger_code"`
 	Constraints    []AccountConstraint `db:"constraints" json:"constraints"`
-	DebitsPending  int64      `db:"debits_pending" json:"debits_pending"`
-	CreditsPending int64      `db:"credits_pending" json:"credits_pending"`
-	DebitsPosted   int64      `db:"debits_posted" json:"debits_posted"`
-	CreditsPosted  int64      `db:"credits_posted" json:"credits_posted"`
-	Metadata       []byte     `db:"metadata" json:"metadata"`
-	CreatedAt      time.Time  `db:"created_at" json:"created_at"`
-	UpdatedAt      time.Time  `db:"updated_at" json:"updated_at"`
+	DebitsPending  int64               `db:"debits_pending" json:"debits_pending"`
+	CreditsPending int64               `db:"credits_pending" json:"credits_pending"`
+	DebitsPosted   int64               `db:"debits_posted" json:"debits_posted"`
+	CreditsPosted  int64               `db:"credits_posted" json:"credits_posted"`
+	Metadata       []byte              `db:"metadata" json:"metadata"`
+	CreatedAt      time.Time           `db:"created_at" json:"created_at"`
+	UpdatedAt      time.Time           `db:"updated_at" json:"updated_at"`
 }
 
 // Balance returns the net settled balance (credits_posted - debits_posted).
@@ -60,7 +60,6 @@ const (
 	LedgerTransferStatusPosted  LedgerTransferStatus = "posted"
 	LedgerTransferStatusVoided  LedgerTransferStatus = "voided"
 )
-
 
 // Well-known transfer codes.
 const (
