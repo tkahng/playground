@@ -181,6 +181,9 @@ func TestSeedRpsGameExpiryJob_InsertsJobWithCorrectKind(t *testing.T) {
 		if rows[0].UniqueKey == nil || *rows[0].UniqueKey != RpsGameExpirySweepKind {
 			t.Errorf("job UniqueKey = %v, want %q", rows[0].UniqueKey, RpsGameExpirySweepKind)
 		}
+		if rows[0].MaxAttempts != 1 {
+			t.Errorf("job MaxAttempts = %d, want 1", rows[0].MaxAttempts)
+		}
 	})
 }
 
@@ -207,26 +210,6 @@ func TestSeedRpsGameExpiryJob_Idempotent(t *testing.T) {
 	})
 }
 
-func TestSeedRpsGameExpiryJob_MaxAttemptsIsOne(t *testing.T) {
-	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		manager := jobs.NewDbJobManager(db)
-
-		if err := SeedRpsGameExpiryJob(ctx, manager); err != nil {
-			t.Fatalf("SeedRpsGameExpiryJob() error = %v", err)
-		}
-
-		rows, err := repository.Job.Get(ctx, db, &map[string]any{"kind": RpsGameExpirySweepKind}, nil, nil, nil)
-		if err != nil {
-			t.Fatalf("get job rows: %v", err)
-		}
-		if len(rows) != 1 {
-			t.Fatalf("job count = %d, want 1", len(rows))
-		}
-		if rows[0].MaxAttempts != 1 {
-			t.Errorf("MaxAttempts = %d, want 1", rows[0].MaxAttempts)
-		}
-	})
-}
 
 // --- Integration: seed → poller executes → re-enqueue appears in DB ---
 
