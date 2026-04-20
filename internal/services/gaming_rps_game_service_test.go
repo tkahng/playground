@@ -264,6 +264,38 @@ func TestDbRpsGameService_Betting_RequestGame_WithoutHostUserID_Fails(t *testing
 	})
 }
 
+func TestDbRpsGameService_Betting_RequestGame_WrongHostUserID_Fails(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		host := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("wronguid_host@example.com"),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "wronguid_host@example.com").ID),
+		)
+		guest := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("wronguid_guest@example.com"),
+		)
+		// A different user — not linked to host player.
+		otherUser := mustCreateUser(t, ctx, adapter, "other@example.com")
+
+		betAmount := int64(50)
+		_, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      3600,
+			BetAmount:            &betAmount,
+			HostUserID:           &otherUser.ID, // wrong user
+		})
+		if err == nil {
+			t.Fatal("expected error when HostUserID does not match requesting player, got nil")
+		}
+	})
+}
+
 func TestDbRpsGameService_RequestGame_SelfPlay_Rejected(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)

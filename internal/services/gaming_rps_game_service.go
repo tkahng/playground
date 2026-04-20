@@ -107,6 +107,16 @@ func (d *DbRpsGameService) RequestGame(ctx context.Context, input *RpsGameReques
 		if d.betting == nil {
 			return nil, errors.New("betting service is not available")
 		}
+		// Verify HostUserID belongs to the requesting player.
+		hostPlayer, err := d.adapter.Gaming().FindPlayer(ctx, &stores.PlayersFilter{
+			Ids: []uuid.UUID{input.RequestingPlayerID},
+		})
+		if err != nil {
+			return nil, fmt.Errorf("look up requesting player: %w", err)
+		}
+		if hostPlayer == nil || hostPlayer.UserID == nil || *hostPlayer.UserID != *input.HostUserID {
+			return nil, errors.New("HostUserID does not match the requesting player's registered user")
+		}
 	}
 
 	gameWithParticipants := &RpsGameWithParticipants{}
