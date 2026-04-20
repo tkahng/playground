@@ -738,7 +738,8 @@ CREATE TABLE ledger.accounts (
     CONSTRAINT accounts_credits_pending_check CHECK ((credits_pending >= 0)),
     CONSTRAINT accounts_credits_posted_check CHECK ((credits_posted >= 0)),
     CONSTRAINT accounts_debits_pending_check CHECK ((debits_pending >= 0)),
-    CONSTRAINT accounts_debits_posted_check CHECK ((debits_posted >= 0))
+    CONSTRAINT accounts_debits_posted_check CHECK ((debits_posted >= 0)),
+    CONSTRAINT chk_accounts_available_balance CHECK (((NOT ('debits_must_not_exceed_credits'::text = ANY (constraints))) OR (((credits_posted - debits_posted) - debits_pending) >= 0)))
 );
 
 
@@ -2283,4 +2284,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260112224708'),
     ('20260228000001'),
     ('20260228000002'),
-    ('20260402000001');
+    ('20260402000001'),
+    ('20260420000001');

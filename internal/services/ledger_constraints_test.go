@@ -183,6 +183,31 @@ func TestLedgerService_CreatePendingTransfer_RejectsZeroAmount(t *testing.T) {
 	})
 }
 
+// TestLedgerService_DbConstraint_RejectsOverdraft verifies the DB-level CHECK constraint
+// on ledger.accounts fires when a direct balance update would overdraft a wallet account,
+// bypassing the application-layer checkDebitConstraint.
+func TestLedgerService_DbConstraint_RejectsOverdraft(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		userID := uuid.New()
+
+		mustFundWallet(t, ctx, adapter, ledger, userID, 100)
+
+		wallet, err := ledger.GetOrCreateUserWallet(ctx, userID)
+		if err != nil {
+			t.Fatalf("GetOrCreateUserWallet: %v", err)
+		}
+
+		// Directly increment debits_posted by 101 — bypassing app-layer guard.
+		// The DB CHECK constraint must reject this.
+		_, err = adapter.Ledger().AtomicUpdateAccountBalances(ctx, wallet.ID, 101, 0, 0, 0)
+		if err == nil {
+			t.Fatal("AtomicUpdateAccountBalances overdraft: want DB constraint error, got nil")
+		}
+	})
+}
+
 // TestLedgerService_IssuanceAccount_CreditsMustNotExceedDebits_IsNotEnforced documents
 // that the AccountConstraintCreditsMustNotExceedDebits constraint on the issuance account
 // is never enforced by checkDebitConstraint (which only checks DebitsMustNotExceedCredits).
