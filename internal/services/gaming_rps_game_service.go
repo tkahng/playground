@@ -336,9 +336,15 @@ func (d *DbRpsGameService) ExpireGamesAndRefundBets(ctx context.Context) (int, e
 			if _, err := d.adapter.Gaming().UpdateRpsGame(txCtx, locked); err != nil {
 				return fmt.Errorf("cancel expired game %s: %w", game.ID, err)
 			}
-			if game.HostBetTransferID != nil && d.betting != nil {
-				if err := d.betting.RefundHostBet(txCtx, *game.HostBetTransferID); err != nil {
-					return fmt.Errorf("refund host bet for expired game %s: %w", game.ID, err)
+			if d.betting != nil && game.HostBetTransferID != nil {
+				if game.GuestBetTransferID != nil {
+					if err := d.betting.RefundBothBets(txCtx, *game.HostBetTransferID, *game.GuestBetTransferID); err != nil {
+						return fmt.Errorf("refund both bets for expired game %s: %w", game.ID, err)
+					}
+				} else {
+					if err := d.betting.RefundHostBet(txCtx, *game.HostBetTransferID); err != nil {
+						return fmt.Errorf("refund host bet for expired game %s: %w", game.ID, err)
+					}
 				}
 			}
 			return nil

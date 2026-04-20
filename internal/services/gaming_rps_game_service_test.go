@@ -710,6 +710,108 @@ func TestDbRpsGameService_ExpireGamesAndRefundBets_IgnoresNoBetGames(t *testing.
 	})
 }
 
+func TestDbRpsGameService_ExpireGamesAndRefundBets_RefundsBothEscrows(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		host := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("both_host@example.com"),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "both_host@example.com").ID),
+		)
+		guest := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("both_guest@example.com"),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "both_guest@example.com").ID),
+		)
+
+		mustFundPlayerWallet(t, ctx, adapter, ledger, host.UserID, 500)
+		mustFundPlayerWallet(t, ctx, adapter, ledger, guest.UserID, 500)
+
+		betAmount := int64(100)
+		game, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      1,
+			BetAmount:            &betAmount,
+			HostUserID:           host.UserID,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame() error = %v", err)
+		}
+
+		// Manually create a guest pending escrow (normally impossible on a pending game)
+		// and inject it onto the game row to simulate the edge-case state.
+		escrow, err := ledger.GetSystemAccount(ctx, models.SystemAccountGameEscrow)
+		if err != nil {
+			t.Fatalf("GetSystemAccount() error = %v", err)
+		}
+		guestWallet, err := ledger.GetOrCreateUserWallet(ctx, *guest.UserID)
+		if err != nil {
+			t.Fatalf("GetOrCreateUserWallet() error = %v", err)
+		}
+		refType := models.ReferenceTypeRpsGame
+		guestPending, err := ledger.CreatePendingTransfer(ctx, PostTransferInput{
+			LedgerCode:      "POINTS",
+			DebitAccountID:  guestWallet.ID,
+			CreditAccountID: escrow.ID,
+			Amount:          betAmount,
+			TransferCode:    models.TransferCodeBetEscrow,
+			ReferenceType:   &refType,
+			ReferenceID:     &game.RpsGame.ID,
+		})
+		if err != nil {
+			t.Fatalf("CreatePendingTransfer(guest) error = %v", err)
+		}
+
+		// Inject GuestBetTransferID onto the game row directly.
+		game.RpsGame.GuestBetTransferID = &guestPending.ID
+		if _, err := adapter.Gaming().UpdateRpsGame(ctx, game.RpsGame); err != nil {
+			t.Fatalf("UpdateRpsGame() inject guest transfer error = %v", err)
+		}
+
+		// Confirm both escrows are held.
+		hostAvail, _ := ledger.GetUserAvailableBalance(ctx, *host.UserID)
+		guestAvail, _ := ledger.GetUserAvailableBalance(ctx, *guest.UserID)
+		if hostAvail != 400 {
+			t.Fatalf("host available before sweep = %d, want 400", hostAvail)
+		}
+		if guestAvail != 400 {
+			t.Fatalf("guest available before sweep = %d, want 400", guestAvail)
+		}
+
+		time.Sleep(2 * time.Second)
+
+		processed, err := rpsService.ExpireGamesAndRefundBets(ctx)
+		if err != nil {
+			t.Fatalf("ExpireGamesAndRefundBets() error = %v", err)
+		}
+		if processed != 1 {
+			t.Errorf("processed = %d, want 1", processed)
+		}
+
+		// Both escrows should be released.
+		hostAvail, _ = ledger.GetUserAvailableBalance(ctx, *host.UserID)
+		guestAvail, _ = ledger.GetUserAvailableBalance(ctx, *guest.UserID)
+		if hostAvail != 500 {
+			t.Errorf("host available after sweep = %d, want 500", hostAvail)
+		}
+		if guestAvail != 500 {
+			t.Errorf("guest available after sweep = %d, want 500", guestAvail)
+		}
+
+		// Game should be cancelled.
+		updated, _ := adapter.Gaming().FindRpsGame(ctx, &stores.RpsGameFilter{
+			Ids: []uuid.UUID{game.RpsGame.ID},
+		})
+		if updated.Status != models.RpsGameStatusCancelled {
+			t.Errorf("game status = %v, want cancelled", updated.Status)
+		}
+	})
+}
+
 func TestDbRpsGameService_ExpireGamesAndRefundBets_ContinuesOnPerGameError(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
