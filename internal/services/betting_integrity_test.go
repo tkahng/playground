@@ -237,7 +237,6 @@ func TestBettingService_EnsureGuestCanAffordBet_UsesAvailableBalance(t *testing.
 }
 
 func TestBettingService_PlaceGuestAndSettle_RejectsDoubleSettlement(t *testing.T) {
-	t.Skip("known bug: PlaceGuestAndSettle does not guard against double-settlement")
 
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)

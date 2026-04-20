@@ -93,6 +93,23 @@ func (s *DbBettingService) PlaceGuestAndSettle(ctx context.Context, input PlaceG
 		return uuid.Nil, errors.New("bet amount must be positive")
 	}
 
+	// Idempotency guard: reject if this game has already been settled.
+	refType := models.ReferenceTypeRpsGame
+	existing, err := s.ledger.FindTransfers(ctx, &stores.LedgerTransferFilter{
+		ReferenceTypes: []string{refType},
+		ReferenceIds:   []uuid.UUID{input.GameID},
+		TransferCodes: []string{
+			models.TransferCodeBetWin,
+			models.TransferCodeBetRefund,
+		},
+	})
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("settlement idempotency check: %w", err)
+	}
+	if len(existing) > 0 {
+		return uuid.Nil, errors.New("game bet already settled")
+	}
+
 	guestWallet, err := s.ledger.GetOrCreateUserWallet(ctx, input.GuestUserID)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("guest wallet: %w", err)
@@ -105,8 +122,6 @@ func (s *DbBettingService) PlaceGuestAndSettle(ctx context.Context, input PlaceG
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("escrow account: %w", err)
 	}
-
-	refType := models.ReferenceTypeRpsGame
 
 	// Step 1: create guest's pending escrow transfer.
 	guestPending, err := s.ledger.CreatePendingTransfer(ctx, PostTransferInput{
