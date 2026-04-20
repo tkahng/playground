@@ -503,6 +503,39 @@ func TestDBLedgerStore_CountTransfers(t *testing.T) {
 		if count != 0 {
 			t.Errorf("CountTransfers by bet_win = %d, want 0", count)
 		}
+
+		// DebitAccountIds: only matches debit side.
+		count, err = s.CountTransfers(ctx, &LedgerTransferFilter{
+			DebitAccountIds: []uuid.UUID{src.ID},
+		})
+		if err != nil {
+			t.Fatalf("CountTransfers by DebitAccountIds: %v", err)
+		}
+		if count != 3 {
+			t.Errorf("CountTransfers by DebitAccountIds = %d, want 3", count)
+		}
+
+		// CreditAccountIds: only matches credit side.
+		count, err = s.CountTransfers(ctx, &LedgerTransferFilter{
+			CreditAccountIds: []uuid.UUID{dst.ID},
+		})
+		if err != nil {
+			t.Fatalf("CountTransfers by CreditAccountIds: %v", err)
+		}
+		if count != 3 {
+			t.Errorf("CountTransfers by CreditAccountIds = %d, want 3", count)
+		}
+
+		// DebitAccountIds with wrong account returns 0.
+		count, err = s.CountTransfers(ctx, &LedgerTransferFilter{
+			DebitAccountIds: []uuid.UUID{dst.ID},
+		})
+		if err != nil {
+			t.Fatalf("CountTransfers by wrong DebitAccountIds: %v", err)
+		}
+		if count != 0 {
+			t.Errorf("CountTransfers by wrong DebitAccountIds = %d, want 0", count)
+		}
 	})
 }
 

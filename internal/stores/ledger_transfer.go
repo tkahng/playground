@@ -100,30 +100,8 @@ func (s *DBLedgerStore) FindTransfers(ctx context.Context, filter *LedgerTransfe
 }
 
 func (s *DBLedgerStore) CountTransfers(ctx context.Context, filter *LedgerTransferFilter) (int64, error) {
-	q := squirrel.Select("COUNT(*)").From("ledger.transfers")
-	if filter != nil {
-		if len(filter.Ids) > 0 {
-			q = q.Where(squirrel.Eq{"ledger.transfers.id": filter.Ids})
-		}
-		if len(filter.Statuses) > 0 {
-			q = q.Where(squirrel.Eq{"ledger.transfers.status": filter.Statuses})
-		}
-		if len(filter.TransferCodes) > 0 {
-			q = q.Where(squirrel.Eq{"ledger.transfers.transfer_code": filter.TransferCodes})
-		}
-		if len(filter.AccountIds) > 0 {
-			q = q.Where(squirrel.Or{
-				squirrel.Eq{"ledger.transfers.debit_account_id": filter.AccountIds},
-				squirrel.Eq{"ledger.transfers.credit_account_id": filter.AccountIds},
-			})
-		}
-		if len(filter.ReferenceTypes) > 0 {
-			q = q.Where(squirrel.Eq{"ledger.transfers.reference_type": filter.ReferenceTypes})
-		}
-		if len(filter.ReferenceIds) > 0 {
-			q = q.Where(squirrel.Eq{"ledger.transfers.reference_id": filter.ReferenceIds})
-		}
-	}
+	base := buildLedgerTransferQuery(filter)
+	q := squirrel.Select("COUNT(*)").FromSelect(base, "t")
 	c, err := database.QueryWithBuilder[database.CountOutput](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
 	if err != nil {
 		return 0, err
