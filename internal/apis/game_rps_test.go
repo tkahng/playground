@@ -527,6 +527,45 @@ func Test_SubmitMove_WithActiveBet_GuestInsufficientBalance(t *testing.T) {
 	})
 }
 
+// Test_SendGameRequestToUnregisteredPlayer_NoBetSupport documents that the
+// unregistered-player invite path does not support bet_amount. UnregisteredPlayerInput
+// has no BetAmount field, and SendRpsGameRequestToUnregisteredPlayer never forwards
+// one to RequestGame. A game created via this endpoint always has bet_amount nil.
+func Test_SendGameRequestToUnregisteredPlayer_NoBetSupport(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		playerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		unregisteredPlayer := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(false))
+
+		scenario := &apis.ApiScenario{
+			Name:           "unregistered-player invite never carries a bet",
+			Method:         http.MethodPost,
+			URL:            "/games/rps/requests/unregistered",
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				scenario.Headers = []string{core.CreateTokenHeader(t, app, playerWithUser.Email)}
+				body := &apis.UnregisteredPlayerInput{
+					Move:                apis.RpsParticipantMoveRock,
+					InvitingPlayerEmail: unregisteredPlayer.Email,
+				}
+				data, _ := json.Marshal(body)
+				scenario.Body = strings.NewReader(string(data))
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
+				if result.Data == nil {
+					t.Fatal("expected game in response")
+				}
+				if result.Data.RpsGame.BetAmount != nil {
+					t.Errorf("expected bet_amount nil on unregistered-player game, got %d", *result.Data.RpsGame.BetAmount)
+				}
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
 func Test_SendGameRequestToRegisteredPlayer_Success(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := apis.SetupApi(t, ctx, db)
