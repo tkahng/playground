@@ -159,6 +159,7 @@ func (s *DbBettingService) PlaceGuestAndSettle(ctx context.Context, input PlaceG
 			TransferCode:    models.TransferCodeBetWin,
 			ReferenceType:   &refType,
 			ReferenceID:     &input.GameID,
+			PendingID:       &input.HostPendingTransferID,
 		})
 		if err != nil {
 			return uuid.Nil, fmt.Errorf("pay host: %w", err)
@@ -174,6 +175,7 @@ func (s *DbBettingService) PlaceGuestAndSettle(ctx context.Context, input PlaceG
 			TransferCode:    models.TransferCodeBetWin,
 			ReferenceType:   &refType,
 			ReferenceID:     &input.GameID,
+			PendingID:       &guestPending.ID,
 		})
 		if err != nil {
 			return uuid.Nil, fmt.Errorf("pay guest: %w", err)
@@ -189,6 +191,7 @@ func (s *DbBettingService) PlaceGuestAndSettle(ctx context.Context, input PlaceG
 			TransferCode:    models.TransferCodeBetRefund,
 			ReferenceType:   &refType,
 			ReferenceID:     &input.GameID,
+			PendingID:       &input.HostPendingTransferID,
 		})
 		if err != nil {
 			return uuid.Nil, fmt.Errorf("refund host: %w", err)
@@ -201,6 +204,7 @@ func (s *DbBettingService) PlaceGuestAndSettle(ctx context.Context, input PlaceG
 			TransferCode:    models.TransferCodeBetRefund,
 			ReferenceType:   &refType,
 			ReferenceID:     &input.GameID,
+			PendingID:       &guestPending.ID,
 		})
 		if err != nil {
 			return uuid.Nil, fmt.Errorf("refund guest: %w", err)

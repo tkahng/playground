@@ -375,6 +375,163 @@ func TestDbBettingService_PlaceGuestAndSettle_Tie(t *testing.T) {
 	})
 }
 
+func TestDbBettingService_PlaceGuestAndSettle_PendingID_HostWins(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+
+		hostUserID := uuid.New()
+		guestUserID := uuid.New()
+		gameID := uuid.New()
+
+		mustFundWallet(t, ctx, adapter, ledger, hostUserID, 500)
+		mustFundWallet(t, ctx, adapter, ledger, guestUserID, 500)
+
+		hostPending, err := betting.PlaceHostBet(ctx, gameID, hostUserID, 100)
+		if err != nil {
+			t.Fatalf("PlaceHostBet() error = %v", err)
+		}
+
+		if _, err = betting.PlaceGuestAndSettle(ctx, PlaceGuestAndSettleInput{
+			GameID:                gameID,
+			GuestUserID:           guestUserID,
+			HostUserID:            hostUserID,
+			BetAmount:             100,
+			HostPendingTransferID: hostPending.ID,
+			HostResult:            models.RpsParticipantResultWin,
+			GuestResult:           models.RpsParticipantResultLose,
+		}); err != nil {
+			t.Fatalf("PlaceGuestAndSettle() error = %v", err)
+		}
+
+		transfers, err := ledger.FindTransfers(ctx, &stores.LedgerTransferFilter{
+			ReferenceIds:  []uuid.UUID{gameID},
+			TransferCodes: []string{models.TransferCodeBetWin},
+		})
+		if err != nil {
+			t.Fatalf("FindTransfers() error = %v", err)
+		}
+		if len(transfers) != 1 {
+			t.Fatalf("expected 1 bet_win transfer, got %d", len(transfers))
+		}
+		if transfers[0].PendingID == nil {
+			t.Fatal("bet_win transfer has nil pending_id, want host escrow ID")
+		}
+		if *transfers[0].PendingID != hostPending.ID {
+			t.Errorf("bet_win pending_id = %v, want host escrow %v", *transfers[0].PendingID, hostPending.ID)
+		}
+	})
+}
+
+func TestDbBettingService_PlaceGuestAndSettle_PendingID_GuestWins(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+
+		hostUserID := uuid.New()
+		guestUserID := uuid.New()
+		gameID := uuid.New()
+
+		mustFundWallet(t, ctx, adapter, ledger, hostUserID, 500)
+		mustFundWallet(t, ctx, adapter, ledger, guestUserID, 500)
+
+		hostPending, err := betting.PlaceHostBet(ctx, gameID, hostUserID, 100)
+		if err != nil {
+			t.Fatalf("PlaceHostBet() error = %v", err)
+		}
+
+		guestPendingID, err := betting.PlaceGuestAndSettle(ctx, PlaceGuestAndSettleInput{
+			GameID:                gameID,
+			GuestUserID:           guestUserID,
+			HostUserID:            hostUserID,
+			BetAmount:             100,
+			HostPendingTransferID: hostPending.ID,
+			HostResult:            models.RpsParticipantResultLose,
+			GuestResult:           models.RpsParticipantResultWin,
+		})
+		if err != nil {
+			t.Fatalf("PlaceGuestAndSettle() error = %v", err)
+		}
+
+		transfers, err := ledger.FindTransfers(ctx, &stores.LedgerTransferFilter{
+			ReferenceIds:  []uuid.UUID{gameID},
+			TransferCodes: []string{models.TransferCodeBetWin},
+		})
+		if err != nil {
+			t.Fatalf("FindTransfers() error = %v", err)
+		}
+		if len(transfers) != 1 {
+			t.Fatalf("expected 1 bet_win transfer, got %d", len(transfers))
+		}
+		if transfers[0].PendingID == nil {
+			t.Fatal("bet_win transfer has nil pending_id, want guest escrow ID")
+		}
+		if *transfers[0].PendingID != guestPendingID {
+			t.Errorf("bet_win pending_id = %v, want guest escrow %v", *transfers[0].PendingID, guestPendingID)
+		}
+	})
+}
+
+func TestDbBettingService_PlaceGuestAndSettle_PendingID_Tie(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+
+		hostUserID := uuid.New()
+		guestUserID := uuid.New()
+		gameID := uuid.New()
+
+		mustFundWallet(t, ctx, adapter, ledger, hostUserID, 500)
+		mustFundWallet(t, ctx, adapter, ledger, guestUserID, 500)
+
+		hostPending, err := betting.PlaceHostBet(ctx, gameID, hostUserID, 100)
+		if err != nil {
+			t.Fatalf("PlaceHostBet() error = %v", err)
+		}
+
+		guestPendingID, err := betting.PlaceGuestAndSettle(ctx, PlaceGuestAndSettleInput{
+			GameID:                gameID,
+			GuestUserID:           guestUserID,
+			HostUserID:            hostUserID,
+			BetAmount:             100,
+			HostPendingTransferID: hostPending.ID,
+			HostResult:            models.RpsParticipantResultTie,
+			GuestResult:           models.RpsParticipantResultTie,
+		})
+		if err != nil {
+			t.Fatalf("PlaceGuestAndSettle() error = %v", err)
+		}
+
+		refunds, err := ledger.FindTransfers(ctx, &stores.LedgerTransferFilter{
+			ReferenceIds:  []uuid.UUID{gameID},
+			TransferCodes: []string{models.TransferCodeBetRefund},
+		})
+		if err != nil {
+			t.Fatalf("FindTransfers() error = %v", err)
+		}
+		if len(refunds) != 2 {
+			t.Fatalf("expected 2 bet_refund transfers, got %d", len(refunds))
+		}
+
+		pendingIDs := map[uuid.UUID]bool{}
+		for _, r := range refunds {
+			if r.PendingID == nil {
+				t.Fatalf("bet_refund transfer %v has nil pending_id", r.ID)
+			}
+			pendingIDs[*r.PendingID] = true
+		}
+		if !pendingIDs[hostPending.ID] {
+			t.Errorf("no bet_refund links to host escrow %v", hostPending.ID)
+		}
+		if !pendingIDs[guestPendingID] {
+			t.Errorf("no bet_refund links to guest escrow %v", guestPendingID)
+		}
+	})
+}
+
 func TestDbBettingService_RefundHostBet_VoidsPendingHold(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
