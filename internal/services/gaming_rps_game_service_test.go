@@ -710,6 +710,91 @@ func TestDbRpsGameService_ExpireGamesAndRefundBets_IgnoresNoBetGames(t *testing.
 	})
 }
 
+func TestDbRpsGameService_ExpireGamesAndRefundBets_ContinuesOnPerGameError(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		hostA := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("sweep_hosta@example.com"),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "sweep_hosta@example.com").ID),
+		)
+		hostB := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("sweep_hostb@example.com"),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "sweep_hostb@example.com").ID),
+		)
+		guest := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("sweep_guest@example.com"),
+		)
+
+		mustFundPlayerWallet(t, ctx, adapter, ledger, hostA.UserID, 500)
+		mustFundPlayerWallet(t, ctx, adapter, ledger, hostB.UserID, 500)
+
+		betAmount := int64(100)
+
+		gameA, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   hostA.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      1,
+			BetAmount:            &betAmount,
+			HostUserID:           hostA.UserID,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame A error = %v", err)
+		}
+
+		gameB, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   hostB.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      1,
+			BetAmount:            &betAmount,
+			HostUserID:           hostB.UserID,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame B error = %v", err)
+		}
+
+		// Pre-void game A's escrow to force a per-game sweep failure.
+		if err := betting.RefundHostBet(ctx, *gameA.RpsGame.HostBetTransferID); err != nil {
+			t.Fatalf("RefundHostBet (pre-void) error = %v", err)
+		}
+
+		time.Sleep(2 * time.Second)
+
+		processed, sweepErr := rpsService.ExpireGamesAndRefundBets(ctx)
+		if sweepErr == nil {
+			t.Error("expected error from failed game A, got nil")
+		}
+		if processed != 1 {
+			t.Errorf("processed = %d, want 1 (only game B should succeed)", processed)
+		}
+
+		// Game A: sweep tx rolled back — still pending.
+		updatedA, _ := adapter.Gaming().FindRpsGame(ctx, &stores.RpsGameFilter{
+			Ids: []uuid.UUID{gameA.RpsGame.ID},
+		})
+		if updatedA.Status != models.RpsGameStatusPending {
+			t.Errorf("game A status = %v, want pending (sweep error should roll back)", updatedA.Status)
+		}
+
+		// Game B: swept successfully — cancelled, escrow released.
+		updatedB, _ := adapter.Gaming().FindRpsGame(ctx, &stores.RpsGameFilter{
+			Ids: []uuid.UUID{gameB.RpsGame.ID},
+		})
+		if updatedB.Status != models.RpsGameStatusCancelled {
+			t.Errorf("game B status = %v, want cancelled", updatedB.Status)
+		}
+		availB, _ := ledger.GetUserAvailableBalance(ctx, *hostB.UserID)
+		if availB != 500 {
+			t.Errorf("host B available balance = %d, want 500 (escrow released)", availB)
+		}
+	})
+}
+
 func TestDbRpsGameService_CreatePlayerByParams_Success(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)

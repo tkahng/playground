@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -311,6 +312,8 @@ type RpsGameWithParticipants struct {
 
 // ExpireGamesAndRefundBets finds all pending bet games whose expiry has passed,
 // marks each cancelled, and voids the host's pending escrow transfer.
+// Errors from individual games are logged and collected; the sweep continues
+// for all remaining games and returns a joined error at the end.
 func (d *DbRpsGameService) ExpireGamesAndRefundBets(ctx context.Context) (int, error) {
 	expiredGames, err := d.adapter.Gaming().FindExpiredPendingBetGames(ctx)
 	if err != nil {
@@ -318,6 +321,7 @@ func (d *DbRpsGameService) ExpireGamesAndRefundBets(ctx context.Context) (int, e
 	}
 
 	processed := 0
+	var errs []error
 	for _, game := range expiredGames {
 		txErr := d.adapter.RunInTxCtx(ctx, func(txCtx context.Context) error {
 			// Re-fetch with lock inside the transaction.
@@ -340,11 +344,16 @@ func (d *DbRpsGameService) ExpireGamesAndRefundBets(ctx context.Context) (int, e
 			return nil
 		})
 		if txErr != nil {
-			return processed, txErr
+			slog.ErrorContext(ctx, "expiry sweep: failed to expire game",
+				slog.String("game_id", game.ID.String()),
+				slog.Any("error", txErr),
+			)
+			errs = append(errs, txErr)
+			continue
 		}
 		processed++
 	}
-	return processed, nil
+	return processed, errors.Join(errs...)
 }
 
 func (d *DbRpsGameService) FindRpsGameWithParticipants(ctx context.Context, gameID uuid.UUID) (*RpsGameWithParticipants, error) {
