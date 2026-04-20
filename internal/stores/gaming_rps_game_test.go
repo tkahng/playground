@@ -15,6 +15,59 @@ import (
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
+func TestDBGamingStore_BetTransferIDs_MustBeUnique(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		gameStore := NewDBGamingStore(db)
+		ledgerStore := NewDBLedgerStore(db)
+
+		// Create a ledger transfer to use as a bet escrow reference.
+		src := makeIssuanceAccount(t, ctx, ledgerStore)
+		dst := makeWalletAccount(t, ctx, ledgerStore)
+		transfer, err := ledgerStore.CreateTransfer(ctx, &models.LedgerTransfer{
+			LedgerCode:      "POINTS",
+			DebitAccountID:  dst.ID,
+			CreditAccountID: src.ID,
+			Amount:          100,
+			Status:          models.LedgerTransferStatusPending,
+			TransferCode:    models.TransferCodeBetEscrow,
+			Metadata:        []byte("{}"),
+		})
+		if err != nil {
+			t.Fatalf("CreateTransfer: %v", err)
+		}
+
+		expiresAt := time.Now().UTC().Add(time.Hour)
+
+		gameA, err := gameStore.CreateRpsGame(ctx, &models.RpsGame{
+			Status:    models.RpsGameStatusPending,
+			ExpiresAt: expiresAt,
+		})
+		if err != nil {
+			t.Fatalf("CreateRpsGame A: %v", err)
+		}
+		gameB, err := gameStore.CreateRpsGame(ctx, &models.RpsGame{
+			Status:    models.RpsGameStatusPending,
+			ExpiresAt: expiresAt,
+		})
+		if err != nil {
+			t.Fatalf("CreateRpsGame B: %v", err)
+		}
+
+		// Assign the transfer to game A — must succeed.
+		gameA.HostBetTransferID = &transfer.ID
+		if _, err := gameStore.UpdateRpsGame(ctx, gameA); err != nil {
+			t.Fatalf("UpdateRpsGame A (first assign): %v", err)
+		}
+
+		// Assign the same transfer to game B — must fail (UNIQUE constraint).
+		gameB.HostBetTransferID = &transfer.ID
+		_, err = gameStore.UpdateRpsGame(ctx, gameB)
+		if err == nil {
+			t.Fatal("expected unique constraint error when reusing host_bet_transfer_id, got nil")
+		}
+	})
+}
+
 func TestDBGamingStore_CreateRpsGame(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		gameStore := NewDBGamingStore(db)

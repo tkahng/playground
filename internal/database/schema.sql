@@ -1229,6 +1229,22 @@ ALTER TABLE ONLY gaming.rps_participants
 
 
 --
+-- Name: rps_games uq_rps_games_guest_bet_transfer_id; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_games
+    ADD CONSTRAINT uq_rps_games_guest_bet_transfer_id UNIQUE (guest_bet_transfer_id);
+
+
+--
+-- Name: rps_games uq_rps_games_host_bet_transfer_id; Type: CONSTRAINT; Schema: gaming; Owner: -
+--
+
+ALTER TABLE ONLY gaming.rps_games
+    ADD CONSTRAINT uq_rps_games_host_bet_transfer_id UNIQUE (host_bet_transfer_id);
+
+
+--
 -- Name: populated_places populated_places_pkey; Type: CONSTRAINT; Schema: gis; Owner: -
 --
 
@@ -2285,4 +2301,5 @@ INSERT INTO public.schema_migrations (version) VALUES
     ('20260228000001'),
     ('20260228000002'),
     ('20260402000001'),
-    ('20260420000001');
+    ('20260420000001'),
+    ('20260420000002');
