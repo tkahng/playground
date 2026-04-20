@@ -227,6 +227,79 @@ func TestBetting_NoPendingTransfers_AfterComplete_HostWins(t *testing.T) {
 	})
 }
 
+func TestBetting_NoPendingTransfers_AfterComplete_GuestWins(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		host := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("gwins_host@example.com"),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "gwins_host@example.com").ID),
+		)
+		guest := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("gwins_guest@example.com"),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "gwins_guest@example.com").ID),
+		)
+		mustFundPlayerWallet(t, ctx, adapter, ledger, host.UserID, 500)
+		mustFundPlayerWallet(t, ctx, adapter, ledger, guest.UserID, 500)
+
+		betAmount := int64(100)
+		// Host plays Rock; guest plays Paper → guest wins.
+		game, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      60 * 60 * 24,
+			BetAmount:            &betAmount,
+			HostUserID:           host.UserID,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame() error = %v", err)
+		}
+		if game.RpsGame.HostBetTransferID == nil {
+			t.Fatal("expected HostBetTransferID to be set after RequestGame with bet")
+		}
+
+		_, err = rpsService.RespondToGameRequest(ctx, &GameRequestResponse{
+			InvitedPlayerID: guest.ID,
+			GameID:          game.RpsGame.ID,
+			Status:          models.RpsGameStatusCompleted,
+			Move:            models.RpsParticipantMovePaper,
+		})
+		if err != nil {
+			t.Fatalf("RespondToGameRequest() error = %v", err)
+		}
+
+		pendingCount, err := ledger.CountTransfers(ctx, &stores.LedgerTransferFilter{
+			ReferenceIds: []uuid.UUID{game.RpsGame.ID},
+			Statuses:     []models.LedgerTransferStatus{models.LedgerTransferStatusPending},
+		})
+		if err != nil {
+			t.Fatalf("CountTransfers: %v", err)
+		}
+		if pendingCount != 0 {
+			t.Errorf("pending transfers after guest win = %d, want 0", pendingCount)
+		}
+
+		hostBal, err := ledger.GetUserBalance(ctx, *host.UserID)
+		if err != nil {
+			t.Fatalf("GetUserBalance host: %v", err)
+		}
+		guestBal, err := ledger.GetUserBalance(ctx, *guest.UserID)
+		if err != nil {
+			t.Fatalf("GetUserBalance guest: %v", err)
+		}
+		if hostBal != 400 {
+			t.Errorf("host balance = %d, want 400", hostBal)
+		}
+		if guestBal != 600 {
+			t.Errorf("guest balance = %d, want 600", guestBal)
+		}
+	})
+}
+
 func TestBetting_NoPendingTransfers_AfterComplete_Tie(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
