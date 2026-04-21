@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log/slog"
 	"time"
 
@@ -295,7 +294,7 @@ func (d *DbNotifier) NotifyTaskDueToday(ctx context.Context, taskID uuid.UUID) e
 	taskEndAtIsNow := isWithinPastHours(task.EndAt, 24*time.Hour)
 
 	if taskEndAtIsNow {
-		fmt.Println("task due today")
+		slog.DebugContext(ctx, "task due today", slog.String("task_id", task.ID.String()))
 		payload := notification.TaskDueTodayNotificationData{
 			TaskID:  task.ID,
 			DueDate: *task.EndAt,
@@ -321,7 +320,7 @@ func (d *DbNotifier) NotifyTaskDueToday(ctx context.Context, taskID uuid.UUID) e
 			notifyMemberIds = append(notifyMemberIds, *task.CreatedByMemberID)
 		}
 		if len(notifyMemberIds) == 0 {
-			fmt.Println("no members to notify")
+			slog.DebugContext(ctx, "no members to notify", slog.String("task_id", task.ID.String()))
 			return nil
 		}
 		notifyMembers, err := d.adapter.TeamMember().FindTeamMembers(ctx, &stores.TeamMemberFilter{
@@ -361,7 +360,7 @@ func (d *DbNotifier) NotifyTaskDueToday(ctx context.Context, taskID uuid.UUID) e
 			return err
 		}
 	} else {
-		fmt.Println("task is not due today")
+		slog.DebugContext(ctx, "task is not due today", slog.String("task_id", task.ID.String()))
 		return nil
 	}
 	return nil
@@ -380,7 +379,7 @@ func (d *DbNotifier) NotifyTaskCompleted(ctx context.Context, taskID uuid.UUID, 
 	}
 	// 2. check task end at is now
 
-	fmt.Println("task due today")
+	slog.DebugContext(ctx, "task completed, notifying", slog.String("task_id", taskID.String()))
 	payload := notification.TaskCompletedNotificationData{
 		TaskID:              taskID,
 		CompletedByMemberID: completedByMemberID,
@@ -407,7 +406,7 @@ func (d *DbNotifier) NotifyTaskCompleted(ctx context.Context, taskID uuid.UUID, 
 		notifyMemberIds = append(notifyMemberIds, *task.CreatedByMemberID)
 	}
 	if len(notifyMemberIds) == 0 {
-		fmt.Println("no members to notify")
+		slog.DebugContext(ctx, "no members to notify", slog.String("task_id", taskID.String()))
 		return nil
 	}
 	notifyMembers, err := d.adapter.TeamMember().FindTeamMembers(ctx, &stores.TeamMemberFilter{

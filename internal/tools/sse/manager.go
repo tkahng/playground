@@ -27,6 +27,8 @@ type manager struct {
 
 // Send implements Manager.
 func (m *manager) Send(channel string, data any) error {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	var errs []error
 	for c := range m.clients {
 		if c == nil {
@@ -48,6 +50,8 @@ func (m *manager) Send(channel string, data any) error {
 
 // SendAll implements Manager.
 func (m *manager) SendAll(data any) error {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
 	var errs []error
 	for c := range m.clients {
 		if err := c.Write(Message{Data: data}); err != nil {
