@@ -74,6 +74,7 @@ func (api *Api) TeamMembersSseEventsBind(humapi huma.API) {
 		map[string]any{
 			"task_completed":   &notification.NotificationPayload[notification.TaskCompletedNotificationData]{},
 			"task_due_today":   &notification.NotificationPayload[notification.TaskDueTodayNotificationData]{},
+			"task_overdue":     &notification.NotificationPayload[notification.TaskOverdueNotificationData]{},
 			"new_team_member":  &notification.NotificationPayload[notification.NewTeamMemberNotificationData]{},
 			"assigned_to_task": &notification.NotificationPayload[notification.AssignedToTaskNotificationData]{},
 			"ping":             &PingMessage{},

@@ -22,6 +22,7 @@ type Notifier interface {
 
 	NotifyTaskDueToday(ctx context.Context, taskID uuid.UUID) error
 	NotifyTaskCompleted(ctx context.Context, taskID uuid.UUID, completedByMemberID uuid.UUID, completedAt time.Time) error
+	NotifyTaskOverdue(ctx context.Context, taskID uuid.UUID) error
 }
 
 var _ Notifier = (*DbNotifier)(nil)
@@ -462,3 +463,94 @@ func NewTaskCompletedWorker(notifier Notifier) *TaskCompletedWorker {
 }
 
 var _ jobs.Worker[workers.TaskCompletedJobArgs] = (*TaskCompletedWorker)(nil)
+
+func (d *DbNotifier) NotifyTaskOverdue(ctx context.Context, taskID uuid.UUID) error {
+	task, err := d.adapter.Task().FindTaskByID(ctx, taskID)
+	if err != nil {
+		return err
+	}
+	if task == nil {
+		return errors.New("task not found")
+	}
+	if task.Status == models.TaskStatusDone {
+		slog.DebugContext(ctx, "task already done, skipping overdue notification", slog.String("task_id", taskID.String()))
+		return nil
+	}
+	if task.EndAt == nil || !time.Now().After(*task.EndAt) {
+		slog.DebugContext(ctx, "task not overdue", slog.String("task_id", taskID.String()))
+		return nil
+	}
+
+	payload := notification.TaskOverdueNotificationData{
+		TaskID:  task.ID,
+		DueDate: *task.EndAt,
+	}
+	notificationPayload := notification.NewNotificationPayload(
+		"Task is overdue.",
+		task.Name+" is overdue.",
+		payload,
+	)
+	notificationPayloadBytes, err := json.Marshal(notificationPayload)
+	if err != nil {
+		return err
+	}
+
+	var notifyMemberIds []uuid.UUID
+	if task.AssigneeID != nil {
+		notifyMemberIds = append(notifyMemberIds, *task.AssigneeID)
+	}
+	if task.ReporterID != nil {
+		notifyMemberIds = append(notifyMemberIds, *task.ReporterID)
+	}
+	if task.CreatedByMemberID != nil {
+		notifyMemberIds = append(notifyMemberIds, *task.CreatedByMemberID)
+	}
+	if len(notifyMemberIds) == 0 {
+		slog.DebugContext(ctx, "no members to notify for overdue task", slog.String("task_id", taskID.String()))
+		return nil
+	}
+
+	notifyMembers, err := d.adapter.TeamMember().FindTeamMembers(ctx, &stores.TeamMemberFilter{
+		Ids: notifyMemberIds,
+	})
+	if err != nil {
+		return err
+	}
+
+	var notifications []models.Notification
+	for _, member := range notifyMembers {
+		notifications = append(notifications, models.Notification{
+			TeamMemberID: &member.ID,
+			Channel:      "team_member_id:" + member.ID.String(),
+			Type:         payload.Kind(),
+			Payload:      notificationPayloadBytes,
+			Metadata:     map[string]any{},
+		})
+	}
+
+	_, err = d.adapter.Notification().InsertManyNotifications(ctx, notifications)
+	if err != nil {
+		return err
+	}
+	for _, n := range notifications {
+		memberID := *n.TeamMemberID
+		if sendErr := d.sseManager.Send("team_member_id:"+memberID.String(), notificationPayload); sendErr != nil {
+			slog.ErrorContext(ctx, "error sending overdue notification", slog.Any("error", sendErr))
+		}
+	}
+	return nil
+}
+
+type TaskOverdueWorker struct {
+	notifier Notifier
+}
+
+func (a *TaskOverdueWorker) Work(ctx context.Context, job *jobs.Job[workers.TaskOverdueJobArgs]) error {
+	return a.notifier.NotifyTaskOverdue(ctx, job.Args.TaskID)
+}
+
+func NewTaskOverdueWorker(notifier Notifier) *TaskOverdueWorker {
+	return &TaskOverdueWorker{notifier: notifier}
+}
+
+var _ jobs.Worker[workers.TaskOverdueJobArgs] = (*TaskOverdueWorker)(nil)

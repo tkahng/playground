@@ -258,6 +258,13 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 				if err != nil {
 					return nil, err
 				}
+				err = api.App().JobService().EnqueueTaskOverdueJob(ctx, &workers.TaskOverdueJobArgs{
+					TaskID:  task.ID,
+					DueDate: dueDate,
+				})
+				if err != nil {
+					return nil, err
+				}
 			}
 			newDoneStatus := previousStatus != task.Status && task.Status == models.TaskStatusDone
 			if newDoneStatus {

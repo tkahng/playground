@@ -22,6 +22,7 @@ type JobService interface {
 	EnqueueRefreshSubscriptionQuantityJob(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error
 	EnqueueOtpMailJob(ctx context.Context, args *workers.OtpEmailJobArgs) error
 	EnqueueTeamInvitationJob(ctx context.Context, args *workers.TeamInvitationJobArgs) error
+	EnqueueTaskOverdueJob(ctx context.Context, job *workers.TaskOverdueJobArgs) error
 	RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier, rpsGame workers.RpsGameExpiryServiceInterface)
 }
 
@@ -101,6 +102,17 @@ func (d *DbJobService) EnqueueTeamInvitationJob(ctx context.Context, args *worke
 	})
 }
 
+// EnqueueTaskOverdueJob implements JobService.
+func (d *DbJobService) EnqueueTaskOverdueJob(ctx context.Context, job *workers.TaskOverdueJobArgs) error {
+	uniqueKey := "task_overdue:" + job.TaskID.String()
+	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
+		Args:        job,
+		UniqueKey:   &uniqueKey,
+		RunAfter:    job.DueDate.Add(24 * time.Hour),
+		MaxAttempts: 3,
+	})
+}
+
 // RegisterWorkers implements JobService.
 func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier, rpsGame workers.RpsGameExpiryServiceInterface) {
 	jobs.RegisterWorker(d.manager, workers.NewOtpEmailWorker(mail))
@@ -111,6 +123,7 @@ func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService Payme
 	jobs.RegisterWorker(d.manager, NewAssignedToTaskWorker(notification))
 	jobs.RegisterWorker(d.manager, NewTaskDueTodayWorker(notification))
 	jobs.RegisterWorker(d.manager, NewTaskCompletedWorker(notification))
+	jobs.RegisterWorker(d.manager, NewTaskOverdueWorker(notification))
 	jobs.RegisterWorker(d.manager, workers.NewRpsGameExpiryWorker(rpsGame, d.manager))
 }
 
@@ -141,6 +154,7 @@ type JobServiceDecorator struct {
 	EnqueTaskDueJobFunc                       func(ctx context.Context, job *workers.TaskDueTodayJobArgs) error
 	EnqueueTaskCompletedJobFunc               func(ctx context.Context, job *workers.TaskCompletedJobArgs) error
 	EnqueueRpsGameInviteJobFunc               func(ctx context.Context, job *workers.RpsGameInvitationJobArgs) error
+	EnqueueTaskOverdueJobFunc                 func(ctx context.Context, job *workers.TaskOverdueJobArgs) error
 }
 
 // EnqueueRpsGameInviteJob implements [JobService].
@@ -236,6 +250,17 @@ func (j *JobServiceDecorator) EnqueueOtpMailJob(ctx context.Context, job *worker
 		return j.EnqueueOtpMailJobFunc(ctx, job)
 	}
 	return j.Delegate.EnqueueOtpMailJob(ctx, job)
+}
+
+// EnqueueTaskOverdueJob implements JobService.
+func (j *JobServiceDecorator) EnqueueTaskOverdueJob(ctx context.Context, job *workers.TaskOverdueJobArgs) error {
+	if j.EnqueueTaskOverdueJobFunc != nil {
+		return j.EnqueueTaskOverdueJobFunc(ctx, job)
+	}
+	if j.Delegate == nil {
+		return errors.New("delegate for EnqueueTaskOverdueJob in JobService is nil")
+	}
+	return j.Delegate.EnqueueTaskOverdueJob(ctx, job)
 }
 
 func NewJobServiceDecorator(enqueuer jobs.JobManager) *JobServiceDecorator {

@@ -413,6 +413,13 @@ func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *ApiCreate
 		if err != nil {
 			return nil, huma.Error500InternalServerError("Failed to create task project update date job")
 		}
+		err = api.App().JobService().EnqueueTaskOverdueJob(ctx, &workers.TaskOverdueJobArgs{
+			TaskID:  task.ID,
+			DueDate: taskDue,
+		})
+		if err != nil {
+			return nil, huma.Error500InternalServerError("Failed to enqueue task overdue job")
+		}
 	}
 	err = api.App().Adapter().Task().UpdateTaskProjectUpdateDate(ctx, parsedProjectID)
 	if err != nil {
