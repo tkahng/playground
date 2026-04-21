@@ -4,11 +4,18 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	pgxgeom "github.com/twpayne/pgx-geom"
+)
+
+var (
+	cachedCustomTypes     []*pgtype.Type
+	cachedCustomTypesOnce sync.Once
+	cachedCustomTypesErr  error
 )
 
 func CreatePool(ctx context.Context, connString string) (*pgxpool.Pool, error) {
@@ -37,24 +44,29 @@ func CreateNewQueriesContext(ctx context.Context, connString string) *Queries {
 }
 
 func CreatePoolWithCustomDataTypes(ctx context.Context, connString string) (*pgxpool.Pool, error) {
-	// Set up a new pool with the custom types and the config.
-	dbpool, err := CreatePool(ctx, connString)
+	config, err := pgxpool.ParseConfig(connString)
 	if err != nil {
 		return nil, err
 	}
-	config := dbpool.Config()
-	// Collect the custom data types once, store them in memory, and register them for every future connection.
-	customTypes, err := getCustomDataTypes(ctx, dbpool)
-	if err != nil {
-		return nil, err
+	// Load custom types once per process; subsequent pool creations reuse the cache.
+	cachedCustomTypesOnce.Do(func() {
+		conn, err := pgx.Connect(ctx, connString)
+		if err != nil {
+			cachedCustomTypesErr = err
+			return
+		}
+		cachedCustomTypes, cachedCustomTypesErr = getCustomDataTypes(ctx, conn)
+		conn.Close(ctx)
+	})
+	if cachedCustomTypesErr != nil {
+		return nil, cachedCustomTypesErr
 	}
 	config.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
 		_, err := conn.Exec(ctx, `SET search_path TO gis, public, postgis, "$user";`)
 		if err != nil {
 			return err
 		}
-		// var err error
-		for _, t := range customTypes {
+		for _, t := range cachedCustomTypes {
 			conn.TypeMap().RegisterType(t)
 		}
 		if err := pgxgeom.Register(ctx, conn); err != nil {
@@ -62,24 +74,14 @@ func CreatePoolWithCustomDataTypes(ctx context.Context, connString string) (*pgx
 		}
 		return nil
 	}
-	// Immediately close the old pool and open a new one with the new config.
-	dbpool.Close()
-	dbpool, err = pgxpool.NewWithConfig(ctx, config)
-	return dbpool, err
+	return pgxpool.NewWithConfig(ctx, config)
 }
 
 // Any custom DB types made with CREATE TYPE need to be registered with pgx.
 // https://github.com/kyleconroy/sqlc/issues/2116
 // https://stackoverflow.com/questions/75658429/need-to-update-psql-row-of-a-composite-type-in-golang-with-jack-pgx
 // https://pkg.go.dev/github.com/jackc/pgx/v5/pgtype
-func getCustomDataTypes(ctx context.Context, pool *pgxpool.Pool) ([]*pgtype.Type, error) {
-	// Get a single connection just to load type information.
-	conn, err := pool.Acquire(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer conn.Release()
-
+func getCustomDataTypes(ctx context.Context, conn *pgx.Conn) ([]*pgtype.Type, error) {
 	dataTypeNames := []string{
 		"auth.providers",
 		// An underscore prefix is an array type in pgtypes.
@@ -88,12 +90,12 @@ func getCustomDataTypes(ctx context.Context, pool *pgxpool.Pool) ([]*pgtype.Type
 
 	typesToRegister := []*pgtype.Type{}
 	for _, typeName := range dataTypeNames {
-		dataType, err := conn.Conn().LoadType(ctx, typeName)
+		dataType, err := conn.LoadType(ctx, typeName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load type %s: %v", typeName, err)
 		}
-		// You need to register only for this connection too, otherwise the array type will look for the register element type.
-		conn.Conn().TypeMap().RegisterType(dataType)
+		// Register on this connection too so array type can find element type.
+		conn.TypeMap().RegisterType(dataType)
 		typesToRegister = append(typesToRegister, dataType)
 	}
 	return typesToRegister, nil

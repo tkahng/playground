@@ -8,6 +8,7 @@ import (
 )
 
 func Test_taskStore_TaskWhere(t *testing.T) {
+	t.Parallel()
 	var id1 = uuid.New()
 	var id2 = uuid.New()
 	var id3 = uuid.New()
