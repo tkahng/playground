@@ -19,6 +19,7 @@ import (
 	"github.com/tkahng/playground/internal/test"
 )
 
+
 func Test_FindCurrentPlayersRpsGames(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := apis.SetupApi(t, ctx, db)
@@ -281,6 +282,287 @@ func Test_SendGameRequestToUnRegisteredPlayer_Success(t *testing.T) {
 		for _, scenario := range scenarios {
 			scenario.Test(t)
 		}
+	})
+}
+
+// --- Betting API tests ---
+
+func Test_RequestGame_WithBetAmount_Success(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		host := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		guest := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := services.NewDbLedgerService(adapter)
+
+		scenario := &apis.ApiScenario{
+			Name:           "request game with bet_amount",
+			Method:         http.MethodPost,
+			URL:            "/games/rps/requests",
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				if err := services.FulfillPointsPurchase(ctx, adapter, ledger, services.PointsPurchaseFulfillInput{
+					UserID:          *host.UserID,
+					PointsAmount:    500,
+					StripeSessionID: "cs_bet_request_host",
+				}); err != nil {
+					t.Fatalf("FulfillPointsPurchase() error = %v", err)
+				}
+				scenario.Headers = []string{core.CreateTokenHeader(t, app, host.Email)}
+				betAmount := int64(100)
+				body := &apis.RpsGameRequestInput{
+					Move:             apis.RpsParticipantMoveRock,
+					InvitingPlayerId: guest.ID,
+					BetAmount:        &betAmount,
+				}
+				data, _ := json.Marshal(body)
+				scenario.Body = strings.NewReader(string(data))
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
+				assert.NotNil(t, result.Data)
+				assert.NotNil(t, result.Data.RpsGame.BetAmount, "BetAmount should be set in response")
+				assert.Equal(t, int64(100), *result.Data.RpsGame.BetAmount)
+
+				// Host available balance should be reduced by the escrow hold.
+				avail, err := ledger.GetUserAvailableBalance(ctx, *host.UserID)
+				assert.NoError(t, err)
+				assert.Equal(t, int64(400), avail, "host available balance should be 400 after 100pt escrow hold")
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+func Test_RequestGame_WithBetAmount_InsufficientBalance(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		host := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		guest := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		scenario := &apis.ApiScenario{
+			Name:            "bet_amount exceeds host balance",
+			Method:          http.MethodPost,
+			URL:             "/games/rps/requests",
+			ExpectedStatus:  http.StatusInternalServerError,
+			ExpectedContent: []string{"insufficient available balance"},
+			TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				// No funds — wallet has 0 balance.
+				scenario.Headers = []string{core.CreateTokenHeader(t, app, host.Email)}
+				betAmount := int64(100)
+				body := &apis.RpsGameRequestInput{
+					Move:             apis.RpsParticipantMoveRock,
+					InvitingPlayerId: guest.ID,
+					BetAmount:        &betAmount,
+				}
+				data, _ := json.Marshal(body)
+				scenario.Body = strings.NewReader(string(data))
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+func Test_RequestGame_WithBetAmountZero_ValidationError(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		host := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		guest := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		scenario := &apis.ApiScenario{
+			Name:            "bet_amount=0 rejected by Huma minimum:1 validation",
+			Method:          http.MethodPost,
+			URL:             "/games/rps/requests",
+			ExpectedStatus:  http.StatusUnprocessableEntity,
+			ExpectedContent: []string{"expected number >= 1", "body.bet_amount"},
+			TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				scenario.Headers = []string{core.CreateTokenHeader(t, app, host.Email)}
+				betAmount := int64(0)
+				body := &apis.RpsGameRequestInput{
+					Move:             apis.RpsParticipantMoveRock,
+					InvitingPlayerId: guest.ID,
+					BetAmount:        &betAmount,
+				}
+				data, _ := json.Marshal(body)
+				scenario.Body = strings.NewReader(string(data))
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+func Test_SubmitMove_WithActiveBet_GuestWins(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		host := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		guest := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := services.NewDbLedgerService(adapter)
+
+		betAmount := int64(100)
+		var gameID string
+
+		scenario := &apis.ApiScenario{
+			Name:           "guest wins bet — balances settled correctly",
+			Method:         http.MethodPost,
+			URL:            "/games/rps/{game-id}/submit-move",
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				if err := services.FulfillPointsPurchase(ctx, adapter, ledger, services.PointsPurchaseFulfillInput{
+					UserID:          *host.UserID,
+					PointsAmount:    500,
+					StripeSessionID: "cs_submit_host",
+				}); err != nil {
+					t.Fatalf("FulfillPointsPurchase(host) error = %v", err)
+				}
+				if err := services.FulfillPointsPurchase(ctx, adapter, ledger, services.PointsPurchaseFulfillInput{
+					UserID:          *guest.UserID,
+					PointsAmount:    500,
+					StripeSessionID: "cs_submit_guest",
+				}); err != nil {
+					t.Fatalf("FulfillPointsPurchase(guest) error = %v", err)
+				}
+
+				// Create game with bet via service (host plays rock).
+				game, err := app.RpsGame().RequestGame(ctx, &services.RpsGameRequestInput{
+					RequestingPlayerID:   host.ID,
+					InvitedPlayerID:      guest.ID,
+					RequestingPlayerMove: models.RpsParticipantMoveRock,
+					DurationSeconds:      3 * 24 * 60 * 60,
+					BetAmount:            &betAmount,
+					HostUserID:           host.UserID,
+				})
+				if err != nil {
+					t.Fatalf("RequestGame() error = %v", err)
+				}
+				gameID = game.RpsGame.ID.String()
+
+				scenario.Headers = []string{core.CreateTokenHeader(t, app, guest.Email)}
+				scenario.URL = strings.ReplaceAll(scenario.URL, "{game-id}", gameID)
+				// Guest plays paper — wins.
+				body := &apis.SubmitMoveToGameInput{
+					Move:   apis.RpsParticipantMovePaper,
+					Status: apis.RpsGameStatusCompleted,
+				}
+				data, _ := json.Marshal(body)
+				scenario.Body = strings.NewReader(string(data))
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
+				assert.NotNil(t, result.Data)
+				assert.Equal(t, apis.RpsGameStatusCompleted, result.Data.RpsGame.Status)
+				assert.Equal(t, apis.RpsParticipantResultWin, result.Data.InvitedParticipant.Result)
+
+				// Guest wins: gains 100 (host's stake) → 600. Host loses 100 → 400.
+				hostBal, err := ledger.GetUserBalance(ctx, *host.UserID)
+				assert.NoError(t, err)
+				assert.Equal(t, int64(400), hostBal, "host balance after losing bet")
+
+				guestBal, err := ledger.GetUserBalance(ctx, *guest.UserID)
+				assert.NoError(t, err)
+				assert.Equal(t, int64(600), guestBal, "guest balance after winning bet")
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+func Test_SubmitMove_WithActiveBet_GuestInsufficientBalance(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		host := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		guest := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := services.NewDbLedgerService(adapter)
+
+		betAmount := int64(100)
+
+		scenario := &apis.ApiScenario{
+			Name:            "guest cannot afford bet — submit-move rejected",
+			Method:          http.MethodPost,
+			URL:             "/games/rps/{game-id}/submit-move",
+			ExpectedStatus:  http.StatusInternalServerError,
+			ExpectedContent: []string{"insufficient balance"},
+			TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				if err := services.FulfillPointsPurchase(ctx, adapter, ledger, services.PointsPurchaseFulfillInput{
+					UserID:          *host.UserID,
+					PointsAmount:    500,
+					StripeSessionID: "cs_nobalance_host",
+				}); err != nil {
+					t.Fatalf("FulfillPointsPurchase(host) error = %v", err)
+				}
+				// Guest has no funds.
+
+				game, err := app.RpsGame().RequestGame(ctx, &services.RpsGameRequestInput{
+					RequestingPlayerID:   host.ID,
+					InvitedPlayerID:      guest.ID,
+					RequestingPlayerMove: models.RpsParticipantMoveRock,
+					DurationSeconds:      3 * 24 * 60 * 60,
+					BetAmount:            &betAmount,
+					HostUserID:           host.UserID,
+				})
+				if err != nil {
+					t.Fatalf("RequestGame() error = %v", err)
+				}
+
+				scenario.Headers = []string{core.CreateTokenHeader(t, app, guest.Email)}
+				scenario.URL = strings.ReplaceAll(scenario.URL, "{game-id}", game.RpsGame.ID.String())
+				body := &apis.SubmitMoveToGameInput{
+					Move:   apis.RpsParticipantMovePaper,
+					Status: apis.RpsGameStatusCompleted,
+				}
+				data, _ := json.Marshal(body)
+				scenario.Body = strings.NewReader(string(data))
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+// Test_SendGameRequestToUnregisteredPlayer_NoBetSupport documents that the
+// unregistered-player invite path does not support bet_amount. UnregisteredPlayerInput
+// has no BetAmount field, and SendRpsGameRequestToUnregisteredPlayer never forwards
+// one to RequestGame. A game created via this endpoint always has bet_amount nil.
+func Test_SendGameRequestToUnregisteredPlayer_NoBetSupport(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		playerWithUser := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		unregisteredPlayer := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(false))
+
+		scenario := &apis.ApiScenario{
+			Name:           "unregistered-player invite never carries a bet",
+			Method:         http.MethodPost,
+			URL:            "/games/rps/requests/unregistered",
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				scenario.Headers = []string{core.CreateTokenHeader(t, app, playerWithUser.Email)}
+				body := &apis.UnregisteredPlayerInput{
+					Move:                apis.RpsParticipantMoveRock,
+					InvitingPlayerEmail: unregisteredPlayer.Email,
+				}
+				data, _ := json.Marshal(body)
+				scenario.Body = strings.NewReader(string(data))
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
+				if result.Data == nil {
+					t.Fatal("expected game in response")
+				}
+				if result.Data.RpsGame.BetAmount != nil {
+					t.Errorf("expected bet_amount nil on unregistered-player game, got %d", *result.Data.RpsGame.BetAmount)
+				}
+			},
+		}
+		scenario.Test(t)
 	})
 }
 

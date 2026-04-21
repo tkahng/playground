@@ -161,6 +161,29 @@ func (c *StripeClient) CreateCheckoutSession(customerId, priceId string, quantit
 	return session.New(sessionParams)
 }
 
+// CreatePointsCheckoutSession creates a Stripe Checkout session in "payment" mode for a one-time points purchase.
+// userID and pointsAmount are stored in the session metadata for webhook fulfillment.
+func (c *StripeClient) CreatePointsCheckoutSession(customerID, userID string, pointsAmount int64, priceID string) (*stripe.CheckoutSession, error) {
+	sessionParams := &stripe.CheckoutSessionParams{
+		Customer: stripe.String(customerID),
+		Mode:     stripe.String(string(stripe.CheckoutSessionModePayment)),
+		LineItems: []*stripe.CheckoutSessionLineItemParams{
+			{
+				Price:    stripe.String(priceID),
+				Quantity: stripe.Int64(1),
+			},
+		},
+		Metadata: map[string]string{
+			"purchase_type": "points",
+			"user_id":       userID,
+			"points_amount": fmt.Sprintf("%d", pointsAmount),
+		},
+		SuccessURL: stripe.String(c.config.StripeAppUrl + "/payment/points-success?sessionId={CHECKOUT_SESSION_ID}"),
+		CancelURL:  stripe.String(c.config.StripeAppUrl + "/payment/cancel"),
+	}
+	return session.New(sessionParams)
+}
+
 func (c *StripeClient) CreatePortalConfiguration(input ...*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams) (string, error) {
 	prods := []*stripe.BillingPortalConfigurationFeaturesSubscriptionUpdateProductParams{}
 	for _, i := range input {

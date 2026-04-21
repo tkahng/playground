@@ -27,6 +27,7 @@ func NewAdapterDecorators() *StorageAdapterDecorator {
 		UserReactionFunc:   &DbUserReactionStoreDectorator{},
 		GamingFunc:         &DbGamingStoreDecorator{},
 		GisFunc:            &DBGisStoreDecorator{},
+		LedgerFunc:         &DbLedgerStoreDecorator{},
 	}
 }
 
@@ -52,6 +53,7 @@ func NewDbAdapterDecorators(db database.Dbx) *StorageAdapterDecorator {
 		},
 		UserReactionFunc: NewDbUserReactionStoreDectorator(db),
 		GisFunc:          NewDBGisStoreDecorator(db),
+		LedgerFunc:       NewDbLedgerStoreDecorator(db),
 	}
 }
 
@@ -113,6 +115,7 @@ type StorageAdapterDecorator struct {
 	GamingFunc         *DbGamingStoreDecorator
 	UserReactionFunc   *DbUserReactionStoreDectorator
 	GisFunc            *DBGisStoreDecorator
+	LedgerFunc         *DbLedgerStoreDecorator
 }
 
 // Gis implements [StorageAdapterInterface].
@@ -121,6 +124,14 @@ func (s *StorageAdapterDecorator) Gis() GisStore {
 		return s.GisFunc
 	}
 	return s.Delegate.Gis()
+}
+
+// Ledger implements [StorageAdapterInterface].
+func (s *StorageAdapterDecorator) Ledger() LedgerStore {
+	if s.LedgerFunc != nil {
+		return s.LedgerFunc
+	}
+	return s.Delegate.Ledger()
 }
 
 // Gaming implements [StorageAdapterInterface].

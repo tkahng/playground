@@ -11,12 +11,12 @@ import (
 	"github.com/tkahng/playground/internal/userreaction"
 )
 
-type Assembler struct {
-}
+type Assembler struct{}
 
 func NewAssembler() *Assembler {
 	return &Assembler{}
 }
+
 func (a *Assembler) AssembleApp(app *BaseApp) {
 	a.configure(app)
 	a.setDatasource(app)
@@ -71,7 +71,12 @@ func (a *Assembler) configure(app *BaseApp) {
 
 // registerWorkers implements Initiator.
 func (a *Assembler) registerWorkers(app *BaseApp) {
-	app.JobService().RegisterWorkers(app.mailService, app.Payment(), app.NotificationPublisher())
+	app.JobService().RegisterWorkers(
+		app.mailService,
+		app.Payment(),
+		app.NotificationPublisher(),
+		app.RpsGame(),
+	)
 }
 
 // setBasicServices implements Initiator.
@@ -81,7 +86,9 @@ func (a *Assembler) setBasicServices(app *BaseApp) {
 
 	adapter := app.Adapter()
 	dbx := app.Db()
-	app.rpsGame = services.NewDbRpsGameService(adapter)
+	app.ledger = services.NewDbLedgerService(adapter)
+	app.betting = services.NewDbBettingService(adapter, app.ledger)
+	app.rpsGame = services.NewDbRpsGameService(adapter, app.betting)
 	app.hash = services.NewHashService()
 	app.encrypt = services.NewCrypto(cfg.EncryptionKey)
 	app.jwt = services.NewJwtService()

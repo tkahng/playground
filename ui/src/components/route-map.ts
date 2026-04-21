@@ -16,6 +16,7 @@ export const RouteMap = {
   ACCOUNT_OVERVIEW_TEAMS_INVITATION: "/account/teams-invitations",
   SETTINGS: "/account/settings",
   BILLING_SETTINGS: "/account/settings/billing",
+  POINTS_SETTINGS: "/account/settings/points",
 
   SIGNIN: "/signin",
   SIGNUP: "/signup",

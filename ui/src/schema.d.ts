@@ -923,6 +923,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/ledger/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get points balance
+         * @description Returns the settled balance and available balance (settled minus pending holds) for the current user.
+         */
+        get: operations["get-ledger-balance"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ledger/points/checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * create points purchase checkout
+         * @description Creates a Stripe Checkout URL for purchasing points. The points are credited to the user's wallet after the Stripe webhook confirms payment.
+         */
+        post: operations["create-points-checkout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ledger/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get points transaction history
+         * @description Returns a paginated list of ledger transfers for the current user.
+         */
+        get: operations["get-ledger-transactions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/ledger/wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * create points wallet
+         * @description Creates the points wallet for the current user. Idempotent — returns the existing wallet if one already exists.
+         */
+        post: operations["create-ledger-wallet"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/media": {
         parameters: {
             query?: never;
@@ -1985,6 +2065,16 @@ export interface components {
             data: components["schemas"]["Job"][] | null;
             meta: components["schemas"]["Meta"];
         };
+        ApiPaginatedResponseLedgerTransfer: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponseLedgerTransfer.json
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["LedgerTransfer"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
         ApiPaginatedResponseMedia: {
             /**
              * Format: uri
@@ -2229,6 +2319,15 @@ export interface components {
             password: string;
             token: string;
         };
+        "Create-points-checkoutResponse": {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/Create-points-checkoutResponse.json
+             */
+            readonly $schema?: string;
+            url: string;
+        };
         CreateTaskProjectTaskDTO: {
             description?: string;
             name: string;
@@ -2405,6 +2504,67 @@ export interface components {
         };
         LatestUserReactionStatsSseEvent: {
             user_reaction_stats: components["schemas"]["UserReactionStats"];
+        };
+        LedgerAccount: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/LedgerAccount.json
+             */
+            readonly $schema?: string;
+            code: string;
+            constraints: string[] | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: int64 */
+            credits_pending: number;
+            /** Format: int64 */
+            credits_posted: number;
+            /** Format: int64 */
+            debits_pending: number;
+            /** Format: int64 */
+            debits_posted: number;
+            entity_id?: string;
+            entity_type: string;
+            id: string;
+            ledger_code: string;
+            metadata: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        LedgerBalanceOutputBody: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/LedgerBalanceOutputBody.json
+             */
+            readonly $schema?: string;
+            /** Format: int64 */
+            available_balance: number;
+            /** Format: int64 */
+            balance: number;
+        };
+        LedgerTransfer: {
+            /** Format: int64 */
+            amount: number;
+            /** Format: date-time */
+            created_at: string;
+            credit_account?: components["schemas"]["LedgerAccount"];
+            credit_account_id: string;
+            debit_account?: components["schemas"]["LedgerAccount"];
+            debit_account_id: string;
+            id: string;
+            ledger_code: string;
+            metadata: string;
+            pending_id?: string;
+            reference_id?: string;
+            reference_type?: string;
+            status: string;
+            /** Format: date-time */
+            timeout_at?: string;
+            transfer_code: string;
+            /** Format: date-time */
+            updated_at: string;
         };
         Media: {
             /** Format: date-time */
@@ -2591,6 +2751,16 @@ export interface components {
             user?: components["schemas"]["ApiUser"];
             user_id?: string;
         };
+        PointsCheckoutInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/PointsCheckoutInput.json
+             */
+            readonly $schema?: string;
+            /** @description Stripe price ID for the points package. */
+            price_id: string;
+        };
         ReactionByCountry: {
             country: string;
             /** Format: int64 */
@@ -2653,6 +2823,11 @@ export interface components {
             role_ids: string[] | null;
         };
         RpsGame: {
+            /**
+             * Format: int64
+             * @description Optional points wager. If set, the host must have sufficient balance.
+             */
+            bet_amount?: number;
             /** Format: date-time */
             completed_at?: string;
             /** Format: date-time */
@@ -2677,6 +2852,11 @@ export interface components {
              * @example http://localhost:8080/schemas/RpsGameRequestInput.json
              */
             readonly $schema?: string;
+            /**
+             * Format: int64
+             * @description Optional points wager. If set, the host must have sufficient balance.
+             */
+            bet_amount?: number;
             /** Format: uuid */
             inviting_player_id: string;
             /** @enum {string} */
@@ -3852,6 +4032,7 @@ export interface operations {
                 q?: string;
                 ids?: string[] | null;
                 active?: boolean;
+                metadata_type?: "subscription" | "points";
             };
             header?: never;
             path?: never;
@@ -5267,21 +5448,7 @@ export interface operations {
             /** @description OK */
             200: {
                 headers: {
-                    Domain?: string;
-                    Expires?: string;
-                    HttpOnly?: boolean;
-                    MaxAge?: number;
-                    Name?: string;
-                    Partitioned?: boolean;
-                    Path?: string;
-                    Quoted?: boolean;
-                    Raw?: string;
-                    RawExpires?: string;
-                    SameSite?: number;
-                    Secure?: boolean;
                     "Set-Cookie"?: string;
-                    Unparsed?: string;
-                    Value?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -5737,21 +5904,7 @@ export interface operations {
             /** @description OK */
             200: {
                 headers: {
-                    Domain?: string;
-                    Expires?: string;
-                    HttpOnly?: boolean;
-                    MaxAge?: number;
-                    Name?: string;
-                    Partitioned?: boolean;
-                    Path?: string;
-                    Quoted?: boolean;
-                    Raw?: string;
-                    RawExpires?: string;
-                    SameSite?: number;
-                    Secure?: boolean;
                     "Set-Cookie"?: string;
-                    Unparsed?: string;
-                    Value?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -5888,21 +6041,7 @@ export interface operations {
             /** @description OK */
             200: {
                 headers: {
-                    Domain?: string;
-                    Expires?: string;
-                    HttpOnly?: boolean;
-                    MaxAge?: number;
-                    Name?: string;
-                    Partitioned?: boolean;
-                    Path?: string;
-                    Quoted?: boolean;
-                    Raw?: string;
-                    RawExpires?: string;
-                    SameSite?: number;
-                    Secure?: boolean;
                     "Set-Cookie"?: string;
-                    Unparsed?: string;
-                    Value?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6012,21 +6151,7 @@ export interface operations {
             /** @description OK */
             200: {
                 headers: {
-                    Domain?: string;
-                    Expires?: string;
-                    HttpOnly?: boolean;
-                    MaxAge?: number;
-                    Name?: string;
-                    Partitioned?: boolean;
-                    Path?: string;
-                    Quoted?: boolean;
-                    Raw?: string;
-                    RawExpires?: string;
-                    SameSite?: number;
-                    Secure?: boolean;
                     "Set-Cookie"?: string;
-                    Unparsed?: string;
-                    Value?: string;
                     [name: string]: unknown;
                 };
                 content: {
@@ -6416,6 +6541,195 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-ledger-balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LedgerBalanceOutputBody"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "create-points-checkout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PointsCheckoutInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Create-points-checkoutResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-ledger-transactions": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+                transfer_codes?: string[] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiPaginatedResponseLedgerTransfer"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "create-ledger-wallet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LedgerAccount"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7011,6 +7325,7 @@ export interface operations {
                 per_page?: number;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
+                metadata_type?: "subscription" | "points";
             };
             header?: never;
             path?: never;

@@ -8,6 +8,9 @@
     "build": "tsc -b && vite build && touch ./dist/.gitkeep",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "preview": "vite preview",
     "generate:schema": "openapi-typescript http://localhost:8080/openapi.yaml -o ./src/schema.d.ts",
     "ui:add": "npx shadcn@latest add"
@@ -55,18 +58,24 @@
   "devDependencies": {
     "@eslint/js": "9.39.1",
     "@tanstack/eslint-plugin-query": "^5.71.5",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.13.14",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
     "@types/react-router-hash-link": "^2.4.9",
     "@vitejs/plugin-react": "5.1.1",
+    "@vitest/coverage-v8": "^4.1.4",
     "eslint": "9.39.1",
     "eslint-plugin-react-hooks": "7.0.1",
     "eslint-plugin-react-refresh": "0.4.24",
     "globals": "^15.15.0",
+    "jsdom": "^29.0.2",
     "openapi-typescript": "^7.10.1",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.24.1",
-    "vite": "7.2.6"
+    "vite": "7.2.6",
+    "vitest": "^4.1.4"
   }
 }

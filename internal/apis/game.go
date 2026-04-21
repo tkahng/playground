@@ -54,6 +54,7 @@ type RpsGame struct {
 	Metadata     []byte            `db:"metadata" json:"metadata"`
 	CreatedAt    time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt    time.Time         `db:"updated_at" json:"updated_at"`
+	BetAmount    *int64            `json:"bet_amount,omitempty" doc:"Optional points wager. If set, the host must have sufficient balance."`
 	Participants []*RpsParticipant `db:"rps_participants" src:"id" dest:"game_id" table:"gaming.rps_participants" json:"participants,omitempty"`
 }
 
@@ -82,6 +83,7 @@ func toApiRpsGame(game *models.RpsGame) *RpsGame {
 		Metadata:     game.Metadata,
 		CreatedAt:    game.CreatedAt,
 		UpdatedAt:    game.UpdatedAt,
+		BetAmount:    game.BetAmount,
 		Participants: mapper.Map(game.Participants, ToApiRpsParticipant),
 	}
 }

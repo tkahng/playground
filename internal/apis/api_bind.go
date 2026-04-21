@@ -33,6 +33,8 @@ func bindApis(appApi *Api) {
 	bindUserReactionApi(appApi)
 	// bind game api
 	bindGameApi(appApi)
+	// bind ledger api
+	bindLedgerApi(appApi.Api(), appApi.App())
 }
 func bindMiddlewares(api API) {
 	api.Api().UseMiddleware(humamiddleware.HumaOperationSecurityMiddleware())

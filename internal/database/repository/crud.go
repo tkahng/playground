@@ -93,6 +93,9 @@ var (
 		UuidV7Generator,
 	)
 	PopulatedPlaceBuilder = NewSQLBuilder[models.PopulatedPlace]()
+
+	LedgerAccountBuilder  = NewSQLBuilder[models.LedgerAccount](UuidV7Generator)
+	LedgerTransferBuilder = NewSQLBuilder[models.LedgerTransfer](UuidV7Generator)
 )
 
 var (
@@ -126,4 +129,7 @@ var (
 	RpsParticipant     Repository[models.RpsParticipant]     = NewPostgresRepository(RpsParticipantBuilder)
 	RpsGameInvite      Repository[models.RpsGameInvite]      = NewPostgresRepository(RpsGameInviteBuilder)
 	PopulatedPlace     Repository[models.PopulatedPlace]     = NewPostgresRepository(PopulatedPlaceBuilder)
+
+	LedgerAccount  Repository[models.LedgerAccount]  = NewPostgresRepository(LedgerAccountBuilder)
+	LedgerTransfer Repository[models.LedgerTransfer] = NewPostgresRepository(LedgerTransferBuilder)
 )
