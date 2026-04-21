@@ -64,8 +64,10 @@ func (d *DbJobService) EnqueTaskDueJob(ctx context.Context, job *workers.TaskDue
 
 // EnqueAssignedToTaskJob implements JobService.
 func (d *DbJobService) EnqueAssignedToTaskJob(ctx context.Context, job *workers.AssignedToTasJobArgs) error {
+	uniqueKey := "assigned_to_task:" + job.TaskID.String() + ":" + job.AssigneeMemberID.String()
 	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
 		Args:        job,
+		UniqueKey:   &uniqueKey,
 		RunAfter:    time.Now(),
 		MaxAttempts: 3,
 	})
