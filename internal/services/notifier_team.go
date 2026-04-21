@@ -24,6 +24,7 @@ type Notifier interface {
 	NotifyTaskCompleted(ctx context.Context, taskID uuid.UUID, completedByMemberID uuid.UUID, completedAt time.Time) error
 	NotifyTaskOverdue(ctx context.Context, taskID uuid.UUID) error
 	NotifyTaskStatusChanged(ctx context.Context, taskID uuid.UUID, oldStatus string, newStatus string, changedByMemberID uuid.UUID) error
+	NotifyProjectStatusChanged(ctx context.Context, projectID uuid.UUID, oldStatus string, newStatus string, changedByMemberID uuid.UUID) error
 }
 
 var _ Notifier = (*DbNotifier)(nil)
@@ -640,3 +641,88 @@ func NewTaskStatusChangedWorker(notifier Notifier) *TaskStatusChangedWorker {
 }
 
 var _ jobs.Worker[workers.TaskStatusChangedJobArgs] = (*TaskStatusChangedWorker)(nil)
+
+func (d *DbNotifier) NotifyProjectStatusChanged(ctx context.Context, projectID uuid.UUID, oldStatus string, newStatus string, changedByMemberID uuid.UUID) error {
+	project, err := d.adapter.Task().FindTaskProjectByID(ctx, projectID)
+	if err != nil {
+		return err
+	}
+	if project == nil {
+		return errors.New("project not found")
+	}
+
+	payload := notification.ProjectStatusChangedNotificationData{
+		ProjectID:         project.ID,
+		OldStatus:         oldStatus,
+		NewStatus:         newStatus,
+		ChangedByMemberID: changedByMemberID,
+	}
+	notificationPayload := notification.NewNotificationPayload(
+		"Project status changed.",
+		project.Name+" status changed from "+oldStatus+" to "+newStatus+".",
+		payload,
+	)
+	notificationPayloadBytes, err := json.Marshal(notificationPayload)
+	if err != nil {
+		return err
+	}
+
+	var notifyMemberIds []uuid.UUID
+	if project.AssigneeID != nil {
+		notifyMemberIds = append(notifyMemberIds, *project.AssigneeID)
+	}
+	if project.ReporterID != nil {
+		notifyMemberIds = append(notifyMemberIds, *project.ReporterID)
+	}
+	if project.CreatedByMemberID != nil {
+		notifyMemberIds = append(notifyMemberIds, *project.CreatedByMemberID)
+	}
+	if len(notifyMemberIds) == 0 {
+		slog.DebugContext(ctx, "no members to notify for project status change", slog.String("project_id", projectID.String()))
+		return nil
+	}
+
+	notifyMembers, err := d.adapter.TeamMember().FindTeamMembers(ctx, &stores.TeamMemberFilter{
+		Ids: notifyMemberIds,
+	})
+	if err != nil {
+		return err
+	}
+
+	var notifications []models.Notification
+	for _, member := range notifyMembers {
+		notifications = append(notifications, models.Notification{
+			TeamMemberID: &member.ID,
+			Channel:      "team_member_id:" + member.ID.String(),
+			Type:         payload.Kind(),
+			Payload:      notificationPayloadBytes,
+			Metadata:     map[string]any{},
+		})
+	}
+
+	_, err = d.adapter.Notification().InsertManyNotifications(ctx, notifications)
+	if err != nil {
+		return err
+	}
+	for _, n := range notifications {
+		memberID := *n.TeamMemberID
+		if sendErr := d.sseManager.Send("team_member_id:"+memberID.String(), notificationPayload); sendErr != nil {
+			slog.ErrorContext(ctx, "error sending project status changed notification", slog.Any("error", sendErr))
+		}
+	}
+	return nil
+}
+
+type ProjectStatusChangedWorker struct {
+	notifier Notifier
+}
+
+func (a *ProjectStatusChangedWorker) Work(ctx context.Context, job *jobs.Job[workers.ProjectStatusChangedJobArgs]) error {
+	return a.notifier.NotifyProjectStatusChanged(ctx, job.Args.ProjectID, job.Args.OldStatus, job.Args.NewStatus, job.Args.ChangedByMemberID)
+}
+
+func NewProjectStatusChangedWorker(notifier Notifier) *ProjectStatusChangedWorker {
+	return &ProjectStatusChangedWorker{notifier: notifier}
+}
+
+var _ jobs.Worker[workers.ProjectStatusChangedJobArgs] = (*ProjectStatusChangedWorker)(nil)
