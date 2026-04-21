@@ -9,6 +9,7 @@ import (
 )
 
 func TestJwtService_CreateJwtToken(t *testing.T) {
+	t.Parallel()
 	service := NewJwtService()
 	claims := jwt.MapClaims{"type": "access_token", "foo": "bar"}
 	token, err := service.CreateJwtToken(claims, "secret")
@@ -17,6 +18,7 @@ func TestJwtService_CreateJwtToken(t *testing.T) {
 }
 
 func TestJwtService_ParseToken_InvalidToken(t *testing.T) {
+	t.Parallel()
 	service := NewJwtService()
 	var data map[string]interface{}
 	err := service.ParseToken("invalid.token", conf.TokenOption{Secret: "secret", Type: "access_token"}, &data)
