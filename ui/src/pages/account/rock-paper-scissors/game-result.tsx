@@ -9,6 +9,8 @@ interface GameResultProps {
   opponent: string;
   playerMove: Move;
   opponentMove: Move;
+  betAmount?: number;
+  betResult?: Result;
 }
 
 const moveEmojis: Record<Move, string> = {
@@ -46,6 +48,8 @@ export function GameResult({
   opponent,
   playerMove,
   opponentMove,
+  betAmount,
+  betResult,
 }: GameResultProps) {
   const config = resultConfig[result];
   const Icon = config.icon;
@@ -104,6 +108,42 @@ export function GameResult({
           </div>
         </div>
       </Card>
+
+      {/* Bet Outcome */}
+      {betAmount !== undefined && betResult !== undefined && (
+        <Card
+          className={`p-6 text-center ${
+            betResult === "win"
+              ? "bg-success/10 border-success/30"
+              : betResult === "lose"
+                ? "bg-destructive/10 border-destructive/30"
+                : "bg-muted/50"
+          }`}
+        >
+          <p className="text-sm text-muted-foreground mb-1">
+            {betResult === "win"
+              ? "Bet won"
+              : betResult === "lose"
+                ? "Bet lost"
+                : "Bet refunded"}
+          </p>
+          <p
+            className={`text-3xl font-bold ${
+              betResult === "win"
+                ? "text-success"
+                : betResult === "lose"
+                  ? "text-destructive"
+                  : "text-muted-foreground"
+            }`}
+          >
+            {betResult === "win"
+              ? `+${betAmount} pts`
+              : betResult === "lose"
+                ? `−${betAmount} pts`
+                : `${betAmount} pts`}
+          </p>
+        </Card>
+      )}
     </div>
   );
 }

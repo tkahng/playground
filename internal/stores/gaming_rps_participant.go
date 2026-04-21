@@ -140,7 +140,14 @@ func (s *DBGamingStore) FindRpsParticipant(ctx context.Context, filter *RpsParti
 func (s *DBGamingStore) CountRpsParticipants(ctx context.Context, filter *RpsParticipantFilter) (int64, error) {
 	q := squirrel.Select("COUNT(*)").From("gaming.rps_participants")
 	q = rpsParticipantsFilterSelect(q, filter)
-	return database.ExecWithBuilder(ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	c, err := database.QueryWithBuilder[database.CountOutput](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	if err != nil {
+		return 0, err
+	}
+	if len(c) == 0 {
+		return 0, nil
+	}
+	return c[0].Count, nil
 }
 
 // CreateParticipant

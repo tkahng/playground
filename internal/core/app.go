@@ -31,6 +31,10 @@ type App interface {
 
 	// gaming
 	RpsGame() services.RpsGameService
+
+	// ledger / betting
+	Ledger() services.LedgerService
+	Betting() services.BettingService
 	// jobs -------------------------------------------------------------------------------------
 
 	JobManager() jobs.JobManager

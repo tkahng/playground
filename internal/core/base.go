@@ -2,7 +2,6 @@ package core
 
 import (
 	"context"
-
 	"log/slog"
 
 	"github.com/tkahng/playground/internal/auth"
@@ -12,6 +11,7 @@ import (
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/workers"
 	"github.com/tkahng/playground/internal/token"
 
 	"github.com/tkahng/playground/internal/tools/filesystem"
@@ -63,6 +63,8 @@ type BaseApp struct {
 	eventManager events.EventManager
 
 	rpsGame services.RpsGameService
+	ledger  services.LedgerService
+	betting services.BettingService
 }
 
 // RpsGame implements [App].
@@ -71,6 +73,22 @@ func (b *BaseApp) RpsGame() services.RpsGameService {
 		panic("rps game not initialized")
 	}
 	return b.rpsGame
+}
+
+// Ledger implements [App].
+func (b *BaseApp) Ledger() services.LedgerService {
+	if b.ledger == nil {
+		panic("ledger service not initialized")
+	}
+	return b.ledger
+}
+
+// Betting implements [App].
+func (b *BaseApp) Betting() services.BettingService {
+	if b.betting == nil {
+		panic("betting service not initialized")
+	}
+	return b.betting
 }
 
 func (b *BaseApp) Encrypt() services.Encryptor {
@@ -299,6 +317,9 @@ func (app *BaseApp) RunBackgroundProcesses(firstCtx context.Context) {
 			return
 		}
 	}()
+	if err := workers.SeedRpsGameExpiryJob(firstCtx, app.JobManager()); err != nil {
+		app.Logger().ErrorContext(firstCtx, "failed to seed rps expiry job", slog.Any("error", err))
+	}
 }
 
 func NewApp(config *conf.EnvConfig) *BaseApp {
