@@ -13,30 +13,42 @@ type item struct {
 
 // You can have a single map for an application or few maps for different purposes
 type TTLMap struct {
-	m map[string]*item
-	// For safe access to the map
-	mu sync.Mutex
+	m    map[string]*item
+	mu   sync.Mutex
+	stop chan struct{}
 }
 
-func New(size int, maxTTL int) (m *TTLMap) {
-	// map is created with the given length
-	m = &TTLMap{m: make(map[string]*item, size)}
+func New(size int, maxTTL int) *TTLMap {
+	m := &TTLMap{
+		m:    make(map[string]*item, size),
+		stop: make(chan struct{}),
+	}
 
-	// this goroutine will clean up the map from old items
+	ticker := time.NewTicker(time.Second)
 	go func() {
-		// You can adjust this ticker to be more or less frequent
-		for now := range time.Tick(time.Second) {
-			m.mu.Lock()
-			for k, v := range m.m {
-				if now.Unix()-v.lastAccess > int64(maxTTL) {
-					delete(m.m, k)
+		defer ticker.Stop()
+		for {
+			select {
+			case now := <-ticker.C:
+				m.mu.Lock()
+				for k, v := range m.m {
+					if now.Unix()-v.lastAccess > int64(maxTTL) {
+						delete(m.m, k)
+					}
 				}
+				m.mu.Unlock()
+			case <-m.stop:
+				return
 			}
-			m.mu.Unlock()
 		}
 	}()
 
-	return
+	return m
+}
+
+// Close stops the background cleanup goroutine.
+func (m *TTLMap) Close() {
+	close(m.stop)
 }
 
 // Put adds a new item to the map or updates the existing one

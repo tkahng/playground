@@ -79,7 +79,7 @@ func (t *TeamServiceImpl) ProcessSlug(ctx context.Context, teamSlug string, team
 		return randomSlug, nil
 	}
 	uuidSlug := uuid.NewString()
-	uuidSlugTeam, err := t.adapter.TeamGroup().FindTeamBySlug(ctx, randomSlug)
+	uuidSlugTeam, err := t.adapter.TeamGroup().FindTeamBySlug(ctx, uuidSlug)
 	if err != nil {
 		return "", err
 	}

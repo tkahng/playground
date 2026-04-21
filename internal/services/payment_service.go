@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"log/slog"
 	"strconv"
 
@@ -345,9 +344,9 @@ func (srv *StripeService) Client() PaymentClient {
 }
 
 func (srv *StripeService) SyncPerms(ctx context.Context) error {
-	var err error
+	var errs []error
 	for productId, permission := range shared.StripeProductPermissionMap {
-		err = func() error {
+		err := func() error {
 			product, err := srv.adapter.Product().FindProduct(ctx, &stores.StripeProductFilter{
 				Ids: []string{productId},
 			})
@@ -366,17 +365,20 @@ func (srv *StripeService) SyncPerms(ctx context.Context) error {
 			}
 			return srv.adapter.Rbac().CreateProductPermissions(ctx, product.ID, perm.ID)
 		}()
+		if err != nil {
+			errs = append(errs, err)
+		}
 	}
-	return err
+	return errors.Join(errs...)
 }
 
 func (srv *StripeService) UpsertPriceProductFromStripe(ctx context.Context) error {
 	if err := srv.FindAndUpsertAllProducts(ctx); err != nil {
-		fmt.Println(err)
+		srv.logger.Error("error upserting products", "error", err)
 		return err
 	}
 	if err := srv.FindAndUpsertAllPrices(ctx); err != nil {
-		fmt.Println(err)
+		srv.logger.Error("error upserting prices", "error", err)
 		return err
 	}
 	return nil
@@ -629,7 +631,7 @@ func (srv *StripeService) CreateBillingPortalSession(ctx context.Context, stripe
 	}
 	url, err := srv.client.CreateBillingPortalSession(stripeCustomerId, config, returnUrl)
 	if err != nil {
-		log.Println(err)
+		srv.logger.Error("error creating billing portal session", "error", err)
 		return "", errors.New("failed to create checkout session")
 	}
 	if url == nil {

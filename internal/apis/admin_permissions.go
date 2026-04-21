@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
@@ -147,7 +146,6 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	PermissionsListParams
 }) (*ApiPaginatedOutput[*Permission], error) {
 	store := api.App().Adapter().Rbac()
-	fmt.Println(input)
 	filter := new(stores.PermissionFilter)
 	filter.Page = input.Page
 	filter.PerPage = input.PerPage
