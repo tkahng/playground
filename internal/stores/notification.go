@@ -234,7 +234,7 @@ func (n *NotificationStoreDecorator) CountNotification(ctx context.Context, args
 
 // InsertManyNotifications implements NotificationStore.
 func (n *NotificationStoreDecorator) InsertManyNotifications(ctx context.Context, notifications []models.Notification) (int64, error) {
-	if n.CreateFunc != nil {
+	if n.CreateManyFunc != nil {
 		return n.CreateManyFunc(ctx, notifications)
 	}
 	if n.Delegate == nil {

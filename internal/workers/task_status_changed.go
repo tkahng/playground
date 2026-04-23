@@ -1,9 +1,6 @@
 package workers
 
-import (
-	"github.com/google/uuid"
-	"github.com/tkahng/playground/internal/jobs"
-)
+import "github.com/google/uuid"
 
 type TaskStatusChangedJobArgs struct {
 	TaskID            uuid.UUID `json:"task_id" required:"true"`
@@ -16,4 +13,3 @@ func (j TaskStatusChangedJobArgs) Kind() string {
 	return "task_status_changed"
 }
 
-type TaskStatusChangedWorker jobs.Worker[TaskStatusChangedJobArgs]

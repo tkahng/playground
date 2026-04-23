@@ -1,9 +1,6 @@
 package workers
 
-import (
-	"github.com/google/uuid"
-	"github.com/tkahng/playground/internal/jobs"
-)
+import "github.com/google/uuid"
 
 type ProjectStatusChangedJobArgs struct {
 	ProjectID         uuid.UUID `json:"project_id" required:"true"`
@@ -16,4 +13,3 @@ func (j ProjectStatusChangedJobArgs) Kind() string {
 	return "project_status_changed"
 }
 
-type ProjectStatusChangedWorker jobs.Worker[ProjectStatusChangedJobArgs]
