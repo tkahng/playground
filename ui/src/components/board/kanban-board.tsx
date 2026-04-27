@@ -27,29 +27,20 @@ import {
   Column,
   ColumnDragData,
 } from "./board-column";
+import {
+  applyCardOverCard,
+  applyCardOverColumn,
+  type ColumnId,
+  defaultCols,
+} from "./kanban-board.utils";
 import { coordinateGetter } from "./keyboard-preset";
 import { CardDragData, Task, TaskCard } from "./task-card";
+
+export type { ColumnId } from "./kanban-board.utils";
 
 type NestedColumn = Column & {
   children?: NestedColumn[];
 };
-
-const defaultCols = [
-  {
-    id: "todo" as const,
-    title: "Todo",
-  },
-  {
-    id: "in_progress" as const,
-    title: "In progress",
-  },
-  {
-    id: "done" as const,
-    title: "Done",
-  },
-] satisfies Column[];
-
-export type ColumnId = (typeof defaultCols)[number]["id"];
 
 export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
   const [columns, setColumns] = useState<Column[]>(defaultCols);
@@ -210,24 +201,35 @@ export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
         const overColumnIndex = columns.findIndex((col) => col.id === overId);
         return arrayMove(columns, activeColumnIndex, overColumnIndex);
       });
-    } else if (activeData?.type === "Task") {
-      const newColumnId = hasDraggableData(over)
-        ? over.data.current?.type === "Column"
+      return;
+    }
+
+    if (activeData?.type === "Task") {
+      const overData = hasDraggableData(over) ? over.data.current : null;
+      const newColumnId: ColumnId =
+        overData?.type === "Column"
           ? (over.id as ColumnId)
-          : over.data.current?.card.columnId
-        : (over.id as ColumnId);
+          : overData?.type === "Task"
+            ? overData.card.columnId
+            : (over.id as ColumnId);
 
       const oldColumnId = activeData.card.columnId;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const position: number = (overData as any)?.sortable?.index ?? 0;
 
       if (oldColumnId !== newColumnId) {
-        setCards((cars) => {
-          return cars.map((car) =>
-            car.id === activeId && newColumnId
-              ? { ...car, columnId: newColumnId }
-              : car,
-          );
-        });
+        setCards((cars) =>
+          cars.map((car) =>
+            car.id === activeId ? { ...car, columnId: newColumnId } : car,
+          ),
+        );
       }
+
+      mutation.mutate({
+        taskId: activeId.toString(),
+        status: newColumnId,
+        position,
+      });
     }
   };
 
@@ -245,52 +247,14 @@ export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
     const activeData = active.data.current;
     const overData = over.data.current;
 
-    const isActiveACar = activeData?.type === "Task";
-    const isOverACar = overData?.type === "Task";
+    if (activeData?.type !== "Task") return;
 
-    if (!isActiveACar) return;
-
-    if (isActiveACar && isOverACar) {
-      setCards((cars) => {
-        const activeIndex = cars.findIndex((car) => car.id === activeId);
-        const overIndex = cars.findIndex((car) => car.id === overId);
-        const activeCar = cars[activeIndex]!;
-        const overCar = cars[overIndex];
-        if (activeCar && overCar && activeCar.columnId !== overCar.columnId) {
-          activeCar.columnId = overCar.columnId;
-          mutation.mutate({
-            taskId: activeCar.id.toString(),
-            status: activeCar.columnId,
-            position: overData.sortable.index,
-          });
-          return arrayMove(cars, activeIndex, overIndex - 1);
-        }
-        mutation.mutate({
-          taskId: activeCar.id.toString(),
-          status: activeCar.columnId,
-          position: overData.sortable.index,
-        });
-        return arrayMove(cars, activeIndex, overIndex);
-      });
-    }
-
-    const isOverAColumn = overData?.type === "Column";
-
-    if (isActiveACar && isOverAColumn) {
-      setCards((cars) => {
-        const activeIndex = cars.findIndex((car) => car.id === activeId);
-        const activeCar = cars[activeIndex];
-        if (activeCar) {
-          activeCar.columnId = overId as ColumnId;
-          mutation.mutate({
-            taskId: activeCar.id.toString(),
-            status: activeCar.columnId,
-            position: overData.sortable.index,
-          });
-          return arrayMove(cars, activeIndex, activeIndex);
-        }
-        return cars;
-      });
+    if (overData?.type === "Task") {
+      setCards((cars) => applyCardOverCard(cars, activeId, overId));
+    } else if (overData?.type === "Column") {
+      setCards((cars) =>
+        applyCardOverColumn(cars, activeId, overId as ColumnId),
+      );
     }
   };
 
