@@ -46,6 +46,8 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	WithTx(dbx database.Dbx) *DbTaskStore
 	GetTeamTaskStats(ctx context.Context, teamId uuid.UUID) (*models.TaskStats, error)
 	FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *UpdateTaskDto) error
+	FindTasksDueToday(ctx context.Context) ([]*models.Task, error)
+	FindTasksOverdue(ctx context.Context) ([]*models.Task, error)
 }
 
 type DbTaskStore struct {
@@ -810,4 +812,43 @@ func (s *DbTaskStore) GetTeamTaskStats(ctx context.Context, teamId uuid.UUID) (*
 		return nil, nil
 	}
 	return &res[0], nil
+}
+
+// FindTasksDueToday returns non-done tasks whose end_at falls within today (UTC).
+func (s *DbTaskStore) FindTasksDueToday(ctx context.Context) ([]*models.Task, error) {
+	now := time.Now().UTC()
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	endOfDay := startOfDay.Add(24 * time.Hour)
+	return repository.Task.Get(
+		ctx,
+		s.db,
+		&map[string]any{
+			"_and": []map[string]any{
+				{"end_at": map[string]any{repository.Gte: startOfDay}},
+				{"end_at": map[string]any{repository.Lt: endOfDay}},
+				{"status": map[string]any{repository.Neq: models.TaskStatusDone}},
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
+}
+
+// FindTasksOverdue returns non-done tasks whose end_at is before today (UTC).
+func (s *DbTaskStore) FindTasksOverdue(ctx context.Context) ([]*models.Task, error) {
+	startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
+	return repository.Task.Get(
+		ctx,
+		s.db,
+		&map[string]any{
+			"_and": []map[string]any{
+				{"end_at": map[string]any{repository.Lt: startOfDay}},
+				{"status": map[string]any{repository.Neq: models.TaskStatusDone}},
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
 }

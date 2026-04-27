@@ -404,6 +404,77 @@ export const readTeamMemberNotification = async (
   return true;
 };
 
+export const deleteTeamMemberNotification = async (
+  token: string,
+  teamMemberId: string,
+  notificationId: string
+) => {
+  const { error } = await client.DELETE(
+    "/api/team-members/{team-member-id}/notifications/{notification-id}",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "team-member-id": teamMemberId,
+          "notification-id": notificationId,
+        },
+      },
+    }
+  );
+  if (error) {
+    throw ApiError.fromErrorModel(error);
+  }
+  return true;
+};
+
+export const markAllTeamMemberNotificationsRead = async (
+  token: string,
+  teamMemberId: string
+) => {
+  const { error } = await client.POST(
+    "/api/team-members/{team-member-id}/notifications/read-all",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "team-member-id": teamMemberId,
+        },
+      },
+    }
+  );
+  if (error) {
+    throw ApiError.fromErrorModel(error);
+  }
+  return true;
+};
+
+export const getTeamMemberUnreadNotificationCount = async (
+  token: string,
+  teamMemberId: string
+) => {
+  const { data, error } = await client.GET(
+    "/api/team-members/{team-member-id}/notifications/unread-count",
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        path: {
+          "team-member-id": teamMemberId,
+        },
+      },
+    }
+  );
+  if (error) {
+    throw ApiError.fromErrorModel(error);
+  }
+  return data;
+};
+
 export const reassignBillingAccess = async ({
   token,
   memberId,

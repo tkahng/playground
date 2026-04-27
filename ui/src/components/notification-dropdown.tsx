@@ -1,4 +1,3 @@
-import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -9,56 +8,73 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
 import { useTeamNotifications } from "@/hooks/use-team-notifications";
+import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count";
 import { Bell } from "lucide-react";
 import { Link } from "react-router";
 
 export function NotificationDropdown() {
-  const { user } = useAuthProvider();
   const { team } = useTeam();
   const { notifications, notificationsLoading, notificationsIsError } =
     useTeamNotifications();
-  if (!user || notificationsLoading || notificationsIsError) {
-    return (
-      <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-        <Avatar>
-          <Bell />
-        </Avatar>
-      </Button>
-    );
-  }
+  const { unreadCount } = useUnreadNotificationCount();
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="relative h-8 w-8 rounded-full shadow-sm border-2"
-        ></Button>
+        <Button variant="ghost" size="icon" className="relative">
+          <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
+      <DropdownMenuContent className="w-72" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">Notifications</p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium">Notifications</p>
+            {unreadCount > 0 && (
+              <span className="text-xs text-muted-foreground">
+                {unreadCount} unread
+              </span>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          {notifications?.data?.map((link) => (
-            <DropdownMenuItem key={link.id}>
-              <Link to={link.id} className="w-full">
-                {link.payload.notification.title}
-              </Link>
-            </DropdownMenuItem>
-          ))}
+          {notificationsLoading && (
+            <DropdownMenuItem disabled>Loading…</DropdownMenuItem>
+          )}
+          {notificationsIsError && (
+            <DropdownMenuItem disabled>Failed to load</DropdownMenuItem>
+          )}
+          {!notificationsLoading &&
+            !notificationsIsError &&
+            (notifications?.data?.length === 0 ? (
+              <DropdownMenuItem disabled>No notifications</DropdownMenuItem>
+            ) : (
+              notifications?.data?.map((n) => (
+                <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-0.5">
+                  <span className={`text-sm ${!n.read_at ? "font-semibold" : "font-normal"}`}>
+                    {n.payload.notification.title}
+                  </span>
+                  {n.payload.notification.body && (
+                    <span className="text-xs text-muted-foreground line-clamp-1">
+                      {n.payload.notification.body}
+                    </span>
+                  )}
+                </DropdownMenuItem>
+              ))
+            ))}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem key={"go-to-notifications"}>
-            <Link to={`/teams/${team?.slug}/notifications`} className="w-full">
-              View all
+          <DropdownMenuItem asChild>
+            <Link to={`/teams/${team?.slug}/notifications`} className="w-full cursor-pointer">
+              View all notifications
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
