@@ -258,6 +258,13 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 				if err != nil {
 					return nil, err
 				}
+				err = api.App().JobService().EnqueueTaskOverdueJob(ctx, &workers.TaskOverdueJobArgs{
+					TaskID:  task.ID,
+					DueDate: dueDate,
+				})
+				if err != nil {
+					return nil, err
+				}
 			}
 			newDoneStatus := previousStatus != task.Status && task.Status == models.TaskStatusDone
 			if newDoneStatus {
@@ -265,6 +272,18 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 					TaskID:              id,
 					CompletedByMemberID: teamInfo.Member.ID,
 					CompletedAt:         time.Now(),
+				})
+				if err != nil {
+					return nil, err
+				}
+			}
+			statusChanged := previousStatus != task.Status && task.Status != models.TaskStatusDone
+			if statusChanged {
+				err = api.App().JobService().EnqueueTaskStatusChangedJob(ctx, &workers.TaskStatusChangedJobArgs{
+					TaskID:            id,
+					OldStatus:         string(previousStatus),
+					NewStatus:         string(task.Status),
+					ChangedByMemberID: teamInfo.Member.ID,
 				})
 				if err != nil {
 					return nil, err
@@ -304,7 +323,8 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 		return nil, err
 	}
 
-	if models.TaskStatus(input.Body.Status) == models.TaskStatusDone {
+	newStatus := models.TaskStatus(input.Body.Status)
+	if newStatus == models.TaskStatusDone {
 		if task.Status != models.TaskStatusDone {
 			err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
 				TaskID:              id,
@@ -314,6 +334,16 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 			if err != nil {
 				return nil, err
 			}
+		}
+	} else if task.Status != newStatus {
+		err = api.App().JobService().EnqueueTaskStatusChangedJob(ctx, &workers.TaskStatusChangedJobArgs{
+			TaskID:            id,
+			OldStatus:         string(task.Status),
+			NewStatus:         string(newStatus),
+			ChangedByMemberID: teamInfo.Member.ID,
+		})
+		if err != nil {
+			return nil, err
 		}
 	}
 	return nil, nil

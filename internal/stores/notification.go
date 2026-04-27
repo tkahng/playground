@@ -22,6 +22,7 @@ type NotificationStore interface {
 	CountNotification(ctx context.Context, args *NotificationFilter) (int64, error)
 	UpdateNotification(ctx context.Context, notification *models.Notification) error
 	DeleteNotifications(ctx context.Context, args *NotificationFilter) (int64, error)
+	MarkAllNotificationsRead(ctx context.Context, teamMemberID uuid.UUID) error
 }
 
 type DbNotificationStore struct {
@@ -88,6 +89,7 @@ type NotificationFilter struct {
 	Channels      []string                       `query:"channels" json:"channels,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
 	Types         []string                       `query:"types" json:"types,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
 	ReadAt        types.OptionalParam[time.Time] `query:"read_at" json:"read_at" required:"false"`
+	Unread        bool                           `query:"unread" json:"unread,omitempty" required:"false"`
 }
 
 func (s *DbNotificationStore) FindNotification(ctx context.Context, args *NotificationFilter) (*models.Notification, error) {
@@ -162,7 +164,22 @@ func (s *DbNotificationStore) filter(args *NotificationFilter) *map[string]any {
 			"_eq": args.ReadAt.Value,
 		}
 	}
+	if args.Unread {
+		where["read_at"] = map[string]any{
+			"_isnull": nil,
+		}
+	}
 	return &where
+}
+
+func (s *DbNotificationStore) MarkAllNotificationsRead(ctx context.Context, teamMemberID uuid.UUID) error {
+	db := database.GetContextOrDefaultDbx(ctx, s.db)
+	_, err := db.Exec(ctx, `
+		UPDATE messaging.notifications
+		SET read_at = clock_timestamp(), updated_at = clock_timestamp()
+		WHERE team_member_id = $1 AND read_at IS NULL
+	`, teamMemberID)
+	return err
 }
 
 func (d *DbNotificationStore) sort(filter *NotificationFilter) *map[string]string {
@@ -176,14 +193,15 @@ func (d *DbNotificationStore) sort(filter *NotificationFilter) *map[string]strin
 }
 
 type NotificationStoreDecorator struct {
-	Delegate              *DbNotificationStore
-	CountFunc             func(ctx context.Context, filter *NotificationFilter) (int64, error)
-	CreateFunc            func(ctx context.Context, notification *models.Notification) (*models.Notification, error)
-	CreateManyFunc        func(ctx context.Context, notifications []models.Notification) (int64, error)
-	FindNotificationFunc  func(ctx context.Context, args *NotificationFilter) (*models.Notification, error)
-	FindNotificationsFunc func(ctx context.Context, args *NotificationFilter) ([]*models.Notification, error)
-	UpdateFunc            func(ctx context.Context, notification *models.Notification) error
-	DeleteFunc            func(ctx context.Context, args *NotificationFilter) (int64, error)
+	Delegate                  *DbNotificationStore
+	CountFunc                 func(ctx context.Context, filter *NotificationFilter) (int64, error)
+	CreateFunc                func(ctx context.Context, notification *models.Notification) (*models.Notification, error)
+	CreateManyFunc            func(ctx context.Context, notifications []models.Notification) (int64, error)
+	FindNotificationFunc      func(ctx context.Context, args *NotificationFilter) (*models.Notification, error)
+	FindNotificationsFunc     func(ctx context.Context, args *NotificationFilter) ([]*models.Notification, error)
+	UpdateFunc                func(ctx context.Context, notification *models.Notification) error
+	DeleteFunc                func(ctx context.Context, args *NotificationFilter) (int64, error)
+	MarkAllReadFunc           func(ctx context.Context, teamMemberID uuid.UUID) error
 }
 
 // DeleteNotifications implements NotificationStore.
@@ -216,7 +234,7 @@ func (n *NotificationStoreDecorator) CountNotification(ctx context.Context, args
 
 // InsertManyNotifications implements NotificationStore.
 func (n *NotificationStoreDecorator) InsertManyNotifications(ctx context.Context, notifications []models.Notification) (int64, error) {
-	if n.CreateFunc != nil {
+	if n.CreateManyFunc != nil {
 		return n.CreateManyFunc(ctx, notifications)
 	}
 	if n.Delegate == nil {
@@ -267,6 +285,17 @@ func (n *NotificationStoreDecorator) UpdateNotification(ctx context.Context, not
 		return errors.New("delegate is nil in UpdateNotification")
 	}
 	return n.Delegate.UpdateNotification(ctx, notification)
+}
+
+// MarkAllNotificationsRead implements NotificationStore.
+func (n *NotificationStoreDecorator) MarkAllNotificationsRead(ctx context.Context, teamMemberID uuid.UUID) error {
+	if n.MarkAllReadFunc != nil {
+		return n.MarkAllReadFunc(ctx, teamMemberID)
+	}
+	if n.Delegate == nil {
+		return errors.New("delegate is nil in MarkAllNotificationsRead")
+	}
+	return n.Delegate.MarkAllNotificationsRead(ctx, teamMemberID)
 }
 
 var _ NotificationStore = (*NotificationStoreDecorator)(nil)

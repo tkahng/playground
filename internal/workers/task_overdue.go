@@ -6,11 +6,11 @@ import (
 	"github.com/google/uuid"
 )
 
-type TaskDueTodayJobArgs struct {
+type TaskOverdueJobArgs struct {
 	TaskID  uuid.UUID `json:"task_id" required:"true"`
 	DueDate time.Time `json:"due_date" required:"true"`
 }
 
-func (j TaskDueTodayJobArgs) Kind() string {
-	return "task_due_today"
+func (j TaskOverdueJobArgs) Kind() string {
+	return "task_overdue"
 }

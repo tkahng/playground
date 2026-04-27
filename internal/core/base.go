@@ -320,6 +320,12 @@ func (app *BaseApp) RunBackgroundProcesses(firstCtx context.Context) {
 	if err := workers.SeedRpsGameExpiryJob(firstCtx, app.JobManager()); err != nil {
 		app.Logger().ErrorContext(firstCtx, "failed to seed rps expiry job", slog.Any("error", err))
 	}
+
+	go func() {
+		app.Logger().Info("Starting task notification scheduler")
+		scheduler := services.NewTaskNotificationScheduler(app.Adapter().Task(), app.JobService())
+		scheduler.Run(firstCtx)
+	}()
 }
 
 func NewApp(config *conf.EnvConfig) *BaseApp {

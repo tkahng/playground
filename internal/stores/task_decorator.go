@@ -38,6 +38,8 @@ type TaskDecorator struct {
 	WithTxFunc                      func(dbx database.Dbx) *DbTaskStore
 	GetTeamTaskStatsFunc            func(ctx context.Context, teamId uuid.UUID) (*models.TaskStats, error)
 	FindAndUpdateTaskFunc           func(ctx context.Context, taskID uuid.UUID, input *UpdateTaskDto) error
+	FindTasksDueTodayFunc           func(ctx context.Context) ([]*models.Task, error)
+	FindTasksOverdueFunc            func(ctx context.Context) ([]*models.Task, error)
 }
 
 // FindAndUpdateTask implements DbTaskStoreInterface.
@@ -346,6 +348,28 @@ func (t *TaskDecorator) CreateTaskFromInput(ctx context.Context, teamID uuid.UUI
 		return nil, ErrDelegateNil
 	}
 	return t.Delegate.CreateTaskFromInput(ctx, teamID, projectID, memberID, input)
+}
+
+// FindTasksDueToday implements DbTaskStoreInterface.
+func (t *TaskDecorator) FindTasksDueToday(ctx context.Context) ([]*models.Task, error) {
+	if t.FindTasksDueTodayFunc != nil {
+		return t.FindTasksDueTodayFunc(ctx)
+	}
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.FindTasksDueToday(ctx)
+}
+
+// FindTasksOverdue implements DbTaskStoreInterface.
+func (t *TaskDecorator) FindTasksOverdue(ctx context.Context) ([]*models.Task, error) {
+	if t.FindTasksOverdueFunc != nil {
+		return t.FindTasksOverdueFunc(ctx)
+	}
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.FindTasksOverdue(ctx)
 }
 
 var _ DbTaskStoreInterface = (*TaskDecorator)(nil)

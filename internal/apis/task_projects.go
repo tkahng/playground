@@ -319,11 +319,34 @@ func (api *Api) TeamTaskProjectUpdate(ctx context.Context, input *UpdateTaskProj
 	if err != nil {
 		return nil, huma.Error400BadRequest("Invalid task project id")
 	}
+
+	existing, err := api.App().Adapter().Task().FindTaskProjectByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if existing == nil {
+		return nil, huma.Error404NotFound("Task project not found")
+	}
+	oldStatus := string(existing.Status)
+
 	payload := input.Body
 	err = api.App().Adapter().Task().UpdateTaskProject(ctx, id, &payload)
 	if err != nil {
 		return nil, err
 	}
+
+	if oldStatus != string(payload.Status) {
+		teamInfo := contextstore.GetContextTeamInfo(ctx)
+		if teamInfo != nil {
+			_ = api.App().JobService().EnqueueProjectStatusChangedJob(ctx, &workers.ProjectStatusChangedJobArgs{
+				ProjectID:         id,
+				OldStatus:         oldStatus,
+				NewStatus:         string(payload.Status),
+				ChangedByMemberID: teamInfo.Member.ID,
+			})
+		}
+	}
+
 	return nil, nil
 }
 
@@ -412,6 +435,13 @@ func (api *Api) TeamTaskProjectTasksCreate(ctx context.Context, input *ApiCreate
 		})
 		if err != nil {
 			return nil, huma.Error500InternalServerError("Failed to create task project update date job")
+		}
+		err = api.App().JobService().EnqueueTaskOverdueJob(ctx, &workers.TaskOverdueJobArgs{
+			TaskID:  task.ID,
+			DueDate: taskDue,
+		})
+		if err != nil {
+			return nil, huma.Error500InternalServerError("Failed to enqueue task overdue job")
 		}
 	}
 	err = api.App().Adapter().Task().UpdateTaskProjectUpdateDate(ctx, parsedProjectID)

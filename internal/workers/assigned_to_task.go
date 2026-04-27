@@ -1,9 +1,6 @@
 package workers
 
-import (
-	"github.com/google/uuid"
-	"github.com/tkahng/playground/internal/jobs"
-)
+import "github.com/google/uuid"
 
 type AssignedToTasJobArgs struct {
 	AssignedByMemeberID uuid.UUID `json:"assigned_by_member_id" required:"true"`
@@ -14,5 +11,3 @@ type AssignedToTasJobArgs struct {
 func (a AssignedToTasJobArgs) Kind() string {
 	return "assigned_to_task"
 }
-
-type AssignedToTaskWorker jobs.Worker[AssignedToTasJobArgs]
