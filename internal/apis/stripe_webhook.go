@@ -90,8 +90,9 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		}
 		switch cs.Mode {
 		case stripe.CheckoutSessionModePayment:
-			if cs.Metadata["purchase_type"] != "points" {
-				slog.WarnContext(ctx, "unhandled payment-mode checkout session", slog.String("session_id", cs.ID), slog.String("purchase_type", cs.Metadata["purchase_type"]))
+			purchaseType, ok := cs.Metadata["purchase_type"]
+			if !ok || purchaseType != "points" {
+				slog.WarnContext(ctx, "unhandled payment-mode checkout session", slog.String("session_id", cs.ID), slog.String("purchase_type", purchaseType))
 				return nil, nil
 			}
 			// Points one-time purchase fulfillment.
