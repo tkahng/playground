@@ -31,6 +31,7 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	FindLastTaskRank(ctx context.Context, taskProjectID uuid.UUID) (float64, error)
 	FindTask(ctx context.Context, task *TaskFilter) (*models.Task, error)
 	FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error)
+	FindTaskByIDForUpdate(ctx context.Context, id uuid.UUID) (*models.Task, error)
 	FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error)
 	GetTaskFirstPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskLastPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
@@ -326,6 +327,21 @@ func (s *DbTaskStore) LoadTaskProjectsTasks(ctx context.Context, projectIds ...u
 
 func (s *DbTaskStore) FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error) {
 	task, err := repository.Task.GetOne(
+		ctx,
+		s.db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": id,
+			},
+		},
+	)
+	return database.OptionalRow(task, err)
+}
+
+// FindTaskByIDForUpdate fetches the task and acquires a row-level lock (SELECT … FOR UPDATE).
+// Must be called inside a transaction.
+func (s *DbTaskStore) FindTaskByIDForUpdate(ctx context.Context, id uuid.UUID) (*models.Task, error) {
+	task, err := repository.Task.GetOneForUpdate(
 		ctx,
 		s.db,
 		&map[string]any{

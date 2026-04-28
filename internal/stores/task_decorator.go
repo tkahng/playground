@@ -141,6 +141,14 @@ func (t *TaskDecorator) FindTaskByID(ctx context.Context, id uuid.UUID) (*models
 	return t.Delegate.FindTaskByID(ctx, id)
 }
 
+// FindTaskByIDForUpdate implements DbTaskStoreInterface.
+func (t *TaskDecorator) FindTaskByIDForUpdate(ctx context.Context, id uuid.UUID) (*models.Task, error) {
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.FindTaskByIDForUpdate(ctx, id)
+}
+
 // FindTaskProjectByID implements DbTaskStoreInterface.
 func (t *TaskDecorator) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error) {
 	if t.FindTaskProjectByIDFunc != nil {

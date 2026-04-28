@@ -53,6 +53,7 @@ type Repository[Model any] interface {
 	GetWithOptions(ctx context.Context, dbx database.Dbx, options ...QueryOptionFunc) ([]*Model, error)
 	Get(ctx context.Context, dbx database.Dbx, where *map[string]any, order *map[string]string, limit *int, skip *int) ([]*Model, error)
 	GetOne(ctx context.Context, dbx database.Dbx, where *map[string]any) (*Model, error)
+	GetOneForUpdate(ctx context.Context, dbx database.Dbx, where *map[string]any) (*Model, error)
 	Put(ctx context.Context, dbx database.Dbx, models []Model) ([]*Model, error)
 	PutOne(ctx context.Context, dbx database.Dbx, model *Model) (*Model, error)
 	PostOne(ctx context.Context, dbx database.Dbx, model *Model) (*Model, error)
@@ -287,6 +288,25 @@ these methods are for convienience
 func (r *PostgresRepository[Model]) GetOne(ctx context.Context, dbx database.Dbx, where *map[string]any) (*Model, error) {
 	result, err := r.Get(ctx, dbx, where, nil, types.Pointer(1), nil)
 	return handleErrAndGetFirstItem(result, err)
+}
+
+// GetOneForUpdate returns the first matching record and locks it with SELECT … FOR UPDATE.
+// Must be called inside a transaction; the lock is released when the transaction commits or rolls back.
+func (r *PostgresRepository[Model]) GetOneForUpdate(ctx context.Context, dbx database.Dbx, where *map[string]any) (*Model, error) {
+	var args []any
+	query := fmt.Sprintf("SELECT %s FROM %s", r.builder.QualifiedColumnNamesJoined(), r.builder.TableName())
+	if expr, err := r.builder.WhereError(ctx, where, &args); err != nil {
+		return nil, err
+	} else if expr != "" {
+		query += fmt.Sprintf(" WHERE %s", expr)
+	}
+	query += " LIMIT 1 FOR UPDATE"
+	slog.DebugContext(ctx, "query and args", slog.String("query", query), slog.Any("args", args))
+	items, err := database.QueryAll[*Model](ctx, dbx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	return handleErrAndGetFirstItem(items, nil)
 }
 
 // PostOne creates a record in the database
