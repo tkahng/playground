@@ -117,7 +117,7 @@ func (d *DbNotifier) NotifyAssignedToTask(ctx context.Context, taskID uuid.UUID,
 		return errors.New("task not found")
 	}
 	payload := notification.AssignedToTaskNotificationData{
-		AssignedByMemeberID: assigner.ID,
+		AssignedByMemberID: assigner.ID,
 		TaskID:              task.ID,
 	}
 	notificationPayload := notification.NewNotificationPayload(
@@ -344,15 +344,15 @@ type AssignedToTaskWorker struct {
 	notifier Notifier
 }
 
-func (a *AssignedToTaskWorker) Work(ctx context.Context, job *jobs.Job[workers.AssignedToTasJobArgs]) error {
-	return a.notifier.NotifyAssignedToTask(ctx, job.Args.TaskID, job.Args.AssignedByMemeberID, job.Args.AssigneeMemberID)
+func (a *AssignedToTaskWorker) Work(ctx context.Context, job *jobs.Job[workers.AssignedToTaskJobArgs]) error {
+	return a.notifier.NotifyAssignedToTask(ctx, job.Args.TaskID, job.Args.AssignedByMemberID, job.Args.AssigneeMemberID)
 }
 
 func NewAssignedToTaskWorker(notifier Notifier) *AssignedToTaskWorker {
 	return &AssignedToTaskWorker{notifier: notifier}
 }
 
-var _ jobs.Worker[workers.AssignedToTasJobArgs] = (*AssignedToTaskWorker)(nil)
+var _ jobs.Worker[workers.AssignedToTaskJobArgs] = (*AssignedToTaskWorker)(nil)
 
 type TaskDueTodayWorker struct {
 	notifier Notifier

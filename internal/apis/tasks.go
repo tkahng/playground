@@ -234,9 +234,9 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 			newAssignee := previousAssignee == nil && input.Body.AssigneeID != nil
 			differentAssignee := previousAssignee != nil && input.Body.AssigneeID != nil && *previousAssignee != *input.Body.AssigneeID
 			if newAssignee || differentAssignee {
-				err = api.App().JobService().EnqueAssignedToTaskJob(ctx, &workers.AssignedToTasJobArgs{
-					TaskID:              task.ID,
-					AssignedByMemeberID: teamInfo.Member.ID,
+				err = api.App().JobService().EnqueueAssignedToTaskJob(ctx, &workers.AssignedToTaskJobArgs{
+					TaskID:             task.ID,
+					AssignedByMemberID: teamInfo.Member.ID,
 					AssigneeMemberID:    *input.Body.AssigneeID,
 				})
 				if err != nil {

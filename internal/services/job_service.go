@@ -17,7 +17,7 @@ type JobService interface {
 	EnqueueRpsGameInviteJob(ctx context.Context, job *workers.RpsGameInvitationJobArgs) error
 	EnqueueTaskCompletedJob(ctx context.Context, job *workers.TaskCompletedJobArgs) error
 	EnqueTaskDueJob(ctx context.Context, job *workers.TaskDueTodayJobArgs) error
-	EnqueAssignedToTaskJob(ctx context.Context, job *workers.AssignedToTasJobArgs) error
+	EnqueueAssignedToTaskJob(ctx context.Context, job *workers.AssignedToTaskJobArgs) error
 	EnqueueTeamMemberAddedJob(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error
 	EnqueueRefreshSubscriptionQuantityJob(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error
 	EnqueueOtpMailJob(ctx context.Context, args *workers.OtpEmailJobArgs) error
@@ -62,8 +62,8 @@ func (d *DbJobService) EnqueTaskDueJob(ctx context.Context, job *workers.TaskDue
 	})
 }
 
-// EnqueAssignedToTaskJob implements JobService.
-func (d *DbJobService) EnqueAssignedToTaskJob(ctx context.Context, job *workers.AssignedToTasJobArgs) error {
+// EnqueueAssignedToTaskJob implements JobService.
+func (d *DbJobService) EnqueueAssignedToTaskJob(ctx context.Context, job *workers.AssignedToTaskJobArgs) error {
 	uniqueKey := "assigned_to_task:" + job.TaskID.String() + ":" + job.AssigneeMemberID.String()
 	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
 		Args:        job,
@@ -178,7 +178,7 @@ type JobServiceDecorator struct {
 	EnqueueTeamMemberAddedJobFunc             func(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error
 	WithTxFunc                                func(db database.Dbx) JobService
 	EnqueueRefreshSubscriptionQuantityJobFunc func(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error
-	EnqueAssignedToTaskJobFunc                func(ctx context.Context, job *workers.AssignedToTasJobArgs) error
+	EnqueueAssignedToTaskJobFunc               func(ctx context.Context, job *workers.AssignedToTaskJobArgs) error
 	EnqueTaskDueJobFunc                       func(ctx context.Context, job *workers.TaskDueTodayJobArgs) error
 	EnqueueTaskCompletedJobFunc               func(ctx context.Context, job *workers.TaskCompletedJobArgs) error
 	EnqueueRpsGameInviteJobFunc               func(ctx context.Context, job *workers.RpsGameInvitationJobArgs) error
@@ -220,15 +220,15 @@ func (j *JobServiceDecorator) EnqueTaskDueJob(ctx context.Context, job *workers.
 	return j.Delegate.EnqueTaskDueJob(ctx, job)
 }
 
-// EnqueAssignedToTaskJob implements JobService.
-func (j *JobServiceDecorator) EnqueAssignedToTaskJob(ctx context.Context, job *workers.AssignedToTasJobArgs) error {
-	if j.EnqueAssignedToTaskJobFunc != nil {
-		return j.EnqueAssignedToTaskJobFunc(ctx, job)
+// EnqueueAssignedToTaskJob implements JobService.
+func (j *JobServiceDecorator) EnqueueAssignedToTaskJob(ctx context.Context, job *workers.AssignedToTaskJobArgs) error {
+	if j.EnqueueAssignedToTaskJobFunc != nil {
+		return j.EnqueueAssignedToTaskJobFunc(ctx, job)
 	}
 	if j.Delegate == nil {
-		return errors.New("delegate for EnqueAssignedToTaskJob in JobService is nil")
+		return errors.New("delegate for EnqueueAssignedToTaskJob in JobService is nil")
 	}
-	return j.Delegate.EnqueAssignedToTaskJob(ctx, job)
+	return j.Delegate.EnqueueAssignedToTaskJob(ctx, job)
 }
 
 // EnqueueRefreshSubscriptionQuantityJob implements JobService.
