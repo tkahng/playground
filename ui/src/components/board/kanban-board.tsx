@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { useAuthProvider } from "@/hooks/use-auth-provider";
@@ -32,15 +32,13 @@ import {
   applyCardOverColumn,
   type ColumnId,
   defaultCols,
+  flattenColumns,
+  type NestedColumn,
 } from "./kanban-board.utils";
 import { coordinateGetter } from "./keyboard-preset";
 import { CardDragData, Task, TaskCard } from "./task-card";
 
 export type { ColumnId } from "./kanban-board.utils";
-
-type NestedColumn = Column & {
-  children?: NestedColumn[];
-};
 
 export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
   const [columns, setColumns] = useState<Column[]>(defaultCols);
@@ -110,20 +108,7 @@ export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
     return false;
   };
 
-  // Helper function to flatten nested columns
-  const flattenColumns = useCallback((cols: NestedColumn[]): Column[] => {
-    return cols.flatMap((col) =>
-      col.children
-        ? // eslint-disable-next-line react-hooks/immutability
-          [{ id: col.id, title: col.title }, ...flattenColumns(col.children)]
-        : [col],
-    );
-  }, []);
-
-  const flatColumns = useMemo(
-    () => flattenColumns(columns),
-    [columns, flattenColumns],
-  );
+  const flatColumns = useMemo(() => flattenColumns(columns), [columns]);
   const columnsId = useMemo(
     () => flatColumns.map((col) => col.id),
     [flatColumns],
