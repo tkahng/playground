@@ -27,7 +27,7 @@ func RecovererMiddleware() func(http.Handler) http.Handler {
 					)
 
 					if r.Header.Get("Connection") != "Upgrade" {
-						_ = apphttp.WriteErr(w, r, http.StatusInternalServerError, "internal server error")
+						apphttp.WriteErr(w, r, http.StatusInternalServerError, "internal server error")
 					}
 				}
 			}()

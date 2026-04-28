@@ -32,7 +32,7 @@ func TaskFromParam(app core.App) HttpMiddelwareFunc {
 					slog.Any("error", err),
 					slog.String(key, taskId),
 				)
-				_ = apphttp.WriteErr(w, r, http.StatusBadRequest, "error parsing task id. invalid UUID format")
+				apphttp.WriteErr(w, r, http.StatusBadRequest, "error parsing task id. invalid UUID format")
 				return
 			}
 			rawCtx := r.Context()
@@ -46,7 +46,7 @@ func TaskFromParam(app core.App) HttpMiddelwareFunc {
 					slog.Any("error", err),
 					slog.String(key, taskId),
 				)
-				_ = apphttp.WriteErr(w, r, http.StatusInternalServerError, "error while querying task")
+				apphttp.WriteErr(w, r, http.StatusInternalServerError, "error while querying task")
 				return
 			}
 			// if task id was not nil and valid uuid,
@@ -91,7 +91,7 @@ func TaskProjectFromParam(app core.App) HttpMiddelwareFunc {
 					slog.Any("error", err),
 					slog.String(key, projectId),
 				)
-				_ = apphttp.WriteErr(w, r, http.StatusBadRequest, "error parsing task project id. invalid UUID format")
+				apphttp.WriteErr(w, r, http.StatusBadRequest, "error parsing task project id. invalid UUID format")
 				return
 			}
 			rawCtx := r.Context()
@@ -105,7 +105,7 @@ func TaskProjectFromParam(app core.App) HttpMiddelwareFunc {
 					slog.Any("error", err),
 					slog.String(key, projectId),
 				)
-				_ = apphttp.WriteErr(w, r, http.StatusInternalServerError, "error while querying task")
+				apphttp.WriteErr(w, r, http.StatusInternalServerError, "error while querying task")
 				return
 			}
 			// if task project id was not nil and valid uuid,
@@ -140,26 +140,26 @@ func CheckTaskOwnerMiddleware(app core.App) HttpMiddelwareFunc {
 			}
 			id, err := uuid.Parse(taskId)
 			if err != nil {
-				_ = apphttp.WriteErr(w, r, http.StatusBadRequest, "invalid task id", err)
+				apphttp.WriteErr(w, r, http.StatusBadRequest, "invalid task id", err)
 				return
 			}
 			task, err := app.Adapter().Task().FindTaskByID(rawCtx, id)
 			if err != nil {
-				_ = apphttp.WriteErr(w, r, http.StatusInternalServerError, "error getting task", err)
+				apphttp.WriteErr(w, r, http.StatusInternalServerError, "error getting task", err)
 				return
 			}
 			if task == nil {
-				_ = apphttp.WriteErr(w, r, http.StatusNotFound, "task not found at middleware")
+				apphttp.WriteErr(w, r, http.StatusNotFound, "task not found at middleware")
 				return
 			}
 			userInfo := contextstore.GetContextUserInfo(rawCtx)
 			if userInfo == nil {
-				_ = apphttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware")
+				apphttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware")
 				return
 			}
 			teamInfo := contextstore.GetContextTeamInfo(rawCtx)
 			if teamInfo == nil {
-				_ = apphttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware")
+				apphttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware")
 				return
 			}
 			// if task.CreatedByMemberID != teamInfo.Member.ID {
@@ -167,7 +167,7 @@ func CheckTaskOwnerMiddleware(app core.App) HttpMiddelwareFunc {
 			// 		next(ctx)
 			// 		return
 			// 	}
-			// 	_ = apphttp.WriteErr(w, r, http.StatusForbidden, "task user id does not match user id")
+			// 	apphttp.WriteErr(w, r, http.StatusForbidden, "task user id does not match user id")
 			// 	return
 			// }
 			next.ServeHTTP(w, r)

@@ -57,11 +57,11 @@ func EmailVerifiedMiddleware() HttpMiddelwareFunc {
 			rawCtx := r.Context()
 			userInfo := contextstore.GetContextUserInfo(rawCtx)
 			if userInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized. user info not found", nil)
+				appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized. user info not found", nil)
 				return
 			}
 			if userInfo.User.EmailVerifiedAt == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "email not verified", nil)
+				appHttp.WriteErr(w, r, http.StatusUnauthorized, "email not verified", nil)
 				return
 			}
 			next.ServeHTTP(w, r)
@@ -147,7 +147,7 @@ func RequireAuthMiddleware() HttpMiddelwareFunc {
 				next.ServeHTTP(w, r)
 				return
 			}
-			_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "you are not authenticated.")
+			appHttp.WriteErr(w, r, http.StatusUnauthorized, "you are not authenticated.")
 		})
 	}
 }
@@ -166,7 +166,7 @@ func CheckPermissionsMiddleware(requiredPermissions ...string) HttpMiddelwareFun
 					}
 				}
 			}
-			_ = appHttp.WriteErr(w, r, http.StatusForbidden, fmt.Sprintf("You do not have the required permissions: %v", requiredPermissions))
+			appHttp.WriteErr(w, r, http.StatusForbidden, fmt.Sprintf("You do not have the required permissions: %v", requiredPermissions))
 		})
 	}
 }
