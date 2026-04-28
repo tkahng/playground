@@ -19,7 +19,6 @@ func NewAssembler() *Assembler {
 
 func (a *Assembler) AssembleApp(app *BaseApp) {
 	a.configure(app)
-	a.setDatasource(app)
 	a.setBasicServices(app)
 	a.setIntegrationServices(app)
 	a.registerWorkers(app)
@@ -55,18 +54,6 @@ func (a *Assembler) configure(app *BaseApp) {
 	if app.logger == nil {
 		panic("logger not initialized")
 	}
-	// if app.cfg == nil {
-	// 	app.cfg = conf.AppConfigGetter()
-	// }
-	// if app.db == nil {
-	// 	app.db = database.CreateSingletonQueriesContext(context.Background(), app.cfg.Db.GetDatabaseUrl())
-	// }
-	// if app.mailer == nil {
-	// 	app.mailer = mailer.NewSmtpMailer(app.cfg.SmtpConfig)
-	// }
-	// if app.logger == nil {
-	// 	app.logger = logger.GetDefaultLogger()
-	// }
 }
 
 // registerWorkers implements Initiator.
@@ -109,21 +96,6 @@ func (a *Assembler) setBasicServices(app *BaseApp) {
 	)
 	app.task = services.NewTaskService(adapter, app.jobService)
 	app.token = token.NewTokenService(cfg, adapter.Token())
-}
-
-// setDatasource implements Initiator.
-func (a *Assembler) setDatasource(app *BaseApp) {
-	// if app.db == nil {
-	// 	queries := database.CreateSingletonQueriesContext(context.Background(), app.cfg.Db.GetDatabaseUrl())
-	// 	if err := queries.Pool().Ping(context.Background()); err != nil {
-	// 		panic(fmt.Errorf("failed to ping db: %w", err))
-	// 	}
-	// 	app.db = queries
-	// }
-	// if app.adapter == nil {
-	// adapter := stores.NewStorageAdapter(app.db)
-	// app.adapter = adapter
-	// }
 }
 
 // setIntegrationServices implements Initiator.
