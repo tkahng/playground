@@ -118,7 +118,8 @@ func (d *DbNotifier) NotifyAssignedToTask(ctx context.Context, taskID uuid.UUID,
 	}
 	payload := notification.AssignedToTaskNotificationData{
 		AssignedByMemberID: assigner.ID,
-		TaskID:              task.ID,
+		AssigneeMemberID:   assigneeMemberID,
+		TaskID:             task.ID,
 	}
 	notificationPayload := notification.NewNotificationPayload(
 		"You have been assigned to a task.",
