@@ -153,12 +153,9 @@ func NewError(status int, msg string, errs ...error) StatusError {
 	}
 }
 
-func WriteErr(w http.ResponseWriter, r *http.Request, status int, msg string, errs ...error) error {
+func WriteErr(w http.ResponseWriter, r *http.Request, status int, msg string, errs ...error) {
 	var err = NewError(status, msg, errs...)
-	writeErr := render.Render(w, r, err)
-	if writeErr != nil {
-		// If we can't write the error, log it so we know what happened.
-		slog.ErrorContext(r.Context(), "could not write error", slog.Any("error", writeErr))
+	if writeErr := render.Render(w, r, err); writeErr != nil {
+		slog.ErrorContext(r.Context(), "could not write error response", slog.Any("error", writeErr))
 	}
-	return writeErr
 }

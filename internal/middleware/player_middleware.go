@@ -16,7 +16,7 @@ func RequireCurrentPlayerMiddelware() func(next http.Handler) http.Handler {
 			ctx := r.Context()
 			player := contextstore.GetContextCurrentPlayer(ctx)
 			if player == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized. player not found", nil)
+				appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized. player not found", nil)
 				return
 			}
 			next.ServeHTTP(w, r)
@@ -30,7 +30,7 @@ func SetCurrentPlayerMiddleware(app core.App) func(next http.Handler) http.Handl
 			ctx := r.Context()
 			userInfo := contextstore.GetContextUserInfo(ctx)
 			if userInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized. user info not found", nil)
+				appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized. user info not found", nil)
 				return
 			}
 			player, err := app.Adapter().Gaming().FindPlayer(ctx, &stores.PlayersFilter{
@@ -38,7 +38,7 @@ func SetCurrentPlayerMiddleware(app core.App) func(next http.Handler) http.Handl
 				Emails:  []string{userInfo.User.Email},
 			})
 			if err != nil {
-				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting player", err)
+				appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting player", err)
 				return
 			}
 			if player == nil {
