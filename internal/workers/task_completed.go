@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/playground/internal/jobs"
 )
 
 type TaskCompletedJobArgs struct {
@@ -17,4 +16,3 @@ func (j TaskCompletedJobArgs) Kind() string {
 	return "task_completed"
 }
 
-type TaskCompletedJobWorker jobs.Worker[TaskCompletedJobArgs]

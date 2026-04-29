@@ -44,22 +44,23 @@ function TeamNotification() {
   );
   useEventSourceListener(
     eventSource,
-    ["new_team_member", "assigned_to_task", "task_due_today", "task_completed"],
+    [
+      "new_team_member",
+      "assigned_to_task",
+      "task_due_today",
+      "task_completed",
+      "task_overdue",
+      "task_status_changed",
+      "project_status_changed",
+    ],
     (evt) => {
       const noti: TeamMemberNotification = JSON.parse(evt.data);
       updateLatestNotification(noti);
     },
     [updateLatestNotification]
   );
-  // useEffect(() => {
-  //   if (notification) {
-  //     toast.info(notification.notification.title, {
-  //       description: notification.notification.body,
-  //     });
-  //   }
-  // }, [notification]);
 
-  return <div> {notification?.notification.title}</div>;
+  return null;
 }
 
 export default TeamNotification;

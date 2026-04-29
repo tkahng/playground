@@ -22,7 +22,7 @@ func RequireTeamInfo() HttpMiddelwareFunc {
 			rawCtx := r.Context()
 			teamInfo := contextstore.GetContextTeamInfo(rawCtx)
 			if teamInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusForbidden, "team info not found. you are not a member of the team related to this request")
+				appHttp.WriteErr(w, r, http.StatusForbidden, "team info not found. you are not a member of the team related to this request")
 				return
 			}
 			next.ServeHTTP(w, r)
@@ -44,14 +44,14 @@ func RequireTeamMemberRolesMiddleware(roles ...models.TeamMemberRole) HttpMiddel
 					next.ServeHTTP(w, r)
 					return
 				}
-				_ = appHttp.WriteErr(
+				appHttp.WriteErr(
 					w,
 					r,
 					http.StatusForbidden,
 					fmt.Sprintf("You do not have the required team member roles: %v", roles),
 				)
 			} else {
-				_ = appHttp.WriteErr(
+				appHttp.WriteErr(
 					w,
 					r,
 					http.StatusForbidden,
@@ -72,14 +72,14 @@ func RequireTeamMemberBillingAccessMiddleware() HttpMiddelwareFunc {
 					next.ServeHTTP(w, r)
 					return
 				}
-				_ = appHttp.WriteErr(
+				appHttp.WriteErr(
 					w,
 					r,
 					http.StatusForbidden,
 					"You do not have the required billing access",
 				)
 			} else {
-				_ = appHttp.WriteErr(
+				appHttp.WriteErr(
 					w,
 					r,
 					http.StatusForbidden,
@@ -166,7 +166,7 @@ func TeamInfoFromContext(app core.App) HttpMiddelwareFunc {
 					slog.String("team_id", teamId.String()),
 					slog.String("user_id", userInfo.User.ID.String()),
 				)
-				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team info", err)
+				appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team info", err)
 				return
 			}
 			// if not found, user is not a member of this team of the member found in context. but this is not a security check, therefore we just move on.
@@ -205,7 +205,7 @@ func TeamMemberFromParam(app core.App) HttpMiddelwareFunc {
 					slog.Any("error", err),
 					slog.String(key, teamMemberID),
 				)
-				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team member id. invalid UUID format", err)
+				appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team member id. invalid UUID format", err)
 				return
 			}
 			// query teamMember from team-member-id.
@@ -220,7 +220,7 @@ func TeamMemberFromParam(app core.App) HttpMiddelwareFunc {
 					slog.Any("error", err),
 					slog.String(key, teamMemberID),
 				)
-				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team member")
+				appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team member")
 				return
 			}
 			// if teamMember id was not nil and valid uuid,
@@ -266,7 +266,7 @@ func TeamFromParam(app core.App) HttpMiddelwareFunc {
 					slog.Any("error", err),
 					slog.String(key, teamId),
 				)
-				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team id. invalid UUID format")
+				appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team id. invalid UUID format")
 				return
 			}
 			rawCtx := r.Context()
@@ -280,7 +280,7 @@ func TeamFromParam(app core.App) HttpMiddelwareFunc {
 					slog.Any("error", err),
 					slog.String(key, teamId),
 				)
-				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error while querying team")
+				appHttp.WriteErr(w, r, http.StatusInternalServerError, "error while querying team")
 				return
 			}
 			// if team id was not nil and valid uuid,
@@ -328,7 +328,7 @@ func TeamFromParamSlug(app core.App) HttpMiddelwareFunc {
 					slog.Any("error", err),
 					slog.String(key, teamSlug),
 				)
-				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error while querying team")
+				appHttp.WriteErr(w, r, http.StatusInternalServerError, "error while querying team")
 				return
 			}
 			// if team id was not nil and valid uuid,
@@ -359,21 +359,21 @@ func MemberIdBelongsToUser() HttpMiddelwareFunc {
 			rawCtx := r.Context()
 			userInfo := contextstore.GetContextTeamInfo(rawCtx)
 			if userInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware", nil)
+				appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware", nil)
 				return
 			}
 			teamMemberID := appHttp.GetParam(r, "team-member-id")
 			if teamMemberID == "" {
-				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "team slug is required", nil)
+				appHttp.WriteErr(w, r, http.StatusBadRequest, "team slug is required", nil)
 				return
 			}
 			parsedTeamMemberID, err := uuid.Parse(teamMemberID)
 			if err != nil {
-				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team member id", err)
+				appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team member id", err)
 				return
 			}
 			if userInfo.Member.ID != parsedTeamMemberID {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware", nil)
+				appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware", nil)
 				return
 			}
 			next.ServeHTTP(w, r)
@@ -388,16 +388,16 @@ func TeamCanDelete(app core.App) HttpMiddelwareFunc {
 			rawCtx := r.Context()
 			teamInfo := contextstore.GetContextTeamInfo(rawCtx)
 			if teamInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusForbidden, "missing team membership", nil)
+				appHttp.WriteErr(w, r, http.StatusForbidden, "missing team membership", nil)
 				return
 			}
 			can, err := app.Checker().TeamCannotHaveValidSubscription(rawCtx, teamInfo.Team.ID)
 			if err != nil {
-				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error checking if team can be deleted", err)
+				appHttp.WriteErr(w, r, http.StatusInternalServerError, "error checking if team can be deleted", err)
 				return
 			}
 			if !can {
-				_ = appHttp.WriteErr(w, r, http.StatusForbidden, "you are not allowed to delete this team", nil)
+				appHttp.WriteErr(w, r, http.StatusForbidden, "you are not allowed to delete this team", nil)
 				return
 			}
 			next.ServeHTTP(w, r)
@@ -414,35 +414,35 @@ func TeamInfoFromTask(app core.App) HttpMiddelwareFunc {
 			rawCtx := r.Context()
 			userInfo := contextstore.GetContextUserInfo(rawCtx)
 			if userInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware", nil)
+				appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware", nil)
 				return
 			}
 			taskId := appHttp.GetParam(r, "task-id")
 			if taskId == "" {
-				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "task id is required", nil)
+				appHttp.WriteErr(w, r, http.StatusBadRequest, "task id is required", nil)
 				return
 			}
 			parsedTaskId, err := uuid.Parse(taskId)
 			if err != nil {
-				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing task id", err)
+				appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing task id", err)
 				return
 			}
 			task, err := app.Adapter().Task().FindTaskByID(rawCtx, parsedTaskId)
 			if err != nil {
-				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting task", err)
+				appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting task", err)
 				return
 			}
 			if task == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusNotFound, "task not found", nil)
+				appHttp.WriteErr(w, r, http.StatusNotFound, "task not found", nil)
 				return
 			}
 			teamInfo, err := app.Team().FindTeamInfo(rawCtx, task.TeamID, userInfo.User.ID)
 			if err != nil {
-				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team info", err)
+				appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team info", err)
 				return
 			}
 			if teamInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "you are not part of the task's team", nil)
+				appHttp.WriteErr(w, r, http.StatusUnauthorized, "you are not part of the task's team", nil)
 				return
 			}
 
@@ -461,7 +461,7 @@ func TeamInfoFromTaskProject(app core.App) HttpMiddelwareFunc {
 			rawCtx := r.Context()
 			userInfo := contextstore.GetContextUserInfo(rawCtx)
 			if userInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware", nil)
+				appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware", nil)
 				return
 			}
 			projectId := appHttp.GetParam(r, "task-project-id")
@@ -471,25 +471,25 @@ func TeamInfoFromTaskProject(app core.App) HttpMiddelwareFunc {
 			}
 			parsedProjectID, err := uuid.Parse(projectId)
 			if err != nil {
-				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing project id", err)
+				appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing project id", err)
 				return
 			}
 			project, err := app.Adapter().Task().FindTaskProjectByID(rawCtx, parsedProjectID)
 			if err != nil {
-				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting project", err)
+				appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting project", err)
 				return
 			}
 			if project == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusNotFound, "project not found", nil)
+				appHttp.WriteErr(w, r, http.StatusNotFound, "project not found", nil)
 				return
 			}
 			teamInfo, err := app.Team().FindTeamInfo(rawCtx, project.TeamID, userInfo.User.ID)
 			if err != nil {
-				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team info", err)
+				appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team info", err)
 				return
 			}
 			if teamInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusNotFound, "team not found", nil)
+				appHttp.WriteErr(w, r, http.StatusNotFound, "team not found", nil)
 				return
 			}
 
@@ -508,26 +508,26 @@ func TeamInfoFromTeamIDParam(app core.App) HttpMiddelwareFunc {
 			rawCtx := r.Context()
 			userInfo := contextstore.GetContextUserInfo(rawCtx)
 			if userInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware", nil)
+				appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware", nil)
 				return
 			}
 			teamId := appHttp.GetParam(r, "team-id")
 			if teamId == "" {
-				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "team id is required", nil)
+				appHttp.WriteErr(w, r, http.StatusBadRequest, "team id is required", nil)
 				return
 			}
 			id, err := uuid.Parse(teamId)
 			if err != nil {
-				_ = appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team id", err)
+				appHttp.WriteErr(w, r, http.StatusBadRequest, "error parsing team id", err)
 				return
 			}
 			teamInfo, err := app.Team().FindTeamInfo(rawCtx, id, userInfo.User.ID)
 			if err != nil {
-				_ = appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team info", err)
+				appHttp.WriteErr(w, r, http.StatusInternalServerError, "error getting team info", err)
 				return
 			}
 			if teamInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusNotFound, "team not found", nil)
+				appHttp.WriteErr(w, r, http.StatusNotFound, "team not found", nil)
 				return
 			}
 			ctxx := contextstore.SetContextTeamInfo(rawCtx, teamInfo)

@@ -200,6 +200,10 @@ func bindTeamsApi(appApi *Api) {
 
 	appApi.DeleteTeamMembersNotificationsBind(teamsGroup)
 
+	appApi.UnreadNotificationsCountBind(teamsGroup)
+
+	appApi.MarkAllNotificationsReadBind(teamsGroup)
+
 	appApi.FindTeamMemberByIDBind(teamsGroup)
 
 	appApi.GetUserTeamMembersBind(teamsGroup)
