@@ -23,7 +23,6 @@ require (
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/joho/godotenv v1.5.1
 	github.com/spf13/cobra v1.10.2
-	github.com/stephenafamo/scan v0.7.0
 	github.com/stretchr/testify v1.11.1
 	github.com/stripe/stripe-go/v82 v82.5.1
 	github.com/wneessen/go-mail v0.7.2

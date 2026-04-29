@@ -14,8 +14,6 @@ import (
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/types"
 
-	"github.com/stephenafamo/scan"
-	"github.com/stephenafamo/scan/pgxscan"
 	"github.com/tkahng/playground/internal/database/repository"
 )
 
@@ -367,7 +365,7 @@ func (s *DbUserStore) GetUserInfo(ctx context.Context, email string) (*models.Us
 		User: *user,
 	}
 	roles, err := func() (*rolePermissionClaims, error) {
-		res, err := pgxscan.One(ctx, database.GetContextOrDefaultDbx(ctx, s.db), scan.StructMapper[rolePermissionClaims](), RawGetUserWithAllRolesAndPermissionsByEmail, email)
+		res, err := database.QueryOne[rolePermissionClaims](ctx, s.db, RawGetUserWithAllRolesAndPermissionsByEmail, email)
 		if err != nil {
 			return nil, err
 		}
