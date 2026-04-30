@@ -345,12 +345,19 @@ func NewApp(config *conf.EnvConfig) *BaseApp {
 
 	logger := logger.GetDefaultLogger()
 
+	fs, err := filesystem.NewFileSystem(context.Background(), config.StorageConfig)
+	if err != nil {
+		slog.Error("failed to create filesystem", slog.Any("error", err))
+		panic(fmt.Sprintf("failed to create filesystem: %v", err))
+	}
+
 	app.db = db
 	app.adapter = adapter
 	app.logger = logger
 	app.cfg = config
 	app.paymentClient = payment
 	app.mailer = mailer
+	app.fs = fs
 	assembler := NewAssembler()
 	assembler.AssembleApp(app)
 	return app
@@ -372,6 +379,7 @@ func NewTestBaseApp(config *conf.EnvConfig, db database.Dbx) *BaseApp {
 	app.cfg = config
 	app.paymentClient = payment
 	app.mailer = mailer
+	app.fs = filesystem.NewMockFileSystem(config.StorageConfig)
 	assembler := NewAssembler()
 	assembler.AssembleApp(app)
 	return app
