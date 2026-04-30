@@ -168,8 +168,7 @@ func WithTx(ctx context.Context, dbx Dbx, fn func(tx Dbx) error) (returnErr erro
 	tx, beginErr := contextOrDefaultDb.BeginTx(ctx)
 	if beginErr != nil {
 		slog.Error("error starting transaction", slog.Any("error", beginErr))
-		returnErr = errors.New("there was an error starting a transaction")
-		return returnErr
+		return fmt.Errorf("starting transaction: %w", beginErr)
 	}
 
 	defer func() {
@@ -177,10 +176,10 @@ func WithTx(ctx context.Context, dbx Dbx, fn func(tx Dbx) error) (returnErr erro
 			slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", errors.New(fmt.Sprint(recErr))), slog.String("stacktrace", string(debug.Stack())))
 			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				slog.ErrorContext(ctx, "error rolling back transaction", slog.Any("error", rollbackErr))
-				returnErr = errors.New("there was an error while recovering from a failure")
+				returnErr = fmt.Errorf("rolling back after panic %v: %w", recErr, rollbackErr)
 				return
 			}
-			returnErr = errors.New(fmt.Sprint(recErr))
+			returnErr = fmt.Errorf("panic in transaction: %v", recErr)
 			return
 		}
 	}()
@@ -189,16 +188,13 @@ func WithTx(ctx context.Context, dbx Dbx, fn func(tx Dbx) error) (returnErr erro
 		slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", fnErr))
 		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 			slog.ErrorContext(ctx, "error rolling back transaction", slog.Any("error", rollbackErr))
-			returnErr = errors.New("there was an error while recovering from a failure")
-			return returnErr
+			return fmt.Errorf("rolling back after error: %w", rollbackErr)
 		}
-		returnErr = fnErr
-		return returnErr
+		return fnErr
 	} else {
 		if commitErr := tx.Commit(ctx); commitErr != nil {
 			slog.ErrorContext(ctx, "error committing transaction", slog.Any("error", commitErr))
-			returnErr = errors.New("there was an error while committing a transaction")
-			return returnErr
+			return fmt.Errorf("committing transaction: %w", commitErr)
 		}
 	}
 	return returnErr
@@ -214,8 +210,7 @@ func WithCtxTx(ctx context.Context, dbx Dbx, fn func(context.Context) error, opt
 	tx, beginErr := contextOrDefaultDb.BeginTx(ctx, opts...)
 	if beginErr != nil {
 		slog.Error("error starting transaction", slog.Any("error", beginErr))
-		returnErr = errors.New("there was an error starting a transaction")
-		return returnErr
+		return fmt.Errorf("starting transaction: %w", beginErr)
 	}
 
 	defer func() {
@@ -223,10 +218,10 @@ func WithCtxTx(ctx context.Context, dbx Dbx, fn func(context.Context) error, opt
 			slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", errors.New(fmt.Sprint(recErr))), slog.String("stacktrace", string(debug.Stack())))
 			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				slog.ErrorContext(ctx, "error rolling back transaction", slog.Any("error", rollbackErr))
-				returnErr = errors.New("there was an error while recovering from a failure")
+				returnErr = fmt.Errorf("rolling back after panic %v: %w", recErr, rollbackErr)
 				return
 			}
-			returnErr = errors.New(fmt.Sprint(recErr))
+			returnErr = fmt.Errorf("panic in transaction: %v", recErr)
 			return
 		}
 	}()
@@ -235,16 +230,13 @@ func WithCtxTx(ctx context.Context, dbx Dbx, fn func(context.Context) error, opt
 		slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", fnErr))
 		if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 			slog.ErrorContext(ctx, "error rolling back transaction", slog.Any("error", rollbackErr))
-			returnErr = errors.New("there was an error while recovering from a failure")
-			return returnErr
+			return fmt.Errorf("rolling back after error: %w", rollbackErr)
 		}
-		returnErr = fnErr
-		return returnErr
+		return fnErr
 	} else {
 		if commitErr := tx.Commit(ctx); commitErr != nil {
 			slog.ErrorContext(ctx, "error committing transaction", slog.Any("error", commitErr))
-			returnErr = errors.New("there was an error while committing a transaction")
-			return returnErr
+			return fmt.Errorf("committing transaction: %w", commitErr)
 		}
 	}
 	return returnErr
