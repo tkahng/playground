@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -46,12 +45,6 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 	}
 	payload := input.RawBody
 
-	event := stripe.Event{}
-
-	if err := json.Unmarshal(payload, &event); err != nil {
-		slog.ErrorContext(ctx, "⚠️  Webhook error while parsing basic request", slog.Any("error", err), slog.String("payload", string(payload)))
-		return nil, huma.Error400BadRequest(err.Error())
-	}
 	cfg := api.App().Config()
 	if cfg == nil {
 		return nil, huma.Error400BadRequest("Missing config")
