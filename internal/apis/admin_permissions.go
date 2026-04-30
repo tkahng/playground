@@ -274,12 +274,15 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 		Name:        input.Body.Name,
 		Description: input.Description,
 	})
-
+	if err != nil {
+		return nil, err
+	}
+	updated, err := store.FindPermissionById(ctx, permission.ID)
 	if err != nil {
 		return nil, err
 	}
 	return &struct{ Body Permission }{
-		Body: *fromModelPermission(permission),
+		Body: *fromModelPermission(updated),
 	}, nil
 }
 
