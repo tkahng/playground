@@ -37,6 +37,7 @@ func (w *NewMemberNotificationWorker) Work(ctx context.Context, args *jobs.Job[N
 			slog.Any("error", err),
 			slog.Any("args", args.Args),
 		)
+		return err
 	}
 	return nil
 }
