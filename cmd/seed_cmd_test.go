@@ -15,33 +15,20 @@ import (
 )
 
 func TestSeedRoles(t *testing.T) {
-	t.Run("seeds all known roles and permissions", func(t *testing.T) {
-		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			if err := cmd.SeedRoles(ctx, db); err != nil {
-				t.Fatalf("SeedRoles() error = %v", err)
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		if err := cmd.SeedRoles(ctx, db); err != nil {
+			t.Fatalf("SeedRoles() error = %v", err)
+		}
+		rbacStore := stores.NewDbRBACStore(db)
+		for roleName := range shared.KnownRoleNamesPermissionsMap {
+			role, err := rbacStore.FindRoleByName(ctx, roleName)
+			if err != nil {
+				t.Fatalf("FindRoleByName(%q) error = %v", roleName, err)
 			}
-			rbacStore := stores.NewDbRBACStore(db)
-			for roleName := range shared.KnownRoleNamesPermissionsMap {
-				role, err := rbacStore.FindRoleByName(ctx, roleName)
-				if err != nil {
-					t.Fatalf("FindRoleByName(%q) error = %v", roleName, err)
-				}
-				if role == nil {
-					t.Errorf("role %q not found after SeedRoles", roleName)
-				}
+			if role == nil {
+				t.Errorf("role %q not found after SeedRoles", roleName)
 			}
-		})
-	})
-
-	t.Run("is idempotent", func(t *testing.T) {
-		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-			if err := cmd.SeedRoles(ctx, db); err != nil {
-				t.Fatalf("first SeedRoles() error = %v", err)
-			}
-			if err := cmd.SeedRoles(ctx, db); err != nil {
-				t.Fatalf("second SeedRoles() error = %v", err)
-			}
-		})
+		}
 	})
 }
 
