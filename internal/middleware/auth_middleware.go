@@ -35,7 +35,7 @@ var HttpTokenFuncs = []func(r *http.Request, w http.ResponseWriter) string{
 
 type HttpMiddelwareFunc func(next http.Handler) http.Handler
 
-func Unwrap(ctx huma.Context) (*http.Request, http.ResponseWriter) {
+func Unwrap(ctx huma.Context) (*http.Request, http.ResponseWriter, error) {
 	for {
 		if c, ok := ctx.(interface{ Unwrap() huma.Context }); ok {
 			ctx = c.Unwrap()
@@ -46,9 +46,10 @@ func Unwrap(ctx huma.Context) (*http.Request, http.ResponseWriter) {
 	if c, ok := ctx.(interface {
 		Unwrap() (*http.Request, http.ResponseWriter)
 	}); ok {
-		return c.Unwrap()
+		r, w := c.Unwrap()
+		return r, w, nil
 	}
-	panic("this context does not implement Unwrap")
+	return nil, nil, fmt.Errorf("huma context does not implement Unwrap")
 }
 
 func EmailVerifiedMiddleware() HttpMiddelwareFunc {

@@ -1,7 +1,12 @@
 package database
 
-import "strings"
+import (
+	"errors"
+
+	"github.com/jackc/pgx/v5/pgconn"
+)
 
 func IsUniqConstraintErr(err error) bool {
-	return strings.Contains(err.Error(), `(SQLSTATE 23505)`)
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }

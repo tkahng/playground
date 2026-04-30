@@ -264,29 +264,6 @@ func (s *DbTaskStore) GetTaskPositions(ctx context.Context, projectID uuid.UUID,
 		LIMIT $4 OFFSET $5
 	`
 	return database.QueryManySingleColumn[float64](ctx, s.db, query, projectID, status, excludeID, 2, offset)
-	// query := `
-	// 	SELECT rank
-	// 	FROM tasks
-	// 	WHERE project_id = $1 AND status = $2 AND id != $3
-	// 	ORDER BY rank ASC
-	// 	LIMIT $4 OFFSET $5
-	// `
-	// rows, err := s.db.Query(ctx, query, projectID, status, excludeID, 2, offset)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// defer rows.Close()
-
-	// var ranks []float64
-	// for rows.Next() {
-	// 	var pos float64
-	// 	if err := rows.Scan(&pos); err != nil {
-	// 		return nil, err
-	// 	}
-	// 	ranks = append(ranks, pos)
-	// }
-
-	// return ranks, rows.Err()
 }
 func NewDbTaskStore(db database.Dbx) *DbTaskStore {
 	return &DbTaskStore{

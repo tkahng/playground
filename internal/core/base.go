@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/tkahng/playground/internal/auth"
@@ -331,7 +332,11 @@ func (app *BaseApp) RunBackgroundProcesses(firstCtx context.Context) {
 func NewApp(config *conf.EnvConfig) *BaseApp {
 	app := new(BaseApp)
 
-	db := database.CreateNewQueriesContext(context.Background(), config.Db.GetDatabaseUrl())
+	db, err := database.CreateNewQueriesContext(context.Background(), config.Db.GetDatabaseUrl())
+	if err != nil {
+		slog.Error("failed to connect to database", slog.Any("error", err))
+		panic(fmt.Sprintf("failed to connect to database: %v", err))
+	}
 	adapter := stores.NewStorageAdapter(db)
 
 	payment := services.NewPaymentClient(config.StripeConfig)
@@ -340,12 +345,19 @@ func NewApp(config *conf.EnvConfig) *BaseApp {
 
 	logger := logger.GetDefaultLogger()
 
+	fs, err := filesystem.NewFileSystem(context.Background(), config.StorageConfig)
+	if err != nil {
+		slog.Error("failed to create filesystem", slog.Any("error", err))
+		panic(fmt.Sprintf("failed to create filesystem: %v", err))
+	}
+
 	app.db = db
 	app.adapter = adapter
 	app.logger = logger
 	app.cfg = config
 	app.paymentClient = payment
 	app.mailer = mailer
+	app.fs = fs
 	assembler := NewAssembler()
 	assembler.AssembleApp(app)
 	return app
@@ -367,6 +379,7 @@ func NewTestBaseApp(config *conf.EnvConfig, db database.Dbx) *BaseApp {
 	app.cfg = config
 	app.paymentClient = payment
 	app.mailer = mailer
+	app.fs = filesystem.NewMockFileSystem(config.StorageConfig)
 	assembler := NewAssembler()
 	assembler.AssembleApp(app)
 	return app

@@ -2,7 +2,6 @@ package security
 
 import (
 	"crypto/hmac"
-	"crypto/md5"
 	"crypto/rand"
 	"crypto/sha256"
 	"crypto/sha512"
@@ -23,13 +22,6 @@ func S256Challenge(code string) string {
 	h := sha256.New()
 	h.Write([]byte(code))
 	return strings.TrimRight(base64.URLEncoding.EncodeToString(h.Sum(nil)), "=")
-}
-
-// MD5 creates md5 hash from the provided plain text.
-func MD5(text string) string {
-	h := md5.New()
-	h.Write([]byte(text))
-	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
 // SHA256 creates sha256 hash as defined in FIPS 180-4 from the provided text.

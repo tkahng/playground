@@ -79,7 +79,7 @@ func CreateSuperuser(ctx context.Context, app core.App, args []string) error {
 			return nil
 		})
 		if txErr != nil {
-			return err
+			return txErr
 		}
 	}
 	if user != nil {

@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"sync"
 
 	"github.com/jackc/pgx/v5"
@@ -32,15 +31,14 @@ func CreatePool(ctx context.Context, connString string) (*pgxpool.Pool, error) {
 }
 
 // CreateNewQueriesContext creates a new pool.
-func CreateNewQueriesContext(ctx context.Context, connString string) *Queries {
+func CreateNewQueriesContext(ctx context.Context, connString string) (*Queries, error) {
 	pool, err := CreatePoolWithCustomDataTypes(ctx, connString)
 	if err != nil {
-		slog.Error("CreateNewQueriesContext: error creating pool.", "error", err)
-		panic(err.Error())
+		return nil, fmt.Errorf("creating database pool: %w", err)
 	}
 	return &Queries{
 		db: pool,
-	}
+	}, nil
 }
 
 func CreatePoolWithCustomDataTypes(ctx context.Context, connString string) (*pgxpool.Pool, error) {

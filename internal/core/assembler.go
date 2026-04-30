@@ -1,6 +1,8 @@
 package core
 
 import (
+	"fmt"
+
 	"github.com/ThreeDotsLabs/watermill/components/cqrs"
 	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/events"
@@ -23,6 +25,43 @@ func (a *Assembler) AssembleApp(app *BaseApp) {
 	a.setIntegrationServices(app)
 	a.registerWorkers(app)
 	a.addEventHandlers(app)
+	a.validate(app)
+}
+
+func (a *Assembler) validate(app *BaseApp) {
+	type check struct {
+		name string
+		val  any
+	}
+	checks := []check{
+		{"fs", app.fs},
+		{"jwt", app.jwt},
+		{"hash", app.hash},
+		{"encrypt", app.encrypt},
+		{"auth", app.auth},
+		{"rbac", app.rbac},
+		{"checker", app.checker},
+		{"task", app.task},
+		{"token", app.token},
+		{"team", app.team},
+		{"teamInvitation", app.teamInvitation},
+		{"notifierPublisher", app.notifierPublisher},
+		{"sseManager", app.sseManager},
+		{"eventManager", app.eventManager},
+		{"jobManager", app.jobManager},
+		{"jobService", app.jobService},
+		{"payment", app.payment},
+		{"paymentClient", app.paymentClient},
+		{"mailService", app.mailService},
+		{"rpsGame", app.rpsGame},
+		{"ledger", app.ledger},
+		{"betting", app.betting},
+	}
+	for _, c := range checks {
+		if c.val == nil {
+			panic(fmt.Sprintf("service %q not initialized at startup", c.name))
+		}
+	}
 }
 
 // addEventHandlers implements Initiator.
