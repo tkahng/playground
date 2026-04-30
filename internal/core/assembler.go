@@ -1,6 +1,8 @@
 package core
 
 import (
+	"fmt"
+
 	"github.com/ThreeDotsLabs/watermill/components/cqrs"
 	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/events"
@@ -11,19 +13,55 @@ import (
 	"github.com/tkahng/playground/internal/userreaction"
 )
 
-type Assembler struct {
-}
+type Assembler struct{}
 
 func NewAssembler() *Assembler {
 	return &Assembler{}
 }
+
 func (a *Assembler) AssembleApp(app *BaseApp) {
 	a.configure(app)
-	a.setDatasource(app)
 	a.setBasicServices(app)
 	a.setIntegrationServices(app)
 	a.registerWorkers(app)
 	a.addEventHandlers(app)
+	a.validate(app)
+}
+
+func (a *Assembler) validate(app *BaseApp) {
+	type check struct {
+		name string
+		val  any
+	}
+	checks := []check{
+		{"fs", app.fs},
+		{"jwt", app.jwt},
+		{"hash", app.hash},
+		{"encrypt", app.encrypt},
+		{"auth", app.auth},
+		{"rbac", app.rbac},
+		{"checker", app.checker},
+		{"task", app.task},
+		{"token", app.token},
+		{"team", app.team},
+		{"teamInvitation", app.teamInvitation},
+		{"notifierPublisher", app.notifierPublisher},
+		{"sseManager", app.sseManager},
+		{"eventManager", app.eventManager},
+		{"jobManager", app.jobManager},
+		{"jobService", app.jobService},
+		{"payment", app.payment},
+		{"paymentClient", app.paymentClient},
+		{"mailService", app.mailService},
+		{"rpsGame", app.rpsGame},
+		{"ledger", app.ledger},
+		{"betting", app.betting},
+	}
+	for _, c := range checks {
+		if c.val == nil {
+			panic(fmt.Sprintf("service %q not initialized at startup", c.name))
+		}
+	}
 }
 
 // addEventHandlers implements Initiator.
@@ -55,23 +93,16 @@ func (a *Assembler) configure(app *BaseApp) {
 	if app.logger == nil {
 		panic("logger not initialized")
 	}
-	// if app.cfg == nil {
-	// 	app.cfg = conf.AppConfigGetter()
-	// }
-	// if app.db == nil {
-	// 	app.db = database.CreateSingletonQueriesContext(context.Background(), app.cfg.Db.GetDatabaseUrl())
-	// }
-	// if app.mailer == nil {
-	// 	app.mailer = mailer.NewSmtpMailer(app.cfg.SmtpConfig)
-	// }
-	// if app.logger == nil {
-	// 	app.logger = logger.GetDefaultLogger()
-	// }
 }
 
 // registerWorkers implements Initiator.
 func (a *Assembler) registerWorkers(app *BaseApp) {
-	app.JobService().RegisterWorkers(app.mailService, app.Payment(), app.NotificationPublisher())
+	app.JobService().RegisterWorkers(
+		app.mailService,
+		app.Payment(),
+		app.NotificationPublisher(),
+		app.RpsGame(),
+	)
 }
 
 // setBasicServices implements Initiator.
@@ -81,7 +112,9 @@ func (a *Assembler) setBasicServices(app *BaseApp) {
 
 	adapter := app.Adapter()
 	dbx := app.Db()
-	app.rpsGame = services.NewDbRpsGameService(adapter)
+	app.ledger = services.NewDbLedgerService(adapter)
+	app.betting = services.NewDbBettingService(adapter, app.ledger)
+	app.rpsGame = services.NewDbRpsGameService(adapter, app.betting)
 	app.hash = services.NewHashService()
 	app.encrypt = services.NewCrypto(cfg.EncryptionKey)
 	app.jwt = services.NewJwtService()
@@ -102,21 +135,6 @@ func (a *Assembler) setBasicServices(app *BaseApp) {
 	)
 	app.task = services.NewTaskService(adapter, app.jobService)
 	app.token = token.NewTokenService(cfg, adapter.Token())
-}
-
-// setDatasource implements Initiator.
-func (a *Assembler) setDatasource(app *BaseApp) {
-	// if app.db == nil {
-	// 	queries := database.CreateSingletonQueriesContext(context.Background(), app.cfg.Db.GetDatabaseUrl())
-	// 	if err := queries.Pool().Ping(context.Background()); err != nil {
-	// 		panic(fmt.Errorf("failed to ping db: %w", err))
-	// 	}
-	// 	app.db = queries
-	// }
-	// if app.adapter == nil {
-	// adapter := stores.NewStorageAdapter(app.db)
-	// app.adapter = adapter
-	// }
 }
 
 // setIntegrationServices implements Initiator.

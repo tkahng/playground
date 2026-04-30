@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 
@@ -219,7 +220,7 @@ func Test_GetPlayers_Success_ByEmail(t *testing.T) {
 				scenario.Store.Set("user_info", userInfo)
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, userInfo.User.Email)
 				scenario.Headers = []string{tokenHeader}
-				scenario.URL = fmt.Sprintf("%s?emails=%s&page=0&per_page=1", scenario.URL, userInfo.User.Email)
+				scenario.URL = fmt.Sprintf("%s?emails=%s&page=0&per_page=1", scenario.URL, url.QueryEscape(userInfo.User.Email))
 			},
 			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.Player]](t, res.Body.Bytes())

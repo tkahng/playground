@@ -23,6 +23,9 @@ type StripeProduct struct {
 	// - index: int. The index of the product in the list of products.
 	//
 	// - customer_type: user|team. The type of the customer.
+	//
+	// - type: subscription|points. The functional type of the product. Used to
+	//   distinguish subscription products from points/wallet products.
 	Metadata map[string]string `db:"metadata" json:"metadata"`
 	// CreatedAt
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
@@ -113,6 +116,21 @@ var StripeProductTablePrefix = stripeProductTable{
 	Roles:       StripeProductTableName + "." + "roles",
 	Permissions: StripeProductTableName + "." + "permissions",
 }
+
+// StripeProductType represents the functional type of a Stripe product or price,
+// stored as metadata["type"]. Used to distinguish between subscription products
+// and points/wallet products.
+type StripeProductType string
+
+const (
+	// StripeProductTypeSubscription is for team/user subscription products and their prices.
+	StripeProductTypeSubscription StripeProductType = "subscription"
+	// StripeProductTypePoints is for one-time points/wallet purchase products and their prices.
+	StripeProductTypePoints StripeProductType = "points"
+)
+
+// StripeProductTypeMetadataKey is the metadata key used to store the product type.
+const StripeProductTypeMetadataKey = "type"
 
 // StripePricingType represents the type of pricing for a Stripe product
 // It can be either "one_time" or "recurring"

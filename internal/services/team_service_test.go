@@ -13,6 +13,7 @@ import (
 )
 
 func TestTeamService_CreateTeam_SlugExists(t *testing.T) {
+	t.Parallel()
 	adapterDecorator := stores.NewAdapterDecorators()
 	service := services.NewTeamService(adapterDecorator)
 
@@ -41,6 +42,7 @@ func TestTeamService_CreateTeam_SlugExists(t *testing.T) {
 }
 
 func TestTeamService_CreateTeam_CheckTeamSlugError(t *testing.T) {
+	t.Parallel()
 	adapterDecorator := stores.NewAdapterDecorators()
 	service := services.NewTeamService(adapterDecorator)
 
@@ -64,6 +66,7 @@ func TestTeamService_CreateTeam_CheckTeamSlugError(t *testing.T) {
 }
 
 func TestTeamService_CreateTeam_CreateTeamWithOwnerMemberError(t *testing.T) {
+	t.Parallel()
 	adapterDecorator := stores.NewAdapterDecorators()
 	service := services.NewTeamService(adapterDecorator)
 
@@ -94,6 +97,7 @@ func TestTeamService_CreateTeam_CreateTeamWithOwnerMemberError(t *testing.T) {
 }
 
 func TestTeamService_UpdateTeam_Success(t *testing.T) {
+	t.Parallel()
 	adapterDecorator := stores.NewAdapterDecorators()
 	service := services.NewTeamService(adapterDecorator)
 
@@ -114,6 +118,7 @@ func TestTeamService_UpdateTeam_Success(t *testing.T) {
 }
 
 func TestTeamService_UpdateTeam_Error(t *testing.T) {
+	t.Parallel()
 	adapterDecorator := stores.NewAdapterDecorators()
 	service := services.NewTeamService(adapterDecorator)
 
@@ -134,6 +139,7 @@ func TestTeamService_UpdateTeam_Error(t *testing.T) {
 }
 
 func TestTeamService_UpdateTeam_TeamNotFound(t *testing.T) {
+	t.Parallel()
 	adapterDecorator := stores.NewAdapterDecorators()
 	service := services.NewTeamService(adapterDecorator)
 

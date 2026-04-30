@@ -2,13 +2,16 @@ package apis
 
 import (
 	"context"
-	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/webhook"
+	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/tools/utils"
 )
 
@@ -42,12 +45,6 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 	}
 	payload := input.RawBody
 
-	event := stripe.Event{}
-
-	if err := json.Unmarshal(payload, &event); err != nil {
-		slog.ErrorContext(ctx, "⚠️  Webhook error while parsing basic request", slog.Any("error", err), slog.String("payload", string(payload)))
-		return nil, huma.Error400BadRequest(err.Error())
-	}
 	cfg := api.App().Config()
 	if cfg == nil {
 		return nil, huma.Error400BadRequest("Missing config")
@@ -80,15 +77,58 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		}
 		return nil, nil
 	case stripe.EventTypeCheckoutSessionCompleted:
-		session, err := utils.UnmarshalJSON[stripe.CheckoutSession](event.Data.Raw)
+		cs, err := utils.UnmarshalJSON[stripe.CheckoutSession](event.Data.Raw)
 		if err != nil {
 			return nil, huma.Error400BadRequest("failed to unmarshal session", err)
 		}
-		err = payment.UpsertSubscriptionByIds(ctx, session.Customer.ID, session.Subscription.ID)
-		if err != nil {
-			return nil, huma.Error400BadRequest("failed to upsert checkout session complete", err)
+		switch cs.Mode {
+		case stripe.CheckoutSessionModePayment:
+			purchaseType, ok := cs.Metadata["purchase_type"]
+			if !ok || purchaseType != "points" {
+				slog.WarnContext(ctx, "unhandled payment-mode checkout session", slog.String("session_id", cs.ID), slog.String("purchase_type", purchaseType))
+				return nil, nil
+			}
+			// Points one-time purchase fulfillment.
+			userIDStr, ok := cs.Metadata["user_id"]
+			if !ok {
+				return nil, huma.Error400BadRequest("points purchase session missing user_id metadata")
+			}
+			userID, err := uuid.Parse(userIDStr)
+			if err != nil {
+				return nil, huma.Error400BadRequest(fmt.Sprintf("invalid user_id in session metadata: %s", userIDStr))
+			}
+			pointsStr, ok := cs.Metadata["points_amount"]
+			if !ok {
+				return nil, huma.Error400BadRequest("points purchase session missing points_amount metadata")
+			}
+			pointsAmount, err := strconv.ParseInt(pointsStr, 10, 64)
+			if err != nil || pointsAmount <= 0 {
+				return nil, huma.Error400BadRequest(fmt.Sprintf("invalid points_amount in session metadata: %s", pointsStr))
+			}
+			txErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+				return services.FulfillPointsPurchase(txCtx, api.App().Adapter(), api.App().Ledger(), services.PointsPurchaseFulfillInput{
+					UserID:          userID,
+					PointsAmount:    pointsAmount,
+					StripeSessionID: cs.ID,
+				})
+			})
+			if txErr != nil {
+				return nil, huma.Error400BadRequest("failed to fulfill points purchase", txErr)
+			}
+			return nil, nil
+		case stripe.CheckoutSessionModeSubscription:
+			if cs.Subscription == nil {
+				return nil, huma.Error400BadRequest("subscription checkout session missing subscription")
+			}
+			err = payment.UpsertSubscriptionByIds(ctx, cs.Customer.ID, cs.Subscription.ID)
+			if err != nil {
+				return nil, huma.Error400BadRequest("failed to upsert checkout session complete", err)
+			}
+			return nil, nil
+		default:
+			slog.WarnContext(ctx, "unhandled checkout session mode", slog.String("session_id", cs.ID), slog.String("mode", string(cs.Mode)))
+			return nil, nil
 		}
-		return nil, nil
 	case stripe.EventTypeCustomerSubscriptionCreated, stripe.EventTypeCustomerSubscriptionUpdated, stripe.EventTypeCustomerSubscriptionDeleted:
 		subscription, err := utils.UnmarshalJSON[stripe.Subscription](event.Data.Raw)
 		if err != nil {
@@ -100,8 +140,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 		}
 		return nil, nil
 	default:
-		slog.WarnContext(ctx, "⚠️  Unhandled Stripe event type", slog.String("event_type", string(event.Type)))
-		return nil, huma.Error400BadRequest("unhandled event type")
+		slog.InfoContext(ctx, "stripe webhook: ignoring unhandled event type", slog.String("type", string(event.Type)))
+		return nil, nil
 	}
-	// return nil, huma.Error400BadRequest("unhandled event type")
 }

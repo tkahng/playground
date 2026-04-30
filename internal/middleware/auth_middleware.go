@@ -35,7 +35,7 @@ var HttpTokenFuncs = []func(r *http.Request, w http.ResponseWriter) string{
 
 type HttpMiddelwareFunc func(next http.Handler) http.Handler
 
-func Unwrap(ctx huma.Context) (*http.Request, http.ResponseWriter) {
+func Unwrap(ctx huma.Context) (*http.Request, http.ResponseWriter, error) {
 	for {
 		if c, ok := ctx.(interface{ Unwrap() huma.Context }); ok {
 			ctx = c.Unwrap()
@@ -46,9 +46,10 @@ func Unwrap(ctx huma.Context) (*http.Request, http.ResponseWriter) {
 	if c, ok := ctx.(interface {
 		Unwrap() (*http.Request, http.ResponseWriter)
 	}); ok {
-		return c.Unwrap()
+		r, w := c.Unwrap()
+		return r, w, nil
 	}
-	panic("this context does not implement Unwrap")
+	return nil, nil, fmt.Errorf("huma context does not implement Unwrap")
 }
 
 func EmailVerifiedMiddleware() HttpMiddelwareFunc {
@@ -57,11 +58,11 @@ func EmailVerifiedMiddleware() HttpMiddelwareFunc {
 			rawCtx := r.Context()
 			userInfo := contextstore.GetContextUserInfo(rawCtx)
 			if userInfo == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized. user info not found", nil)
+				appHttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized. user info not found", nil)
 				return
 			}
 			if userInfo.User.EmailVerifiedAt == nil {
-				_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "email not verified", nil)
+				appHttp.WriteErr(w, r, http.StatusUnauthorized, "email not verified", nil)
 				return
 			}
 			next.ServeHTTP(w, r)
@@ -147,7 +148,7 @@ func RequireAuthMiddleware() HttpMiddelwareFunc {
 				next.ServeHTTP(w, r)
 				return
 			}
-			_ = appHttp.WriteErr(w, r, http.StatusUnauthorized, "you are not authenticated.")
+			appHttp.WriteErr(w, r, http.StatusUnauthorized, "you are not authenticated.")
 		})
 	}
 }
@@ -166,7 +167,7 @@ func CheckPermissionsMiddleware(requiredPermissions ...string) HttpMiddelwareFun
 					}
 				}
 			}
-			_ = appHttp.WriteErr(w, r, http.StatusForbidden, fmt.Sprintf("You do not have the required permissions: %v", requiredPermissions))
+			appHttp.WriteErr(w, r, http.StatusForbidden, fmt.Sprintf("You do not have the required permissions: %v", requiredPermissions))
 		})
 	}
 }

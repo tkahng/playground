@@ -27,7 +27,11 @@ var (
 func DbSetup(cfg *conf.EnvConfig) (context.Context, *Queries) {
 	ctxOnce.Do(func() {
 		ctxInstance = context.Background()
-		dbx = CreateNewQueriesContext(ctxInstance, cfg.Db.GetDatabaseUrl())
+		var err error
+		dbx, err = CreateNewQueriesContext(ctxInstance, cfg.Db.GetDatabaseUrl())
+		if err != nil {
+			panic(fmt.Sprintf("DbSetup: failed to create database pool: %v", err))
+		}
 	})
 	return ctxInstance, dbx
 }
@@ -66,7 +70,10 @@ func WithNewTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	_ = logger.GetDefaultLogger()
 	ctx := context.Background()
 	cfg := conf.ZeroEnvConfig()
-	dbx := CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseUrl())
+	dbx, err := CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseUrl())
+	if err != nil {
+		t.Fatalf("WithNewTestTx: failed to create database pool: %v", err)
+	}
 	tx, beginErr := dbx.BeginTx(ctx)
 	if beginErr != nil {
 		t.Fatal(beginErr)
@@ -89,47 +96,7 @@ func WithNewTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	fn(ctx, NewTxQueries(tx))
 }
 
-// WithNewTestTx creates a new pool connection, runs the test within that transactions, rolls back, and closes the pool.
 func WithNewDatabase(t *testing.T, fn func(ctx context.Context, db Dbx)) {
-	t.Helper()
-	_ = logger.GetDefaultLogger()
-	uid := security.RandomString(16)
-	ctx := context.Background()
-	cfg := conf.ZeroEnvConfig()
-	dbCfg := cfg.Db
-	clonedDbCfg := conf.DBConfig{
-		User:     dbCfg.User,
-		Password: dbCfg.Password,
-		Host:     dbCfg.Host,
-		Port:     dbCfg.Port,
-		Db:       fmt.Sprintf("%s_%s", cfg.Db.Db, uid),
-		SSL:      dbCfg.SSL,
-	}
-	mConfig := MigratorConfig{
-		DatabaseUrl: clonedDbCfg.GetDatabaseUrl(),
-	}
-	migrator := NewMigrator(&mConfig)
-	if err := migrator.CreateAndMigrate(); err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		if err := migrator.Drop(); err != nil {
-			t.Fatal(err)
-		}
-	}()
-	dbx := CreateNewQueriesContext(ctx, clonedDbCfg.GetDatabaseUrl())
-	defer dbx.Close()
-	// panic handle
-	defer func() {
-		if recErr := recover(); recErr != nil {
-			slog.ErrorContext(ctx, "recovered from panic in transaction.", slog.String("error", strings.ToValidUTF8(string(debug.Stack()), "")))
-			t.Fatal(fmt.Sprint(recErr))
-		}
-	}()
-	fn(ctx, dbx)
-}
-
-func WithNewDatabase2(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	t.Helper()
 	_ = logger.GetDefaultLogger()
 	ctx := context.Background()
@@ -160,7 +127,10 @@ func WithNewDatabase2(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 			t.Fatal(err)
 		}
 	}()
-	dbx := CreateNewQueriesContext(ctx, clonedDbCfg.GetDatabaseUrl())
+	dbx, err := CreateNewQueriesContext(ctx, clonedDbCfg.GetDatabaseUrl())
+	if err != nil {
+		t.Fatalf("WithNewDatabase: failed to create database pool: %v", err)
+	}
 	defer dbx.Close()
 	// panic handle
 	defer func() {

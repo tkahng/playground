@@ -3,7 +3,7 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { rpsGameQueries } from "@/lib/rps-game-queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
-import { useSearchParams } from "react-router";
+import { useSearchParams, Link } from "react-router";
 import { useEffect, useState } from "react";
 import { SelectedRpsGameDialog } from "./selected-game-dialog";
 import { Participant, PlayerRpsGame } from "@/schema.types";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { CreateGameDialog } from "./create-game-dialog";
 import { CenteredSpinner } from "@/components/centered-spinner";
+import { RouteMap } from "@/components/route-map";
 
 export default function RockPaperScissors() {
   const userInfo = useAuthProvider();
@@ -79,6 +80,19 @@ export default function RockPaperScissors() {
     },
   });
 
+  const { data: balanceData } = useQuery({
+    queryKey: [{ key: "ledger-balance" }],
+    enabled: !!userInfo.user?.tokens.access_token,
+    queryFn: async () => {
+      if (!userInfo.user?.tokens.access_token) {
+        throw new Error("No access token");
+      }
+      return rpsGameQueries.getLedgerBalance({
+        token: userInfo.user.tokens.access_token,
+      });
+    },
+  });
+
   const [open, onOpenChange] = useState(!!gameId);
   useEffect(() => {
     if (gameId) {
@@ -97,7 +111,23 @@ export default function RockPaperScissors() {
 
   return (
     <div>
-      <h1>Rock Paper Scissors</h1>
+      <div className="flex items-center gap-3 mb-1">
+        <h1>Rock Paper Scissors</h1>
+        {balanceData && (
+          balanceData.available_balance <= 0 ? (
+            <Link
+              to={RouteMap.POINTS_SETTINGS}
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium text-amber-600 underline underline-offset-2 hover:text-amber-700"
+            >
+              🪙 0 pts — Buy Points
+            </Link>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium">
+              🪙 {balanceData.available_balance ?? 0} pts
+            </span>
+          )
+        )}
+      </div>
       <div className="flex items-center justify-between">
         <p>Start a new Game with a friend</p>
         <CreateGameDialog />
@@ -139,6 +169,41 @@ export default function RockPaperScissors() {
               return new Date(
                 row.original.rpsGame.created_at,
               ).toLocaleDateString();
+            },
+          },
+          {
+            header: "Bet",
+            cell: ({ row }) => {
+              const betAmount = row.original.rpsGame.bet_amount;
+              if (!betAmount) {
+                return <span className="text-muted-foreground">—</span>;
+              }
+              const state = CalculateGameState(row.original);
+              if (state === GameState.Win) {
+                return (
+                  <span className="text-green-600 font-semibold">
+                    +{betAmount} pts
+                  </span>
+                );
+              }
+              if (state === GameState.Lose) {
+                return (
+                  <span className="text-red-600 font-semibold">
+                    −{betAmount} pts
+                  </span>
+                );
+              }
+              if (
+                state === GameState.Tie ||
+                state === GameState.Cancelled ||
+                state === GameState.Expired
+              ) {
+                return <span className="text-muted-foreground">refunded</span>;
+              }
+              // Pending or Submitted
+              return (
+                <span className="text-amber-600">{betAmount} pts at stake</span>
+              );
             },
           },
         ]}

@@ -2,9 +2,26 @@ package apis
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/go-chi/httprate"
+	"github.com/tkahng/playground/internal/middleware/humamiddleware"
+	apphttp "github.com/tkahng/playground/internal/tools/http"
 )
+
+// newAuthRateLimiter returns a per-IP huma middleware that allows at most
+// limit requests per window. Exceeding it returns 429.
+func newAuthRateLimiter(limit int, window time.Duration) func(ctx huma.Context, next func(huma.Context)) {
+	return humamiddleware.HumaChiMiddleware(httprate.Limit(
+		limit,
+		window,
+		httprate.WithKeyFuncs(httprate.KeyByRealIP),
+		httprate.WithLimitHandler(func(w http.ResponseWriter, r *http.Request) {
+			apphttp.WriteErr(w, r, http.StatusTooManyRequests, "too many requests")
+		}),
+	))
+}
 
 func bindAuthApi(appApi *Api) {
 	api := appApi.Api()

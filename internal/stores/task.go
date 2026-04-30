@@ -31,6 +31,7 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	FindLastTaskRank(ctx context.Context, taskProjectID uuid.UUID) (float64, error)
 	FindTask(ctx context.Context, task *TaskFilter) (*models.Task, error)
 	FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error)
+	FindTaskByIDForUpdate(ctx context.Context, id uuid.UUID) (*models.Task, error)
 	FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error)
 	GetTaskFirstPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskLastPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
@@ -46,6 +47,8 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	WithTx(dbx database.Dbx) *DbTaskStore
 	GetTeamTaskStats(ctx context.Context, teamId uuid.UUID) (*models.TaskStats, error)
 	FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *UpdateTaskDto) error
+	FindTasksDueToday(ctx context.Context) ([]*models.Task, error)
+	FindTasksOverdue(ctx context.Context) ([]*models.Task, error)
 }
 
 type DbTaskStore struct {
@@ -261,29 +264,6 @@ func (s *DbTaskStore) GetTaskPositions(ctx context.Context, projectID uuid.UUID,
 		LIMIT $4 OFFSET $5
 	`
 	return database.QueryManySingleColumn[float64](ctx, s.db, query, projectID, status, excludeID, 2, offset)
-	// query := `
-	// 	SELECT rank
-	// 	FROM tasks
-	// 	WHERE project_id = $1 AND status = $2 AND id != $3
-	// 	ORDER BY rank ASC
-	// 	LIMIT $4 OFFSET $5
-	// `
-	// rows, err := s.db.Query(ctx, query, projectID, status, excludeID, 2, offset)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// defer rows.Close()
-
-	// var ranks []float64
-	// for rows.Next() {
-	// 	var pos float64
-	// 	if err := rows.Scan(&pos); err != nil {
-	// 		return nil, err
-	// 	}
-	// 	ranks = append(ranks, pos)
-	// }
-
-	// return ranks, rows.Err()
 }
 func NewDbTaskStore(db database.Dbx) *DbTaskStore {
 	return &DbTaskStore{
@@ -324,6 +304,21 @@ func (s *DbTaskStore) LoadTaskProjectsTasks(ctx context.Context, projectIds ...u
 
 func (s *DbTaskStore) FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error) {
 	task, err := repository.Task.GetOne(
+		ctx,
+		s.db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": id,
+			},
+		},
+	)
+	return database.OptionalRow(task, err)
+}
+
+// FindTaskByIDForUpdate fetches the task and acquires a row-level lock (SELECT … FOR UPDATE).
+// Must be called inside a transaction.
+func (s *DbTaskStore) FindTaskByIDForUpdate(ctx context.Context, id uuid.UUID) (*models.Task, error) {
+	task, err := repository.Task.GetOneForUpdate(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -810,4 +805,43 @@ func (s *DbTaskStore) GetTeamTaskStats(ctx context.Context, teamId uuid.UUID) (*
 		return nil, nil
 	}
 	return &res[0], nil
+}
+
+// FindTasksDueToday returns non-done tasks whose end_at falls within today (UTC).
+func (s *DbTaskStore) FindTasksDueToday(ctx context.Context) ([]*models.Task, error) {
+	now := time.Now().UTC()
+	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	endOfDay := startOfDay.Add(24 * time.Hour)
+	return repository.Task.Get(
+		ctx,
+		s.db,
+		&map[string]any{
+			"_and": []map[string]any{
+				{"end_at": map[string]any{repository.Gte: startOfDay}},
+				{"end_at": map[string]any{repository.Lt: endOfDay}},
+				{"status": map[string]any{repository.Neq: models.TaskStatusDone}},
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
+}
+
+// FindTasksOverdue returns non-done tasks whose end_at is before today (UTC).
+func (s *DbTaskStore) FindTasksOverdue(ctx context.Context) ([]*models.Task, error) {
+	startOfDay := time.Now().UTC().Truncate(24 * time.Hour)
+	return repository.Task.Get(
+		ctx,
+		s.db,
+		&map[string]any{
+			"_and": []map[string]any{
+				{"end_at": map[string]any{repository.Lt: startOfDay}},
+				{"status": map[string]any{repository.Neq: models.TaskStatusDone}},
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
 }

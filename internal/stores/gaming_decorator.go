@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 )
@@ -22,11 +23,13 @@ type DbGamingStoreDecorator struct {
 	FindPlayersFunc           func(ctx context.Context, filter *PlayersFilter) ([]*models.Player, error)
 	UpdateFriendshipFunc      func(ctx context.Context, player *models.Frindship) (*models.Frindship, error)
 	UpdatePlayerFunc          func(ctx context.Context, player *models.Player) (*models.Player, error)
-	CreateRpsGameFunc         func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
-	UpdateRpsGameFunc         func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
-	FindRpsGameFunc           func(ctx context.Context, filter *RpsGameFilter) (*models.RpsGame, error)
-	FindRpsGamesFunc          func(ctx context.Context, filter *RpsGameFilter) ([]*models.RpsGame, error)
-	CountRpsGamesFunc         func(ctx context.Context, filter *RpsGameFilter) (int64, error)
+	CreateRpsGameFunc              func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
+	UpdateRpsGameFunc              func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
+	FindRpsGameFunc                func(ctx context.Context, filter *RpsGameFilter) (*models.RpsGame, error)
+	FindRpsGamesFunc               func(ctx context.Context, filter *RpsGameFilter) ([]*models.RpsGame, error)
+	CountRpsGamesFunc              func(ctx context.Context, filter *RpsGameFilter) (int64, error)
+	FindRpsGameForUpdateFunc       func(ctx context.Context, gameID uuid.UUID) (*models.RpsGame, error)
+	FindExpiredPendingBetGamesFunc func(ctx context.Context) ([]*models.RpsGame, error)
 	CountRpsParticipantsFunc  func(ctx context.Context, filter *RpsParticipantFilter) (int64, error)
 	CreateRpsParticipantFunc  func(ctx context.Context, participant *models.RpsParticipant) (*models.RpsParticipant, error)
 	CreateRpsParticipantsFunc func(ctx context.Context, participant []*models.RpsParticipant) ([]*models.RpsParticipant, error)
@@ -376,6 +379,28 @@ func (s *DbGamingStoreDecorator) CountFriendships(ctx context.Context, filter *F
 		return 0, fmt.Errorf("Gaming store decorator CountFriendships %w", ErrDelegateNil)
 	}
 	return s.Delegate.CountFriendships(ctx, filter)
+}
+
+// FindRpsGameForUpdate implements [GamingStore].
+func (s *DbGamingStoreDecorator) FindRpsGameForUpdate(ctx context.Context, gameID uuid.UUID) (*models.RpsGame, error) {
+	if s.FindRpsGameForUpdateFunc != nil {
+		return s.FindRpsGameForUpdateFunc(ctx, gameID)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator FindRpsGameForUpdate %w", ErrDelegateNil)
+	}
+	return s.Delegate.FindRpsGameForUpdate(ctx, gameID)
+}
+
+// FindExpiredPendingBetGames implements [GamingStore].
+func (s *DbGamingStoreDecorator) FindExpiredPendingBetGames(ctx context.Context) ([]*models.RpsGame, error) {
+	if s.FindExpiredPendingBetGamesFunc != nil {
+		return s.FindExpiredPendingBetGamesFunc(ctx)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator FindExpiredPendingBetGames %w", ErrDelegateNil)
+	}
+	return s.Delegate.FindExpiredPendingBetGames(ctx)
 }
 
 var _ GamingStore = (*DbGamingStoreDecorator)(nil)

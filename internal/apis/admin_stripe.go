@@ -97,6 +97,7 @@ func ToStripeProductListFilter(input *StripeProductListParams) (*stores.StripePr
 	filter.Ids = input.Ids
 	filter.Active = input.Active
 	filter.Q = input.Q
+	filter.MetadataType = input.MetadataType
 	return filter, nil
 }
 

@@ -18,7 +18,7 @@ export default function PricingPage() {
       // if (user) {
       //   userSubs = await getUserSubscriptions(user.tokens.access_token);
       // }
-      const products = await getProductsWithPrices();
+      const products = await getProductsWithPrices(undefined, "subscription");
       return { products, userSubs: null };
     },
   });

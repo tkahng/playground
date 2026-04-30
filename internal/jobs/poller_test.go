@@ -16,7 +16,10 @@ import (
 func TestPoller_Run(t *testing.T) {
 	ctx := context.Background()
 	cfg := conf.ZeroEnvConfig()
-	dbx := database.CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseUrl())
+	dbx, err := database.CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseUrl())
+	if err != nil {
+		t.Fatalf("failed to create database pool: %v", err)
+	}
 	t.Cleanup(func() {
 		_, err := repository.Job.Delete(ctx, dbx, &map[string]any{})
 		dbx.Close()

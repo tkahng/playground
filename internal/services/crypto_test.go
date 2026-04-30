@@ -10,6 +10,7 @@ import (
 const validKey = "BlKEVCiNGfRH0gwCVJ6pxxbDW3iLu/nN"
 
 func TestNewCrypto(t *testing.T) {
+	t.Parallel()
 	t.Run("panics with invalid key length", func(t *testing.T) {
 		assert.PanicsWithValue(t, "encryption key must be 32 chars", func() {
 			services.NewCrypto("invalid-key-length")
@@ -24,6 +25,7 @@ func TestNewCrypto(t *testing.T) {
 }
 
 func TestCrypto_EncryptDecrypt(t *testing.T) {
+	t.Parallel()
 	crypto := services.NewCrypto(validKey)
 
 	t.Run("encrypt and decrypt successfully", func(t *testing.T) {

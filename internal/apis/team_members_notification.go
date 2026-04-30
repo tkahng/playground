@@ -74,6 +74,9 @@ func (api *Api) TeamMembersSseEventsBind(humapi huma.API) {
 		map[string]any{
 			"task_completed":   &notification.NotificationPayload[notification.TaskCompletedNotificationData]{},
 			"task_due_today":   &notification.NotificationPayload[notification.TaskDueTodayNotificationData]{},
+			"task_overdue":         &notification.NotificationPayload[notification.TaskOverdueNotificationData]{},
+			"task_status_changed":    &notification.NotificationPayload[notification.TaskStatusChangedNotificationData]{},
+			"project_status_changed": &notification.NotificationPayload[notification.ProjectStatusChangedNotificationData]{},
 			"new_team_member":  &notification.NotificationPayload[notification.NewTeamMemberNotificationData]{},
 			"assigned_to_task": &notification.NotificationPayload[notification.AssignedToTaskNotificationData]{},
 			"ping":             &PingMessage{},
@@ -234,6 +237,87 @@ func (api *Api) ReadTeamMembersNotificationsBind(aapi huma.API) {
 				return nil, err
 			}
 
+			return nil, nil
+		},
+	)
+}
+
+type UnreadCountResponse struct {
+	Body struct {
+		Count int64 `json:"count"`
+	}
+}
+
+func (api *Api) UnreadNotificationsCountBind(aapi huma.API) {
+	huma.Register(
+		aapi,
+		huma.Operation{
+			OperationID: "unread-team-members-notifications-count",
+			Method:      http.MethodGet,
+			Path:        "/team-members/{team-member-id}/notifications/unread-count",
+			Summary:     "unread-team-members-notifications-count",
+			Description: "count of unread notifications for a team member",
+			Tags:        []string{"Team Members"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.MemberIdBelongsToUser(),
+			),
+		},
+		func(ctx context.Context, input *struct {
+			TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
+		}) (*UnreadCountResponse, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("no team info")
+			}
+			count, err := api.App().Adapter().Notification().CountNotification(ctx, &stores.NotificationFilter{
+				TeamMemberIds: []uuid.UUID{teamInfo.Member.ID},
+				Unread:        true,
+			})
+			if err != nil {
+				return nil, err
+			}
+			resp := &UnreadCountResponse{}
+			resp.Body.Count = count
+			return resp, nil
+		},
+	)
+}
+
+func (api *Api) MarkAllNotificationsReadBind(aapi huma.API) {
+	huma.Register(
+		aapi,
+		huma.Operation{
+			OperationID: "mark-all-team-members-notifications-read",
+			Method:      http.MethodPost,
+			Path:        "/team-members/{team-member-id}/notifications/read-all",
+			Summary:     "mark-all-team-members-notifications-read",
+			Description: "mark all notifications as read for a team member",
+			Tags:        []string{"Team Members"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusBadRequest},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.MemberIdBelongsToUser(),
+			),
+		},
+		func(ctx context.Context, input *struct {
+			TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
+		}) (*struct{}, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("no team info")
+			}
+			err := api.App().Adapter().Notification().MarkAllNotificationsRead(ctx, teamInfo.Member.ID)
+			if err != nil {
+				return nil, err
+			}
 			return nil, nil
 		},
 	)

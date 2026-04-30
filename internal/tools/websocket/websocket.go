@@ -101,8 +101,11 @@ func ServeWS(
 		}
 		connSetup(conn)
 		client := clientFactory(conn)
-		ctx := context.Background()
-		ctx, cf := context.WithCancel(ctx)
+		// Derive from the request context so values (auth, tracing) are inherited,
+		// but strip the cancellation: net/http cancels r.Context() when the handler
+		// returns, which would immediately kill the WebSocket goroutines.
+		// Shutdown propagates through Manager.Run(serverCtx) instead.
+		ctx, cf := context.WithCancel(context.WithoutCancel(r.Context()))
 		onCreate(ctx, cf, client)
 
 		// all writes will happen in this goroutine, ensuring only one write on

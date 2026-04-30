@@ -131,8 +131,8 @@ func getRpsGameInviteFromTokenQuery(app core.App, ctx context.Context, token str
 	if rpsGameInvite == nil {
 		return nil, huma.Error400BadRequest("invalid token")
 	}
-	if !rpsGameInvite.ExpiresAt.UTC().Before(time.Now().UTC()) {
-		return nil, huma.Error400BadRequest("invalid token")
+	if rpsGameInvite.ExpiresAt.UTC().Before(time.Now().UTC()) {
+		return nil, huma.Error400BadRequest("token expired")
 	}
 	return rpsGameInvite, nil
 }
@@ -290,12 +290,13 @@ func bindSubmitMoveToRpsGameApi(api huma.API, app core.App) {
 			}
 			var rpsGameWithParticipants *services.RpsGameWithParticipants
 			txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
-				rpsGameWithParticipants, err = app.RpsGame().RespondToGameRequest(txCtx, &services.GameRequestResponse{
+				resp := &services.GameRequestResponse{
 					GameID:          game.RpsGame.ID,
 					InvitedPlayerID: currentPlayer.ID,
 					Move:            models.RpsParticipantMove(input.Body.Move),
 					Status:          models.RpsGameStatus(input.Body.Status),
-				})
+				}
+				rpsGameWithParticipants, err = app.RpsGame().RespondToGameRequest(txCtx, resp)
 				return err
 			})
 			if txErr != nil {
@@ -362,6 +363,7 @@ func SendRpsGameRequestToUnregisteredPlayer(app core.App, ctx context.Context, i
 			RequestingPlayerID: currentPlayer.ID,
 			InvitedPlayerID:    rpsGameWithParticipants.InvitedParticipant.PlayerID,
 			Token:              security.GenerateTokenKey(),
+			ExpiresAt:          rpsGameWithParticipants.RpsGame.ExpiresAt,
 		})
 		if err != nil {
 			return err
@@ -432,6 +434,7 @@ func bindSendGameRequestToUnRegisteredPlayerApi(api huma.API, app core.App) {
 type RpsGameRequestInput struct {
 	InvitingPlayerId uuid.UUID          `json:"inviting_player_id" required:"true" format:"uuid"`
 	Move             RpsParticipantMove `json:"move" required:"true" enum:"rock,paper,scissors"`
+	BetAmount        *int64             `json:"bet_amount,omitempty" required:"false" minimum:"1" doc:"Optional points wager. If set, the host must have sufficient balance."`
 }
 
 func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
@@ -487,12 +490,17 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 			}
 			var rpsGameWithParticipants *services.RpsGameWithParticipants
 			txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
-				rpsGameWithParticipants, err = app.RpsGame().RequestGame(txCtx, &services.RpsGameRequestInput{
+				reqInput := &services.RpsGameRequestInput{
 					RequestingPlayerID:   currentPlayer.ID,
 					InvitedPlayerID:      player.ID,
 					RequestingPlayerMove: models.RpsParticipantMove(input.Body.Move),
 					DurationSeconds:      3 * 24 * 60 * 60,
-				})
+				}
+				if input.Body.BetAmount != nil {
+					reqInput.BetAmount = input.Body.BetAmount
+					reqInput.HostUserID = &user.User.ID
+				}
+				rpsGameWithParticipants, err = app.RpsGame().RequestGame(txCtx, reqInput)
 				return err
 			})
 			if txErr != nil {

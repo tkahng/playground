@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/tkahng/playground/internal/jobs"
 )
 
 type TaskDueTodayJobArgs struct {
@@ -15,5 +14,3 @@ type TaskDueTodayJobArgs struct {
 func (j TaskDueTodayJobArgs) Kind() string {
 	return "task_due_today"
 }
-
-type TaskDueTodayJobWorker jobs.Worker[TaskDueTodayJobArgs]

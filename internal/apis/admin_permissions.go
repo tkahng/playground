@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
@@ -147,7 +146,6 @@ func (api *Api) AdminPermissionsList(ctx context.Context, input *struct {
 	PermissionsListParams
 }) (*ApiPaginatedOutput[*Permission], error) {
 	store := api.App().Adapter().Rbac()
-	fmt.Println(input)
 	filter := new(stores.PermissionFilter)
 	filter.Page = input.Page
 	filter.PerPage = input.PerPage
@@ -276,12 +274,15 @@ func (api *Api) AdminPermissionsUpdate(ctx context.Context, input *struct {
 		Name:        input.Body.Name,
 		Description: input.Description,
 	})
-
+	if err != nil {
+		return nil, err
+	}
+	updated, err := store.FindPermissionById(ctx, permission.ID)
 	if err != nil {
 		return nil, err
 	}
 	return &struct{ Body Permission }{
-		Body: *fromModelPermission(permission),
+		Body: *fromModelPermission(updated),
 	}, nil
 }
 

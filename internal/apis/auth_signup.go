@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/auth"
@@ -22,6 +23,7 @@ type SignupInput struct {
 }
 
 func (a *Api) bindSingup(api huma.API) {
+	rl := newAuthRateLimiter(10, time.Minute)
 	huma.Register(
 		api,
 		huma.Operation{
@@ -31,7 +33,8 @@ func (a *Api) bindSingup(api huma.API) {
 			Summary:     "Sign up",
 			Description: "Count the number of colors for all themes",
 			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusNotFound},
+			Errors:      []int{http.StatusNotFound, http.StatusTooManyRequests},
+			Middlewares: huma.Middlewares{rl},
 		},
 		a.SignUp,
 	)

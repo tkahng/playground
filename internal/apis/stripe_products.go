@@ -50,9 +50,10 @@ type StripeProductListParams struct {
 	PaginatedInput
 	SortParams
 	StripeProductExpand
-	Q      string                    `query:"q,omitempty" required:"false"`
-	Ids    []string                  `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100"`
-	Active types.OptionalParam[bool] `query:"active,omitempty" required:"false"`
+	Q            string                                        `query:"q,omitempty" required:"false"`
+	Ids          []string                                      `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100"`
+	Active       types.OptionalParam[bool]                     `query:"active,omitempty" required:"false"`
+	MetadataType types.OptionalParam[models.StripeProductType] `query:"metadata_type,omitempty" required:"false" enum:"subscription,points"`
 }
 
 type StripeProductExpand struct {
@@ -83,6 +84,7 @@ func (a *Api) bindStripeProductsWithPrices(api huma.API) {
 type StripeProductsWithPricesInput struct {
 	PaginatedInput
 	SortParams
+	MetadataType types.OptionalParam[models.StripeProductType] `query:"metadata_type,omitempty" required:"false" enum:"subscription,points"`
 }
 
 func (api *Api) StripeProductsWithPrices(ctx context.Context, input *StripeProductsWithPricesInput) (*ApiPaginatedOutput[*StripeProduct], error) {
@@ -93,6 +95,7 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, input *StripeProdu
 	filter.Active.Value = true
 	filter.SortBy = input.SortBy
 	filter.SortOrder = input.SortOrder
+	filter.MetadataType = input.MetadataType
 
 	products, err := api.App().Adapter().Product().ListProducts(ctx, filter)
 	if err != nil {

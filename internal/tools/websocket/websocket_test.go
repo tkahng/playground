@@ -81,3 +81,51 @@ func TestWSHandler(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	//FIXME: seems to be leaking goroutines
 }
+
+type ctxKey string
+
+// TestServeWS_PropagatesRequestContextValues verifies that values stored on
+// the HTTP request context (e.g. auth info injected by middleware) are
+// accessible inside the onCreate callback's context after the upgrade.
+func TestServeWS_PropagatesRequestContextValues(t *testing.T) {
+	const key ctxKey = "user_id"
+	const want = "abc-123"
+
+	upgrader := gwebsocket.Upgrader{ReadBufferSize: 1024, WriteBufferSize: 1024}
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+
+	gotValue := make(chan any, 1)
+
+	h := websocket.ServeWS(
+		upgrader,
+		websocket.DefaultSetupConn,
+		websocket.NewClient,
+		func(ctx context.Context, cf context.CancelFunc, c websocket.Client) {
+			gotValue <- ctx.Value(key)
+			cf() // immediately cancel so goroutines exit
+		},
+		func(c websocket.Client) { c.Wait() },
+		50*time.Second,
+		nil,
+	)
+
+	// Inject a value into the request context via middleware before the upgrade.
+	withValue := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r = r.WithContext(context.WithValue(r.Context(), key, want))
+		h(w, r)
+	})
+
+	s := httptest.NewServer(withValue)
+	defer s.Close()
+
+	rawWS, _, err := gwebsocket.DefaultDialer.Dial("ws"+strings.TrimPrefix(s.URL, "http"), nil)
+	assert.NoError(t, err)
+	defer rawWS.Close()
+
+	select {
+	case v := <-gotValue:
+		assert.Equal(t, want, v)
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for onCreate to fire")
+	}
+}

@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -33,6 +32,8 @@ func bindApis(appApi *Api) {
 	bindUserReactionApi(appApi)
 	// bind game api
 	bindGameApi(appApi)
+	// bind ledger api
+	bindLedgerApi(appApi.Api(), appApi.App())
 }
 func bindMiddlewares(api API) {
 	api.Api().UseMiddleware(humamiddleware.HumaOperationSecurityMiddleware())
@@ -58,7 +59,6 @@ func bindMiscApi(appApi *Api) {
 	huma.Get(api, "/", func(ctx context.Context, input *struct {
 		Page types.OmittableNullable[string] `query:"page" required:"false"`
 	}) (*IndexOutput, error) {
-		fmt.Println("input", input)
 		return &IndexOutput{
 			Body: IndexOutputBody{
 				Access: "public",

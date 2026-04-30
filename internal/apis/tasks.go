@@ -204,62 +204,83 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 			if err != nil {
 				return nil, huma.Error400BadRequest("Invalid task ID")
 			}
-			task, err := api.App().Adapter().Task().FindTaskByID(ctx, id)
-			if err != nil {
-				return nil, err
+
+			// previousState is captured inside the transaction from the locked read,
+			// ensuring the notification decisions below reflect the actual DB state at
+			// the time of the update (not a stale snapshot from a concurrent request).
+			var (
+				previousStatus   models.TaskStatus
+				previousDueDate  *time.Time
+				previousAssignee *uuid.UUID
+			)
+
+			txErr := api.App().Adapter().RunInTx(ctx, func(tx stores.StorageAdapterInterface) error {
+				task, err := tx.Task().FindTaskByIDForUpdate(ctx, id)
+				if err != nil {
+					return err
+				}
+				if task == nil {
+					return huma.Error404NotFound("Task not found")
+				}
+
+				previousStatus = task.Status
+				previousDueDate = task.EndAt
+				previousAssignee = task.AssigneeID
+
+				task.Name = input.Body.Name
+				task.Description = input.Body.Description
+				task.Status = models.TaskStatus(input.Body.Status)
+				task.StartAt = input.Body.StartAt
+				task.EndAt = input.Body.EndAt
+				task.AssigneeID = input.Body.AssigneeID
+				task.ReporterID = input.Body.ReporterID
+				task.ParentID = input.Body.ParentID
+
+				return tx.Task().UpdateTask(ctx, task)
+			})
+			if txErr != nil {
+				return nil, txErr
 			}
 
-			if task == nil {
-				return nil, huma.Error404NotFound("Task not found")
-			}
-			previousStatus := task.Status
-			previousDueDate := task.EndAt
-			previousAssignee := task.AssigneeID
-
-			task.Name = input.Body.Name
-			task.Description = input.Body.Description
-			task.Status = models.TaskStatus(input.Body.Status)
-			task.StartAt = input.Body.StartAt
-			task.EndAt = input.Body.EndAt
-
-			task.AssigneeID = input.Body.AssigneeID
-			task.ReporterID = input.Body.ReporterID
-			task.ParentID = input.Body.ParentID
-
-			err = api.App().Adapter().Task().UpdateTask(ctx, task)
-			if err != nil {
-				return nil, err
-			}
+			newStatus := models.TaskStatus(input.Body.Status)
 
 			newAssignee := previousAssignee == nil && input.Body.AssigneeID != nil
 			differentAssignee := previousAssignee != nil && input.Body.AssigneeID != nil && *previousAssignee != *input.Body.AssigneeID
 			if newAssignee || differentAssignee {
-				err = api.App().JobService().EnqueAssignedToTaskJob(ctx, &workers.AssignedToTasJobArgs{
-					TaskID:              task.ID,
-					AssignedByMemeberID: teamInfo.Member.ID,
-					AssigneeMemberID:    *input.Body.AssigneeID,
+				err = api.App().JobService().EnqueueAssignedToTaskJob(ctx, &workers.AssignedToTaskJobArgs{
+					TaskID:             id,
+					AssignedByMemberID: teamInfo.Member.ID,
+					AssigneeMemberID:   *input.Body.AssigneeID,
 				})
 				if err != nil {
 					return nil, err
 				}
 			}
 
-			newDueDate := previousDueDate == nil && task.EndAt != nil
-			differentDueDate := previousDueDate != nil && task.EndAt != nil && *previousDueDate != *task.EndAt
+			newDueDate := previousDueDate == nil && input.Body.EndAt != nil
+			differentDueDate := previousDueDate != nil && input.Body.EndAt != nil && *previousDueDate != *input.Body.EndAt
 			if newDueDate || differentDueDate {
-				dueDate := *task.EndAt
+				dueDate := *input.Body.EndAt
 				if dueDate.Before(time.Now()) {
 					dueDate = time.Now().Add(10 * time.Second)
 				}
 				err = api.App().JobService().EnqueTaskDueJob(ctx, &workers.TaskDueTodayJobArgs{
-					TaskID:  task.ID,
+					TaskID:  id,
+					DueDate: dueDate,
+				})
+				if err != nil {
+					return nil, err
+				}
+				err = api.App().JobService().EnqueueTaskOverdueJob(ctx, &workers.TaskOverdueJobArgs{
+					TaskID:  id,
 					DueDate: dueDate,
 				})
 				if err != nil {
 					return nil, err
 				}
 			}
-			newDoneStatus := previousStatus != task.Status && task.Status == models.TaskStatusDone
+
+			newDoneStatus := previousStatus != newStatus && newStatus == models.TaskStatusDone
 			if newDoneStatus {
 				err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
 					TaskID:              id,
@@ -270,6 +291,20 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 					return nil, err
 				}
 			}
+
+			statusChanged := previousStatus != newStatus && newStatus != models.TaskStatusDone
+			if statusChanged {
+				err = api.App().JobService().EnqueueTaskStatusChangedJob(ctx, &workers.TaskStatusChangedJobArgs{
+					TaskID:            id,
+					OldStatus:         string(previousStatus),
+					NewStatus:         string(newStatus),
+					ChangedByMemberID: teamInfo.Member.ID,
+				})
+				if err != nil {
+					return nil, err
+				}
+			}
+
 			return nil, nil
 		},
 	)
@@ -304,7 +339,8 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 		return nil, err
 	}
 
-	if models.TaskStatus(input.Body.Status) == models.TaskStatusDone {
+	newStatus := models.TaskStatus(input.Body.Status)
+	if newStatus == models.TaskStatusDone {
 		if task.Status != models.TaskStatusDone {
 			err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
 				TaskID:              id,
@@ -314,6 +350,16 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 			if err != nil {
 				return nil, err
 			}
+		}
+	} else if task.Status != newStatus {
+		err = api.App().JobService().EnqueueTaskStatusChangedJob(ctx, &workers.TaskStatusChangedJobArgs{
+			TaskID:            id,
+			OldStatus:         string(task.Status),
+			NewStatus:         string(newStatus),
+			ChangedByMemberID: teamInfo.Member.ID,
+		})
+		if err != nil {
+			return nil, err
 		}
 	}
 	return nil, nil

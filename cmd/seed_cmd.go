@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -49,14 +50,19 @@ var seedRolesCmd = &cobra.Command{
 	Short: "seed roles",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		conf := conf.GetConfig[conf.DBConfig]()
-
-		dbx := database.CreateNewQueriesContext(ctx, conf.GetDatabaseUrl())
+		cfg := conf.GetConfig[conf.DBConfig]()
+		dbx, err := database.CreateNewQueriesContext(ctx, cfg.GetDatabaseUrl())
+		if err != nil {
+			return err
+		}
 		defer dbx.Close()
-
-		rbacStore := stores.NewDbRBACStore(dbx)
-		return rbacStore.CreateRolesAndPermissions(ctx, shared.KnownRoleNamesPermissionsMap)
+		return SeedRoles(ctx, dbx)
 	},
+}
+
+func SeedRoles(ctx context.Context, db database.Dbx) error {
+	rbacStore := stores.NewDbRBACStore(db)
+	return rbacStore.CreateRolesAndPermissions(ctx, shared.KnownRoleNamesPermissionsMap)
 }
 
 var seedUserCmd = &cobra.Command{
@@ -64,30 +70,30 @@ var seedUserCmd = &cobra.Command{
 	Short:   "seed user",
 	Example: "seed user admin@k2dv.io Password123! true",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 3 {
-			return errors.New("missing email and password arguments")
-		}
-
-		if args[0] == "" || is.EmailFormat.Validate(args[0]) != nil {
-			return errors.New("mrror missing or invalid email address")
-		}
-		email := args[0]
-		password := args[1]
-		verirfied := args[2]
 		ctx := cmd.Context()
 		cfg := conf.AppConfigGetter()
 		app := core.NewApp(cfg)
 		defer app.Close()
-		_, err := app.Auth().Signup(
-			ctx,
-			&auth.SignupInput{
-				Email:    email,
-				Password: password,
-				Verified: verirfied == "true",
-			},
-		)
-		return err
+		return SeedUser(ctx, app, args)
 	},
+}
+
+func SeedUser(ctx context.Context, app core.App, args []string) error {
+	if len(args) != 3 {
+		return errors.New("missing email, password, and verified arguments")
+	}
+	if args[0] == "" || is.EmailFormat.Validate(args[0]) != nil {
+		return errors.New("missing or invalid email address")
+	}
+	email := args[0]
+	password := args[1]
+	verified := args[2]
+	_, err := app.Auth().Signup(ctx, &auth.SignupInput{
+		Email:    email,
+		Password: password,
+		Verified: verified == "true",
+	})
+	return err
 }
 
 var seedTeam = &cobra.Command{
@@ -95,42 +101,39 @@ var seedTeam = &cobra.Command{
 	Short:   "seed team",
 	Example: "seed team admin@k2dv.io teamSlug",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 2 {
-			return errors.New("missing email and password arguments")
-		}
-
-		if args[0] == "" || is.EmailFormat.Validate(args[0]) != nil {
-			return errors.New("mrror missing or invalid email address")
-		}
-		email := args[0]
-		slug := slug.NewSlug(args[1])
-
 		ctx := cmd.Context()
 		cfg := conf.AppConfigGetter()
 		app := core.NewApp(cfg)
 		defer app.Close()
-		user, err := app.Adapter().User().FindUser(ctx, &stores.UserFilter{
-			Emails: []string{email},
-		})
-		if err != nil {
-			return err
-		}
-		if user == nil {
-			return errors.New("user not found")
-		}
-
-		team, err := app.Team().CreateTeamWithOwner(
-			ctx,
-			slug,
-			slug,
-			user.ID,
-		)
-		if err != nil {
-			return err
-		}
-		if team == nil {
-			return errors.New("team not found")
-		}
-		return err
+		return SeedTeam(ctx, app, args)
 	},
+}
+
+func SeedTeam(ctx context.Context, app core.App, args []string) error {
+	if len(args) != 2 {
+		return errors.New("missing email and team slug arguments")
+	}
+	if args[0] == "" || is.EmailFormat.Validate(args[0]) != nil {
+		return errors.New("missing or invalid email address")
+	}
+	email := args[0]
+	teamSlug := slug.NewSlug(args[1])
+
+	user, err := app.Adapter().User().FindUser(ctx, &stores.UserFilter{
+		Emails: []string{email},
+	})
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return errors.New("user not found")
+	}
+	team, err := app.Team().CreateTeamWithOwner(ctx, teamSlug, teamSlug, user.ID)
+	if err != nil {
+		return err
+	}
+	if team == nil {
+		return errors.New("team not found")
+	}
+	return nil
 }

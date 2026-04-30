@@ -2,7 +2,7 @@ package core
 
 import (
 	"context"
-
+	"fmt"
 	"log/slog"
 
 	"github.com/tkahng/playground/internal/auth"
@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/workers"
 	"github.com/tkahng/playground/internal/token"
 
 	"github.com/tkahng/playground/internal/tools/filesystem"
@@ -63,6 +64,8 @@ type BaseApp struct {
 	eventManager events.EventManager
 
 	rpsGame services.RpsGameService
+	ledger  services.LedgerService
+	betting services.BettingService
 }
 
 // RpsGame implements [App].
@@ -71,6 +74,22 @@ func (b *BaseApp) RpsGame() services.RpsGameService {
 		panic("rps game not initialized")
 	}
 	return b.rpsGame
+}
+
+// Ledger implements [App].
+func (b *BaseApp) Ledger() services.LedgerService {
+	if b.ledger == nil {
+		panic("ledger service not initialized")
+	}
+	return b.ledger
+}
+
+// Betting implements [App].
+func (b *BaseApp) Betting() services.BettingService {
+	if b.betting == nil {
+		panic("betting service not initialized")
+	}
+	return b.betting
 }
 
 func (b *BaseApp) Encrypt() services.Encryptor {
@@ -299,12 +318,25 @@ func (app *BaseApp) RunBackgroundProcesses(firstCtx context.Context) {
 			return
 		}
 	}()
+	if err := workers.SeedRpsGameExpiryJob(firstCtx, app.JobManager()); err != nil {
+		app.Logger().ErrorContext(firstCtx, "failed to seed rps expiry job", slog.Any("error", err))
+	}
+
+	go func() {
+		app.Logger().Info("Starting task notification scheduler")
+		scheduler := services.NewTaskNotificationScheduler(app.Adapter().Task(), app.JobService())
+		scheduler.Run(firstCtx)
+	}()
 }
 
 func NewApp(config *conf.EnvConfig) *BaseApp {
 	app := new(BaseApp)
 
-	db := database.CreateNewQueriesContext(context.Background(), config.Db.GetDatabaseUrl())
+	db, err := database.CreateNewQueriesContext(context.Background(), config.Db.GetDatabaseUrl())
+	if err != nil {
+		slog.Error("failed to connect to database", slog.Any("error", err))
+		panic(fmt.Sprintf("failed to connect to database: %v", err))
+	}
 	adapter := stores.NewStorageAdapter(db)
 
 	payment := services.NewPaymentClient(config.StripeConfig)
@@ -313,12 +345,19 @@ func NewApp(config *conf.EnvConfig) *BaseApp {
 
 	logger := logger.GetDefaultLogger()
 
+	fs, err := filesystem.NewFileSystem(context.Background(), config.StorageConfig)
+	if err != nil {
+		slog.Error("failed to create filesystem", slog.Any("error", err))
+		panic(fmt.Sprintf("failed to create filesystem: %v", err))
+	}
+
 	app.db = db
 	app.adapter = adapter
 	app.logger = logger
 	app.cfg = config
 	app.paymentClient = payment
 	app.mailer = mailer
+	app.fs = fs
 	assembler := NewAssembler()
 	assembler.AssembleApp(app)
 	return app
@@ -340,6 +379,7 @@ func NewTestBaseApp(config *conf.EnvConfig, db database.Dbx) *BaseApp {
 	app.cfg = config
 	app.paymentClient = payment
 	app.mailer = mailer
+	app.fs = filesystem.NewMockFileSystem(config.StorageConfig)
 	assembler := NewAssembler()
 	assembler.AssembleApp(app)
 	return app

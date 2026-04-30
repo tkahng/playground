@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"path"
 	"regexp"
@@ -52,13 +51,13 @@ func (fs *S3FileSystem) PutFile(ctx context.Context, authority string, key strin
 	return err
 }
 
-func NewFileSystem(cfg conf.StorageConfig) (FileSystem, error) {
-	newConfig, err := config.LoadDefaultConfig(context.TODO(),
+func NewFileSystem(ctx context.Context, cfg conf.StorageConfig) (FileSystem, error) {
+	newConfig, err := config.LoadDefaultConfig(ctx,
 		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(cfg.ClientId, cfg.ClientSecret, "")),
 		config.WithRegion(cfg.Region),
 	)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	client := awss3.NewFromConfig(newConfig, func(o *awss3.Options) {

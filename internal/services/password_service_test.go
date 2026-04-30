@@ -7,6 +7,7 @@ import (
 )
 
 func TestHashService_HashAndVerifyPassword(t *testing.T) {
+	t.Parallel()
 	service := NewHashService()
 	password := "mySecretPassword123!"
 	hash, err := service.Hash(password)
