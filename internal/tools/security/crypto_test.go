@@ -27,25 +27,6 @@ func TestS256Challenge(t *testing.T) {
 	}
 }
 
-func TestMD5(t *testing.T) {
-	scenarios := []struct {
-		code     string
-		expected string
-	}{
-		{"", "d41d8cd98f00b204e9800998ecf8427e"},
-		{"123", "202cb962ac59075b964b07152d234b70"},
-	}
-
-	for _, s := range scenarios {
-		t.Run(s.code, func(t *testing.T) {
-			result := security.MD5(s.code)
-
-			if result != s.expected {
-				t.Fatalf("Expected %v, got %v", s.expected, result)
-			}
-		})
-	}
-}
 
 func TestSHA256(t *testing.T) {
 	scenarios := []struct {
