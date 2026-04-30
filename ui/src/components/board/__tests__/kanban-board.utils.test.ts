@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest";
 import type { Task } from "../task-card";
-import { applyCardOverCard, applyCardOverColumn, flattenColumns, type NestedColumn } from "../kanban-board.utils";
+import {
+  applyCardOverCard,
+  applyCardOverColumn,
+  flattenColumns,
+  type NestedColumn,
+} from "../kanban-board.utils";
 
-function makeTask(id: string, columnId: "todo" | "in_progress" | "done", rank = 0): Task {
+function makeTask(
+  id: string,
+  columnId: "todo" | "in_progress" | "done",
+  rank = 0,
+): Task {
   return {
     id,
     name: `Task ${id}`,
@@ -42,11 +51,11 @@ describe("applyCardOverCard", () => {
 
   it("does not mutate the original cards array or its elements", () => {
     const cards = [makeTask("a", "todo"), makeTask("b", "in_progress")];
-    const originalColumnId = cards[0].columnId;
+    const originalColumnId = cards[0]?.columnId;
 
     applyCardOverCard(cards, "a", "b");
 
-    expect(cards[0].columnId).toBe(originalColumnId);
+    expect(cards[0]?.columnId).toBe(originalColumnId);
     expect(cards).toHaveLength(2);
   });
 
@@ -67,10 +76,7 @@ describe("applyCardOverCard", () => {
   });
 
   it("preserves all other card properties when changing column", () => {
-    const cards = [
-      makeTask("a", "todo"),
-      makeTask("b", "done"),
-    ];
+    const cards = [makeTask("a", "todo"), makeTask("b", "done")];
 
     const result = applyCardOverCard(cards, "a", "b");
     const moved = result.find((c) => c.id === "a")!;
@@ -115,11 +121,11 @@ describe("applyCardOverColumn", () => {
 
   it("does not mutate the original cards array or its elements", () => {
     const cards = [makeTask("a", "todo"), makeTask("b", "in_progress")];
-    const snapshot = cards[0].columnId;
+    const snapshot = cards[0]?.columnId;
 
     applyCardOverColumn(cards, "a", "done");
 
-    expect(cards[0].columnId).toBe(snapshot);
+    expect(cards[0]?.columnId).toBe(snapshot);
     expect(cards).toHaveLength(2);
   });
 
@@ -137,8 +143,8 @@ describe("applyCardOverColumn", () => {
     const result = applyCardOverColumn(cards, "a", "in_progress");
     const moved = result[0];
 
-    expect(moved.name).toBe("Task a");
-    expect(moved.id).toBe("a");
+    expect(moved?.name).toBe("Task a");
+    expect(moved?.id).toBe("a");
   });
 
   it("keeps the card at the same index (no reordering)", () => {

@@ -13,7 +13,7 @@ function TeamNotification() {
   const { teamMember } = useTeam();
   function messageReducer(
     state: TeamMemberNotification,
-    action: TeamMemberNotification
+    action: TeamMemberNotification,
   ) {
     toast.info(action.notification.title, {
       description: action.notification.body,
@@ -23,7 +23,7 @@ function TeamNotification() {
       ...action,
     };
   }
-  const [notification, updateLatestNotification] = useReducer(messageReducer, {
+  const [, updateLatestNotification] = useReducer(messageReducer, {
     notification: {
       title: "",
       body: "",
@@ -40,7 +40,7 @@ function TeamNotification() {
       teamMember?.id +
       "/sse?access_token=" +
       user?.tokens.access_token,
-    false
+    false,
   );
   useEventSourceListener(
     eventSource,
@@ -57,7 +57,7 @@ function TeamNotification() {
       const noti: TeamMemberNotification = JSON.parse(evt.data);
       updateLatestNotification(noti);
     },
-    [updateLatestNotification]
+    [updateLatestNotification],
   );
 
   return null;

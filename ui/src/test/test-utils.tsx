@@ -3,6 +3,7 @@ import { render, type RenderOptions } from "@testing-library/react";
 import React from "react";
 import { AuthContext, type AuthContextType } from "@/context/auth-context";
 import type { UserInfoTokens } from "@/schema.types";
+import { vi } from "vitest";
 
 export const mockUserTokens: UserInfoTokens = {
   user: {
@@ -14,7 +15,12 @@ export const mockUserTokens: UserInfoTokens = {
   tokens: {
     access_token: "test-access-token",
     refresh_token: "test-refresh-token",
+    expires_in: 0,
+    token_type: "",
   },
+  permissions: null,
+  providers: null,
+  roles: null,
 };
 
 export const mockAuthContext: AuthContextType = {
