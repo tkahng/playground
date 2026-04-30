@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/tkahng/playground/internal/auth"
@@ -331,7 +332,11 @@ func (app *BaseApp) RunBackgroundProcesses(firstCtx context.Context) {
 func NewApp(config *conf.EnvConfig) *BaseApp {
 	app := new(BaseApp)
 
-	db := database.CreateNewQueriesContext(context.Background(), config.Db.GetDatabaseUrl())
+	db, err := database.CreateNewQueriesContext(context.Background(), config.Db.GetDatabaseUrl())
+	if err != nil {
+		slog.Error("failed to connect to database", slog.Any("error", err))
+		panic(fmt.Sprintf("failed to connect to database: %v", err))
+	}
 	adapter := stores.NewStorageAdapter(db)
 
 	payment := services.NewPaymentClient(config.StripeConfig)

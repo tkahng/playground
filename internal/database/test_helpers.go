@@ -27,7 +27,11 @@ var (
 func DbSetup(cfg *conf.EnvConfig) (context.Context, *Queries) {
 	ctxOnce.Do(func() {
 		ctxInstance = context.Background()
-		dbx = CreateNewQueriesContext(ctxInstance, cfg.Db.GetDatabaseUrl())
+		var err error
+		dbx, err = CreateNewQueriesContext(ctxInstance, cfg.Db.GetDatabaseUrl())
+		if err != nil {
+			panic(fmt.Sprintf("DbSetup: failed to create database pool: %v", err))
+		}
 	})
 	return ctxInstance, dbx
 }
@@ -66,7 +70,10 @@ func WithNewTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	_ = logger.GetDefaultLogger()
 	ctx := context.Background()
 	cfg := conf.ZeroEnvConfig()
-	dbx := CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseUrl())
+	dbx, err := CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseUrl())
+	if err != nil {
+		t.Fatalf("WithNewTestTx: failed to create database pool: %v", err)
+	}
 	tx, beginErr := dbx.BeginTx(ctx)
 	if beginErr != nil {
 		t.Fatal(beginErr)
@@ -120,7 +127,10 @@ func WithNewDatabase(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 			t.Fatal(err)
 		}
 	}()
-	dbx := CreateNewQueriesContext(ctx, clonedDbCfg.GetDatabaseUrl())
+	dbx, err := CreateNewQueriesContext(ctx, clonedDbCfg.GetDatabaseUrl())
+	if err != nil {
+		t.Fatalf("WithNewDatabase: failed to create database pool: %v", err)
+	}
 	defer dbx.Close()
 	// panic handle
 	defer func() {
