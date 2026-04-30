@@ -3,6 +3,7 @@ package apis
 import (
 	"context"
 	"net/http"
+	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/contextstore"
@@ -16,6 +17,7 @@ type RequestPasswordResetOutput struct {
 }
 
 func (a *Api) bindRequestPasswordReset(api huma.API) {
+	rl := newAuthRateLimiter(5, time.Minute)
 	huma.Register(
 		api,
 		huma.Operation{
@@ -25,7 +27,8 @@ func (a *Api) bindRequestPasswordReset(api huma.API) {
 			Summary:     "Request password reset",
 			Description: "Request password reset",
 			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusNotFound},
+			Errors:      []int{http.StatusNotFound, http.StatusTooManyRequests},
+			Middlewares: huma.Middlewares{rl},
 		},
 		a.RequestPasswordReset,
 	)
@@ -49,6 +52,7 @@ func (api *Api) RequestPasswordReset(ctx context.Context, input *struct {
 	return nil, nil
 }
 func (a *Api) bindCheckPasswordReset(api huma.API) {
+	rl := newAuthRateLimiter(5, time.Minute)
 	huma.Register(
 		api,
 		huma.Operation{
@@ -58,7 +62,8 @@ func (a *Api) bindCheckPasswordReset(api huma.API) {
 			Summary:     "Check password reset",
 			Description: "Check password reset",
 			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusNotFound},
+			Errors:      []int{http.StatusNotFound, http.StatusTooManyRequests},
+			Middlewares: huma.Middlewares{rl},
 		},
 		a.CheckPasswordReset,
 	)
@@ -84,6 +89,7 @@ type ConfirmPasswordResetInput struct {
 }
 
 func (a *Api) bindConfirmPasswordReset(api huma.API) {
+	rl := newAuthRateLimiter(5, time.Minute)
 	huma.Register(
 		api,
 		huma.Operation{
@@ -93,7 +99,8 @@ func (a *Api) bindConfirmPasswordReset(api huma.API) {
 			Summary:     "Confirm password reset",
 			Description: "Confirm password reset",
 			Tags:        []string{"Auth"},
-			Errors:      []int{http.StatusNotFound},
+			Errors:      []int{http.StatusNotFound, http.StatusTooManyRequests},
+			Middlewares: huma.Middlewares{rl},
 		},
 		a.ConfirmPasswordReset,
 	)

@@ -18,6 +18,7 @@ type EmailVerificationPostInput struct {
 }
 
 func (a *Api) RequestVerificationBind(api huma.API) {
+	rl := newAuthRateLimiter(5, time.Minute)
 	huma.Register(
 		api,
 		huma.Operation{
@@ -27,7 +28,8 @@ func (a *Api) RequestVerificationBind(api huma.API) {
 			Summary:     "Email verification request",
 			Description: "Request email verification",
 			Tags:        []string{"Auth", "Verify"},
-			Errors:      []int{http.StatusNotFound},
+			Errors:      []int{http.StatusNotFound, http.StatusTooManyRequests},
+			Middlewares: huma.Middlewares{rl},
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
@@ -64,6 +66,7 @@ func (a *Api) RequestVerificationBind(api huma.API) {
 // to prevent data inconsistency. In case of a roll back, the only thing that will persist is the stripe customer on stripe's side,
 // which will not be accessed since each team creation attempt will simply create a new customer.
 func (api *Api) VerifyEmailBind(humaAPI huma.API) {
+	rl := newAuthRateLimiter(5, time.Minute)
 	huma.Register(
 		humaAPI,
 		huma.Operation{
@@ -73,7 +76,8 @@ func (api *Api) VerifyEmailBind(humaAPI huma.API) {
 			Summary:     "Confirm Email verification request",
 			Description: "Confirm Request email verification",
 			Tags:        []string{"Auth", "Verify"},
-			Errors:      []int{http.StatusNotFound, http.StatusConflict},
+			Errors:      []int{http.StatusNotFound, http.StatusConflict, http.StatusTooManyRequests},
+			Middlewares: huma.Middlewares{rl},
 		},
 		func(ctx context.Context, input *struct{ Body EmailVerificationPostInput }) (*struct{}, error) {
 			runInTxErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
@@ -127,6 +131,7 @@ type OtpDto struct {
 }
 
 func (api *Api) VerifyEmailOtpBind(humaAPI huma.API) {
+	rl := newAuthRateLimiter(5, time.Minute)
 	huma.Register(
 		humaAPI,
 		huma.Operation{
@@ -136,7 +141,8 @@ func (api *Api) VerifyEmailOtpBind(humaAPI huma.API) {
 			Summary:     "Confirm Email verification OTP",
 			Description: "Confirm Email verification OTP",
 			Tags:        []string{"Auth", "Verify"},
-			Errors:      []int{http.StatusNotFound},
+			Errors:      []int{http.StatusNotFound, http.StatusTooManyRequests},
+			Middlewares: huma.Middlewares{rl},
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
