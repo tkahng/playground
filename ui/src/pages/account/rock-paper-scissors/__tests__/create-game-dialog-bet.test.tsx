@@ -16,7 +16,7 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 import { rpsGameQueries } from "@/lib/rps-game-queries";
 import { CreateGameDialog } from "../create-game-dialog";
 
-const mockQueries = rpsGameQueries as {
+const mockQueries = rpsGameQueries as unknown as {
   findPlayerByEmail: ReturnType<typeof vi.fn>;
   getLedgerBalance: ReturnType<typeof vi.fn>;
   requestGame: ReturnType<typeof vi.fn>;
@@ -34,13 +34,15 @@ const fakePlayer = {
 // Interacts with the dialog to search for and find a player.
 // Mocks must be configured BEFORE calling render() — TanStack Query fires the
 // balance query on mount, before this helper executes.
-async function openDialogAndFindPlayer(user: ReturnType<typeof userEvent.setup>) {
+async function openDialogAndFindPlayer(
+  user: ReturnType<typeof userEvent.setup>,
+) {
   mockQueries.findPlayerByEmail.mockResolvedValue({ data: fakePlayer });
 
   await user.click(screen.getByRole("button", { name: /play a game/i }));
   await user.type(
     screen.getByPlaceholderText(/enter full email address/i),
-    "opponent@example.com"
+    "opponent@example.com",
   );
   await user.click(screen.getByRole("button", { name: /search/i }));
 
@@ -84,7 +86,7 @@ describe("CreateGameDialog — bet section", () => {
     await openDialogAndFindPlayer(user);
 
     expect(
-      screen.queryByPlaceholderText(/enter bet amount/i)
+      screen.queryByPlaceholderText(/enter bet amount/i),
     ).not.toBeInTheDocument();
   });
 
@@ -98,7 +100,7 @@ describe("CreateGameDialog — bet section", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByPlaceholderText(/enter bet amount/i)
+        screen.getByPlaceholderText(/enter bet amount/i),
       ).toBeInTheDocument();
     });
   });
@@ -125,9 +127,11 @@ describe("CreateGameDialog — bet section", () => {
     await user.click(screen.getByLabelText(/add a bet/i));
 
     await waitFor(() => {
-      expect(screen.getByRole("link", { name: /buy points/i })).toBeInTheDocument();
       expect(
-        screen.queryByPlaceholderText(/enter bet amount/i)
+        screen.getByRole("link", { name: /buy points/i }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByPlaceholderText(/enter bet amount/i),
       ).not.toBeInTheDocument();
     });
   });
@@ -157,14 +161,16 @@ describe("CreateGameDialog — bet section", () => {
     await user.click(toggle);
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText(/enter bet amount/i)).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText(/enter bet amount/i),
+      ).toBeInTheDocument();
     });
 
     await user.click(toggle);
 
     await waitFor(() => {
       expect(
-        screen.queryByPlaceholderText(/enter bet amount/i)
+        screen.queryByPlaceholderText(/enter bet amount/i),
       ).not.toBeInTheDocument();
     });
   });
