@@ -16,6 +16,7 @@ import (
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/core"
 	database "github.com/tkahng/playground/internal/database"
+	appOtel "github.com/tkahng/playground/internal/tools/otel"
 )
 
 var port int
@@ -47,6 +48,20 @@ func migrate(dbUrl string) error {
 func Run2() error {
 	firstCtx, firstCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer firstCancel()
+
+	otelShutdown, err := appOtel.Setup(firstCtx, "playground", "1.0.0")
+	if err != nil {
+		slog.Warn("otel setup failed, continuing without telemetry", slog.Any("error", err))
+	} else {
+		defer func() {
+			shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			if err := otelShutdown(shutCtx); err != nil {
+				slog.Warn("otel shutdown error", slog.Any("error", err))
+			}
+		}()
+	}
+
 	opts := conf.AppConfigGetter()
 	// migrate database
 	if err := migrate(opts.Db.GetDatabaseUrl()); err != nil {

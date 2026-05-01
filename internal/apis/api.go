@@ -20,6 +20,7 @@ import (
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/ui"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type API interface {
@@ -90,6 +91,7 @@ func NewAppApi(app core.App, router chi.Router, api huma.API) *Api {
 }
 
 func AddBaseMiddlewares(app core.App, r chi.Router, mw ...func(http.Handler) http.Handler) {
+	r.Use(otelhttp.NewMiddleware("http.server"))
 	r.Use(middleware.InitContextAttrsMiddleware)
 	r.Use(chimiddleware.RequestID)
 	r.Use(middleware.SetRequestIDAttrsMiddleware)
