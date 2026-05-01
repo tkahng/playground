@@ -31,6 +31,8 @@ services:
       - POSTGRES_USER=${DATABASE_USER}
       - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
       - POSTGRES_DB=${DATABASE_DB}
+    networks:
+      - dokploy-network
 
   app:
     depends_on:
@@ -47,10 +49,13 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://alloy:4318
       - OTEL_SERVICE_NAME=playground
     networks:
-      - default
+      - dokploy-network
       - observability
 
 networks:
+  dokploy-network:
+    driver: bridge
+    name: dokploy-network
   observability:
     external: true
     name: observability

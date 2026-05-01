@@ -14,6 +14,7 @@ services:
       - prometheus
     networks:
       - observability
+      - dokploy-network
 
   loki:
     image: grafana/loki:latest
@@ -69,11 +70,15 @@ services:
       - prometheus
     networks:
       - observability
+      - dokploy-network
 
 networks:
   observability:
     name: observability
     driver: bridge
+  dokploy-network:
+    external: true
+    name: dokploy-network
 
 volumes:
   loki-data:

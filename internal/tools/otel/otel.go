@@ -43,7 +43,7 @@ func Setup(ctx context.Context, serviceName, serviceVersion string) (ShutdownFun
 		return nil, err
 	}
 
-	traceExp, err := otlptracehttp.New(ctx)
+	traceExp, err := otlptracehttp.New(ctx, otlptracehttp.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func Setup(ctx context.Context, serviceName, serviceVersion string) (ShutdownFun
 		propagation.Baggage{},
 	))
 
-	metricExp, err := otlpmetrichttp.New(ctx)
+	metricExp, err := otlpmetrichttp.New(ctx, otlpmetrichttp.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func Setup(ctx context.Context, serviceName, serviceVersion string) (ShutdownFun
 	)
 	otel.SetMeterProvider(mp)
 
-	logExp, err := otlploghttp.New(ctx)
+	logExp, err := otlploghttp.New(ctx, otlploghttp.WithInsecure())
 	if err != nil {
 		return nil, err
 	}
