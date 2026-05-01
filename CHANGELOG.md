@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/tkahng/playground/compare/v1.0.0...v1.0.1) (2026-05-01)
+
+
+### Bug Fixes
+
+* fix production.yml ([2665ee0](https://github.com/tkahng/playground/commit/2665ee0aef862176dfdb7f8ad09f3501af82b75d))
+
 ## 1.0.0 (2026-01-20)
 
 
