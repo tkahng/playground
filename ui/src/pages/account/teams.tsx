@@ -5,11 +5,13 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DataTable } from "@/components/data-table";
 import { accountSidebarLinks } from "@/components/links";
 import { RouteMap } from "@/components/route-map";
+import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { GetError } from "@/lib/error";
 import { getUserTeamMembers } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
+import { Users } from "lucide-react";
 import { NavLink, useSearchParams } from "react-router";
 
 export default function AccountTeamsPage() {
@@ -65,51 +67,86 @@ export default function AccountTeamsPage() {
     return <div>No data</div>;
   }
 
+  const hasTeams = (data?.meta.total ?? 0) > 0;
+
   return (
     <div className="flex">
       <DashboardSidebar links={accountSidebarLinks} />
       <div className="flex-1 space-y-6 p-12 w-full">
         <div className="mx-auto px-8 py-8 justify-start items-stretch flex-1 max-w-[1200px]">
-          <div className="flex items-center justify-between">
-            <p>Create and manage Teams for your applications.</p>
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-muted-foreground">
+              Create and manage teams to collaborate on projects.
+            </p>
             <div className="flex items-center space-x-2">
               <CreateTeamDialog />
               {!isUserVerified && <CreateTeamDisabledTooltip />}
             </div>
           </div>
 
-          <DataTable
-            columns={[
-              {
-                accessorKey: "name",
-                header: "Name",
-                cell: ({ row }) => {
-                  return (
+          {!hasTeams ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center">
+              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+                <Users className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">No teams yet</h3>
+              <p className="text-muted-foreground text-sm max-w-xs mb-6">
+                Create a team to invite collaborators and manage projects
+                together with a Kanban board.
+              </p>
+              {isUserVerified ? (
+                <CreateTeamDialog
+                  trigger={
+                    <Button size="lg">Create your first team</Button>
+                  }
+                />
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <Button size="lg" disabled>
+                    Create your first team
+                  </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Verify your email first —{" "}
+                    <NavLink
+                      to="/account/settings"
+                      className="underline hover:no-underline"
+                    >
+                      go to Settings
+                    </NavLink>
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <DataTable
+              columns={[
+                {
+                  accessorKey: "name",
+                  header: "Name",
+                  cell: ({ row }) => (
                     <NavLink
                       to={`${RouteMap.TEAM_LIST}/${row.original.team?.slug}/dashboard`}
                       className="hover:underline text-blue-500"
                     >
                       {row.original.team?.name}
                     </NavLink>
-                  );
+                  ),
                 },
-              },
-              {
-                accessorKey: "role",
-                header: "Member Role",
-                cell: ({ row }) => {
-                  return (
+                {
+                  accessorKey: "role",
+                  header: "Member Role",
+                  cell: ({ row }) => (
                     <span className="text-gray-500">{row.original.role}</span>
-                  );
+                  ),
                 },
-              },
-            ]}
-            data={data?.data || []}
-            rowCount={data?.meta.total || 0}
-            paginationState={{ pageIndex, pageSize }}
-            onPaginationChange={onPaginationChange}
-            paginationEnabled
-          />
+              ]}
+              data={data?.data || []}
+              rowCount={data?.meta.total || 0}
+              paginationState={{ pageIndex, pageSize }}
+              onPaginationChange={onPaginationChange}
+              paginationEnabled
+            />
+          )}
         </div>
       </div>
     </div>

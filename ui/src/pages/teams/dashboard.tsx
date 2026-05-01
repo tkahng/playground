@@ -14,7 +14,7 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
 } from "@tanstack/react-table";
-import { UserPlus } from "lucide-react";
+import { FolderOpen, UserPlus } from "lucide-react";
 import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { CreateProjectAiDialog } from "./projects/create-project-ai-dialog";
@@ -146,17 +146,36 @@ export default function TeamDashboard() {
             <CreateProjectAiDialog />
           </div>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {table.getRowModel().rows.map(({ original: project }) => (
-            <ProjectCard
-              team={team}
-              key={project.id}
-              project={project}
-              onDelete={(projectId) => mutation.mutate({ projectId })}
-            />
-          ))}
-        </div>
-        <DataTablePagination table={table} />
+        {projects.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+              <FolderOpen className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">No projects yet</h3>
+            <p className="text-muted-foreground text-sm max-w-xs mb-6">
+              Create a project to start managing tasks with a Kanban board.
+              Assign work to team members and track progress.
+            </p>
+            <div className="flex items-center gap-3">
+              <CreateProjectDialog />
+              <CreateProjectAiDialog />
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {table.getRowModel().rows.map(({ original: project }) => (
+                <ProjectCard
+                  team={team}
+                  key={project.id}
+                  project={project}
+                  onDelete={(projectId) => mutation.mutate({ projectId })}
+                />
+              ))}
+            </div>
+            <DataTablePagination table={table} />
+          </>
+        )}
       </div>
     </div>
   );
