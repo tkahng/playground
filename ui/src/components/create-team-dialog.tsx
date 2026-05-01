@@ -68,7 +68,9 @@ export function CreateTeamDialog({
       });
       setDialogOpen(false);
       setTeam(data);
-      toast.success("Team created successfully");
+      toast.success("Team created!", {
+        description: "Add your first project — click 'New Project' to get started.",
+      });
       navigate(`/teams/${data.slug}/dashboard`);
     },
     onError: (error) => {

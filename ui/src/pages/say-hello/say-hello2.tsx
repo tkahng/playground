@@ -1,6 +1,7 @@
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useOnboardingProgress } from "@/hooks/use-onboarding-progress";
 import { ApiError } from "@/lib/error";
 import { getCountryName } from "@/lib/get-country-name";
@@ -17,6 +18,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useReducer } from "react";
 import TimeAgo from "react-timeago";
 import { toast } from "sonner";
+import { useNavigate } from "react-router";
 
 const maxItems = 3;
 function messageReducer(
@@ -37,7 +39,9 @@ function messageReducer(
 }
 export default function SayHelloPage() {
   const state = useGeolocation();
-  const { markStep } = useOnboardingProgress();
+  const { markStep, progress } = useOnboardingProgress();
+  const { user } = useAuthProvider();
+  const navigate = useNavigate();
   const [stats, updateStats] = useReducer(messageReducer, {
     top_five_countries: [],
     total_reactions: 0,
@@ -68,7 +72,15 @@ export default function SayHelloPage() {
       });
     },
     onSuccess: async () => {
-      toast.success("Success");
+      toast.success("Hello sent!");
+      if (!progress.saidHello) {
+        const nextPath = user ? "/account/teams" : "/signup";
+        const nextLabel = user ? "Create a team →" : "Sign up →";
+        toast("Ready to go further?", {
+          description: "Build a team and start collaborating on projects.",
+          action: { label: nextLabel, onClick: () => navigate(nextPath) },
+        });
+      }
       markStep("saidHello");
     },
     onError: async (err: ApiError) => {
