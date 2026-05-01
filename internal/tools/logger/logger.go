@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-chi/httplog/v3"
 	"github.com/tkahng/playground/internal/conf"
+	"go.opentelemetry.io/contrib/bridges/otelslog"
 )
 
 var (
@@ -21,27 +22,23 @@ func GetLoggerSingleton(cfg *conf.AppConfig) *slog.Logger {
 	})
 	return logger
 }
+
 func getLogger(cfg *conf.AppConfig) *slog.Logger {
 	level := slog.LevelInfo
 	if cfg.Debug {
 		level = slog.LevelDebug
 	}
-	// logger := slog.New(
-	// 	NewPrettyHandler(os.Stdout, PrettyHandlerOptions{
-	// 		SlogOpts: slog.HandlerOptions{
-	// 			Level:       level,
-	// 			ReplaceAttr: StackReplaceAttr,
-	// 		},
-	// 	}),
-	// )
-	logger := slog.New(ContextHandler{
+	stdoutHandler := ContextHandler{
 		Handler: slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
 			Level:       level,
 			AddSource:   true,
 			ReplaceAttr: httplog.SchemaOTEL.Concise(true).ReplaceAttr,
 		}),
-	})
-	return logger
+	}
+	otelHandler := otelslog.NewHandler("playground",
+		otelslog.WithLoggerProvider(nil), // uses global provider
+	)
+	return slog.New(newMultiHandler(stdoutHandler, otelHandler))
 }
 
 func GetDefaultLogger() *slog.Logger {
