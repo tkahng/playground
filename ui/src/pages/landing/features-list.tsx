@@ -22,6 +22,7 @@ import {
   ShieldUser,
   Users,
 } from "lucide-react";
+
 export type Feature = {
   title: string;
   shortContent: string[];
@@ -34,22 +35,25 @@ export type Feature = {
   featureImageComponent?: React.JSX.Element;
   landingLinkText?: string;
   landingLink: string;
+  badge?: string;
 };
 
+// Ordered by discovery flow: try it first → sign up → team → project → plan → game → admin
 export const features: Feature[] = [
   {
     title: "Say Hello!",
+    badge: "Start here — no sign-up needed",
     icon: <Hand className="h-10 w-10" />,
     shortContent: ["Whoever you are, wherever you are, you can say hello!"],
     mainContent: [
-      `This is a simple feature that allows you to say hello to the world. It's a great way to test out the basic functionality of the website and get a feel for how things work.`,
+      "Wave to the world with a single click. Your location is added to a live counter, and you can watch hellos stream in from around the globe in real time.",
     ],
     fragment: "say-hello",
     path: "/features",
     landingLink: "/say-hello",
     landingLinkText: "Try Saying Hello!",
     detailLink: "/say-hello",
-    detailLinkText: "Try Saying Hello",
+    detailLinkText: "Try it now",
     featureImageComponent: (
       <ThemedImage
         dark={SayHelloDark}
@@ -59,41 +63,20 @@ export const features: Feature[] = [
     ),
   },
   {
-    title: "Rock Paper Scissors",
-    icon: <Scissors />,
-    shortContent: [
-      "Challenge your friends! Send a game request with your move, they submit theirs, and see who wins.",
-    ],
-    mainContent: [
-      `This is a fun game that allows you to challenge your friends and see who wins. It's a great way to test out the basic functionality of the website and get a feel for how things work.`,
-    ],
-    path: "/features",
-    fragment: "rps",
-    landingLink: "/rock-paper-scissors",
-    detailLink: "/rock-paper-scissors",
-    detailLinkText: "Play Now",
-    featureImageComponent: (
-      <ThemedImage
-        dark={ChooseYourMoveDark}
-        light={ChooseYourMoveLight}
-        className="max-h-100"
-      />
-    ),
-  },
-  {
     title: "Authentication",
+    badge: "Required for the rest",
     icon: <IdCard className="h-10 w-10" />,
     shortContent: [
-      "Join your way: From Email/Password to Google, Github, etc.",
+      "Join your way: Email/Password, Google, GitHub, and more.",
     ],
     mainContent: [
-      `Experience seamless and secure login with various authentication options, including email/password, Google, and GitHub. Your data is protected with the latest security protocols.`,
+      "Sign up with email/password or OAuth providers like Google and GitHub. Email verification, password reset, and session management all included.",
     ],
     fragment: "authentication",
     path: "/features",
     landingLink: "/features#authentication",
     detailLink: "/signup",
-    detailLinkText: "Sign Up",
+    detailLinkText: "Create an account",
     featureImageComponent: (
       <ThemedImage
         dark={AuthenticationDark}
@@ -104,32 +87,38 @@ export const features: Feature[] = [
   },
   {
     title: "Teams",
+    badge: "Requires account",
     icon: <Users className="h-10 w-10" />,
     shortContent: [
-      "Create your own team with members. Easily manage member's roles and access",
+      "Create a team, invite members, and manage roles and access.",
     ],
     mainContent: [
-      `Create and manage your own teams, invite members, and assign roles with ease. Foster collaboration and streamline your workflow by working together on projects.`,
+      "Create and manage teams, invite members by email, and assign roles with fine-grained access control. Each team gets its own dashboard and project space.",
     ],
     fragment: "teams",
     path: "/features",
     landingLink: "/features#teams",
+    detailLink: "/account/teams",
+    detailLinkText: "Go to Teams",
     featureImageComponent: (
       <ThemedImage dark={TeamDark} light={TeamLight} className="max-h-100" />
     ),
   },
   {
     title: "Projects & Tasks",
+    badge: "Requires a team",
     icon: <ListTodo className="h-10 w-10" />,
     shortContent: [
-      "Tackle real-world problems by creating projects with tasks. Assign others and track progress.",
+      "Create projects with Kanban boards. Assign tasks, set statuses, track progress.",
     ],
     fragment: "projects-and-tasks",
     path: "/features",
     mainContent: [
-      `Break down your work into manageable projects and tasks. Assign tasks to team members, set deadlines, and monitor progress to ensure timely completion.`,
+      "Break work into projects and tasks on a Kanban board. Assign tasks to team members, drag between columns, and monitor progress — all within your team's workspace.",
     ],
     landingLink: "/features#projects-and-tasks",
+    detailLink: "/account/teams",
+    detailLinkText: "Open your team",
     featureImageComponent: (
       <ThemedImage
         dark={ProjectsDark}
@@ -139,17 +128,20 @@ export const features: Feature[] = [
     ),
   },
   {
-    title: "Payment Integration",
+    title: "Plans & Billing",
+    badge: "Stripe-powered",
     icon: <Banknote className="h-10 w-10" />,
     shortContent: [
-      "Teams can subscribe to different plans and manage their subscriptions.",
+      "Subscribe your team to a plan and unlock protected features.",
     ],
     fragment: "payment-integration",
     path: "/features",
     mainContent: [
-      `Integrate with Stripe to manage subscriptions and products. Offer various plans to your teams and handle billing with confidence.`,
+      "Stripe-powered subscription management. Teams can subscribe to Basic, Pro, or Advanced plans to unlock protected routes. Manage billing, view invoices, and cancel anytime.",
     ],
     landingLink: "/features#payment-integration",
+    detailLink: "/pricing",
+    detailLinkText: "See plans",
     featureImageComponent: (
       <ThemedImage
         dark={PaymentDark}
@@ -159,15 +151,39 @@ export const features: Feature[] = [
     ),
   },
   {
+    title: "Rock Paper Scissors",
+    badge: "Play with anyone",
+    icon: <Scissors className="h-10 w-10" />,
+    shortContent: [
+      "Challenge anyone via a shareable link. Place point bets and see who wins.",
+    ],
+    mainContent: [
+      "Create a game, pick your move, and share a link. Your opponent picks theirs and the result is revealed. Bet points on the outcome — points are earned and tracked per account.",
+    ],
+    path: "/features",
+    fragment: "rps",
+    landingLink: "/rock-paper-scissors",
+    detailLink: "/rock-paper-scissors",
+    detailLinkText: "Play now",
+    featureImageComponent: (
+      <ThemedImage
+        dark={ChooseYourMoveDark}
+        light={ChooseYourMoveLight}
+        className="max-h-100"
+      />
+    ),
+  },
+  {
     title: "Admin",
+    badge: "Admin role required",
     icon: <ShieldUser className="h-10 w-10" />,
     shortContent: [
-      "Manage users, roles and permissions, products, and subscriptions",
+      "Manage users, roles, permissions, products, and background jobs.",
     ],
     fragment: "admin",
     path: "/features",
     mainContent: [
-      `Gain full control over your platform with robust admin features. Manage users, roles, permissions, products, and subscriptions from a centralized dashboard.`,
+      "Full admin dashboard for managing users, assigning roles and permissions, configuring Stripe products, viewing subscriptions, and monitoring background jobs.",
     ],
     landingLink: "/features#admin",
     featureImageComponent: (
