@@ -1,7 +1,8 @@
+import { useOnboardingProgress } from "@/hooks/use-onboarding-progress";
 import { rpsGameQueries } from "@/lib/rps-game-queries";
 import { RpsGameWithParticipants } from "@/schema.types";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { GameResult } from "../account/rock-paper-scissors/game-result";
@@ -14,6 +15,11 @@ export default function RockPaperScissorsPage() {
   const [played, setPlayed] = useState(false);
   const [game, setGame] = useState<RpsGameWithParticipants | null>(null);
   const [searchParams] = useSearchParams();
+  const { markStep } = useOnboardingProgress();
+  useEffect(() => {
+    markStep("visitedRps");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const token = searchParams.get("token");
   const {
     data: rpsGame,

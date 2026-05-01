@@ -1,6 +1,7 @@
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useOnboardingProgress } from "@/hooks/use-onboarding-progress";
 import { ApiError } from "@/lib/error";
 import { getCountryName } from "@/lib/get-country-name";
 import { userReactionQueries } from "@/lib/user-reaction-queries";
@@ -36,6 +37,7 @@ function messageReducer(
 }
 export default function SayHelloPage() {
   const state = useGeolocation();
+  const { markStep } = useOnboardingProgress();
   const [stats, updateStats] = useReducer(messageReducer, {
     top_five_countries: [],
     total_reactions: 0,
@@ -67,6 +69,7 @@ export default function SayHelloPage() {
     },
     onSuccess: async () => {
       toast.success("Success");
+      markStep("saidHello");
     },
     onError: async (err: ApiError) => {
       switch (err.status) {

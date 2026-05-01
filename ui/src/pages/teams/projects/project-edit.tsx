@@ -1,6 +1,7 @@
 import { KanbanBoard } from "@/components/board/kanban-board";
 import { Input } from "@/components/ui/input";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useOnboardingProgress } from "@/hooks/use-onboarding-progress";
 import { useProject } from "@/hooks/use-project";
 import { useTeam } from "@/hooks/use-team";
 import { taskList } from "@/lib/task-queries";
@@ -15,7 +16,13 @@ import { CenteredSpinner } from "@/components/centered-spinner";
 export default function ProjectEdit() {
   const queryClient = useQueryClient();
   const { user } = useAuthProvider();
+  const { markStep } = useOnboardingProgress();
   const { team } = useTeam();
+
+  useEffect(() => {
+    markStep("hasProject");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const { data: project, isLoading: isProjectLoading, error } = useProject();
   const [input, setInput] = useState("");
   const {

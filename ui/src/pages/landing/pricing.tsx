@@ -1,11 +1,18 @@
 import { CenteredSpinner } from "@/components/centered-spinner";
 import PricingTeam from "@/components/pricing/pricing-team";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useOnboardingProgress } from "@/hooks/use-onboarding-progress";
 import { getProductsWithPrices } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 export default function PricingPage() {
   const { user } = useAuthProvider();
+  const { markStep } = useOnboardingProgress();
+  useEffect(() => {
+    markStep("visitedPricing");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const {
     data: products,
     isPending: isPendingProducts,
