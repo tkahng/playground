@@ -6,13 +6,6 @@ import (
 	"encoding"
 	"encoding/json"
 	"fmt"
-	"reflect"
-)
-
-//nolint:gochecknoglobals
-var (
-	encodingTextMarshalerIntf   = reflect.TypeOf((*encoding.TextMarshaler)(nil)).Elem()
-	encodingTextUnmarshalerIntf = reflect.TypeOf((*encoding.TextUnmarshaler)(nil)).Elem()
 )
 
 func NewJSON[T any](val T) JSON[T] {
@@ -54,9 +47,7 @@ func (j JSON[T]) MarshalJSON() ([]byte, error) {
 
 // MarshalText implements encoding.TextMarshaler.
 func (j JSON[T]) MarshalText() ([]byte, error) {
-	refVal := reflect.ValueOf(j.Val)
-	if refVal.Type().Implements(encodingTextMarshalerIntf) {
-		valuer := refVal.Interface().(encoding.TextMarshaler)
+	if valuer, ok := any(j.Val).(encoding.TextMarshaler); ok {
 		return valuer.MarshalText()
 	}
 
@@ -69,13 +60,8 @@ func (j JSON[T]) MarshalText() ([]byte, error) {
 
 // UnmarshalText implements encoding.TextUnmarshaler.
 func (j *JSON[T]) UnmarshalText(text []byte) error {
-	refVal := reflect.ValueOf(&j.Val)
-	if refVal.Type().Implements(encodingTextUnmarshalerIntf) {
-		valuer := refVal.Interface().(encoding.TextUnmarshaler)
-		if err := valuer.UnmarshalText(text); err != nil {
-			return err
-		}
-		return nil
+	if valuer, ok := any(&j.Val).(encoding.TextUnmarshaler); ok {
+		return valuer.UnmarshalText(text)
 	}
 
 	if err := ConvertAssign(&j.Val, string(text)); err != nil {
