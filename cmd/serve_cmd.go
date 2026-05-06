@@ -39,7 +39,7 @@ func NewServeCmd() *cobra.Command {
 
 func migrate(dbUrl string) error {
 	mConfig := database.MigratorConfig{
-		DatabaseUrl: dbUrl,
+		DatabaseURL: dbUrl,
 	}
 	migrator := database.NewMigrator(&mConfig)
 	return migrator.CreateAndMigrate()
@@ -64,7 +64,7 @@ func Run2() error {
 
 	opts := conf.AppConfigGetter()
 	// migrate database
-	if err := migrate(opts.Db.GetDatabaseUrl()); err != nil {
+	if err := migrate(opts.Db.GetDatabaseURL()); err != nil {
 		return err
 	}
 	app := core.NewApp(opts)

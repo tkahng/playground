@@ -40,7 +40,7 @@ type DBConfig struct {
 	// DatabaseUrl string `env:"DATABASE_URL,expand" envDefault:"postgres://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_DB}?sslmode=${DATABASE_SSL}"`
 }
 
-func (c *DBConfig) GetDatabaseUrl() string {
+func (c *DBConfig) GetDatabaseURL() string {
 	url := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
 		c.User, c.Password, c.Host, c.Port, c.Db, c.SSL,

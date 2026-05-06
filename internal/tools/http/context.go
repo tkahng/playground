@@ -13,9 +13,9 @@ import (
 	"github.com/danielgtaylor/huma/v2/queryparam"
 )
 
-// MultipartMaxMemory is the maximum memory to use when parsing multipart
+// multipartMaxMemory is the maximum memory to use when parsing multipart
 // form data.
-var MultipartMaxMemory int64 = 8 * 1024
+var multipartMaxMemory int64 = 8 * 1024
 
 // Unwrap extracts the underlying HTTP request and response writer from a Huma
 // context. If passed a context from a different adapter it will panic.
@@ -104,7 +104,7 @@ func (c *playgroundContext) BodyReader() io.Reader {
 }
 
 func (c *playgroundContext) GetMultipartForm() (*multipart.Form, error) {
-	err := c.r.ParseMultipartForm(MultipartMaxMemory)
+	err := c.r.ParseMultipartForm(multipartMaxMemory)
 	return c.r.MultipartForm, err
 }
 

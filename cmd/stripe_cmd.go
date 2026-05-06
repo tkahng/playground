@@ -26,7 +26,7 @@ var stripeSyncCmd = &cobra.Command{
 		dbconf := conf.GetConfig[conf.DBConfig]()
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
-		dbx, err := database.CreateNewQueriesContext(ctx, dbconf.GetDatabaseUrl())
+		dbx, err := database.CreateNewQueriesContext(ctx, dbconf.GetDatabaseURL())
 		if err != nil {
 			return err
 		}
@@ -47,7 +47,7 @@ var stripeRolesCmd = &cobra.Command{
 		dbconf := conf.GetConfig[conf.DBConfig]()
 		stripeconfig := conf.GetConfig[conf.StripeConfig]()
 
-		dbx, err := database.CreateNewQueriesContext(ctx, dbconf.GetDatabaseUrl())
+		dbx, err := database.CreateNewQueriesContext(ctx, dbconf.GetDatabaseURL())
 		if err != nil {
 			return err
 		}

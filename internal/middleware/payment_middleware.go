@@ -9,7 +9,7 @@ import (
 	appHttp "github.com/tkahng/playground/internal/tools/http"
 )
 
-func SelectOrCreateOwnerCustomerFromTeam(app core.App) HttpMiddelwareFunc {
+func SelectOrCreateOwnerCustomerFromTeam(app core.App) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
@@ -54,7 +54,7 @@ func SelectOrCreateOwnerCustomerFromTeam(app core.App) HttpMiddelwareFunc {
 		})
 	}
 }
-func SelectCustomerFromTeam(app core.App) HttpMiddelwareFunc {
+func SelectCustomerFromTeam(app core.App) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
@@ -80,7 +80,7 @@ func SelectCustomerFromTeam(app core.App) HttpMiddelwareFunc {
 	}
 }
 
-func SelectCustomerFromUser(app core.App) HttpMiddelwareFunc {
+func SelectCustomerFromUser(app core.App) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()

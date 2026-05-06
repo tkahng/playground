@@ -12,7 +12,7 @@ import (
 func TestCreateDatabaseWithTemplate(t *testing.T) {
 	cfg := conf.ZeroEnvConfig()
 	cfg.Db.Db = "postgres"
-	dbx, err := CreatePool(context.Background(), cfg.Db.GetDatabaseUrl())
+	dbx, err := CreatePool(context.Background(), cfg.Db.GetDatabaseURL())
 	if err != nil {
 		t.Fatal(err)
 	}

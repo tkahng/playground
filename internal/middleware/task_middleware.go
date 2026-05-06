@@ -11,7 +11,7 @@ import (
 	apphttp "github.com/tkahng/playground/internal/tools/http"
 )
 
-func TaskFromParam(app core.App) HttpMiddelwareFunc {
+func TaskFromParam(app core.App) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// context
@@ -70,7 +70,7 @@ func TaskFromParam(app core.App) HttpMiddelwareFunc {
 	}
 }
 
-func TaskProjectFromParam(app core.App) HttpMiddelwareFunc {
+func TaskProjectFromParam(app core.App) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// context
@@ -129,7 +129,7 @@ func TaskProjectFromParam(app core.App) HttpMiddelwareFunc {
 	}
 }
 
-func CheckTaskOwnerMiddleware(app core.App) HttpMiddelwareFunc {
+func CheckTaskOwnerMiddleware(app core.App) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()

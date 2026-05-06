@@ -26,12 +26,12 @@ type Migrator interface {
 	NewMigration(name string) error
 }
 type MigratorConfig struct {
-	DatabaseUrl    string
+	DatabaseURL    string
 	AutoDumpSchema bool
 }
 
 func NewMigrator(config *MigratorConfig) Migrator {
-	u, err := url.Parse(config.DatabaseUrl)
+	u, err := url.Parse(config.DatabaseURL)
 	if err != nil {
 		slog.Error("error parsing database url", "error", err)
 		panic(fmt.Errorf("error parsing database url for migrator: %w", err))
