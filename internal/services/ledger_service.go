@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/apierrors"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 )
@@ -114,7 +115,7 @@ func (s *DbLedgerService) GetSystemAccount(ctx context.Context, code string) (*m
 		return nil, err
 	}
 	if acc == nil {
-		return nil, fmt.Errorf("system ledger account %q not found", code)
+		return nil, apierrors.NotFound(fmt.Sprintf("system ledger account %q not found", code))
 	}
 	return acc, nil
 }
@@ -180,14 +181,14 @@ func (s *DbLedgerService) PostTransfer(ctx context.Context, input PostTransferIn
 		return nil, fmt.Errorf("find debit account: %w", err)
 	}
 	if debitAcc == nil {
-		return nil, fmt.Errorf("debit account %s not found", input.DebitAccountID)
+		return nil, apierrors.NotFound(fmt.Sprintf("debit account %s not found", input.DebitAccountID))
 	}
 	creditAcc, err := ledger.FindAccountByIDForUpdate(ctx, input.CreditAccountID)
 	if err != nil {
 		return nil, fmt.Errorf("find credit account: %w", err)
 	}
 	if creditAcc == nil {
-		return nil, fmt.Errorf("credit account %s not found", input.CreditAccountID)
+		return nil, apierrors.NotFound(fmt.Sprintf("credit account %s not found", input.CreditAccountID))
 	}
 
 	// Check constraints.
@@ -246,7 +247,7 @@ func (s *DbLedgerService) CreatePendingTransfer(ctx context.Context, input PostT
 		return nil, fmt.Errorf("find debit account: %w", err)
 	}
 	if debitAcc == nil {
-		return nil, fmt.Errorf("debit account %s not found", input.DebitAccountID)
+		return nil, apierrors.NotFound(fmt.Sprintf("debit account %s not found", input.DebitAccountID))
 	}
 
 	if err := checkAvailableBalanceConstraint(debitAcc, input.Amount); err != nil {
@@ -299,7 +300,7 @@ func (s *DbLedgerService) PostPendingTransfer(ctx context.Context, pendingID uui
 		return nil, fmt.Errorf("find pending transfer: %w", err)
 	}
 	if pending == nil {
-		return nil, fmt.Errorf("pending transfer %s not found", pendingID)
+		return nil, apierrors.NotFound(fmt.Sprintf("pending transfer %s not found", pendingID))
 	}
 	if pending.Status != models.LedgerTransferStatusPending {
 		return nil, fmt.Errorf("transfer %s is not pending (status: %s)", pendingID, pending.Status)
@@ -332,7 +333,7 @@ func (s *DbLedgerService) VoidPendingTransfer(ctx context.Context, pendingID uui
 		return nil, fmt.Errorf("find pending transfer: %w", err)
 	}
 	if pending == nil {
-		return nil, fmt.Errorf("pending transfer %s not found", pendingID)
+		return nil, apierrors.NotFound(fmt.Sprintf("pending transfer %s not found", pendingID))
 	}
 	if pending.Status != models.LedgerTransferStatusPending {
 		return nil, fmt.Errorf("transfer %s is not pending (status: %s)", pendingID, pending.Status)

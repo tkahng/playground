@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
+	"github.com/tkahng/playground/internal/apierrors"
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
@@ -90,7 +91,7 @@ func (s *StripeService) RefreshCustomerBillingAccess(ctx context.Context, teamId
 		return err
 	}
 	if customer == nil {
-		return errors.New("customer not found")
+		return apierrors.NotFound("customer not found")
 	}
 	billingTeamOwner, err := s.adapter.TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
 		Active: types.OptionalParam[bool]{
@@ -107,7 +108,7 @@ func (s *StripeService) RefreshCustomerBillingAccess(ctx context.Context, teamId
 		return err
 	}
 	if billingTeamOwner == nil {
-		return errors.New("active owner member with billing access not found.")
+		return apierrors.NotFound("active owner member with billing access not found")
 	}
 	if billingTeamOwner.UserID == nil {
 		return errors.New("user id null for billing team owner")
@@ -159,7 +160,7 @@ func (s *StripeService) UpsertSubscriptionFromStripe(ctx context.Context, sub *s
 		item = sub.Items.Data[0]
 	}
 	if item == nil || item.Price == nil {
-		return errors.New("price not found")
+		return apierrors.NotFound("price not found")
 	}
 
 	status := models.StripeSubscriptionStatus(sub.Status)
@@ -194,7 +195,7 @@ func (srv *StripeService) CreateTeamCustomer(ctx context.Context, team *models.T
 		return nil, err
 	}
 	if existingCustomer != nil {
-		return nil, errors.New("customer already exists in db for team")
+		return nil, apierrors.Conflict("customer already exists in db for team")
 	}
 	customer, err := srv.client.CreateCustomer(user.Email, &team.Name, &map[string]string{
 		"team_id":       team.ID.String(),
@@ -223,7 +224,7 @@ func (srv *StripeService) CreateUserCustomer(ctx context.Context, user *models.U
 		return nil, err
 	}
 	if existingCustomer != nil {
-		return nil, errors.New("customer already exists in db for user")
+		return nil, apierrors.Conflict("customer already exists in db for user")
 	}
 	customer, err := srv.client.CreateCustomer(user.Email, user.Name, &map[string]string{
 		"user_id":       user.ID.String(),
@@ -354,7 +355,7 @@ func (srv *StripeService) SyncPerms(ctx context.Context) error {
 				return err
 			}
 			if product == nil {
-				return errors.New("product not found")
+				return apierrors.NotFound("product not found")
 			}
 			perm, err := srv.adapter.Rbac().FindPermissionByName(ctx, permission)
 			if err != nil {
@@ -490,7 +491,7 @@ func (srv *StripeService) UpsertSubscriptionByIds(ctx context.Context, cutomerId
 		return err
 	}
 	if customer == nil {
-		return errors.New("customer not found")
+		return apierrors.NotFound("customer not found")
 	}
 	sub, err := srv.client.FindSubscriptionByStripeId(subscriptionId)
 	if err != nil {

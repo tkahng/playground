@@ -7,6 +7,7 @@ import (
 
 	"github.com/alexedwards/argon2id"
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/apierrors"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
@@ -222,7 +223,7 @@ func (u *DbAccountStore) UpdateUserPassword(ctx context.Context, userId uuid.UUI
 		return err
 	}
 	if account == nil {
-		return errors.New("user ProvidersCredentials account not found")
+		return apierrors.NotFound("user ProvidersCredentials account not found")
 	}
 	hash, err := security.CreateHash(password, argon2id.DefaultParams)
 	if err != nil {

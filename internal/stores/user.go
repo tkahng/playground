@@ -2,13 +2,13 @@ package stores
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"slices"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/apierrors"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/tools/mapper"
@@ -236,7 +236,7 @@ func (s *DbUserStore) AssignUserRoles(ctx context.Context, userId uuid.UUID, rol
 			return fmt.Errorf("error finding user while assigning roles: %w", err)
 		}
 		if user == nil {
-			return fmt.Errorf("user not found while assigning roles")
+			return apierrors.NotFound("user not found while assigning roles")
 		}
 		roles, err := repository.Role.Get(
 			ctx,
@@ -359,7 +359,7 @@ func (s *DbUserStore) GetUserInfo(ctx context.Context, email string) (*models.Us
 		return nil, fmt.Errorf("error getting user: %w", err)
 	}
 	if user == nil {
-		return nil, errors.New("user not found")
+		return nil, apierrors.NotFound("user not found")
 	}
 	result := &models.UserInfo{
 		User: *user,
