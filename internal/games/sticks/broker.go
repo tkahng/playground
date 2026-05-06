@@ -94,10 +94,10 @@ func (gb *GameBroker) Stop() {
 
 	// Clean up remaining games
 	gb.gamesMutex.Lock()
+	defer gb.gamesMutex.Unlock()
 	for _, session := range gb.activeGames {
 		session.Cancel()
 	}
-	gb.gamesMutex.Unlock()
 
 	log.Printf("GameBroker stopped")
 }
