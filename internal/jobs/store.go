@@ -186,7 +186,7 @@ func (s *DbJobStore) ClaimPendingJobs(ctx context.Context, limit int) ([]*models
 		UPDATE app.jobs SET status='processing', updated_at=clock_timestamp(), attempts=attempts+1
 		WHERE id IN (
 			SELECT id FROM app.jobs
-			WHERE status='pending' AND run_after <= clock_timestamp() AND attempts < max_attempts
+			WHERE status='pending' AND run_after <= clock_timestamp() + interval '200ms' AND attempts < max_attempts
 			ORDER BY run_after
 			LIMIT $1
 			FOR UPDATE SKIP LOCKED

@@ -1,6 +1,9 @@
 package apierrors
 
-import "net/http"
+import (
+	"encoding/json"
+	"net/http"
+)
 
 // AppError is a domain error carrying an HTTP status code.
 // It implements huma.StatusError so Huma uses the correct status code
@@ -14,6 +17,18 @@ type AppError struct {
 func (e *AppError) Error() string  { return e.message }
 func (e *AppError) GetStatus() int { return e.status }
 func (e *AppError) Unwrap() error  { return e.cause }
+
+func (e *AppError) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Title  string `json:"title"`
+		Status int    `json:"status"`
+		Detail string `json:"detail"`
+	}{
+		Title:  http.StatusText(e.status),
+		Status: e.status,
+		Detail: e.message,
+	})
+}
 
 func NotFound(message string) *AppError {
 	return &AppError{status: http.StatusNotFound, message: message}
