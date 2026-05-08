@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/tkahng/playground/compare/v1.0.1...v1.0.2) (2026-05-08)
+
+
+### Bug Fixes
+
+* change grafana host port to 3001 to avoid port conflict ([#155](https://github.com/tkahng/playground/issues/155)) ([54155bf](https://github.com/tkahng/playground/commit/54155bf6de187703f99f124bff2caa22cfd7e5dc))
+
 ## [1.0.1](https://github.com/tkahng/playground/compare/v1.0.0...v1.0.1) (2026-05-01)
 
 
