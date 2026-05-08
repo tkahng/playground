@@ -1,8 +1,9 @@
+import { useOnboardingProgress } from "@/hooks/use-onboarding-progress";
 import { rpsGameQueries } from "@/lib/rps-game-queries";
 import { RpsGameWithParticipants } from "@/schema.types";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { useSearchParams } from "react-router";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { GameResult } from "../account/rock-paper-scissors/game-result";
 import { ErrorCard } from "@/components/error-card";
@@ -14,6 +15,22 @@ export default function RockPaperScissorsPage() {
   const [played, setPlayed] = useState(false);
   const [game, setGame] = useState<RpsGameWithParticipants | null>(null);
   const [searchParams] = useSearchParams();
+  const { markStep, progress } = useOnboardingProgress();
+  const navigate = useNavigate();
+  useEffect(() => {
+    const isFirstVisit = !progress.visitedRps;
+    markStep("visitedRps");
+    if (isFirstVisit) {
+      const t = setTimeout(() => {
+        toast("Unlock more with a plan!", {
+          description: "Subscribe to access protected routes and features.",
+          action: { label: "See plans →", onClick: () => navigate("/pricing") },
+        });
+      }, 2000);
+      return () => clearTimeout(t);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const token = searchParams.get("token");
   const {
     data: rpsGame,

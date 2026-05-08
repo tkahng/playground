@@ -35,6 +35,9 @@ func getLogger(cfg *conf.AppConfig) *slog.Logger {
 			ReplaceAttr: httplog.SchemaOTEL.Concise(true).ReplaceAttr,
 		}),
 	}
+	if !cfg.OtelEnabled {
+		return slog.New(stdoutHandler)
+	}
 	otelHandler := otelslog.NewHandler("playground",
 		otelslog.WithLoggerProvider(nil), // uses global provider
 	)

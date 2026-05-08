@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
 
 	"github.com/tkahng/playground/internal/auth"
 	"github.com/tkahng/playground/internal/conf"
@@ -66,6 +67,8 @@ type BaseApp struct {
 	rpsGame services.RpsGameService
 	ledger  services.LedgerService
 	betting services.BettingService
+
+	bgWg sync.WaitGroup
 }
 
 // RpsGame implements [App].
@@ -111,6 +114,7 @@ func (b *BaseApp) PaymentClient() services.PaymentClient {
 
 func (b *BaseApp) Close() {
 	slog.Info("closing app.")
+	b.bgWg.Wait()
 	b.db.Close()
 }
 
@@ -290,49 +294,57 @@ func (a *BaseApp) Payment() services.PaymentService {
 	}
 	return a.payment
 }
-func (app *BaseApp) RunBackgroundProcesses(firstCtx context.Context) {
-	go func() {
-		app.Logger().Info("Starting poller")
-		if err := app.JobManager().Run(firstCtx); err != nil {
-			app.Logger().ErrorContext(
-				firstCtx,
-				"error starting poller",
-				slog.Any("error", err),
-			)
-			return
-		}
-	}()
-
-	go func() {
-		app.Logger().Info("Starting sse manager")
-		app.SseManager().Run(firstCtx)
-	}()
-	go func() {
-		app.Logger().Info("Starting event manager")
-		if err := app.EventManager().Run(firstCtx); err != nil {
-			app.Logger().ErrorContext(
-				firstCtx,
-				"error starting event manager",
-				slog.Any("error", err),
-			)
-			return
-		}
-	}()
-	if err := workers.SeedRpsGameExpiryJob(firstCtx, app.JobManager()); err != nil {
-		app.Logger().ErrorContext(firstCtx, "failed to seed rps expiry job", slog.Any("error", err))
+func (app *BaseApp) RunBackgroundProcesses(ctx context.Context) {
+	run := func(name string, fn func()) {
+		app.bgWg.Add(1)
+		go func() {
+			defer app.bgWg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					app.Logger().ErrorContext(ctx, "panic in background process",
+						slog.String("process", name),
+						slog.Any("error", r),
+					)
+				}
+			}()
+			fn()
+		}()
 	}
 
-	go func() {
+	run("poller", func() {
+		app.Logger().Info("Starting poller")
+		if err := app.JobManager().Run(ctx); err != nil {
+			app.Logger().ErrorContext(ctx, "error starting poller", slog.Any("error", err))
+		}
+	})
+
+	run("sse manager", func() {
+		app.Logger().Info("Starting sse manager")
+		app.SseManager().Run(ctx)
+	})
+
+	run("event manager", func() {
+		app.Logger().Info("Starting event manager")
+		if err := app.EventManager().Run(ctx); err != nil {
+			app.Logger().ErrorContext(ctx, "error starting event manager", slog.Any("error", err))
+		}
+	})
+
+	if err := workers.SeedRpsGameExpiryJob(ctx, app.JobManager()); err != nil {
+		app.Logger().ErrorContext(ctx, "failed to seed rps expiry job", slog.Any("error", err))
+	}
+
+	run("task notification scheduler", func() {
 		app.Logger().Info("Starting task notification scheduler")
 		scheduler := services.NewTaskNotificationScheduler(app.Adapter().Task(), app.JobService())
-		scheduler.Run(firstCtx)
-	}()
+		scheduler.Run(ctx)
+	})
 }
 
 func NewApp(config *conf.EnvConfig) *BaseApp {
 	app := new(BaseApp)
 
-	db, err := database.CreateNewQueriesContext(context.Background(), config.Db.GetDatabaseUrl())
+	db, err := database.CreateNewQueriesContext(context.Background(), config.Db.GetDatabaseURL())
 	if err != nil {
 		slog.Error("failed to connect to database", slog.Any("error", err))
 		panic(fmt.Sprintf("failed to connect to database: %v", err))

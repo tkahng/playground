@@ -2,10 +2,10 @@ package stores
 
 import (
 	"context"
-	"errors"
 	"slices"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/apierrors"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
@@ -160,7 +160,7 @@ func (s *DbTeamGroupStore) UpdateTeam(ctx context.Context, teamId uuid.UUID, nam
 		return nil, err
 	}
 	if team == nil {
-		return nil, errors.New("team not found")
+		return nil, apierrors.NotFound("team not found")
 	}
 
 	team.Name = name

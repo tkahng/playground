@@ -45,7 +45,7 @@ func TestDBConfig_GetUrl(t *testing.T) {
 			}()
 			tt.setEnv()
 			c := conf.GetConfig[conf.DBConfig]()
-			got := c.GetDatabaseUrl()
+			got := c.GetDatabaseURL()
 			if got != tt.want {
 				t.Errorf("GetUrl() = %v, want %v", got, tt.want)
 			}
@@ -53,7 +53,7 @@ func TestDBConfig_GetUrl(t *testing.T) {
 	}
 }
 
-func TestDBConfig_DatabaseUrl(t *testing.T) {
+func TestDBConfig_DatabaseURL(t *testing.T) {
 	tests := []struct {
 		name   string // description of this test case
 		setEnv func()
@@ -91,7 +91,7 @@ func TestDBConfig_DatabaseUrl(t *testing.T) {
 			}()
 			tt.setEnv()
 			c := conf.GetConfig[conf.DBConfig]()
-			got := c.GetDatabaseUrl()
+			got := c.GetDatabaseURL()
 			if got != tt.want {
 				t.Errorf("GetUrl() = %v, want %v", got, tt.want)
 			}

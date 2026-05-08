@@ -1,3 +1,4 @@
+import React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -39,7 +40,11 @@ const formSchema = z.object({
     .optional(),
 });
 
-export function CreateTeamDialog() {
+export function CreateTeamDialog({
+  trigger,
+}: {
+  trigger?: React.ReactNode;
+}) {
   const { user } = useAuthProvider();
   const isUserVerified = !!user?.user?.email_verified_at;
   const { setTeam } = useTeam();
@@ -63,7 +68,9 @@ export function CreateTeamDialog() {
       });
       setDialogOpen(false);
       setTeam(data);
-      toast.success("Team created successfully");
+      toast.success("Team created!", {
+        description: "Add your first project — click 'New Project' to get started.",
+      });
       navigate(`/teams/${data.slug}/dashboard`);
     },
     onError: (error) => {
@@ -86,9 +93,11 @@ export function CreateTeamDialog() {
   return (
     <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" disabled={!isUserVerified}>
-          Create Team
-        </Button>
+        {trigger ?? (
+          <Button variant="outline" disabled={!isUserVerified}>
+            Create Team
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>

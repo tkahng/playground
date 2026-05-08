@@ -1,3 +1,4 @@
+import { StripeTestCardNotice } from "@/components/stripe-test-card-notice";
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTabs } from "@/hooks/use-tabs";
@@ -105,6 +106,9 @@ export default function PricingMini({ products, subscription }: Props) {
     return (
       <section className="">
         <div className="max-w-6xl px-4 py-8 mx-auto sm:px-6 lg:px-8">
+          <div className="mb-6">
+            <StripeTestCardNotice />
+          </div>
           <div className="sm:flex sm:flex-col sm:align-center">
             <div className="relative self-center mt-6 bg-primary-foreground rounded-lg p-0.5 flex sm:mt-8 border">
               {intervals.includes("month") && (

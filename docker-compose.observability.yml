@@ -5,8 +5,8 @@ services:
       - ./observability/alloy:/etc/alloy
     command: run --server.http.listen-addr=0.0.0.0:12345 /etc/alloy/config.alloy
     ports:
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
       - "12345:12345" # Alloy UI
     depends_on:
       - loki
@@ -63,7 +63,7 @@ services:
       - ./observability/grafana/provisioning:/etc/grafana/provisioning
       - grafana-data:/var/lib/grafana
     ports:
-      - "3000:3000"
+      - "3001:3000"
     depends_on:
       - loki
       - tempo

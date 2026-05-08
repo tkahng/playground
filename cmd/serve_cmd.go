@@ -39,7 +39,7 @@ func NewServeCmd() *cobra.Command {
 
 func migrate(dbUrl string) error {
 	mConfig := database.MigratorConfig{
-		DatabaseUrl: dbUrl,
+		DatabaseURL: dbUrl,
 	}
 	migrator := database.NewMigrator(&mConfig)
 	return migrator.CreateAndMigrate()
@@ -49,22 +49,24 @@ func Run2() error {
 	firstCtx, firstCancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM, syscall.SIGHUP, syscall.SIGINT)
 	defer firstCancel()
 
-	otelShutdown, err := appOtel.Setup(firstCtx, "playground", "1.0.0")
-	if err != nil {
-		slog.Warn("otel setup failed, continuing without telemetry", slog.Any("error", err))
-	} else {
-		defer func() {
-			shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-			if err := otelShutdown(shutCtx); err != nil {
-				slog.Warn("otel shutdown error", slog.Any("error", err))
-			}
-		}()
-	}
-
 	opts := conf.AppConfigGetter()
+
+	if opts.OtelEnabled {
+		otelShutdown, err := appOtel.Setup(firstCtx, "playground", "1.0.0")
+		if err != nil {
+			slog.Warn("otel setup failed, continuing without telemetry", slog.Any("error", err))
+		} else {
+			defer func() {
+				shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				if err := otelShutdown(shutCtx); err != nil {
+					slog.Warn("otel shutdown error", slog.Any("error", err))
+				}
+			}()
+		}
+	}
 	// migrate database
-	if err := migrate(opts.Db.GetDatabaseUrl()); err != nil {
+	if err := migrate(opts.Db.GetDatabaseURL()); err != nil {
 		return err
 	}
 	app := core.NewApp(opts)

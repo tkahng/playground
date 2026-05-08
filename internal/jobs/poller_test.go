@@ -16,7 +16,7 @@ import (
 func TestPoller_Run(t *testing.T) {
 	ctx := context.Background()
 	cfg := conf.ZeroEnvConfig()
-	dbx, err := database.CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseUrl())
+	dbx, err := database.CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseURL())
 	if err != nil {
 		t.Fatalf("failed to create database pool: %v", err)
 	}

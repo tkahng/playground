@@ -12,7 +12,7 @@ import (
 func TestNewMigrator(t *testing.T) {
 	t.Run("Valid url should return migrator.", func(t *testing.T) {
 		config := &database.MigratorConfig{
-			DatabaseUrl: "postgres://postgres:postgres@localhost:5432/playground_migrator_test?sslmode=disable",
+			DatabaseURL: "postgres://postgres:postgres@localhost:5432/playground_migrator_test?sslmode=disable",
 		}
 		got := database.NewMigrator(config)
 		if got == nil {
@@ -28,7 +28,7 @@ func TestDbmateMigrator_CreateAndMigrate_Status_Drop(t *testing.T) {
 		cfg.Db = dbName
 		mConfig := database.MigratorConfig{
 			AutoDumpSchema: false,
-			DatabaseUrl:    cfg.GetDatabaseUrl(),
+			DatabaseURL:    cfg.GetDatabaseURL(),
 		}
 		m := database.NewMigrator(&mConfig)
 		defer func() {

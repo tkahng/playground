@@ -16,7 +16,7 @@ import (
 )
 
 // RequireTeamInfo checks if the request has team info
-func RequireTeamInfo() HttpMiddelwareFunc {
+func RequireTeamInfo() HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
@@ -31,7 +31,7 @@ func RequireTeamInfo() HttpMiddelwareFunc {
 }
 
 // RequireTeamMemberRolesMiddleware checks if the member has the required team member roles
-func RequireTeamMemberRolesMiddleware(roles ...models.TeamMemberRole) HttpMiddelwareFunc {
+func RequireTeamMemberRolesMiddleware(roles ...models.TeamMemberRole) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
@@ -63,7 +63,7 @@ func RequireTeamMemberRolesMiddleware(roles ...models.TeamMemberRole) HttpMiddel
 }
 
 // RequireTeamMemberRolesMiddleware checks if the member has the required team member roles
-func RequireTeamMemberBillingAccessMiddleware() HttpMiddelwareFunc {
+func RequireTeamMemberBillingAccessMiddleware() HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
@@ -90,9 +90,9 @@ func RequireTeamMemberBillingAccessMiddleware() HttpMiddelwareFunc {
 	}
 }
 
-type GetTeamIdFunc func(ctx context.Context) (uuid.UUID, bool)
+type getTeamIDFunc func(ctx context.Context) (uuid.UUID, bool)
 
-var GetTeamIdFuncs []GetTeamIdFunc = []GetTeamIdFunc{
+var getTeamIDFuncs []getTeamIDFunc = []getTeamIDFunc{
 	func(ctx context.Context) (uuid.UUID, bool) {
 		team := contextstore.GetContextTeam(ctx)
 		if team != nil {
@@ -123,8 +123,8 @@ var GetTeamIdFuncs []GetTeamIdFunc = []GetTeamIdFunc{
 	},
 }
 
-func GetTeamIdFromContext(ctx context.Context) (uuid.UUID, bool) {
-	for _, fn := range GetTeamIdFuncs {
+func GetTeamIDFromContext(ctx context.Context) (uuid.UUID, bool) {
+	for _, fn := range getTeamIDFuncs {
 		if teamId, ok := fn(ctx); ok {
 			return teamId, true
 		}
@@ -139,7 +139,7 @@ func GetTeamIdFromContext(ctx context.Context) (uuid.UUID, bool) {
 //   - if the team is found, it queries the team member using the team.id and user.id.
 //   - if the team not found, it calls [contextstore.GetContextTeamMember] for the team member, and queries the user's team member using the teamMember.TeamID and user.ID.
 //   - if the team member is not found, it moves on without setting the team info
-func TeamInfoFromContext(app core.App) HttpMiddelwareFunc {
+func TeamInfoFromContext(app core.App) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
@@ -151,7 +151,7 @@ func TeamInfoFromContext(app core.App) HttpMiddelwareFunc {
 			}
 
 			// get team id from various context values
-			teamId, ok := GetTeamIdFromContext(rawCtx)
+			teamId, ok := GetTeamIDFromContext(rawCtx)
 			if !ok {
 				next.ServeHTTP(w, r)
 				return
@@ -183,7 +183,7 @@ func TeamInfoFromContext(app core.App) HttpMiddelwareFunc {
 }
 
 // TeamMemberFromParam captures the {team-member-id} path param, and if found, stores the teamMember in the context, otherwise it simply moves on
-func TeamMemberFromParam(app core.App) HttpMiddelwareFunc {
+func TeamMemberFromParam(app core.App) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// context
@@ -245,7 +245,7 @@ func TeamMemberFromParam(app core.App) HttpMiddelwareFunc {
 }
 
 // TeamFromParam captures the {team-id} path param, and if found, stores the team in the context, otherwise it simply moves on
-func TeamFromParam(app core.App) HttpMiddelwareFunc {
+func TeamFromParam(app core.App) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// context
@@ -305,7 +305,7 @@ func TeamFromParam(app core.App) HttpMiddelwareFunc {
 }
 
 // TeamFromParamSlug captures the {team-slug} path param, and if found, stores the team in the context, otherwise it simply moves on
-func TeamFromParamSlug(app core.App) HttpMiddelwareFunc {
+func TeamFromParamSlug(app core.App) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// context
@@ -352,8 +352,8 @@ func TeamFromParamSlug(app core.App) HttpMiddelwareFunc {
 	}
 }
 
-// MemberIdBelongsToUser middleware ensures that the user is the member with id {team-member-id}
-func MemberIdBelongsToUser() HttpMiddelwareFunc {
+// MemberIDBelongsToUser middleware ensures that the user is the member with id {team-member-id}
+func MemberIDBelongsToUser() HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
@@ -382,7 +382,7 @@ func MemberIdBelongsToUser() HttpMiddelwareFunc {
 }
 
 // TeamCanDelete middleware checks whether the team can be deleted, i.e. it has no valid subscriptions
-func TeamCanDelete(app core.App) HttpMiddelwareFunc {
+func TeamCanDelete(app core.App) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
@@ -408,7 +408,7 @@ func TeamCanDelete(app core.App) HttpMiddelwareFunc {
 // TeamInfoFromTask captures the {task-id} path param to query its teamId, and along with the user info, queries the teamInfo membership.
 // If the user has membership in the team of the task, that teamInfo is added to the context, and the request is forwarded to the next middleware,
 // otherwise it returns an error
-func TeamInfoFromTask(app core.App) HttpMiddelwareFunc {
+func TeamInfoFromTask(app core.App) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
@@ -455,7 +455,7 @@ func TeamInfoFromTask(app core.App) HttpMiddelwareFunc {
 
 // TeamInfoFromTaskProject captures the {"task-project-id"} path param to query its teamId, and along with the user info, queries the teamInfo membership.
 // If the user has membership in the team of the task project, that teamInfo is added to the context and the request is forwarded to the next middleware, otherwise it returns an error
-func TeamInfoFromTaskProject(app core.App) HttpMiddelwareFunc {
+func TeamInfoFromTaskProject(app core.App) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
@@ -502,7 +502,7 @@ func TeamInfoFromTaskProject(app core.App) HttpMiddelwareFunc {
 
 // TeamInfoFromTeamIDParam captures the {team-id} path param, and along with the user info, queries the teamInfo.
 // If the user has membership in the team of the task project, that teamInfo is added to the context, otherwise it returns an error
-func TeamInfoFromTeamIDParam(app core.App) HttpMiddelwareFunc {
+func TeamInfoFromTeamIDParam(app core.App) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
