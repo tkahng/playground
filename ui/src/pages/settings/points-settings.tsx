@@ -1,6 +1,7 @@
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { settingsSidebarLinks } from "@/components/links";
+import { StripeTestCardNotice } from "@/components/stripe-test-card-notice";
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { createPointsCheckoutSession, getProductsWithPrices } from "@/lib/api";
@@ -91,6 +92,8 @@ export default function PointsSettingsPage() {
             </div>
           )}
         </div>
+
+        <StripeTestCardNotice />
 
         {prices.length === 0 ? (
           <p className="text-muted-foreground">
