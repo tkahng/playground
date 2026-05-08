@@ -35,7 +35,7 @@ export default function PermissionEdit() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuthProvider();
-  const { permissionId } = useParams<{ permissionId: string }>();
+  const { permissionId } = useParams({ strict: false });
   const {
     data: permission,
     isLoading: loading,
@@ -84,7 +84,7 @@ export default function PermissionEdit() {
     }
   }, [permission, form.reset, form]);
   if (!user) {
-    navigate(RouteMap.SIGNIN);
+    navigate({ to: RouteMap.SIGNIN });
   }
   if (loading) return <CenteredSpinner />;
   if (error) return <p>Error: {error.message}</p>;

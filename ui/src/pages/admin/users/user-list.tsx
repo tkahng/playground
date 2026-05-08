@@ -1,6 +1,5 @@
 import { useSearchParams } from "@/hooks/use-search-params";
 import { DataTable } from "@/components/data-table";
-import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { userPaginate } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
@@ -68,7 +67,7 @@ export default function UserListPage() {
             cell: ({ row }) => {
               return (
                 <Link
-                  to={`${RouteMap.ADMIN_USERS}/${row.original.id}`}
+                  to='/admin/users/$userId' params={{ userId: row.original.id }}
                   className="hover:underline text-blue-500"
                 >
                   {row.original.email}

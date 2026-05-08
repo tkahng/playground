@@ -1,6 +1,5 @@
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { DataTable } from "@/components/data-table";
-import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { adminPlanFeaturesList } from "@/lib/api";
@@ -35,7 +34,7 @@ export default function PlanFeaturesListPage() {
             header: "Product ID",
             cell: ({ row }) => (
               <Link
-                to={`${RouteMap.ADMIN_PLAN_FEATURES}/${row.original.stripe_product_id}`}
+                to='/admin/plan-features/$productId' params={{ productId: row.original.stripe_product_id }}
                 className="hover:underline text-blue-500"
               >
                 {row.original.stripe_product_id}
@@ -76,7 +75,7 @@ function EditButton({ productId }: { productId: string }) {
       variant="ghost"
       size="icon"
       onClick={() =>
-        navigate(`${RouteMap.ADMIN_PLAN_FEATURES}/${productId}`)
+        navigate({ to: '/admin/plan-features/$productId', params: { productId } })
       }
     >
       <Pencil className="h-4 w-4" />

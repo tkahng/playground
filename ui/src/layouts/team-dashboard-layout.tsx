@@ -65,7 +65,7 @@ export default function TeamDashboardLayout() {
     return <Navigate to="/teams" />;
   }
   if (pathname === "/teams/settings/billing") {
-    return <Navigate to={`/teams/${team.slug}/settings/billing`} />;
+    return <Navigate to="/teams/$teamSlug/settings/billing" params={{ teamSlug: team.slug }} />;
   }
   return (
     <div className="min-h-screen flex flex-col">

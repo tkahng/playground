@@ -1,4 +1,3 @@
-import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import {
   DialogClose,
@@ -40,7 +39,7 @@ export function JobsActionDropdown({
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_JOBS}/${jobId}`);
+              navigate({ to: '/admin/jobs/$jobId', params: { jobId } });
             }}
           >
             <Button variant="ghost" size="sm">

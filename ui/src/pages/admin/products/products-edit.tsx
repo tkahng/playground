@@ -25,7 +25,7 @@ export default function ProductEditPage() {
   const { user } = useAuthProvider();
 
   const queryClient = useQueryClient();
-  const { productId } = useParams<{ productId: string }>();
+  const { productId } = useParams({ strict: false });
   const { data, isError, isLoading, error } = useQuery({
     queryKey: ["product", productId],
     queryFn: async () => {

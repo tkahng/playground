@@ -71,7 +71,7 @@ export function CreateTeamDialog({
       toast.success("Team created!", {
         description: "Add your first project — click 'New Project' to get started.",
       });
-      navigate(`/teams/${data.slug}/dashboard`);
+      navigate({ to: '/teams/$teamSlug/dashboard', params: { teamSlug: data.slug } });
     },
     onError: (error) => {
       const err = GetError(error);

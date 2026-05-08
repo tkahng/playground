@@ -23,12 +23,15 @@ export default function RockPaperScissors() {
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
   const onClickGameId = (key: string | null) => {
-    if (key) {
-      searchParams.set("game_id", key);
-    } else {
-      searchParams.delete("game_id");
-    }
-    setSearchParams(searchParams);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev.toString());
+      if (key) {
+        next.set("game_id", key);
+      } else {
+        next.delete("game_id");
+      }
+      return next;
+    });
   };
   const onPaginationChange = (updater: Updater<PaginationState>) => {
     const newState =

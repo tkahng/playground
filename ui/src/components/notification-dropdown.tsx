@@ -73,7 +73,7 @@ export function NotificationDropdown() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           <DropdownMenuItem asChild>
-            <Link to={`/teams/${team?.slug}/notifications`} className="w-full cursor-pointer">
+            <Link to='/teams/$teamSlug/notifications' params={{ teamSlug: team?.slug ?? '' }} className="w-full cursor-pointer">
               View all notifications
             </Link>
           </DropdownMenuItem>

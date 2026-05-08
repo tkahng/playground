@@ -62,7 +62,7 @@ export default function UserEdit() {
   ]);
   const queryClient = useQueryClient();
   const { user } = useAuthProvider();
-  const { userId } = useParams<{ userId: string }>();
+  const { userId } = useParams({ strict: false });
   const {
     data,
     isLoading: loading,

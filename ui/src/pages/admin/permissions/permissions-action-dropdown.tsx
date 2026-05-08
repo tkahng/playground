@@ -1,4 +1,3 @@
-import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import {
   DialogClose,
@@ -40,7 +39,7 @@ export function PermissionsActionDropdown({
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_PERMISSIONS}/${permissionId}`);
+              navigate({ to: '/admin/permissions/$permissionId', params: { permissionId } });
             }}
           >
             <Button variant="ghost" size="sm">

@@ -8,7 +8,6 @@ import {
   SelectValue,
 } from "@radix-ui/react-select";
 import { useFieldArray, useForm } from "react-hook-form";
-import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "./ui/button";
@@ -122,7 +121,7 @@ export function ProfileForm() {
               </Select>
               <FormDescription>
                 You can manage verified email addresses in your{" "}
-                <Link to="/examples/forms">email settings</Link>.
+                <a href="#" className="underline">email settings</a>.
               </FormDescription>
               <FormMessage />
             </FormItem>

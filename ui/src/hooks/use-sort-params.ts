@@ -8,6 +8,7 @@ export const useSortParams = () => {
   const objectParams = Object.fromEntries(searchParams);
 
   const setSearchParams = (params: Record<string, string>) => {
+    // @ts-expect-error – search schema not declared per-route; runtime is correct
     navigate({ search: () => params, replace: true });
   };
 

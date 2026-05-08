@@ -14,7 +14,6 @@ import {
   Phone,
   Twitter,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 
 export default function LandingContactPage() {
   return (
@@ -132,34 +131,34 @@ export default function LandingContactPage() {
           </p>
         </div>
         <div className="flex space-x-4">
-          <Link
-            to="#"
+          <a
+            href="#"
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           >
             <Twitter className="h-6 w-6" />
             <span className="sr-only">Twitter</span>
-          </Link>
-          <Link
-            to="#"
+          </a>
+          <a
+            href="#"
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           >
             <Facebook className="h-6 w-6" />
             <span className="sr-only">Facebook</span>
-          </Link>
-          <Link
-            to="#"
+          </a>
+          <a
+            href="#"
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           >
             <Linkedin className="h-6 w-6" />
             <span className="sr-only">LinkedIn</span>
-          </Link>
-          <Link
-            to="#"
+          </a>
+          <a
+            href="#"
             className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
           >
             <Github className="h-6 w-6" />
             <span className="sr-only">GitHub</span>
-          </Link>
+          </a>
         </div>
       </PrimarySection>
     </>

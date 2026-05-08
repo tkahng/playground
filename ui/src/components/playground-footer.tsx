@@ -1,5 +1,5 @@
 import { Facebook, Github, Linkedin, Twitter } from "lucide-react";
-import { NavLink } from "@tanstack/react-router";
+
 // container mx-auto flex h-14 items-center justify-between  lg:px-6
 export function PlaygroundFooter() {
   return (
@@ -11,24 +11,24 @@ export function PlaygroundFooter() {
               <h4 className="text-lg font-semibold mb-4">Product</h4>
               <ul className="space-y-2">
                 <li>
-                  <NavLink to="#" className="text-sm hover:underline">
+                  <a href="#" className="text-sm hover:underline">
                     Features
-                  </NavLink>
+                  </a>
                 </li>
                 <li>
-                  <NavLink to="#" className="text-sm hover:underline">
+                  <a href="#" className="text-sm hover:underline">
                     Pricing
-                  </NavLink>
+                  </a>
                 </li>
                 <li>
-                  <NavLink to="#" className="text-sm hover:underline">
+                  <a href="#" className="text-sm hover:underline">
                     API
-                  </NavLink>
+                  </a>
                 </li>
                 <li>
-                  <NavLink to="#" className="text-sm hover:underline">
+                  <a href="#" className="text-sm hover:underline">
                     Integrations
-                  </NavLink>
+                  </a>
                 </li>
               </ul>
             </div>
@@ -38,24 +38,24 @@ export function PlaygroundFooter() {
               <h4 className="text-lg font-semibold mb-4">Resources</h4>
               <ul className="space-y-2">
                 <li>
-                  <NavLink to="#" className="text-sm hover:underline">
+                  <a href="#" className="text-sm hover:underline">
                     Documentation
-                  </NavLink>
+                  </a>
                 </li>
                 <li>
-                  <NavLink to="#" className="text-sm hover:underline">
+                  <a href="#" className="text-sm hover:underline">
                     Tutorials
-                  </NavLink>
+                  </a>
                 </li>
                 <li>
-                  <NavLink to="#" className="text-sm hover:underline">
+                  <a href="#" className="text-sm hover:underline">
                     Blog
-                  </NavLink>
+                  </a>
                 </li>
                 <li>
-                  <NavLink to="#" className="text-sm hover:underline">
+                  <a href="#" className="text-sm hover:underline">
                     Support
-                  </NavLink>
+                  </a>
                 </li>
               </ul>
             </div>
@@ -65,24 +65,24 @@ export function PlaygroundFooter() {
               <h4 className="text-lg font-semibold mb-4">Company</h4>
               <ul className="space-y-2">
                 <li>
-                  <NavLink to="#" className="text-sm hover:underline">
+                  <a href="#" className="text-sm hover:underline">
                     About
-                  </NavLink>
+                  </a>
                 </li>
                 <li>
-                  <NavLink to="#" className="text-sm hover:underline">
+                  <a href="#" className="text-sm hover:underline">
                     Careers
-                  </NavLink>
+                  </a>
                 </li>
                 <li>
-                  <NavLink to="#" className="text-sm hover:underline">
+                  <a href="#" className="text-sm hover:underline">
                     Privacy Policy
-                  </NavLink>
+                  </a>
                 </li>
                 <li>
-                  <NavLink to="#" className="text-sm hover:underline">
+                  <a href="#" className="text-sm hover:underline">
                     Terms of Service
-                  </NavLink>
+                  </a>
                 </li>
               </ul>
             </div>
@@ -92,36 +92,36 @@ export function PlaygroundFooter() {
               <h4 className="text-lg font-semibold mb-4">Social</h4>
               <ul className="space-y-2">
                 <li>
-                  <NavLink
-                    to="#"
+                  <a
+                    href="#"
                     className="flex items-center text-sm hover:underline"
                   >
                     <Twitter className="mr-2 h-5 w-5" /> Twitter
-                  </NavLink>
+                  </a>
                 </li>
                 <li>
-                  <NavLink
-                    to="#"
+                  <a
+                    href="#"
                     className="flex items-center text-sm hover:underline"
                   >
                     <Facebook className="mr-2 h-5 w-5" /> Facebook
-                  </NavLink>
+                  </a>
                 </li>
                 <li>
-                  <NavLink
-                    to="#"
+                  <a
+                    href="#"
                     className="flex items-center text-sm hover:underline"
                   >
                     <Linkedin className="mr-2 h-5 w-5" /> LinkedIn
-                  </NavLink>
+                  </a>
                 </li>
                 <li>
-                  <NavLink
-                    to="#"
+                  <a
+                    href="#"
                     className="flex items-center text-sm hover:underline"
                   >
                     <Github className="mr-2 h-5 w-5" /> GitHub
-                  </NavLink>
+                  </a>
                 </li>
               </ul>
             </div>

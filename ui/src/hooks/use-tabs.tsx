@@ -12,14 +12,10 @@ export function useTabs<T extends string = string>(
   const tab = allowed.includes(value as T) ? (value as T) : defaultValue;
 
   const onClick = (next: T) => {
-    navigate({
-      search: (prev) => {
-        const newParams = { ...(prev as Record<string, string>) };
-        newParams["tab"] = next;
-        return newParams;
-      },
-      replace: true,
-    });
+    const params = new URLSearchParams(search);
+    params.set("tab", next);
+    // @ts-expect-error – search schema not declared per-route; runtime is correct
+    navigate({ search: () => Object.fromEntries(params.entries()), replace: true });
   };
 
   return { tab, onClick };

@@ -19,7 +19,7 @@ export default function PricingPage() {
       const t = setTimeout(() => {
         toast("Did you know?", {
           description: "You can earn points by playing Rock Paper Scissors.",
-          action: { label: "Play now →", onClick: () => navigate("/rock-paper-scissors") },
+          action: { label: "Play now →", onClick: () => navigate({ to: '/rock-paper-scissors' }) },
         });
       }, 1500);
       return () => clearTimeout(t);

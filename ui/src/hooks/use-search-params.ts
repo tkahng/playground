@@ -14,16 +14,12 @@ export function useSearchParams(): [URLSearchParams, SetSearchParams] {
 
   const setSearchParams: SetSearchParams = (updater, options) => {
     const replace = options?.replace ?? true;
-    if (typeof updater === "function") {
-      const current = new URLSearchParams(rawSearch);
-      const next = updater(current);
-      navigate({
-        search: () => Object.fromEntries(next.entries()),
-        replace,
-      });
-    } else {
-      navigate({ search: () => updater, replace });
-    }
+    const next =
+      typeof updater === "function"
+        ? updater(new URLSearchParams(rawSearch))
+        : new URLSearchParams(updater);
+    // @ts-expect-error – search schema not declared per-route; runtime is correct
+    navigate({ search: () => Object.fromEntries(next.entries()), replace });
   };
 
   return [searchParams, setSearchParams];
