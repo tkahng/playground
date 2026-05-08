@@ -196,15 +196,26 @@ func TestApi_AdminPlanFeaturesUpsert(t *testing.T) {
 				},
 			},
 			{
-				Name:            "upsert plan features - product not found",
-				Method:          http.MethodPut,
-				URL:             "/admin/plan-features/prod_nonexistent",
-				ExpectedStatus:  http.StatusNotFound,
-				Headers:         []string{header},
-				ExpectedContent: []string{"Not Found"},
-				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
+				Name:           "upsert plan features - arbitrary product id succeeds",
+				Method:         http.MethodPut,
+				URL:            "/admin/plan-features/prod_nonexistent",
+				ExpectedStatus: http.StatusOK,
+				Headers:        []string{header},
+				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					scenario.Body = apis.JsonToReader(t, &apis.PlanFeaturesUpsertBody{DailyAiTokens: 10_000})
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+					var body apis.PlanFeature
+					if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+						t.Fatalf("decode error: %v", err)
+					}
+					if body.StripeProductID != "prod_nonexistent" {
+						t.Errorf("StripeProductID = %q, want %q", body.StripeProductID, "prod_nonexistent")
+					}
+					if body.DailyAiTokens != 10_000 {
+						t.Errorf("DailyAiTokens = %d, want 10000", body.DailyAiTokens)
+					}
 				},
 			},
 			{
