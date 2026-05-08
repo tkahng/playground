@@ -12,6 +12,9 @@ import (
 type PlanFeaturesStoreInterface interface {
 	FindByProductID(ctx context.Context, productID string) (*models.PlanFeatures, error)
 	Upsert(ctx context.Context, pf *models.PlanFeatures) (*models.PlanFeatures, error)
+	// InsertIfMissing inserts a row only when no row exists for that product yet.
+	// Used during startup sync so manually configured limits are never overwritten.
+	InsertIfMissing(ctx context.Context, pf *models.PlanFeatures) error
 	List(ctx context.Context) ([]*models.PlanFeatures, error)
 	WithTx(db database.Dbx) *DbPlanFeaturesStore
 }
@@ -35,6 +38,16 @@ func (s *DbPlanFeaturesStore) FindByProductID(ctx context.Context, productID str
 		"stripe_product_id": map[string]any{"_eq": productID},
 	})
 	return database.OptionalRow(data, err)
+}
+
+func (s *DbPlanFeaturesStore) InsertIfMissing(ctx context.Context, pf *models.PlanFeatures) error {
+	q := squirrel.Insert("billing.plan_features").
+		Columns("stripe_product_id", "daily_ai_tokens").
+		Values(pf.StripeProductID, pf.DailyAiTokens).
+		Suffix("ON CONFLICT (stripe_product_id) DO NOTHING").
+		PlaceholderFormat(squirrel.Dollar)
+	_, err := database.ExecWithBuilder(ctx, s.db, q)
+	return err
 }
 
 func (s *DbPlanFeaturesStore) List(ctx context.Context) ([]*models.PlanFeatures, error) {
