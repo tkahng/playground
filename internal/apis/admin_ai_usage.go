@@ -8,6 +8,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 type AdminAiUsageRecord struct {
@@ -23,10 +24,9 @@ type AdminAiUsageRecord struct {
 
 type AdminAiUsageListInput struct {
 	stores.PaginatedInput
-	// Huma does not support pointer query params; parse strings in the handler.
-	TeamID string `query:"team_id,omitempty" required:"false" format:"uuid"`
-	Since  string `query:"since,omitempty"   required:"false" format:"date-time"`
-	Until  string `query:"until,omitempty"   required:"false" format:"date-time"`
+	TeamID types.OptionalParam[uuid.UUID] `query:"team_id,omitempty" required:"false" format:"uuid"`
+	Since  types.OptionalParam[time.Time] `query:"since,omitempty"   required:"false" format:"date-time"`
+	Until  types.OptionalParam[time.Time] `query:"until,omitempty"   required:"false" format:"date-time"`
 }
 
 func (api *Api) AdminAiUsageList(ctx context.Context, input *AdminAiUsageListInput) (*struct {
@@ -35,20 +35,14 @@ func (api *Api) AdminAiUsageList(ctx context.Context, input *AdminAiUsageListInp
 	filter := &stores.AiUsageFilter{
 		PaginatedInput: input.PaginatedInput,
 	}
-	if input.TeamID != "" {
-		if id, err := uuid.Parse(input.TeamID); err == nil {
-			filter.TeamID = &id
-		}
+	if input.TeamID.IsSet {
+		filter.TeamID = &input.TeamID.Value
 	}
-	if input.Since != "" {
-		if t, err := time.Parse(time.RFC3339, input.Since); err == nil {
-			filter.Since = &t
-		}
+	if input.Since.IsSet {
+		filter.Since = &input.Since.Value
 	}
-	if input.Until != "" {
-		if t, err := time.Parse(time.RFC3339, input.Until); err == nil {
-			filter.Until = &t
-		}
+	if input.Until.IsSet {
+		filter.Until = &input.Until.Value
 	}
 
 	rows, err := api.App().Adapter().AiUsage().ListAiUsages(ctx, filter)
