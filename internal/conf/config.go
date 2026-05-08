@@ -28,6 +28,7 @@ type AppConfig struct {
 	EncryptionKey string `env:"ENCRYPTION_KEY" envDefault:"12345678901234567890123456789012"`
 	AppEnv        string `env:"APP_ENV" envDefault:"development"` // can be development, staging, production
 	Debug         bool   `env:"DEBUG" envDefault:"false"`
+	OtelEnabled   bool   `env:"OTEL_ENABLED" envDefault:"false"`
 }
 
 type DBConfig struct {
