@@ -71,23 +71,25 @@ function FeatureCard({
   return (
     <div
       id={feature.fragment}
-      className="flex flex-col md:flex-row items-center gap-x-12 gap-y-8 md:even:flex-row-reverse scroll-mt-8"
+      className="flex flex-col md:flex-row items-center gap-8 md:gap-16 md:even:flex-row-reverse scroll-mt-8"
     >
       {/* Image */}
-      {feature.featureImageComponent ? (
-        <div className="w-fit bg-muted rounded-xl shrink-0">
-          {feature.featureImageComponent}
+      <div className="w-full md:basis-1/2 md:shrink-0 min-w-0">
+        <div className="rounded-2xl border border-border/50 bg-muted overflow-hidden p-6 flex items-center justify-center">
+          {feature.featureImageComponent ? (
+            <div className="w-full flex items-center justify-center">
+              {feature.featureImageComponent}
+            </div>
+          ) : (
+            <div className="aspect-[4/3] w-full flex items-center justify-center">
+              {feature.icon}
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="w-full aspect-[4/3] bg-muted rounded-xl border border-border/50 basis-1/2 shrink-0">
-          <div className="flex items-center justify-center w-full h-full">
-            {feature.icon}
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* Text */}
-      <div className="basis-1/2 shrink-0 flex flex-col gap-4">
+      <div className="w-full md:basis-1/2 md:shrink-0 min-w-0 flex flex-col gap-4">
         {/* Step + badge row */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-xs text-muted-foreground/60 bg-muted px-2 py-0.5 rounded">
