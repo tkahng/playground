@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	FreeTierProductID       = "free"
 	FreeTierDailyTokenLimit int64 = 10_000
 	PaidTierDailyTokenLimit int64 = 100_000
 )
@@ -30,10 +31,18 @@ type aiUsageService struct {
 	adapter stores.StorageAdapterInterface
 }
 
-// SyncPlanFeatures seeds a plan_features row (with the free-tier default) for
-// every active subscription product that does not already have one. It is safe
-// to call repeatedly; existing rows are never modified.
+// SyncPlanFeatures seeds plan_features rows for the free tier and every active
+// subscription product that does not already have one. Safe to call repeatedly;
+// existing rows are never modified.
 func SyncPlanFeatures(ctx context.Context, adapter stores.StorageAdapterInterface) error {
+	// Always ensure the free-tier sentinel row exists.
+	if err := adapter.PlanFeatures().InsertIfMissing(ctx, &models.PlanFeatures{
+		StripeProductID: FreeTierProductID,
+		DailyAiTokens:   FreeTierDailyTokenLimit,
+	}); err != nil {
+		return err
+	}
+
 	products, err := adapter.Product().ListProducts(ctx, &stores.StripeProductFilter{
 		Active:       types.OptionalParam[bool]{IsSet: true, Value: true},
 		MetadataType: types.OptionalParam[models.StripeProductType]{IsSet: true, Value: models.StripeProductTypeSubscription},
@@ -66,13 +75,19 @@ func (s *aiUsageService) GetDailyLimit(ctx context.Context, teamID uuid.UUID) (i
 		return 0, err
 	}
 
-	// No active subscription → free tier
 	if len(subs) == 0 || subs[0] == nil {
+		// No subscription — read the "free" plan_features row.
+		pf, err := s.adapter.PlanFeatures().FindByProductID(ctx, FreeTierProductID)
+		if err != nil {
+			return 0, err
+		}
+		if pf != nil {
+			return pf.DailyAiTokens, nil
+		}
 		return FreeTierDailyTokenLimit, nil
 	}
 
 	sub := subs[0]
-	// Load the full subscription with price + product to get the product ID
 	full, err := s.adapter.Subscription().FindSubscriptionsWithPriceProductByIds(ctx, sub.ID)
 	if err != nil {
 		return 0, err
@@ -86,10 +101,8 @@ func (s *aiUsageService) GetDailyLimit(ctx context.Context, teamID uuid.UUID) (i
 		return 0, err
 	}
 	if pf == nil {
-		// Paid subscription but no plan_features row configured yet
 		return PaidTierDailyTokenLimit, nil
 	}
-
 	return pf.DailyAiTokens, nil
 }
 

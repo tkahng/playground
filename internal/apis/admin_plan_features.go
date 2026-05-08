@@ -57,16 +57,8 @@ func (api *Api) AdminPlanFeaturesList(ctx context.Context, _ *struct{}) (*struct
 func (api *Api) AdminPlanFeaturesUpsert(ctx context.Context, input *PlanFeaturesUpsertInput) (*struct {
 	Body *PlanFeature
 }, error) {
-	product, err := api.App().Adapter().Product().FindProductById(ctx, input.ProductID)
-	if err != nil {
-		return nil, err
-	}
-	if product == nil {
-		return nil, huma.Error404NotFound("product not found")
-	}
-
 	pf, err := api.App().Adapter().PlanFeatures().Upsert(ctx, &models.PlanFeatures{
-		StripeProductID: product.ID,
+		StripeProductID: input.ProductID,
 		DailyAiTokens:   input.Body.DailyAiTokens,
 	})
 	if err != nil {
