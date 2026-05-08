@@ -154,3 +154,134 @@ func TestAiUsageStore_DayBoundary(t *testing.T) {
 		}
 	})
 }
+
+func TestAiUsageStore_ListAndCount(t *testing.T) {
+	t.Parallel()
+	test.SkipIfShort(t)
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewStorageAdapter(db)
+
+		user := stores.CreateUser(adapter, ctx, "list@example.com")
+		team := stores.CreateTeam(adapter, ctx, "list-team")
+		member := stores.CreateTeamMember(adapter, ctx, team, user, models.TeamMemberRoleOwner, true)
+
+		for range 3 {
+			if _, err := adapter.AiUsage().CreateAiUsage(ctx, &models.AiUsage{
+				UserID: user.ID, TeamMemberID: &member.ID, TeamID: &team.ID,
+				PromptTokens: 100, CompletionTokens: 50, TotalTokens: 150,
+			}); err != nil {
+				t.Fatalf("CreateAiUsage() error = %v", err)
+			}
+		}
+
+		rows, err := adapter.AiUsage().ListAiUsages(ctx, &stores.AiUsageFilter{
+			PaginatedInput: stores.PaginatedInput{Page: 0, PerPage: 10},
+		})
+		if err != nil {
+			t.Fatalf("ListAiUsages() error = %v", err)
+		}
+		if len(rows) < 3 {
+			t.Errorf("ListAiUsages() = %d rows, want at least 3", len(rows))
+		}
+
+		total, err := adapter.AiUsage().CountAiUsages(ctx, &stores.AiUsageFilter{})
+		if err != nil {
+			t.Fatalf("CountAiUsages() error = %v", err)
+		}
+		if total < 3 {
+			t.Errorf("CountAiUsages() = %d, want at least 3", total)
+		}
+	})
+}
+
+func TestAiUsageStore_ListFilterByTeam(t *testing.T) {
+	t.Parallel()
+	test.SkipIfShort(t)
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewStorageAdapter(db)
+
+		user := stores.CreateUser(adapter, ctx, "filter@example.com")
+		teamA := stores.CreateTeam(adapter, ctx, "filter-team-a")
+		teamB := stores.CreateTeam(adapter, ctx, "filter-team-b")
+		memberA := stores.CreateTeamMember(adapter, ctx, teamA, user, models.TeamMemberRoleOwner, true)
+		memberB := stores.CreateTeamMember(adapter, ctx, teamB, user, models.TeamMemberRoleOwner, true)
+
+		if _, err := adapter.AiUsage().CreateAiUsage(ctx, &models.AiUsage{
+			UserID: user.ID, TeamMemberID: &memberA.ID, TeamID: &teamA.ID,
+			PromptTokens: 10, CompletionTokens: 5, TotalTokens: 15,
+		}); err != nil {
+			t.Fatalf("CreateAiUsage(teamA) error = %v", err)
+		}
+		if _, err := adapter.AiUsage().CreateAiUsage(ctx, &models.AiUsage{
+			UserID: user.ID, TeamMemberID: &memberB.ID, TeamID: &teamB.ID,
+			PromptTokens: 20, CompletionTokens: 10, TotalTokens: 30,
+		}); err != nil {
+			t.Fatalf("CreateAiUsage(teamB) error = %v", err)
+		}
+
+		rows, err := adapter.AiUsage().ListAiUsages(ctx, &stores.AiUsageFilter{
+			PaginatedInput: stores.PaginatedInput{Page: 0, PerPage: 10},
+			TeamID:         &teamA.ID,
+		})
+		if err != nil {
+			t.Fatalf("ListAiUsages(teamA) error = %v", err)
+		}
+		if len(rows) != 1 {
+			t.Errorf("ListAiUsages(teamA) = %d rows, want 1", len(rows))
+		}
+		if rows[0].TotalTokens != 15 {
+			t.Errorf("TotalTokens = %d, want 15", rows[0].TotalTokens)
+		}
+
+		count, err := adapter.AiUsage().CountAiUsages(ctx, &stores.AiUsageFilter{TeamID: &teamA.ID})
+		if err != nil {
+			t.Fatalf("CountAiUsages(teamA) error = %v", err)
+		}
+		if count != 1 {
+			t.Errorf("CountAiUsages(teamA) = %d, want 1", count)
+		}
+	})
+}
+
+func TestAiUsageStore_ListPagination(t *testing.T) {
+	t.Parallel()
+	test.SkipIfShort(t)
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewStorageAdapter(db)
+
+		user := stores.CreateUser(adapter, ctx, "page@example.com")
+		team := stores.CreateTeam(adapter, ctx, "page-team")
+		member := stores.CreateTeamMember(adapter, ctx, team, user, models.TeamMemberRoleOwner, true)
+
+		for range 5 {
+			if _, err := adapter.AiUsage().CreateAiUsage(ctx, &models.AiUsage{
+				UserID: user.ID, TeamMemberID: &member.ID, TeamID: &team.ID,
+				PromptTokens: 1, CompletionTokens: 1, TotalTokens: 2,
+			}); err != nil {
+				t.Fatalf("CreateAiUsage() error = %v", err)
+			}
+		}
+
+		page0, err := adapter.AiUsage().ListAiUsages(ctx, &stores.AiUsageFilter{
+			PaginatedInput: stores.PaginatedInput{Page: 0, PerPage: 3},
+			TeamID:         &team.ID,
+		})
+		if err != nil {
+			t.Fatalf("ListAiUsages(page 0) error = %v", err)
+		}
+		if len(page0) != 3 {
+			t.Errorf("page 0 = %d rows, want 3", len(page0))
+		}
+
+		page1, err := adapter.AiUsage().ListAiUsages(ctx, &stores.AiUsageFilter{
+			PaginatedInput: stores.PaginatedInput{Page: 1, PerPage: 3},
+			TeamID:         &team.ID,
+		})
+		if err != nil {
+			t.Fatalf("ListAiUsages(page 1) error = %v", err)
+		}
+		if len(page1) != 2 {
+			t.Errorf("page 1 = %d rows, want 2", len(page1))
+		}
+	})
+}

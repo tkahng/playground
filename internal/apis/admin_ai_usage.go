@@ -23,9 +23,10 @@ type AdminAiUsageRecord struct {
 
 type AdminAiUsageListInput struct {
 	stores.PaginatedInput
-	TeamID *uuid.UUID `query:"team_id,omitempty" required:"false" format:"uuid"`
-	Since  *time.Time `query:"since,omitempty" required:"false" format:"date-time"`
-	Until  *time.Time `query:"until,omitempty" required:"false" format:"date-time"`
+	// Huma does not support pointer query params; parse strings in the handler.
+	TeamID string `query:"team_id,omitempty" required:"false" format:"uuid"`
+	Since  string `query:"since,omitempty"   required:"false" format:"date-time"`
+	Until  string `query:"until,omitempty"   required:"false" format:"date-time"`
 }
 
 func (api *Api) AdminAiUsageList(ctx context.Context, input *AdminAiUsageListInput) (*struct {
@@ -33,9 +34,21 @@ func (api *Api) AdminAiUsageList(ctx context.Context, input *AdminAiUsageListInp
 }, error) {
 	filter := &stores.AiUsageFilter{
 		PaginatedInput: input.PaginatedInput,
-		TeamID:         input.TeamID,
-		Since:          input.Since,
-		Until:          input.Until,
+	}
+	if input.TeamID != "" {
+		if id, err := uuid.Parse(input.TeamID); err == nil {
+			filter.TeamID = &id
+		}
+	}
+	if input.Since != "" {
+		if t, err := time.Parse(time.RFC3339, input.Since); err == nil {
+			filter.Since = &t
+		}
+	}
+	if input.Until != "" {
+		if t, err := time.Parse(time.RFC3339, input.Until); err == nil {
+			filter.Until = &t
+		}
 	}
 
 	rows, err := api.App().Adapter().AiUsage().ListAiUsages(ctx, filter)

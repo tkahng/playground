@@ -195,3 +195,90 @@ func TestAiUsageService_CheckQuota_ExhaustedLimit(t *testing.T) {
 		}
 	})
 }
+
+func TestSyncPlanFeatures_SeedsFreeRow(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+
+		// No "free" row before sync.
+		before, err := adapter.PlanFeatures().FindByProductID(ctx, services.FreeTierProductID)
+		if err != nil {
+			t.Fatalf("FindByProductID() before sync error = %v", err)
+		}
+		if before != nil {
+			t.Fatal("expected no free row before SyncPlanFeatures")
+		}
+
+		if err := services.SyncPlanFeatures(ctx, adapter); err != nil {
+			t.Fatalf("SyncPlanFeatures() error = %v", err)
+		}
+
+		after, err := adapter.PlanFeatures().FindByProductID(ctx, services.FreeTierProductID)
+		if err != nil {
+			t.Fatalf("FindByProductID() after sync error = %v", err)
+		}
+		if after == nil {
+			t.Fatal("expected free row after SyncPlanFeatures, got nil")
+		}
+		if after.DailyAiTokens != services.FreeTierDailyTokenLimit {
+			t.Errorf("DailyAiTokens = %d, want %d", after.DailyAiTokens, services.FreeTierDailyTokenLimit)
+		}
+	})
+}
+
+func TestSyncPlanFeatures_DoesNotOverwriteFreeRow(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+
+		// Pre-set the free row to a custom limit.
+		customLimit := int64(999)
+		if _, err := adapter.PlanFeatures().Upsert(ctx, &models.PlanFeatures{
+			StripeProductID: services.FreeTierProductID,
+			DailyAiTokens:   customLimit,
+		}); err != nil {
+			t.Fatalf("Upsert() error = %v", err)
+		}
+
+		// SyncPlanFeatures should not overwrite it.
+		if err := services.SyncPlanFeatures(ctx, adapter); err != nil {
+			t.Fatalf("SyncPlanFeatures() error = %v", err)
+		}
+
+		row, err := adapter.PlanFeatures().FindByProductID(ctx, services.FreeTierProductID)
+		if err != nil {
+			t.Fatalf("FindByProductID() error = %v", err)
+		}
+		if row.DailyAiTokens != customLimit {
+			t.Errorf("DailyAiTokens = %d, want %d (existing value should be preserved)", row.DailyAiTokens, customLimit)
+		}
+	})
+}
+
+func TestGetDailyLimit_ReadsFreeRow(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		svc := services.NewAiUsageService(adapter)
+
+		team, err := adapter.TeamGroup().CreateTeam(ctx, "free-row-team", "free-row-team")
+		if err != nil {
+			t.Fatalf("CreateTeam() error = %v", err)
+		}
+
+		// Seed the free row with a non-default value.
+		customLimit := int64(7_777)
+		if _, err := adapter.PlanFeatures().Upsert(ctx, &models.PlanFeatures{
+			StripeProductID: services.FreeTierProductID,
+			DailyAiTokens:   customLimit,
+		}); err != nil {
+			t.Fatalf("Upsert free row error = %v", err)
+		}
+
+		limit, err := svc.GetDailyLimit(ctx, team.ID)
+		if err != nil {
+			t.Fatalf("GetDailyLimit() error = %v", err)
+		}
+		if limit != customLimit {
+			t.Errorf("GetDailyLimit() = %d, want %d (should read from free plan_features row)", limit, customLimit)
+		}
+	})
+}
