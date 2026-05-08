@@ -2,7 +2,7 @@ import { LinkDto } from "@/components/links";
 import PlaygroundLogo from "@/components/playground-logo";
 import { UserNav } from "@/components/user-nav";
 import { cn } from "@/lib/utils";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { NotificationDropdown } from "./notification-dropdown";
 import TeamNotification from "./team-notification";
 

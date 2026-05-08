@@ -3,7 +3,7 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { protectedApi } from "@/lib/api";
 import { GetError } from "@/lib/error";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
 
 export default function ProtectedRoutePage() {
   const { user } = useAuthProvider();

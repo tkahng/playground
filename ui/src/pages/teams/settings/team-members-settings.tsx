@@ -1,3 +1,4 @@
+import { useSearchParams } from "@/hooks/use-search-params";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DataTable } from "@/components/data-table";
 import { teamSettingLinks } from "@/components/links";
@@ -8,7 +9,7 @@ import { MemberRowDropdownMenuDialog } from "@/pages/teams/settings/member-row-d
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { CheckCircle, XCircle } from "lucide-react";
-import { useSearchParams } from "react-router";
+import {  } from "@tanstack/react-router";
 import { InviteTeamMemberDialog } from "./invite-team-member-dialog";
 import { CenteredSpinner } from "@/components/centered-spinner";
 

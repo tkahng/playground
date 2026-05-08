@@ -1,7 +1,7 @@
 import { LinkDto } from "@/components/links";
 import { cn } from "@/lib/utils";
+import { Link } from "@tanstack/react-router";
 import { JSX, PropsWithChildren } from "react";
-import { Link } from "react-router";
 
 type NavbarLinkProps = { className?: string } & LinkDto;
 

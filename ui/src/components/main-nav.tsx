@@ -1,13 +1,13 @@
 import { LinkDto } from "@/components/links";
 import { cn } from "@/lib/utils";
-import { Link, useLocation } from "react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 
 export function MainNav({
   className,
   links,
   ...props
 }: React.HTMLAttributes<HTMLElement> & { links: LinkDto[] }) {
-  const { pathname } = useLocation();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
     <nav className={cn("flex items-center h-12", className)} {...props}>

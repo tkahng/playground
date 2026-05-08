@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { RouteMap } from "./route-map";
 import {
   Accordion,

@@ -1,25 +1,25 @@
-import { useSearchParams } from "react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 
 export function useTabs<T extends string = string>(
   defaultValue: T,
   allowed: readonly T[]
 ) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const search = useRouterState({ select: (s) => s.location.searchStr });
+  const searchParams = new URLSearchParams(search);
   const value = searchParams.get("tab");
 
-  // validate query param
   const tab = allowed.includes(value as T) ? (value as T) : defaultValue;
 
   const onClick = (next: T) => {
-    setSearchParams(
-      (prev) => {
-        prev.set("tab", next);
-        return prev;
+    navigate({
+      search: (prev) => {
+        const newParams = { ...(prev as Record<string, string>) };
+        newParams["tab"] = next;
+        return newParams;
       },
-      {
-        preventScrollReset: true,
-      }
-    );
+      replace: true,
+    });
   };
 
   return { tab, onClick };

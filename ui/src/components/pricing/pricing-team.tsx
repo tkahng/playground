@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { ProductWithPrices, SubscriptionWithPrice, User } from "@/schema.types";
 
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 import { z } from "zod";
 
 interface Props {
@@ -165,7 +165,7 @@ export default function PricingTeam({ products, subscription }: Props) {
                           search:
                             "redirect_to=" +
                             encodeURIComponent(
-                              location.pathname + location.search,
+                              location.pathname + (location.searchStr || ""),
                             ),
                         }}
                       >

@@ -4,7 +4,7 @@ import { getMe } from "@/lib/api";
 import { getTeamBySlug, getTeamTeamMembers } from "@/lib/team-queries";
 import { TeamWithMember } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
 import { findTaskById } from "./task-queries";
 
 export const useTeamTeamMembers = () => {

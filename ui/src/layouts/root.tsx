@@ -1,9 +1,8 @@
 import { landingLinks } from "@/components/links";
 import { PlaygroundLandingHeader } from "@/components/playground-landing-header";
 import { PlaygroundMinimalFooter } from "@/components/playground-minimal-footer";
-import { Outlet } from "react-router";
+import { Outlet } from "@tanstack/react-router";
 
-// TODO: always check for refreshtoken query param and get auth.
 export default function RootLayout() {
   return (
     <>

@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useEffect, useReducer } from "react";
 import { JSX } from "react";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 import {
   SiDocker,
   SiGithub,

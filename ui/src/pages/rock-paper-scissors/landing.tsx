@@ -2,7 +2,7 @@ import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 
 export function RockPaperScissorsLanding() {
   // Mock authentication state - replace with actual auth

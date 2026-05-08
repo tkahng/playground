@@ -1,14 +1,9 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import {
-  createSearchParams,
-  Navigate,
-  Outlet,
-  useLocation,
-} from "react-router";
+import { Navigate, Outlet, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 export default function AdminLayoutBase() {
-  const location = useLocation();
+  const location = useRouterState({ select: (s) => s.location });
   const { user } = useAuthProvider();
 
   if (!user || !user.permissions?.includes("superuser")) {
@@ -19,16 +14,10 @@ export default function AdminLayoutBase() {
         onClick: () => console.log("Close"),
       },
     });
+    const redirectTo = location.pathname + (location.searchStr || "");
     return (
-      <Navigate
-        to={{
-          pathname: "/signin",
-          search: createSearchParams({
-            redirect_to: location.pathname + location.search,
-          }).toString(),
-        }}
-      />
+      <Navigate to="/signin" search={{ redirect_to: redirectTo }} />
     );
   }
-  return <Outlet context={{ user }} />;
+  return <Outlet />;
 }

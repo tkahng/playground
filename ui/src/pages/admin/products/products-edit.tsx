@@ -16,7 +16,7 @@ import {
 } from "@/lib/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft, Trash } from "lucide-react";
-import { Link, useParams } from "react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ProductPermissionsDialog } from "./product-permissions-dialog";
 import { CenteredSpinner } from "@/components/centered-spinner";

@@ -1,9 +1,10 @@
+import { useSearchParams } from "@/hooks/use-search-params";
 import { DataTable } from "@/components/data-table";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { rpsGameQueries } from "@/lib/rps-game-queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
-import { useSearchParams, Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { SelectedRpsGameDialog } from "./selected-game-dialog";
 import { Participant, PlayerRpsGame } from "@/schema.types";

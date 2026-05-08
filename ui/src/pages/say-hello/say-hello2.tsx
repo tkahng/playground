@@ -18,7 +18,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useReducer } from "react";
 import TimeAgo from "react-timeago";
 import { toast } from "sonner";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 
 const maxItems = 3;
 function messageReducer(

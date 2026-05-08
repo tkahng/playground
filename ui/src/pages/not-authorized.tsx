@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ArrowLeft, Home, LogIn, ShieldAlert } from "lucide-react";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 
 export default function NotAuthorizedPage() {
   return (

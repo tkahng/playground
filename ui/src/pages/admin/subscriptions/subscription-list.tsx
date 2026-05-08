@@ -1,10 +1,11 @@
+import { useSearchParams } from "@/hooks/use-search-params";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { DataTable } from "@/components/data-table";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { adminStripeSubscriptions } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
-import { useSearchParams } from "react-router";
+
 export default function SubscriptionsListPage() {
   const { user } = useAuthProvider();
 

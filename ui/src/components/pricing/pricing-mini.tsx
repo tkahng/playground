@@ -10,7 +10,7 @@ import { ProductWithPrices, SubscriptionWithPrice, User } from "@/schema.types";
 import { useMutation } from "@tanstack/react-query";
 
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -58,7 +58,7 @@ export default function PricingMini({ products, subscription }: Props) {
           pathname: "/signin",
           search:
             "redirect_to=" +
-            encodeURIComponent(location.pathname + location.search),
+            encodeURIComponent(location.pathname + (location.searchStr || "")),
         });
       }
       if (!team || teamMember?.role !== "owner") {

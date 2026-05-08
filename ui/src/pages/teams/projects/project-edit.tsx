@@ -9,7 +9,7 @@ import { TaskStatus } from "@/schema.types";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 import { ProjectEditDialog } from "./edit-project-dialog";
 import { CenteredSpinner } from "@/components/centered-spinner";
 

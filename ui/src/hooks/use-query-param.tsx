@@ -1,27 +1,25 @@
-import { useSearchParams } from "react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 
 export function useQueryParams(name: string) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const search = useRouterState({ select: (s) => s.location.searchStr });
+  const searchParams = new URLSearchParams(search);
   const value = searchParams.get(name);
 
-  // validate query param
-  const param = value;
-
   const onClick = (next: string | null) => {
-    setSearchParams(
-      (prev) => {
+    navigate({
+      search: (prev) => {
+        const newParams = { ...(prev as Record<string, string>) };
         if (next) {
-          prev.set(name, next);
+          newParams[name] = next;
         } else {
-          prev.delete(name);
+          delete newParams[name];
         }
-        return prev;
+        return newParams;
       },
-      {
-        preventScrollReset: true,
-      },
-    );
+      replace: true,
+    });
   };
 
-  return { param, onClick };
+  return { param: value, onClick };
 }

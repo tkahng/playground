@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@radix-ui/react-select";
 import { useFieldArray, useForm } from "react-hook-form";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "./ui/button";

@@ -1,4 +1,4 @@
-import { Navigate } from "react-router";
+import { Navigate } from "@tanstack/react-router";
 
 export default function Dashboard() {
   // const { user } = useAuthProvider();

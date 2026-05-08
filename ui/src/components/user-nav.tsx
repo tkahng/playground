@@ -42,7 +42,7 @@ import { useUpdateMemberLastSelectedAt } from "@/lib/mutation";
 import { Team } from "@/schema.types";
 import { Check, CheckCircle, CircleX } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Spinner } from "./ui/spinner";
 
 export function UserNav() {

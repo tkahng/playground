@@ -1,3 +1,4 @@
+import { useSearchParams } from "@/hooks/use-search-params";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DataTable } from "@/components/data-table";
@@ -8,7 +9,7 @@ import { getUserTeamInvitations } from "@/lib/team-queries";
 import { Team } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
-import { NavLink, useSearchParams } from "react-router";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 export default function InvitationsPage() {
@@ -80,7 +81,7 @@ export default function InvitationsPage() {
                 header: "Name",
                 cell: ({ row }) => {
                   return (
-                    <NavLink
+                    <Link
                       to={{
                         pathname: `/team-invitation`,
                         search: `?token=${row.original.token}`,
@@ -89,7 +90,7 @@ export default function InvitationsPage() {
                       onClick={() => handleSelectTeam(row.original.team!)}
                     >
                       {row.original.team?.name}
-                    </NavLink>
+                    </Link>
                   );
                 },
               },

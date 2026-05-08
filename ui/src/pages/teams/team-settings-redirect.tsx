@@ -1,5 +1,5 @@
 import { useTeam } from "@/hooks/use-team";
-import { Navigate } from "react-router";
+import { Navigate } from "@tanstack/react-router";
 
 export default function TeamSettingsRedirect() {
   const { team } = useTeam();

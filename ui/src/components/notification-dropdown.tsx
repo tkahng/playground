@@ -12,7 +12,7 @@ import { useTeam } from "@/hooks/use-team";
 import { useTeamNotifications } from "@/hooks/use-team-notifications";
 import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count";
 import { Bell } from "lucide-react";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 
 export function NotificationDropdown() {
   const { team } = useTeam();

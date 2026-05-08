@@ -1,13 +1,11 @@
-import { Outlet } from "react-router";
+import { Outlet } from "@tanstack/react-router";
+import { PropsWithChildren } from "react";
 
-function TaskLayout() {
+function TaskLayout({ children }: PropsWithChildren) {
   return (
     <div className="flex">
-      {/* <div className="w-64">
-        <TaskProjectSidebar />
-      </div> */}
       <div className="flex-1 space-y-6 w-full">
-        <Outlet />
+        {children ?? <Outlet />}
       </div>
     </div>
   );

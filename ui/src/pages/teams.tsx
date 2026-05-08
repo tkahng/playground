@@ -1,3 +1,4 @@
+import { useSearchParams } from "@/hooks/use-search-params";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { CreateTeamDialog } from "@/components/create-team-dialog";
 import { CreateTeamDisabledTooltip } from "@/components/create-team-disabled-tooltip";
@@ -9,7 +10,7 @@ import { getUserTeamMembers } from "@/lib/team-queries";
 import { Team } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
-import { NavLink, useSearchParams } from "react-router";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 export default function TeamSelect() {
@@ -83,13 +84,13 @@ export default function TeamSelect() {
             header: "Name",
             cell: ({ row }) => {
               return (
-                <NavLink
+                <Link
                   to={`${RouteMap.TEAM_LIST}/${row.original.team?.slug}/dashboard`}
                   className="hover:underline text-blue-500"
                   onClick={() => handleSelectTeam(row.original.team!)}
                 >
                   {row.original.team?.name}
-                </NavLink>
+                </Link>
               );
             },
           },

@@ -1,3 +1,4 @@
+import { useSearchParams } from "@/hooks/use-search-params";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { PlaygroundLandingHeader } from "@/components/playground-landing-header";
 import { PlaygroundMinimalFooter } from "@/components/playground-minimal-footer";
@@ -7,7 +8,7 @@ import { getCheckoutSession } from "@/lib/api";
 import { GetError } from "@/lib/error";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, Home, Settings } from "lucide-react";
-import { Link, useSearchParams } from "react-router";
+import { Link } from "@tanstack/react-router";
 
 export default function PaymentSuccessPage() {
   const { user } = useAuthProvider();

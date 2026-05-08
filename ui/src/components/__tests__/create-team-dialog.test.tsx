@@ -1,5 +1,4 @@
 import { screen } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render } from "@/test/test-utils";
 
@@ -19,9 +18,7 @@ import { CreateTeamDialog } from "../create-team-dialog";
 
 function renderDialog(props: React.ComponentProps<typeof CreateTeamDialog> = {}) {
   return render(
-    <MemoryRouter>
-      <CreateTeamDialog {...props} />
-    </MemoryRouter>,
+    <CreateTeamDialog {...props} />,
   );
 }
 

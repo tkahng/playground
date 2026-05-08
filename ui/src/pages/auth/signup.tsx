@@ -17,14 +17,9 @@ import { Label } from "@/components/ui/label";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { ApiError } from "@/lib/error";
 import { SignupInput } from "@/schema.types";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 import { useState } from "react";
-import {
-  createSearchParams,
-  Link,
-  useLocation,
-  useNavigate,
-} from "react-router";
 import { toast } from "sonner";
 
 export default function SignupPage() {
@@ -38,8 +33,8 @@ export default function SignupPage() {
   const navigate = useNavigate();
   const { signUp } = useAuthProvider();
 
-  const { search } = useLocation();
-  const params = new URLSearchParams(search);
+  const location = useRouterState({ select: (s) => s.location });
+  const params = new URLSearchParams(location.search);
   const redirectTo = params.get("redirect_to");
   const email = params.get("email");
 
@@ -55,12 +50,8 @@ export default function SignupPage() {
       });
       setLoading(false);
       navigate({
-        pathname: RouteMap.VERIFY_EMAIL,
-        search: redirectTo
-          ? createSearchParams({
-              redirect_to: redirectTo,
-            }).toString()
-          : "",
+        to: RouteMap.VERIFY_EMAIL,
+        search: redirectTo ? { redirect_to: redirectTo } : {},
       });
     } catch (error) {
       if (ApiError.isApiError(error)) {
@@ -169,10 +160,8 @@ export default function SignupPage() {
               Already have an account?{" "}
               <Link
                 className="text-primary underline-offset-4 hover:underline"
-                to={{
-                  pathname: RouteMap.SIGNIN,
-                  search: search,
-                }}
+                to={RouteMap.SIGNIN}
+                search={location.search ? Object.fromEntries(params.entries()) : {}}
               >
                 Sign in
               </Link>

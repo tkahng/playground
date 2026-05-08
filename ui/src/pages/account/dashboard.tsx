@@ -1,6 +1,6 @@
 import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { Card, CardContent } from "@/components/ui/card";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 
 export default function Dashboard() {
   return (

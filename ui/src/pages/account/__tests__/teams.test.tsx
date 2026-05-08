@@ -1,5 +1,4 @@
 import { screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "@/test/test-utils";
 import { mockAuthContext, mockUserTokens } from "@/test/test-utils";
@@ -56,13 +55,11 @@ function renderPage(verified = false) {
     : mockAuthContext;
 
   return render(
-    <MemoryRouter>
-      <QueryClientProvider client={createTestQueryClient()}>
+    <QueryClientProvider client={createTestQueryClient()}>
         <AuthContext.Provider value={authValue}>
           <AccountTeamsPage />
         </AuthContext.Provider>
-      </QueryClientProvider>
-    </MemoryRouter>,
+      </QueryClientProvider>,
   );
 }
 

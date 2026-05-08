@@ -8,7 +8,7 @@ import {
 import { SubscriptionWithPrice } from "@/schema.types";
 import { useQuery } from "@tanstack/react-query";
 import { ReactNode, useState } from "react";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import PricingMini from "./pricing/pricing-mini";
 import { CenteredSpinner } from "./centered-spinner";

@@ -4,7 +4,7 @@ import { getUserTeamMembers } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle2, Circle, ArrowRight, X } from "lucide-react";
 import { useEffect } from "react";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
