@@ -28,6 +28,7 @@ type StorageAdapterInterface interface {
 	Gaming() GamingStore
 	Gis() GisStore
 	Ledger() LedgerStore
+	AiUsage() AiUsageStoreInterface
 	// WithTx(tx database.Dbx) *StorageAdapter
 	RunInTxCtx(ctx context.Context, fn func(txCtx context.Context) error) error
 	RunInTx(ctx context.Context, fn func(tx StorageAdapterInterface) error) error
@@ -53,6 +54,12 @@ type StorageAdapter struct {
 	gaming         *DBGamingStore
 	gis            *DBGisStore
 	ledger         *DBLedgerStore
+	aiUsage        *DbAiUsageStore
+}
+
+// AiUsage implements [StorageAdapterInterface].
+func (s *StorageAdapter) AiUsage() AiUsageStoreInterface {
+	return s.aiUsage
 }
 
 // Gis implements [StorageAdapterInterface].
@@ -128,6 +135,7 @@ func (s *StorageAdapter) RunInTx(ctx context.Context, fn func(tx StorageAdapterI
 			userReaction:   s.userReaction.WithTx(db),
 			gaming:         s.gaming.WithTx(db),
 			ledger:         s.ledger.WithTx(db),
+			aiUsage:        s.aiUsage.WithTx(db),
 		}
 		return fn(tx)
 	})
@@ -198,5 +206,6 @@ func NewStorageAdapter(db database.Dbx) *StorageAdapter {
 		gaming:         NewDBGamingStore(db),
 		gis:            NewGisStore(db),
 		ledger:         NewDBLedgerStore(db),
+		aiUsage:        NewDbAiUsageStore(db),
 	}
 }
