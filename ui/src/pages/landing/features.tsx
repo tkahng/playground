@@ -69,42 +69,75 @@ function FeatureCard({
   nextFeature?: Feature;
 }) {
   return (
-    <section
+    <div
       id={feature.fragment}
-      className="scroll-mt-20 flex flex-col sm:flex-row gap-8 items-start"
+      className="flex flex-col md:flex-row items-center gap-x-12 gap-y-8 md:even:flex-row-reverse scroll-mt-8"
     >
-      <div className="sm:sticky sm:top-24 sm:w-48 shrink-0">
-        <div className="text-xs font-mono text-muted-foreground/60 mb-1">
-          {String(step).padStart(2, "0")} / {String(total).padStart(2, "0")}
+      {/* Image */}
+      {feature.featureImageComponent ? (
+        <div className="w-fit bg-muted rounded-xl shrink-0">
+          {feature.featureImageComponent}
         </div>
-        <div className="text-sm font-semibold">{feature.title}</div>
-        {nextFeature && (
-          <a
-            href={`#${nextFeature.fragment}`}
-            onClick={(e) => {
-              e.preventDefault();
-              document
-                .getElementById(nextFeature.fragment)
-                ?.scrollIntoView({ behavior: "smooth", block: "center" });
-            }}
-            className="mt-3 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Next <ArrowRight className="h-3 w-3" />
-          </a>
-        )}
-      </div>
+      ) : (
+        <div className="w-full aspect-[4/3] bg-muted rounded-xl border border-border/50 basis-1/2 shrink-0">
+          <div className="flex items-center justify-center w-full h-full">
+            {feature.icon}
+          </div>
+        </div>
+      )}
 
-      <div className="flex-1 space-y-3">
-        <p className="text-muted-foreground">{feature.description}</p>
-        {feature.to && (
-          <Link
-            to={feature.to}
-            className="inline-flex items-center gap-1 text-sm font-medium hover:underline"
-          >
-            Try it <ArrowRight className="h-4 w-4" />
-          </Link>
-        )}
+      {/* Text */}
+      <div className="basis-1/2 shrink-0 flex flex-col gap-4">
+        {/* Step + badge row */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-mono text-xs text-muted-foreground/60 bg-muted px-2 py-0.5 rounded">
+            {String(step).padStart(2, "0")} / {String(total).padStart(2, "0")}
+          </span>
+          {feature.badge && (
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+              {feature.badge}
+            </span>
+          )}
+        </div>
+
+        <div>
+          <h4 className="text-2xl font-semibold tracking-tight mb-2">
+            {feature.title}
+          </h4>
+          <p className="text-muted-foreground leading-relaxed">
+            {feature.mainContent.map((item) => (
+              <span key={item}>{item}</span>
+            ))}
+          </p>
+        </div>
+
+        {/* CTAs */}
+        <div className="flex flex-wrap items-center gap-3 mt-2">
+          {feature.detailLink && (
+            <Button asChild size="lg" className="rounded-full gap-2">
+              <Link to={feature.detailLink}>
+                {feature.detailLinkText || "Try it"}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          )}
+          {nextFeature && (
+            <a
+              href={`#${nextFeature.fragment}`}
+              onClick={(e) => {
+                e.preventDefault();
+                document
+                  .getElementById(nextFeature.fragment)
+                  ?.scrollIntoView({ behavior: "smooth", block: "center" });
+              }}
+              className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+            >
+              Next: {nextFeature.title}
+              <ArrowRight className="h-3.5 w-3.5" />
+            </a>
+          )}
+        </div>
       </div>
-    </section>
+    </div>
   );
 }
