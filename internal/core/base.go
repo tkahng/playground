@@ -11,10 +11,12 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/events"
 	"github.com/tkahng/playground/internal/jobs"
+	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/workers"
 	"github.com/tkahng/playground/internal/token"
+	"github.com/tkahng/playground/internal/tools/types"
+	"github.com/tkahng/playground/internal/workers"
 
 	"github.com/tkahng/playground/internal/tools/filesystem"
 	"github.com/tkahng/playground/internal/tools/logger"
@@ -302,7 +304,36 @@ func (a *BaseApp) Payment() services.PaymentService {
 	}
 	return a.payment
 }
+func (app *BaseApp) syncPlanFeatures(ctx context.Context) {
+	products, err := app.Adapter().Product().ListProducts(ctx, &stores.StripeProductFilter{
+		Active:       types.OptionalParam[bool]{IsSet: true, Value: true},
+		MetadataType: types.OptionalParam[models.StripeProductType]{IsSet: true, Value: models.StripeProductTypeSubscription},
+		PaginatedInput: stores.PaginatedInput{
+			Page:    0,
+			PerPage: 100,
+		},
+	})
+	if err != nil {
+		app.Logger().ErrorContext(ctx, "plan features sync: list products failed", slog.Any("error", err))
+		return
+	}
+	for _, p := range products {
+		if err := app.Adapter().PlanFeatures().InsertIfMissing(ctx, &models.PlanFeatures{
+			StripeProductID: p.ID,
+			DailyAiTokens:   services.FreeTierDailyTokenLimit,
+		}); err != nil {
+			app.Logger().ErrorContext(ctx, "plan features sync: insert failed",
+				slog.String("product_id", p.ID),
+				slog.Any("error", err),
+			)
+		}
+	}
+	app.Logger().InfoContext(ctx, "plan features sync complete", slog.Int("products", len(products)))
+}
+
 func (app *BaseApp) RunBackgroundProcesses(ctx context.Context) {
+	app.syncPlanFeatures(ctx)
+
 	run := func(name string, fn func()) {
 		app.bgWg.Add(1)
 		go func() {
