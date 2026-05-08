@@ -50,13 +50,15 @@ type Medium struct {
 }
 
 type AiUsage struct {
-	_                struct{}  `db:"ai_usages" schema:"app" json:"-"`
-	ID               uuid.UUID `db:"id,pk" json:"id"`
-	UserID           uuid.UUID `db:"user_id" json:"user_id"`
-	PromptTokens     int64     `db:"prompt_tokens" json:"prompt_tokens"`
-	CompletionTokens int64     `db:"completion_tokens" json:"completion_tokens"`
-	TotalTokens      int64     `db:"total_tokens" json:"total_tokens"`
-	CreatedAt        time.Time `db:"created_at" json:"created_at"`
-	UpdatedAt        time.Time `db:"updated_at" json:"updated_at"`
-	User             *User     `db:"user" src:"user_id" dest:"id" table:"auth.users" json:"user,omitempty"`
+	_                struct{}   `db:"ai_usages" schema:"app" json:"-"`
+	ID               uuid.UUID  `db:"id,pk" json:"id"`
+	UserID           uuid.UUID  `db:"user_id" json:"user_id"`
+	TeamMemberID     *uuid.UUID `db:"team_member_id" json:"team_member_id"`
+	TeamID           *uuid.UUID `db:"team_id" json:"team_id"`
+	PromptTokens     int64      `db:"prompt_tokens" json:"prompt_tokens"`
+	CompletionTokens int64      `db:"completion_tokens" json:"completion_tokens"`
+	TotalTokens      int64      `db:"total_tokens" json:"total_tokens"`
+	CreatedAt        time.Time  `db:"created_at" json:"created_at"`
+	UpdatedAt        time.Time  `db:"updated_at" json:"updated_at"`
+	User             *User      `db:"user" src:"user_id" dest:"id" table:"auth.users" json:"user,omitempty"`
 }

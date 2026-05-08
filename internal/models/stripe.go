@@ -132,6 +132,10 @@ const (
 // StripeProductTypeMetadataKey is the metadata key used to store the product type.
 const StripeProductTypeMetadataKey = "type"
 
+// StripeProductDailyAiTokensMetadataKey is the metadata key for daily AI token quota.
+// Value should be a decimal integer string, e.g. "100000".
+const StripeProductDailyAiTokensMetadataKey = "daily_ai_tokens"
+
 // StripePricingType represents the type of pricing for a Stripe product
 // It can be either "one_time" or "recurring"
 type StripePricingType string

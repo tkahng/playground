@@ -54,3 +54,7 @@ func Forbidden(message string) *AppError {
 func Gone(message string) *AppError {
 	return &AppError{status: http.StatusGone, message: message}
 }
+
+func TooManyRequests(message string) *AppError {
+	return &AppError{status: http.StatusTooManyRequests, message: message}
+}
