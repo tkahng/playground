@@ -1,11 +1,31 @@
 import { CenteredSpinner } from "@/components/centered-spinner";
 import PricingTeam from "@/components/pricing/pricing-team";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useOnboardingProgress } from "@/hooks/use-onboarding-progress";
 import { getProductsWithPrices } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useNavigate } from "react-router";
+import { toast } from "sonner";
 
 export default function PricingPage() {
   const { user } = useAuthProvider();
+  const { markStep, progress } = useOnboardingProgress();
+  const navigate = useNavigate();
+  useEffect(() => {
+    const isFirstVisit = !progress.visitedPricing;
+    markStep("visitedPricing");
+    if (isFirstVisit) {
+      const t = setTimeout(() => {
+        toast("Did you know?", {
+          description: "You can earn points by playing Rock Paper Scissors.",
+          action: { label: "Play now →", onClick: () => navigate("/rock-paper-scissors") },
+        });
+      }, 1500);
+      return () => clearTimeout(t);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const {
     data: products,
     isPending: isPendingProducts,

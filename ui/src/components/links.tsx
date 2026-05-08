@@ -6,6 +6,7 @@ export type LinkDto = {
   icon?: JSX.Element;
   to: string;
   current?: (pathname: string) => boolean;
+  badge?: string;
 };
 
 export const RouteLinks = {
@@ -23,7 +24,7 @@ export const RouteLinks = {
   FEATURES: { to: RouteMap.FEATURES, title: "Features" },
   PRICING: { to: RouteMap.PRICING, title: "Pricing" },
   ABOUT: { to: RouteMap.ABOUT, title: "About" },
-  SAY_HELLO: { to: RouteMap.SAY_HELLO, title: "Say Hello" },
+  SAY_HELLO: { to: RouteMap.SAY_HELLO, title: "Say Hello", badge: "Try it!" },
   ACCOUNT_DASHBOARD: {
     to: RouteMap.ACCOUNT_DASHBOARD,
     title: "Dashboard",
@@ -130,11 +131,11 @@ export const RouteLinks = {
 } as const;
 
 export const landingLinks: LinkDto[] = [
+  RouteLinks.SAY_HELLO,
+  RouteLinks.ROCK_PAPER_SCISSORS,
   RouteLinks.FEATURES,
   RouteLinks.PRICING,
   RouteLinks.ABOUT,
-  RouteLinks.SAY_HELLO,
-  RouteLinks.ROCK_PAPER_SCISSORS,
 ];
 
 export const userDropdownLinks: LinkDto[] = [

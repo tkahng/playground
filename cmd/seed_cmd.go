@@ -51,7 +51,7 @@ var seedRolesCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		cfg := conf.GetConfig[conf.DBConfig]()
-		dbx, err := database.CreateNewQueriesContext(ctx, cfg.GetDatabaseUrl())
+		dbx, err := database.CreateNewQueriesContext(ctx, cfg.GetDatabaseURL())
 		if err != nil {
 			return err
 		}

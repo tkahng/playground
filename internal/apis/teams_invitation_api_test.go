@@ -197,7 +197,7 @@ func TestApi_AcceptInvitation(t *testing.T) {
 			Name:           "fail: user mismatch",
 			Method:         http.MethodPost,
 			URL:            "/team-invitations/accept",
-			ExpectedStatus: http.StatusInternalServerError,
+			ExpectedStatus: http.StatusBadRequest,
 			ExpectedContent: []string{
 				"user does not match invitation",
 			},

@@ -31,7 +31,7 @@ var upCmd = &cobra.Command{
 		cfg := conf.GetConfig[conf.DBConfig]()
 		mConfig := database.MigratorConfig{
 			AutoDumpSchema: false,
-			DatabaseUrl:    cfg.GetDatabaseUrl(),
+			DatabaseURL:    cfg.GetDatabaseURL(),
 		}
 		migrator := database.NewMigrator(&mConfig)
 		return migrator.CreateAndMigrate()
@@ -45,7 +45,7 @@ var resetCmd = &cobra.Command{
 		cfg := conf.GetConfig[conf.DBConfig]()
 		mConfig := database.MigratorConfig{
 			AutoDumpSchema: false,
-			DatabaseUrl:    cfg.GetDatabaseUrl(),
+			DatabaseURL:    cfg.GetDatabaseURL(),
 		}
 		migrator := database.NewMigrator(&mConfig)
 		return migrator.Reset()
@@ -58,7 +58,7 @@ var makeSchema = &cobra.Command{
 		cfg := conf.GetConfig[conf.DBConfig]()
 		mConfig := database.MigratorConfig{
 			AutoDumpSchema: false,
-			DatabaseUrl:    cfg.GetDatabaseUrl(),
+			DatabaseURL:    cfg.GetDatabaseURL(),
 		}
 
 		migrator := database.NewMigrator(&mConfig)
@@ -72,7 +72,7 @@ var rollBack = &cobra.Command{
 		cfg := conf.GetConfig[conf.DBConfig]()
 		mConfig := database.MigratorConfig{
 			AutoDumpSchema: false,
-			DatabaseUrl:    cfg.GetDatabaseUrl(),
+			DatabaseURL:    cfg.GetDatabaseURL(),
 		}
 
 		migrator := database.NewMigrator(&mConfig)
@@ -90,7 +90,7 @@ var newMigrations = &cobra.Command{
 		cfg := conf.GetConfig[conf.DBConfig]()
 		mConfig := database.MigratorConfig{
 			AutoDumpSchema: false,
-			DatabaseUrl:    cfg.GetDatabaseUrl(),
+			DatabaseURL:    cfg.GetDatabaseURL(),
 		}
 
 		migrator := database.NewMigrator(&mConfig)

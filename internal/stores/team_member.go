@@ -10,6 +10,7 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/apierrors"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
@@ -352,7 +353,7 @@ func (s *DbTeamMemberStore) CreateTeamFromUser(ctx context.Context, user *models
 		return nil, err
 	}
 	if team == nil {
-		return nil, errors.New("team not found")
+		return nil, apierrors.NotFound("team not found")
 	}
 	// Create a team member for the user
 	teamMember, err := repository.TeamMember.PostOne(
@@ -370,7 +371,7 @@ func (s *DbTeamMemberStore) CreateTeamFromUser(ctx context.Context, user *models
 		return nil, err
 	}
 	if teamMember == nil {
-		return nil, errors.New("team member not found")
+		return nil, apierrors.NotFound("team member not found")
 	}
 	return teamMember, nil
 }
@@ -404,7 +405,7 @@ func (s *DbTeamMemberStore) CreateTeamMemberFromUserAndSlug(ctx context.Context,
 			return nil, err
 		}
 		if team == nil {
-			return nil, errors.New("team not found")
+			return nil, apierrors.NotFound("team not found")
 		}
 	}
 	billingAccess := role == models.TeamMemberRoleOwner
@@ -424,7 +425,7 @@ func (s *DbTeamMemberStore) CreateTeamMemberFromUserAndSlug(ctx context.Context,
 		return nil, err
 	}
 	if teamMember == nil {
-		return nil, errors.New("team member not found")
+		return nil, apierrors.NotFound("team member not found")
 	}
 	teamMember.Team = team
 	teamMember.User = user

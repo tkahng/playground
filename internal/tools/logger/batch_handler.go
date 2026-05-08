@@ -193,8 +193,8 @@ func (h *BatchHandler) Handle(ctx context.Context, r slog.Record) error {
 // SetLevel updates the handler options level to the specified one.
 func (h *BatchHandler) SetLevel(level slog.Level) {
 	h.mux.Lock()
+	defer h.mux.Unlock()
 	h.options.Level = level
-	h.mux.Unlock()
 }
 
 // WriteAll writes all accumulated Log entries and resets the batch queue.

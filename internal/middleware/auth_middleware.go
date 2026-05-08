@@ -28,12 +28,12 @@ func TokenFromQuery(r *http.Request, w http.ResponseWriter) string {
 	return appHttp.GetQuery(r, "access_token")
 }
 
-var HttpTokenFuncs = []func(r *http.Request, w http.ResponseWriter) string{
+var httpTokenFuncs = []func(r *http.Request, w http.ResponseWriter) string{
 	TokenFromHeader,
 	TokenFromQuery,
 }
 
-type HttpMiddelwareFunc func(next http.Handler) http.Handler
+type HTTPMiddlewareFunc func(next http.Handler) http.Handler
 
 func Unwrap(ctx huma.Context) (*http.Request, http.ResponseWriter, error) {
 	for {
@@ -52,7 +52,7 @@ func Unwrap(ctx huma.Context) (*http.Request, http.ResponseWriter, error) {
 	return nil, nil, fmt.Errorf("huma context does not implement Unwrap")
 }
 
-func EmailVerifiedMiddleware() HttpMiddelwareFunc {
+func EmailVerifiedMiddleware() HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
@@ -70,7 +70,7 @@ func EmailVerifiedMiddleware() HttpMiddelwareFunc {
 	}
 }
 
-func AuthMiddleware(app core.App) HttpMiddelwareFunc {
+func AuthMiddleware(app core.App) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -80,7 +80,7 @@ func AuthMiddleware(app core.App) HttpMiddelwareFunc {
 				return
 			}
 			var token string
-			for _, f := range HttpTokenFuncs {
+			for _, f := range httpTokenFuncs {
 				token = f(r, w)
 				if len(token) > 0 {
 					break
@@ -115,7 +115,7 @@ func AuthMiddleware(app core.App) HttpMiddelwareFunc {
 	}
 }
 
-func RequireAuthMiddleware() HttpMiddelwareFunc {
+func RequireAuthMiddleware() HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -152,7 +152,7 @@ func RequireAuthMiddleware() HttpMiddelwareFunc {
 		})
 	}
 }
-func CheckPermissionsMiddleware(requiredPermissions ...string) HttpMiddelwareFunc {
+func CheckPermissionsMiddleware(requiredPermissions ...string) HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if claims := contextstore.GetContextUserInfo(r.Context()); claims != nil {

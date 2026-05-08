@@ -10,6 +10,7 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/apierrors"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
@@ -169,7 +170,7 @@ func (s *DbTaskStore) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, i
 		return err
 	}
 	if task == nil {
-		return errors.New("task not found")
+		return apierrors.NotFound("task not found")
 	}
 
 	task.Name = input.Name
@@ -734,7 +735,7 @@ func (s *DbTaskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.
 		return err
 	}
 	if taskProject == nil {
-		return errors.New("task project not found")
+		return apierrors.NotFound("task project not found")
 	}
 	taskProject.Name = input.Name
 	taskProject.Description = input.Description
@@ -753,7 +754,7 @@ func (s *DbTaskStore) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID
 		return err
 	}
 	if task == nil {
-		return errors.New("task not found")
+		return apierrors.NotFound("task not found")
 	}
 	rank, err := s.CalculateTaskRankStatus(ctx, task.ID, task.ProjectID, status, task.Rank, position)
 	if err != nil {

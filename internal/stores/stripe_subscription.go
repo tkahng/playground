@@ -2,7 +2,6 @@ package stores
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -11,6 +10,7 @@ import (
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
+	"github.com/tkahng/playground/internal/apierrors"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
@@ -200,7 +200,7 @@ func (s *DbSubscriptionStore) UpsertSubscriptionFromStripe(ctx context.Context, 
 		item = sub.Items.Data[0]
 	}
 	if item == nil || item.Price == nil {
-		return errors.New("price not found")
+		return apierrors.NotFound("price not found")
 	}
 
 	status := models.StripeSubscriptionStatus(sub.Status)

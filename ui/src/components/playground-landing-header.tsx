@@ -28,7 +28,7 @@ export function PlaygroundLandingHeader({
         <div className="hidden lg:flex grow items-center space-x-4">
           <PlaygroundLogo />
           {leftLinks?.length
-            ? leftLinks?.map(({ to, title, current }) => (
+            ? leftLinks?.map(({ to, title, current, badge }) => (
                 <Link
                   key={to}
                   className={cn(
@@ -39,11 +39,16 @@ export function PlaygroundLandingHeader({
                       : to === pathname
                         ? "underline"
                         : "text-muted-foreground",
-                    "text-sm font-medium underline-offset-4 hover:underline",
+                    "flex items-center gap-1.5 text-sm font-medium underline-offset-4 hover:underline",
                   )}
                   to={to}
                 >
                   {title}
+                  {badge && (
+                    <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground leading-none">
+                      {badge}
+                    </span>
+                  )}
                 </Link>
               ))
             : null}
@@ -51,7 +56,7 @@ export function PlaygroundLandingHeader({
 
         <div className="hidden lg:flex shrink items-center space-x-4">
           {rightLinks?.length && rightLinks.length > 0
-            ? rightLinks.map(({ to, title, current }) => (
+            ? rightLinks.map(({ to, title, current, badge }) => (
                 <Link
                   key={to}
                   className={cn(
@@ -62,11 +67,16 @@ export function PlaygroundLandingHeader({
                       : to === pathname
                         ? "underline"
                         : "text-muted-foreground",
-                    "text-sm font-medium underline-offset-4 hover:underline",
+                    "flex items-center gap-1.5 text-sm font-medium underline-offset-4 hover:underline",
                   )}
                   to={to}
                 >
                   {title}
+                  {badge && (
+                    <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground leading-none">
+                      {badge}
+                    </span>
+                  )}
                 </Link>
               ))
             : null}
@@ -100,10 +110,15 @@ export function PlaygroundLandingHeader({
                             : item.to === pathname
                               ? "underline"
                               : "text-muted-foreground",
-                          "text-sm font-medium underline-offset-4 hover:underline",
+                          "flex items-center gap-1.5 text-sm font-medium underline-offset-4 hover:underline",
                         )}
                       >
                         {item.title}
+                        {item.badge && (
+                          <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground leading-none">
+                            {item.badge}
+                          </span>
+                        )}
                       </Link>
                     </SheetClose>
                   ))}

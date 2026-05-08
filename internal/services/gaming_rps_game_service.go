@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/apierrors"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 )
@@ -193,7 +194,7 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 		return nil, err
 	}
 	if lockedGame == nil {
-		return nil, errors.New("game not found")
+		return nil, apierrors.NotFound("game not found")
 	}
 
 	gameWithParticipants, err := d.FindRpsGameWithParticipants(ctx, input.GameID)
@@ -201,7 +202,7 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 		return nil, err
 	}
 	if gameWithParticipants.RpsGame.ExpiresAt.UTC().Before(time.Now().UTC()) {
-		return nil, errors.New("game expired")
+		return nil, apierrors.Gone("game expired")
 	}
 	if gameWithParticipants.RpsGame.Status != models.RpsGameStatusPending {
 		return nil, errors.New("game is not pending")
@@ -277,7 +278,7 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 		}
 
 	default:
-		return nil, errors.New("invalid status")
+		return nil, apierrors.BadRequest("invalid status")
 	}
 
 	updatedGameWithParticipants, err := d.updateGame(ctx, gameWithParticipants)

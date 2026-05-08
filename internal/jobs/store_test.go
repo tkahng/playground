@@ -483,6 +483,45 @@ func TestDbJobStore_RescheduleJob(t *testing.T) {
 	})
 }
 
+func TestDbJobStore_ClaimPendingJobs_Buffer(t *testing.T) {
+	t.Parallel()
+	test.SkipIfShort(t)
+
+	t.Run("claims job within 200ms buffer", func(t *testing.T) {
+		t.Parallel()
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			s := &DbJobStore{db: db}
+			err := s.SaveJob(ctx, &EnqueueParams{
+				Args:        EmailJobArgs{Recipient: "r", Subject: "s", Body: "b"},
+				RunAfter:    time.Now().Add(100 * time.Millisecond),
+				MaxAttempts: 1,
+			})
+			assert.NoError(t, err)
+
+			got, err := s.ClaimPendingJobs(ctx, 10)
+			assert.NoError(t, err)
+			assert.Len(t, got, 1, "job within 200ms buffer should be claimed")
+		})
+	})
+
+	t.Run("does not claim job beyond 200ms buffer", func(t *testing.T) {
+		t.Parallel()
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			s := &DbJobStore{db: db}
+			err := s.SaveJob(ctx, &EnqueueParams{
+				Args:        EmailJobArgs{Recipient: "r", Subject: "s", Body: "b"},
+				RunAfter:    time.Now().Add(500 * time.Millisecond),
+				MaxAttempts: 1,
+			})
+			assert.NoError(t, err)
+
+			got, err := s.ClaimPendingJobs(ctx, 10)
+			assert.NoError(t, err)
+			assert.Len(t, got, 0, "job beyond 200ms buffer should not be claimed")
+		})
+	})
+}
+
 type testJob struct {
 	Message string
 }

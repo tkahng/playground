@@ -1,4 +1,5 @@
 import { OwnerTeamSelectDialog } from "@/components/pricing/owner-team-select-dialog";
+import { StripeTestCardNotice } from "@/components/stripe-test-card-notice";
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTabs } from "@/hooks/use-tabs";
@@ -73,23 +74,8 @@ export default function PricingTeam({ products, subscription }: Props) {
           <h1 className="text-4xl font-extrabold text-primary sm:text-center sm:text-6xl">
             Pricing Plans
           </h1>
-          <div className="max-w-2xl m-auto mt-5 text-xl text-secondary-foreground sm:text-center sm:text-2xl">
-            {/* <h2 className="font-extrabold">
-              Upgrade your team by subscribing to one of our pricing plans.
-            </h2> */}
-            <br />
-            <div className="">
-              These are Stripe sandboxes,{" "}
-              <span className="italic font-bold"> no real money </span>
-              is involved.
-            </div>
-            <a
-              className="underline text-lg"
-              href="https://docs.stripe.com/testing?testing-method=card-numbers#visa"
-            >
-              Click here to learn how to use test credit cards.
-            </a>
-            <br />
+          <div className="max-w-2xl m-auto mt-5">
+            <StripeTestCardNotice />
           </div>
           <div className="relative self-center mt-6 bg-primary-foreground rounded-lg p-0.5 flex sm:mt-8 border">
             {intervals.includes("month") && (

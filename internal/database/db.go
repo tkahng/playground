@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"runtime/debug"
@@ -173,7 +172,7 @@ func WithTx(ctx context.Context, dbx Dbx, fn func(tx Dbx) error) (returnErr erro
 
 	defer func() {
 		if recErr := recover(); recErr != nil {
-			slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", errors.New(fmt.Sprint(recErr))), slog.String("stacktrace", string(debug.Stack())))
+			slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", recErr), slog.String("stacktrace", string(debug.Stack())))
 			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				slog.ErrorContext(ctx, "error rolling back transaction", slog.Any("error", rollbackErr))
 				returnErr = fmt.Errorf("rolling back after panic %v: %w", recErr, rollbackErr)
@@ -215,7 +214,7 @@ func WithCtxTx(ctx context.Context, dbx Dbx, fn func(context.Context) error, opt
 
 	defer func() {
 		if recErr := recover(); recErr != nil {
-			slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", errors.New(fmt.Sprint(recErr))), slog.String("stacktrace", string(debug.Stack())))
+			slog.ErrorContext(ctx, "error in transaction function. rolling back.", slog.Any("error", recErr), slog.String("stacktrace", string(debug.Stack())))
 			if rollbackErr := tx.Rollback(ctx); rollbackErr != nil {
 				slog.ErrorContext(ctx, "error rolling back transaction", slog.Any("error", rollbackErr))
 				returnErr = fmt.Errorf("rolling back after panic %v: %w", recErr, rollbackErr)

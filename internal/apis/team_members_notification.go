@@ -66,7 +66,7 @@ func (api *Api) TeamMembersSseEventsBind(humapi huma.API) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
-				middleware.MemberIdBelongsToUser(),
+				middleware.MemberIDBelongsToUser(),
 			),
 
 			Errors: []int{http.StatusInternalServerError, http.StatusBadRequest},
@@ -151,7 +151,7 @@ func (api *Api) FindTeamMembersNotificationsBind(aapi huma.API) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
-				middleware.MemberIdBelongsToUser(),
+				middleware.MemberIDBelongsToUser(),
 			),
 		},
 		func(ctx context.Context, input *TeamMembersNotificationsInput) (*ApiPaginatedOutput[*Notification], error) {
@@ -207,7 +207,7 @@ func (api *Api) ReadTeamMembersNotificationsBind(aapi huma.API) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
-				middleware.MemberIdBelongsToUser(),
+				middleware.MemberIDBelongsToUser(),
 			),
 		},
 		func(ctx context.Context, input *ReadTeamMembersNotificationsInput) (*struct{}, error) {
@@ -264,7 +264,7 @@ func (api *Api) UnreadNotificationsCountBind(aapi huma.API) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
-				middleware.MemberIdBelongsToUser(),
+				middleware.MemberIDBelongsToUser(),
 			),
 		},
 		func(ctx context.Context, input *struct {
@@ -304,7 +304,7 @@ func (api *Api) MarkAllNotificationsReadBind(aapi huma.API) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
-				middleware.MemberIdBelongsToUser(),
+				middleware.MemberIDBelongsToUser(),
 			),
 		},
 		func(ctx context.Context, input *struct {
@@ -339,7 +339,7 @@ func (api *Api) DeleteTeamMembersNotificationsBind(aapi huma.API) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
-				middleware.MemberIdBelongsToUser(),
+				middleware.MemberIDBelongsToUser(),
 			),
 		},
 		func(ctx context.Context, input *ReadTeamMembersNotificationsInput) (*struct{}, error) {

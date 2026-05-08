@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/apierrors"
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
@@ -93,7 +94,7 @@ func (app *DbOtpMailService) SendOtpEmail(ctx context.Context, emailType mailer.
 	case mailer.EmailTypeConfirmPasswordReset:
 		tokenOpts = app.options.PasswordResetToken
 	default:
-		return fmt.Errorf("invalid email type")
+		return apierrors.BadRequest("invalid email type")
 	}
 	otp := security.GenerateOtp(6)
 	tokenHash, err := app.token.GenerateToken(ctx, &token.GenerateTokenOptions{
@@ -126,7 +127,7 @@ func (app *DbOtpMailService) getSendMailParams(emailType mailer.EmailType, token
 	var sendMailParams mailer.SendMailParams
 	var ok bool
 	if sendMailParams, ok = mailer.EmailPathMap[emailType]; !ok {
-		return nil, fmt.Errorf("email type not found")
+		return nil, apierrors.NotFound("email type not found")
 	}
 	path, err := mailer.GetPathParams(sendMailParams.TemplatePath, tokenHash, string(claims.Type), claims.RedirectTo)
 	if err != nil {

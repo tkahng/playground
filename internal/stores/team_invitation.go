@@ -2,11 +2,11 @@ package stores
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/apierrors"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
@@ -242,7 +242,7 @@ func (s *DbTeamInvitationStore) FindPendingInvitation(ctx context.Context, teamI
 		return nil, nil
 	}
 	if invitation.ExpiresAt.Before(time.Now()) {
-		return nil, errors.New("invitation expired")
+		return nil, apierrors.Gone("invitation expired")
 	}
 	return invitation, nil
 }
@@ -259,20 +259,20 @@ func (i *DbTeamInvitationStore) AcceptInvitation(
 		return err
 	}
 	if invite == nil {
-		return fmt.Errorf("invitation not found")
+		return apierrors.NotFound("invitation not found")
 	}
 	user, err := adapter.User().FindUserByID(ctx, userId)
 	if err != nil {
 		return err
 	}
 	if user == nil {
-		return fmt.Errorf("user not found")
+		return apierrors.NotFound("user not found")
 	}
 	if invite.Email != user.Email {
-		return fmt.Errorf("user does not match invitation")
+		return apierrors.BadRequest("user does not match invitation")
 	}
 	if invite.Status != models.TeamInvitationStatusPending {
-		return fmt.Errorf("invitation is not pending")
+		return apierrors.BadRequest("invitation is not pending")
 	}
 	teamMember, err := adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
 		TeamID:           invite.TeamID,

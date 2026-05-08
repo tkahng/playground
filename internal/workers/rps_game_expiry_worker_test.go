@@ -60,7 +60,7 @@ func newTestDb(t *testing.T) database.Dbx {
 	t.Helper()
 	ctx := context.Background()
 	cfg := conf.ZeroEnvConfig()
-	db, err := database.CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseUrl())
+	db, err := database.CreateNewQueriesContext(ctx, cfg.Db.GetDatabaseURL())
 	if err != nil {
 		t.Fatalf("failed to create database pool: %v", err)
 	}

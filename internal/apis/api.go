@@ -96,15 +96,11 @@ func AddBaseMiddlewares(app core.App, r chi.Router, mw ...func(http.Handler) htt
 	r.Use(chimiddleware.RequestID)
 	r.Use(middleware.SetRequestIDAttrsMiddleware)
 	r.Use(httplog.RequestLogger(app.Logger(), &httplog.Options{
-		Level: slog.LevelInfo,
-
-		// Set log output to Elastic Common Schema (ECS) format.
+		Level:  slog.LevelInfo,
 		Schema: httplog.SchemaOTEL.Concise(true),
-
-		// RecoverPanics recovers from panics occurring in the underlying HTTP handlers
-		// and middlewares. It returns HTTP 500 unless response status was already set.
-		//
-		// NOTE: Panics are logged as errors automatically, regardless of this setting.
+		Skip: func(req *http.Request, respStatus int) bool {
+			return req.URL.Path == "/actuator/health"
+		},
 		RecoverPanics: true,
 	}))
 	r.Use(cors.Handler(cors.Options{
