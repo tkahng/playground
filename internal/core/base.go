@@ -49,7 +49,8 @@ type BaseApp struct {
 	rbac    services.RBACService
 	checker services.ConstraintChecker
 
-	task services.TaskService
+	task    services.TaskService
+	aiUsage services.AiUsageService
 
 	token token.TokenService
 
@@ -248,6 +249,13 @@ func (app *BaseApp) Task() services.TaskService {
 		panic("task not initialized")
 	}
 	return app.task
+}
+
+func (app *BaseApp) AiUsage() services.AiUsageService {
+	if app.aiUsage == nil {
+		panic("ai usage service not initialized")
+	}
+	return app.aiUsage
 }
 
 func (app *BaseApp) Rbac() services.RBACService {

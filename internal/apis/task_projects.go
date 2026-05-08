@@ -262,12 +262,22 @@ func (api *Api) TeamTaskProjectCreateWithAiBind(humaApi huma.API) {
 			if teamInfo == nil {
 				return nil, huma.Error401Unauthorized("no team info")
 			}
+			if teamInfo.Member.UserID == nil {
+				return nil, huma.Error401Unauthorized("no user info")
+			}
+
+			if err := api.App().AiUsage().CheckQuota(ctx, teamInfo.Member.TeamID); err != nil {
+				return nil, err
+			}
 
 			geminiClient := gemini.NewClient(api.App().Config().AiConfig)
 			taskProjectPlan, err := geminiClient.GenerateProjectPlan(ctx, input.Body.Input)
 			if err != nil {
 				return nil, err
 			}
+
+			_ = api.App().AiUsage().RecordUsage(ctx, *teamInfo.Member.UserID, teamInfo.Member.ID, teamInfo.Member.TeamID, taskProjectPlan.Usage)
+
 			args := stores.CreateTaskProjectWithTasksDTO{
 				CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
 					Name:        taskProjectPlan.Project.Name,

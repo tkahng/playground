@@ -42,6 +42,7 @@ func (a *Assembler) validate(app *BaseApp) {
 		{"rbac", app.rbac},
 		{"checker", app.checker},
 		{"task", app.task},
+		{"aiUsage", app.aiUsage},
 		{"token", app.token},
 		{"team", app.team},
 		{"teamInvitation", app.teamInvitation},
@@ -134,6 +135,7 @@ func (a *Assembler) setBasicServices(app *BaseApp) {
 		adapter,
 	)
 	app.task = services.NewTaskService(adapter, app.jobService)
+	app.aiUsage = services.NewAiUsageService(adapter)
 	app.token = token.NewTokenService(cfg, adapter.Token())
 }
 
