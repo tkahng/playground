@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -46,23 +45,25 @@ func (s *aiUsageService) GetDailyLimit(ctx context.Context, teamID uuid.UUID) (i
 	}
 
 	sub := subs[0]
-	// Load the full subscription with price + product to read metadata
+	// Load the full subscription with price + product to get the product ID
 	full, err := s.adapter.Subscription().FindSubscriptionsWithPriceProductByIds(ctx, sub.ID)
 	if err != nil {
 		return 0, err
 	}
-	if len(full) == 0 || full[0] == nil || full[0].Price == nil || full[0].Price.Product == nil {
+	if len(full) == 0 || full[0] == nil || full[0].Price == nil {
 		return PaidTierDailyTokenLimit, nil
 	}
 
-	product := full[0].Price.Product
-	if raw, ok := product.Metadata[models.StripeProductDailyAiTokensMetadataKey]; ok {
-		if n, err := strconv.ParseInt(raw, 10, 64); err == nil && n > 0 {
-			return n, nil
-		}
+	pf, err := s.adapter.PlanFeatures().FindByProductID(ctx, full[0].Price.ProductID)
+	if err != nil {
+		return 0, err
+	}
+	if pf == nil {
+		// Paid subscription but no plan_features row configured yet
+		return PaidTierDailyTokenLimit, nil
 	}
 
-	return PaidTierDailyTokenLimit, nil
+	return pf.DailyAiTokens, nil
 }
 
 func (s *aiUsageService) CheckQuota(ctx context.Context, teamID uuid.UUID) error {
