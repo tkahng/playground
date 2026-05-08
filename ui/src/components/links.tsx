@@ -126,6 +126,12 @@ export const RouteLinks = {
     current: (pathname: string) =>
       pathname.startsWith(RouteMap.ADMIN_PLAN_FEATURES),
   },
+  ADMIN_DASHBOARD_AI_USAGE: {
+    to: RouteMap.ADMIN_AI_USAGE,
+    title: "AI Usage",
+    current: (pathname: string) =>
+      pathname.startsWith(RouteMap.ADMIN_AI_USAGE),
+  },
   PROTECTED: {
     to: RouteMap.PROTECTED,
     title: "Protected",
@@ -157,6 +163,7 @@ export const adminHeaderLinks: LinkDto[] = [
   RouteLinks.ADMIN_DASHBOARD_PRODUCTS,
   RouteLinks.ADMIN_DASHBOARD_SUBSCRIPTIONS,
   RouteLinks.ADMIN_DASHBOARD_PLAN_FEATURES,
+  RouteLinks.ADMIN_DASHBOARD_AI_USAGE,
   RouteLinks.ADMIN_DASHBOARD_JOBS,
 ];
 

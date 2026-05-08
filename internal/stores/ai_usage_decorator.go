@@ -34,6 +34,14 @@ func (s *AiUsageStoreDecorator) Cleanup() {
 	s.GetDailyTokensByTeamFunc = nil
 }
 
+func (s *AiUsageStoreDecorator) ListAiUsages(ctx context.Context, filter *AiUsageFilter) ([]*models.AiUsage, error) {
+	return s.Delegate.ListAiUsages(ctx, filter)
+}
+
+func (s *AiUsageStoreDecorator) CountAiUsages(ctx context.Context, filter *AiUsageFilter) (int64, error) {
+	return s.Delegate.CountAiUsages(ctx, filter)
+}
+
 func (s *AiUsageStoreDecorator) CreateAiUsage(ctx context.Context, input *models.AiUsage) (*models.AiUsage, error) {
 	if s.CreateAiUsageFunc != nil {
 		return s.CreateAiUsageFunc(ctx, input)

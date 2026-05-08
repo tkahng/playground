@@ -37,6 +37,7 @@ import NotFoundPage from "./pages/404";
 import AccountDashboard from "./pages/account/dashboard";
 import InvitationsPage from "./pages/account/invitations";
 import AccountTeamsPage from "./pages/account/teams";
+import AiUsageListPage from "./pages/admin/ai-usage/ai-usage-list";
 import AdminDashboardPage from "./pages/admin/admin-dashboard";
 import JobsEdit from "./pages/admin/jobs/jobs-edit";
 import JobsListPage from "./pages/admin/jobs/jobs-list";
@@ -297,6 +298,12 @@ function App() {
                 >
                   <Route index element={<PlanFeaturesListPage />} />
                   <Route path=":productId" element={<PlanFeaturesEditPage />} />
+                </Route>
+                <Route
+                  path="ai-usage"
+                  element={<PageSectionLayout title="AI Usage" />}
+                >
+                  <Route index element={<AiUsageListPage />} />
                 </Route>
                 <Route path="jobs" element={<PageSectionLayout title="Jobs" />}>
                   <Route index element={<JobsListPage />} />

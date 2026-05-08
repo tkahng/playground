@@ -404,6 +404,17 @@ func bindAdminApi(appApi *Api) {
 		appApi.AdminStripeProductsPermissionDelete,
 	)
 
+	// admin ai usage
+	huma.Register(adminGroup, huma.Operation{
+		OperationID: "admin-ai-usage-list",
+		Method:      http.MethodGet,
+		Path:        "/ai-usage",
+		Summary:     "List AI usage records",
+		Description: "Paginated list of AI token usage records, filterable by team and date range.",
+		Tags:        []string{"Admin", "AI Usage"},
+		Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+	}, appApi.AdminAiUsageList)
+
 	// admin plan features
 	huma.Register(adminGroup, huma.Operation{
 		OperationID: "admin-plan-features-list",

@@ -1216,6 +1216,42 @@ export const permissionsList = async () => {
   return data;
 };
 
+export type AdminAiUsageRecord = {
+  id: string;
+  user_id: string;
+  team_id: string | null;
+  team_member_id: string | null;
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  created_at: string;
+};
+
+export type AdminAiUsageListParams = {
+  page?: number;
+  per_page?: number;
+  team_id?: string;
+  since?: string;
+  until?: string;
+};
+
+export const adminAiUsageList = async (
+  token: string,
+  params: AdminAiUsageListParams = {}
+): Promise<{ data: AdminAiUsageRecord[]; meta: { total: number; page: number; per_page: number; has_more: boolean } }> => {
+  const query = new URLSearchParams();
+  if (params.page !== undefined) query.set("page", String(params.page));
+  if (params.per_page !== undefined) query.set("per_page", String(params.per_page));
+  if (params.team_id) query.set("team_id", params.team_id);
+  if (params.since) query.set("since", params.since);
+  if (params.until) query.set("until", params.until);
+  const res = await fetch(`/api/admin/ai-usage?${query}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new ApiError(`Failed to fetch AI usage: ${res.statusText}`);
+  return res.json();
+};
+
 export type AiUsageStatus = {
   consumed: number;
   limit: number;
