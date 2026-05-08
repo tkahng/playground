@@ -117,6 +117,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/plan-features": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List plan features
+         * @description List all plan feature limits (daily AI tokens per Stripe product)
+         */
+        get: operations["admin-plan-features-list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/plan-features/{product-id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get plan features
+         * @description Get plan feature limits for a specific Stripe product
+         */
+        get: operations["admin-plan-features-get"];
+        /**
+         * Set plan features
+         * @description Create or update plan feature limits for a Stripe product
+         */
+        put: operations["admin-plan-features-upsert"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/products": {
         parameters: {
             query?: never;
@@ -1575,6 +1619,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/team-members/{team-member-id}/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * mark-all-team-members-notifications-read
+         * @description mark all notifications as read for a team member
+         */
+        post: operations["mark-all-team-members-notifications-read"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/team-members/{team-member-id}/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * unread-team-members-notifications-count
+         * @description count of unread notifications for a team member
+         */
+        get: operations["unread-team-members-notifications-count"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/team-members/{team-member-id}/notifications/{notification-id}": {
         parameters: {
             query?: never;
@@ -1609,46 +1693,6 @@ export interface paths {
          * @description read team members notifications
          */
         post: operations["read-team-members-notifications"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/team-members/{team-member-id}/notifications/unread-count": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * unread-team-members-notifications-count
-         * @description count of unread notifications for a team member
-         */
-        get: operations["unread-team-members-notifications-count"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/team-members/{team-member-id}/notifications/read-all": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * mark-all-team-members-notifications-read
-         * @description mark all notifications as read for a team member
-         */
-        post: operations["mark-all-team-members-notifications-read"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2082,7 +2126,6 @@ export interface components {
              * @example http://localhost:8080/schemas/Admin-user-permissions-createRequest.json
              */
             readonly $schema?: string;
-            /** Format: uuid */
             permission_ids: string[] | null;
         };
         ApiPaginatedResponseApiUser: {
@@ -2463,6 +2506,13 @@ export interface components {
              */
             type: string;
         };
+        FormFile: {
+            ContentType: string;
+            Filename: string;
+            IsSet: boolean;
+            /** Format: int64 */
+            Size: number;
+        };
         GamePutPlayerMeArgs: {
             /**
              * Format: uri
@@ -2668,12 +2718,24 @@ export interface components {
             data: components["schemas"]["NewTeamMemberNotificationData"];
             notification: components["schemas"]["NotificationContent"];
         };
+        NotificationPayloadProjectStatusChangedNotificationData: {
+            data: components["schemas"]["ProjectStatusChangedNotificationData"];
+            notification: components["schemas"]["NotificationContent"];
+        };
         NotificationPayloadTaskCompletedNotificationData: {
             data: components["schemas"]["TaskCompletedNotificationData"];
             notification: components["schemas"]["NotificationContent"];
         };
         NotificationPayloadTaskDueTodayNotificationData: {
             data: components["schemas"]["TaskDueTodayNotificationData"];
+            notification: components["schemas"]["NotificationContent"];
+        };
+        NotificationPayloadTaskOverdueNotificationData: {
+            data: components["schemas"]["TaskOverdueNotificationData"];
+            notification: components["schemas"]["NotificationContent"];
+        };
+        NotificationPayloadTaskStatusChangedNotificationData: {
+            data: components["schemas"]["TaskStatusChangedNotificationData"];
             notification: components["schemas"]["NotificationContent"];
         };
         OAuth2AuthorizationUrlInput: {
@@ -2761,7 +2823,6 @@ export interface components {
              * @example http://localhost:8080/schemas/PermissionIdsInput.json
              */
             readonly $schema?: string;
-            /** Format: uuid */
             permission_ids: string[] | null;
         };
         PermissionSource: {
@@ -2778,6 +2839,32 @@ export interface components {
         };
         PingMessage: {
             message: string;
+        };
+        PlanFeature: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/PlanFeature.json
+             */
+            readonly $schema?: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: int64 */
+            daily_ai_tokens: number;
+            id: string;
+            stripe_product_id: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        PlanFeaturesUpsertBody: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/PlanFeaturesUpsertBody.json
+             */
+            readonly $schema?: string;
+            /** Format: int64 */
+            daily_ai_tokens: number;
         };
         Player: {
             /** Format: date-time */
@@ -2800,6 +2887,12 @@ export interface components {
             readonly $schema?: string;
             /** @description Stripe price ID for the points package. */
             price_id: string;
+        };
+        ProjectStatusChangedNotificationData: {
+            changed_by_member_id: string;
+            new_status: string;
+            old_status: string;
+            project_id: string;
         };
         ReactionByCountry: {
             country: string;
@@ -2859,7 +2952,6 @@ export interface components {
              * @example http://localhost:8080/schemas/RoleIdsInput.json
              */
             readonly $schema?: string;
-            /** Format: uuid */
             role_ids: string[] | null;
         };
         RpsGame: {
@@ -3212,6 +3304,11 @@ export interface components {
             status: "todo" | "in_progress" | "done";
             team_id: string;
         };
+        TaskOverdueNotificationData: {
+            /** Format: date-time */
+            due_date: string;
+            task_id: string;
+        };
         TaskPositionStatusDTO: {
             /**
              * Format: uri
@@ -3273,6 +3370,12 @@ export interface components {
             total_projects: number;
             /** Format: int64 */
             total_tasks: number;
+        };
+        TaskStatusChangedNotificationData: {
+            changed_by_member_id: string;
+            new_status: string;
+            old_status: string;
+            task_id: string;
         };
         Team: {
             /**
@@ -3380,6 +3483,16 @@ export interface components {
             refresh_token: string;
             /** @example Bearer */
             token_type: string;
+        };
+        UnreadCountResponseBody: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/UnreadCountResponseBody.json
+             */
+            readonly $schema?: string;
+            /** Format: int64 */
+            count: number;
         };
         UnregisteredPlayerInput: {
             /**
@@ -4031,6 +4144,137 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-plan-features-list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanFeature"][] | null;
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-plan-features-get": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "product-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanFeature"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-plan-features-upsert": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "product-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanFeaturesUpsertBody"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanFeature"];
+                };
             };
             /** @description Not Found */
             404: {
@@ -5562,6 +5806,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ErrorModel"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -5604,6 +5857,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -5669,6 +5931,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ErrorModel"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -5711,6 +5982,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6018,6 +6298,15 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ErrorModel"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -6047,6 +6336,15 @@ export interface operations {
             };
             /** @description Not Found */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6099,6 +6397,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6209,6 +6516,15 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -6853,7 +7169,6 @@ export interface operations {
             content: {
                 "multipart/form-data": {
                     files?: string[];
-                    /** Format: uri */
                     urls?: string[];
                 };
             };
@@ -6877,6 +7192,15 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8554,6 +8878,102 @@ export interface operations {
             };
         };
     };
+    "mark-all-team-members-notifications-read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-member-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "unread-team-members-notifications-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-member-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnreadCountResponseBody"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "delete-team-members-notifications": {
         parameters: {
             query?: never;
@@ -8632,86 +9052,6 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "unread-team-members-notifications-count": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                "team-member-id": string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        count: number;
-                    };
-                };
-            };
-            /** @description Bad Request */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-            /** @description Internal Server Error */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/problem+json": components["schemas"]["ErrorModel"];
-                };
-            };
-        };
-    };
-    "mark-all-team-members-notifications-read": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                "team-member-id": string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No Content */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Bad Request */
-            400: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8839,6 +9179,17 @@ export interface operations {
                         /** @description The retry time in milliseconds. */
                         retry?: number;
                     } | {
+                        data: components["schemas"]["NotificationPayloadProjectStatusChangedNotificationData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "project_status_changed";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
                         data: components["schemas"]["NotificationPayloadTaskCompletedNotificationData"];
                         /**
                          * @description The event name.
@@ -8856,6 +9207,28 @@ export interface operations {
                          * @constant
                          */
                         event: "task_due_today";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
+                        data: components["schemas"]["NotificationPayloadTaskOverdueNotificationData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "task_overdue";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
+                        data: components["schemas"]["NotificationPayloadTaskStatusChangedNotificationData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "task_status_changed";
                         /** @description The event ID. */
                         id?: number;
                         /** @description The retry time in milliseconds. */

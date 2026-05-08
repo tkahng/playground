@@ -40,6 +40,8 @@ import AccountTeamsPage from "./pages/account/teams";
 import AdminDashboardPage from "./pages/admin/admin-dashboard";
 import JobsEdit from "./pages/admin/jobs/jobs-edit";
 import JobsListPage from "./pages/admin/jobs/jobs-list";
+import PlanFeaturesEditPage from "./pages/admin/plan-features/plan-features-edit";
+import PlanFeaturesListPage from "./pages/admin/plan-features/plan-features-list";
 import ProductEditPage from "./pages/admin/products/products-edit";
 import ProductsListPage from "./pages/admin/products/products-list";
 import SubscriptionsListPage from "./pages/admin/subscriptions/subscription-list";
@@ -288,6 +290,13 @@ function App() {
                 >
                   <Route index element={<ProductsListPage />} />
                   <Route path=":productId" element={<ProductEditPage />} />
+                </Route>
+                <Route
+                  path="plan-features"
+                  element={<PageSectionLayout title="Plan Features" />}
+                >
+                  <Route index element={<PlanFeaturesListPage />} />
+                  <Route path=":productId" element={<PlanFeaturesEditPage />} />
                 </Route>
                 <Route path="jobs" element={<PageSectionLayout title="Jobs" />}>
                   <Route index element={<JobsListPage />} />
