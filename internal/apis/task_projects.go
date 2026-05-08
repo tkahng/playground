@@ -15,7 +15,7 @@ import (
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/tools/ai/googleai2"
+	"github.com/tkahng/playground/internal/tools/gemini"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/utils"
 	"github.com/tkahng/playground/internal/workers"
@@ -263,8 +263,8 @@ func (api *Api) TeamTaskProjectCreateWithAiBind(humaApi huma.API) {
 				return nil, huma.Error401Unauthorized("no team info")
 			}
 
-			aiService := googleai2.NewAiService(ctx, api.App().Config().AiConfig)
-			taskProjectPlan, err := aiService.GenerateProjectPlan(ctx, input.Body.Input)
+			geminiClient := gemini.NewClient(api.App().Config().AiConfig)
+			taskProjectPlan, err := geminiClient.GenerateProjectPlan(ctx, input.Body.Input)
 			if err != nil {
 				return nil, err
 			}
@@ -276,7 +276,7 @@ func (api *Api) TeamTaskProjectCreateWithAiBind(humaApi huma.API) {
 					TeamID:      teamInfo.Member.TeamID,
 					MemberID:    teamInfo.Member.ID,
 				},
-				Tasks: mapper.Map(taskProjectPlan.Tasks, func(task googleai2.Task) stores.CreateTaskProjectTaskDTO {
+				Tasks: mapper.Map(taskProjectPlan.Tasks, func(task gemini.Task) stores.CreateTaskProjectTaskDTO {
 					return stores.CreateTaskProjectTaskDTO{
 						Name:        task.Name,
 						Description: &task.Description,
