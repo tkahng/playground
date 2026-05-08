@@ -13,8 +13,8 @@ import (
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/workers"
 	"github.com/tkahng/playground/internal/token"
+	"github.com/tkahng/playground/internal/workers"
 
 	"github.com/tkahng/playground/internal/tools/filesystem"
 	"github.com/tkahng/playground/internal/tools/logger"
@@ -49,7 +49,8 @@ type BaseApp struct {
 	rbac    services.RBACService
 	checker services.ConstraintChecker
 
-	task services.TaskService
+	task    services.TaskService
+	aiUsage services.AiUsageService
 
 	token token.TokenService
 
@@ -250,6 +251,13 @@ func (app *BaseApp) Task() services.TaskService {
 	return app.task
 }
 
+func (app *BaseApp) AiUsage() services.AiUsageService {
+	if app.aiUsage == nil {
+		panic("ai usage service not initialized")
+	}
+	return app.aiUsage
+}
+
 func (app *BaseApp) Rbac() services.RBACService {
 	if app.rbac == nil {
 		panic("rbac not initialized")
@@ -294,7 +302,17 @@ func (a *BaseApp) Payment() services.PaymentService {
 	}
 	return a.payment
 }
+func (app *BaseApp) syncPlanFeatures(ctx context.Context) {
+	if err := services.SyncPlanFeatures(ctx, app.Adapter()); err != nil {
+		app.Logger().ErrorContext(ctx, "plan features sync failed", slog.Any("error", err))
+		return
+	}
+	app.Logger().InfoContext(ctx, "plan features sync complete")
+}
+
 func (app *BaseApp) RunBackgroundProcesses(ctx context.Context) {
+	app.syncPlanFeatures(ctx)
+
 	run := func(name string, fn func()) {
 		app.bgWg.Add(1)
 		go func() {

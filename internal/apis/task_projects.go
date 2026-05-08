@@ -15,7 +15,7 @@ import (
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/tools/ai/googleai2"
+	"github.com/tkahng/playground/internal/tools/gemini"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/utils"
 	"github.com/tkahng/playground/internal/workers"
@@ -262,12 +262,22 @@ func (api *Api) TeamTaskProjectCreateWithAiBind(humaApi huma.API) {
 			if teamInfo == nil {
 				return nil, huma.Error401Unauthorized("no team info")
 			}
+			if teamInfo.Member.UserID == nil {
+				return nil, huma.Error401Unauthorized("no user info")
+			}
 
-			aiService := googleai2.NewAiService(ctx, api.App().Config().AiConfig)
-			taskProjectPlan, err := aiService.GenerateProjectPlan(ctx, input.Body.Input)
+			if err := api.App().AiUsage().CheckQuota(ctx, teamInfo.Member.TeamID); err != nil {
+				return nil, err
+			}
+
+			geminiClient := gemini.NewClient(api.App().Config().AiConfig)
+			taskProjectPlan, err := geminiClient.GenerateProjectPlan(ctx, input.Body.Input)
 			if err != nil {
 				return nil, err
 			}
+
+			_ = api.App().AiUsage().RecordUsage(ctx, *teamInfo.Member.UserID, teamInfo.Member.ID, teamInfo.Member.TeamID, taskProjectPlan.Usage)
+
 			args := stores.CreateTaskProjectWithTasksDTO{
 				CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
 					Name:        taskProjectPlan.Project.Name,
@@ -276,7 +286,7 @@ func (api *Api) TeamTaskProjectCreateWithAiBind(humaApi huma.API) {
 					TeamID:      teamInfo.Member.TeamID,
 					MemberID:    teamInfo.Member.ID,
 				},
-				Tasks: mapper.Map(taskProjectPlan.Tasks, func(task googleai2.Task) stores.CreateTaskProjectTaskDTO {
+				Tasks: mapper.Map(taskProjectPlan.Tasks, func(task gemini.Task) stores.CreateTaskProjectTaskDTO {
 					return stores.CreateTaskProjectTaskDTO{
 						Name:        task.Name,
 						Description: &task.Description,

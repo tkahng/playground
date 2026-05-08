@@ -28,6 +28,8 @@ func NewAdapterDecorators() *StorageAdapterDecorator {
 		GamingFunc:         &DbGamingStoreDecorator{},
 		GisFunc:            &DBGisStoreDecorator{},
 		LedgerFunc:         &DbLedgerStoreDecorator{},
+		AiUsageFunc:        &AiUsageStoreDecorator{},
+		PlanFeaturesFunc:   &PlanFeaturesStoreDecorator{},
 	}
 }
 
@@ -54,6 +56,8 @@ func NewDbAdapterDecorators(db database.Dbx) *StorageAdapterDecorator {
 		UserReactionFunc: NewDbUserReactionStoreDectorator(db),
 		GisFunc:          NewDBGisStoreDecorator(db),
 		LedgerFunc:       NewDbLedgerStoreDecorator(db),
+		AiUsageFunc:      NewAiUsageStoreDecorator(db),
+		PlanFeaturesFunc: NewPlanFeaturesStoreDecorator(db),
 	}
 }
 
@@ -116,6 +120,8 @@ type StorageAdapterDecorator struct {
 	UserReactionFunc   *DbUserReactionStoreDectorator
 	GisFunc            *DBGisStoreDecorator
 	LedgerFunc         *DbLedgerStoreDecorator
+	AiUsageFunc        *AiUsageStoreDecorator
+	PlanFeaturesFunc   *PlanFeaturesStoreDecorator
 }
 
 // Gis implements [StorageAdapterInterface].
@@ -329,6 +335,20 @@ func (s *StorageAdapterDecorator) Task() DbTaskStoreInterface {
 		return s.TaskFunc
 	}
 	return s.Delegate.Task()
+}
+
+func (s *StorageAdapterDecorator) AiUsage() AiUsageStoreInterface {
+	if s.AiUsageFunc != nil {
+		return s.AiUsageFunc
+	}
+	return s.Delegate.AiUsage()
+}
+
+func (s *StorageAdapterDecorator) PlanFeatures() PlanFeaturesStoreInterface {
+	if s.PlanFeaturesFunc != nil {
+		return s.PlanFeaturesFunc
+	}
+	return s.Delegate.PlanFeatures()
 }
 
 var _ StorageAdapterInterface = (*StorageAdapterDecorator)(nil)

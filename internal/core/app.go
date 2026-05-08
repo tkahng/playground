@@ -65,6 +65,8 @@ type App interface {
 
 	Task() services.TaskService
 
+	AiUsage() services.AiUsageService
+
 	NotificationPublisher() services.Notifier
 
 	SseManager() sse.Manager

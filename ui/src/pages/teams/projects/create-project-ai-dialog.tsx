@@ -7,6 +7,7 @@ import {
   Lightbulb,
   AlertCircle,
   RotateCcw,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,8 +24,9 @@ import { useNavigate } from "react-router";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
 import { taskProjectCreateWithAi } from "@/lib/task-queries";
+import { teamAiUsageStatus } from "@/lib/api";
 import { Project } from "@/schema.types";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { ApiError } from "@/lib/error";
 
 type DialogStep = "input" | "generating" | "success" | "error";
@@ -34,6 +36,51 @@ const examplePrompts = [
   "Migrate our database to a new cloud provider",
   "Plan a company-wide hackathon event",
 ];
+
+function TokenUsageBar({
+  consumed,
+  limit,
+  remaining,
+}: {
+  consumed: number;
+  limit: number;
+  remaining: number;
+}) {
+  const pct = limit > 0 ? Math.min((consumed / limit) * 100, 100) : 0;
+  const exhausted = remaining <= 0;
+
+  return (
+    <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
+      <div className="flex items-center justify-between text-xs">
+        <span className="flex items-center gap-1.5 text-muted-foreground font-medium">
+          <Zap className="size-3" />
+          Daily AI tokens
+        </span>
+        <span
+          className={cn(
+            "font-mono font-medium",
+            exhausted ? "text-destructive" : "text-foreground"
+          )}
+        >
+          {remaining.toLocaleString()} remaining
+        </span>
+      </div>
+      <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+        <div
+          className={cn(
+            "h-full rounded-full transition-all duration-500",
+            pct >= 90 ? "bg-destructive" : pct >= 70 ? "bg-amber-500" : "bg-primary"
+          )}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>{consumed.toLocaleString()} used</span>
+        <span>{limit.toLocaleString()} limit</span>
+      </div>
+    </div>
+  );
+}
 
 export function CreateProjectAiDialog() {
   const [open, setOpen] = React.useState(false);
@@ -55,6 +102,17 @@ export function CreateProjectAiDialog() {
     "Finalizing your project...",
   ];
 
+  const { data: usageStatus } = useQuery({
+    queryKey: ["team-ai-usage", currentTeam?.id],
+    queryFn: async () => {
+      if (!user?.tokens.access_token || !currentTeam?.id)
+        throw new Error("Missing token or team");
+      return teamAiUsageStatus(user.tokens.access_token, currentTeam.id);
+    },
+    enabled: open && !!user?.tokens.access_token && !!currentTeam?.id,
+    refetchOnWindowFocus: false,
+  });
+
   const resetDialog = () => {
     setStep("input");
     setPrompt("");
@@ -66,29 +124,22 @@ export function CreateProjectAiDialog() {
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen);
     if (!newOpen) {
-      // Reset after close animation
       setTimeout(resetDialog, 200);
     }
   };
+
   const mutation = useMutation({
     mutationFn: async ({ input }: { input: string }) => {
       if (!user?.tokens.access_token)
         throw new ApiError("Missing access token or role ID");
-
       if (!currentTeam) throw new Error("Missing team");
-      const res = await taskProjectCreateWithAi(
-        user.tokens.access_token,
-        currentTeam.id,
-        {
-          input,
-        },
-      );
-
-      return res;
+      return taskProjectCreateWithAi(user.tokens.access_token, currentTeam.id, {
+        input,
+      });
     },
     onMutate: () => {
       setStep("generating");
-      setGeneratingPhase(0); // Reset when not loading
+      setGeneratingPhase(0);
       setErrorMessage("");
     },
     onSuccess: async (project) => {
@@ -105,40 +156,28 @@ export function CreateProjectAiDialog() {
       setStep("error");
     },
   });
+
   React.useEffect(() => {
     if (!mutation.isPending) {
-      setGeneratingPhase(0); // Reset when not loading
+      setGeneratingPhase(0);
       return;
     }
-
     const interval = setInterval(() => {
-      setGeneratingPhase((prev) => {
-        // Stop at the last phase, don't loop back
-        if (prev < generatingPhases.length - 1) {
-          return prev + 1;
-        }
-        return prev;
-      });
-    }, 800); // Change phase every 2 seconds
-
+      setGeneratingPhase((prev) =>
+        prev < generatingPhases.length - 1 ? prev + 1 : prev
+      );
+    }, 800);
     return () => clearInterval(interval);
   }, [mutation.isPending, generatingPhases.length]);
 
   const handleSubmit = () => {
     if (!prompt.trim()) return;
-    if (mutation.isPending) return; // guard against double click
+    if (mutation.isPending) return;
     mutation.mutate({ input: prompt });
   };
 
-  const handleRetry = () => {
-    handleSubmit();
-  };
+  const quotaExhausted = usageStatus != null && usageStatus.remaining <= 0;
 
-  const handleBackToInput = () => {
-    setStep("input");
-    setErrorMessage("");
-    setGeneratingPhase(0);
-  };
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
@@ -186,12 +225,28 @@ export function CreateProjectAiDialog() {
             </DialogHeader>
 
             <div className="mt-6 space-y-4">
+              {usageStatus && (
+                <TokenUsageBar
+                  consumed={usageStatus.consumed}
+                  limit={usageStatus.limit}
+                  remaining={usageStatus.remaining}
+                />
+              )}
+
               <Textarea
                 placeholder="e.g., Build a customer onboarding flow that reduces churn and improves user activation..."
                 className="min-h-30 resize-none"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
+                disabled={quotaExhausted}
               />
+
+              {quotaExhausted && (
+                <p className="text-xs text-destructive flex items-center gap-1.5">
+                  <AlertCircle className="size-3" />
+                  Daily token limit reached. Upgrade your plan or try again tomorrow.
+                </p>
+              )}
 
               <div className="space-y-2">
                 <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -204,7 +259,8 @@ export function CreateProjectAiDialog() {
                       key={example}
                       type="button"
                       onClick={() => setPrompt(example)}
-                      className="rounded-full border bg-secondary/50 px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                      disabled={quotaExhausted}
+                      className="rounded-full border bg-secondary/50 px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {example}
                     </button>
@@ -214,7 +270,7 @@ export function CreateProjectAiDialog() {
 
               <Button
                 onClick={handleSubmit}
-                disabled={!prompt.trim() || mutation.isPending}
+                disabled={!prompt.trim() || mutation.isPending || quotaExhausted}
                 className="w-full gap-2"
               >
                 {mutation.isPending ? (
@@ -264,7 +320,6 @@ export function CreateProjectAiDialog() {
                 </p>
               </div>
 
-              {/* Progress indicators */}
               <div className="flex gap-1.5">
                 {generatingPhases.map((_, index) => (
                   <div
@@ -336,13 +391,17 @@ export function CreateProjectAiDialog() {
               </p>
 
               <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-center">
-                <Button onClick={handleRetry} className="gap-2">
+                <Button onClick={handleSubmit} className="gap-2">
                   <RotateCcw className="size-4" />
                   Try Again
                 </Button>
                 <Button
                   variant="outline"
-                  onClick={handleBackToInput}
+                  onClick={() => {
+                    setStep("input");
+                    setErrorMessage("");
+                    setGeneratingPhase(0);
+                  }}
                   className="bg-transparent"
                 >
                   Edit Prompt

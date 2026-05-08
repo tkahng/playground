@@ -1216,6 +1216,60 @@ export const permissionsList = async () => {
   return data;
 };
 
+export type AiUsageStatus = components["schemas"]["AiUsageStatus"];
+
+export const adminAiUsageList = async (
+  token: string,
+  params: operations["admin-ai-usage-list"]["parameters"]["query"] = {}
+) => {
+  const { data, error } = await client.GET("/api/admin/ai-usage", {
+    headers: { Authorization: `Bearer ${token}` },
+    params: { query: params },
+  });
+  if (error) throw ApiError.fromErrorModel(error);
+  return data;
+};
+
+export const teamAiUsageStatus = async (token: string, teamId: string) => {
+  const { data, error } = await client.GET("/api/teams/{team-id}/ai-usage", {
+    headers: { Authorization: `Bearer ${token}` },
+    params: { path: { "team-id": teamId } },
+  });
+  if (error) throw ApiError.fromErrorModel(error);
+  return data;
+};
+
+export const adminPlanFeaturesList = async (token: string) => {
+  const { data, error } = await client.GET("/api/admin/plan-features", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (error) throw ApiError.fromErrorModel(error);
+  return data;
+};
+
+export const adminPlanFeaturesGet = async (token: string, productId: string) => {
+  const { data, error } = await client.GET("/api/admin/plan-features/{product-id}", {
+    headers: { Authorization: `Bearer ${token}` },
+    params: { path: { "product-id": productId } },
+  });
+  if (error) throw ApiError.fromErrorModel(error);
+  return data;
+};
+
+export const adminPlanFeaturesUpsert = async (
+  token: string,
+  productId: string,
+  body: components["schemas"]["PlanFeaturesUpsertBody"]
+) => {
+  const { data, error } = await client.PUT("/api/admin/plan-features/{product-id}", {
+    headers: { Authorization: `Bearer ${token}` },
+    params: { path: { "product-id": productId } },
+    body,
+  });
+  if (error) throw ApiError.fromErrorModel(error);
+  return data;
+};
+
 export const adminJobQueries = {
   getJob: async (token: string, id: string) => {
     const { data, error } = await client.GET("/api/admin/jobs/{job-id}", {

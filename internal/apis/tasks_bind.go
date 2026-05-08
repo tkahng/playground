@@ -99,6 +99,8 @@ func bindTaskApi(appApi *Api) {
 	appApi.TeamTaskProjectCreateBind(taskGroup)
 	// task project create with ai
 	appApi.TeamTaskProjectCreateWithAiBind(taskGroup)
+	// ai usage status
+	appApi.TeamAiUsageStatusBind(taskGroup)
 	// task project update
 	huma.Register(
 		taskGroup,

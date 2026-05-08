@@ -404,6 +404,48 @@ func bindAdminApi(appApi *Api) {
 		appApi.AdminStripeProductsPermissionDelete,
 	)
 
+	// admin ai usage
+	huma.Register(adminGroup, huma.Operation{
+		OperationID: "admin-ai-usage-list",
+		Method:      http.MethodGet,
+		Path:        "/ai-usage",
+		Summary:     "List AI usage records",
+		Description: "Paginated list of AI token usage records, filterable by team and date range.",
+		Tags:        []string{"Admin", "AI Usage"},
+		Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+	}, appApi.AdminAiUsageList)
+
+	// admin plan features
+	huma.Register(adminGroup, huma.Operation{
+		OperationID: "admin-plan-features-list",
+		Method:      http.MethodGet,
+		Path:        "/plan-features",
+		Summary:     "List plan features",
+		Description: "List all plan feature limits (daily AI tokens per Stripe product)",
+		Tags:        []string{"Admin", "Plan Features"},
+		Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+	}, appApi.AdminPlanFeaturesList)
+	huma.Register(adminGroup, huma.Operation{
+		OperationID: "admin-plan-features-get",
+		Method:      http.MethodGet,
+		Path:        "/plan-features/{product-id}",
+		Summary:     "Get plan features",
+		Description: "Get plan feature limits for a specific Stripe product",
+		Tags:        []string{"Admin", "Plan Features"},
+		Errors:      []int{http.StatusNotFound},
+		Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+	}, appApi.AdminPlanFeaturesGet)
+	huma.Register(adminGroup, huma.Operation{
+		OperationID: "admin-plan-features-upsert",
+		Method:      http.MethodPut,
+		Path:        "/plan-features/{product-id}",
+		Summary:     "Set plan features",
+		Description: "Create or update plan feature limits for a Stripe product",
+		Tags:        []string{"Admin", "Plan Features"},
+		Errors:      []int{http.StatusNotFound},
+		Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+	}, appApi.AdminPlanFeaturesUpsert)
+
 	// admin jobs -------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 	huma.Register(
