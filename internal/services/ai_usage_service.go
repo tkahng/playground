@@ -9,6 +9,7 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/gemini"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 const (
@@ -27,6 +28,32 @@ type AiUsageService interface {
 
 type aiUsageService struct {
 	adapter stores.StorageAdapterInterface
+}
+
+// SyncPlanFeatures seeds a plan_features row (with the free-tier default) for
+// every active subscription product that does not already have one. It is safe
+// to call repeatedly; existing rows are never modified.
+func SyncPlanFeatures(ctx context.Context, adapter stores.StorageAdapterInterface) error {
+	products, err := adapter.Product().ListProducts(ctx, &stores.StripeProductFilter{
+		Active:       types.OptionalParam[bool]{IsSet: true, Value: true},
+		MetadataType: types.OptionalParam[models.StripeProductType]{IsSet: true, Value: models.StripeProductTypeSubscription},
+		PaginatedInput: stores.PaginatedInput{
+			Page:    0,
+			PerPage: 100,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	for _, p := range products {
+		if err := adapter.PlanFeatures().InsertIfMissing(ctx, &models.PlanFeatures{
+			StripeProductID: p.ID,
+			DailyAiTokens:   FreeTierDailyTokenLimit,
+		}); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func NewAiUsageService(adapter stores.StorageAdapterInterface) AiUsageService {

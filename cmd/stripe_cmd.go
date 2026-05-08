@@ -35,7 +35,10 @@ var stripeSyncCmd = &cobra.Command{
 		client := services.NewPaymentClient(stripeconfig)
 		service := services.NewPaymentService(client, adapter)
 
-		return service.UpsertPriceProductFromStripe(ctx)
+		if err := service.UpsertPriceProductFromStripe(ctx); err != nil {
+				return err
+			}
+			return services.SyncPlanFeatures(ctx, adapter)
 	},
 }
 
