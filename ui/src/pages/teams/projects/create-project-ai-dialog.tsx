@@ -146,7 +146,7 @@ export function CreateProjectAiDialog() {
       setGeneratedProject(project);
       setStep("success");
       setTimeout(() => {
-        navigate(`/teams/${currentTeam?.slug}/projects/${project?.id}`);
+        navigate({ to: '/teams/$teamSlug/projects/$projectId', params: { teamSlug: currentTeam?.slug ?? '', projectId: project?.id ?? '' } });
         handleOpenChange(false);
       }, 1800);
     },

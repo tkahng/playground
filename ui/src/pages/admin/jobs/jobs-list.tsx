@@ -1,7 +1,6 @@
 import { useSearchParams } from "@/hooks/use-search-params";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { DataTable } from "@/components/data-table";
-import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { adminJobQueries } from "@/lib/api";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
@@ -62,7 +61,7 @@ export default function JobsListPage() {
             cell: ({ row }) => {
               return (
                 <Link
-                  to={`${RouteMap.ADMIN_JOBS}/${row.original.id}`}
+                  to='/admin/jobs/$jobId' params={{ jobId: row.original.id }}
                   className="hover:underline text-blue-500"
                 >
                   {row.original.id}

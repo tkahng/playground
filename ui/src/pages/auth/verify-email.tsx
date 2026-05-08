@@ -24,15 +24,16 @@ import { confirmVerificationOtp } from "@/lib/api";
 import { decodeRedirectTo } from "@/lib/url";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import z from "zod";
 
 const otpSchema = z.object({
   otp: z.string().length(6, "OTP must be 6 digits"),
 });
+
 export default function VerifyEmailPage() {
   const { user, checkAuth } = useAuthProvider();
   const rawSearch = useRouterState({ select: (s) => s.location.searchStr });
@@ -61,8 +62,10 @@ export default function VerifyEmailPage() {
     onSuccess: () => {
       toast.success("Email verified successfully!");
       navigate({
-        pathname: navigateTo.pathname,
-        search: navigateTo.search,
+        to: navigateTo.pathname as "/" ,
+        search: navigateTo.search
+          ? Object.fromEntries(new URLSearchParams(navigateTo.search).entries())
+          : {},
       });
       checkAuth();
     },
@@ -74,20 +77,25 @@ export default function VerifyEmailPage() {
       setIsPending(false);
     },
   });
+
   function onUpdateSubmit(data: z.infer<typeof otpSchema>) {
     mutation.mutate(data);
   }
+
   if (!user) {
     toast.error("User is not authenticated", {
       description: "Please sign in",
     });
-    navigate({ pathname: RouteMap.SIGNIN, search: searchParams.toString() });
+    navigate({
+      to: RouteMap.SIGNIN,
+      search: rawSearch ? Object.fromEntries(searchParams.entries()) : {},
+    });
     return;
   }
 
   if (user.user.email_verified_at) {
     toast.warning("Email already verified");
-    navigate(RouteMap.ACCOUNT_DASHBOARD);
+    navigate({ to: RouteMap.ACCOUNT_DASHBOARD });
     return;
   }
 
@@ -138,34 +146,29 @@ export default function VerifyEmailPage() {
                             Enter the 6-digit code sent to your email.
                           </FieldDescription>
                         </Field>
-                        <FieldGroup>
-                          <Button
-                            type="submit"
-                            form="otp-form"
-                            disabled={isPending}
-                          >
-                            {isPending && <Spinner />}
-                            Verify
-                          </Button>
-                          <FieldDescription className="text-center">
-                            Didn&apos;t receive the code? <a href="#">Resend</a>
-                          </FieldDescription>
-                        </FieldGroup>
                       </FieldGroup>
                     );
                   }}
                 />
               </form>
+              <div className="flex flex-col items-center justify-center gap-2 pt-6">
+                <Button
+                  form="otp-form"
+                  disabled={isPending}
+                  type="submit"
+                  className="w-full"
+                >
+                  {isPending ? <Spinner /> : "Verify"}
+                </Button>
+                <Link
+                  to={RouteMap.SIGNIN}
+                  className="text-sm text-primary hover:underline"
+                >
+                  Back to sign in
+                </Link>
+              </div>
             </CardContent>
           </Card>
-          <div className="flex justify-end px-4 md:px-6 lg:px-8 py-2">
-            <Link
-              className="text-muted-foreground"
-              to={RouteMap.ACCOUNT_DASHBOARD}
-            >
-              skip
-            </Link>
-          </div>
         </div>
       </div>
     </div>

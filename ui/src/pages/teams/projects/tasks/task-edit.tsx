@@ -68,11 +68,7 @@ const formSchema = z.object({
 });
 
 export default function TaskEdit() {
-  const { taskId } = useParams<{
-    projectId: string;
-    taskId: string;
-    teamId: string;
-  }>();
+  const { taskId } = useParams({ strict: false });
   const {
     data: task,
     isLoading: isTaskLoading,
@@ -190,7 +186,7 @@ export default function TaskEdit() {
     <TaskContext.Provider value={task!}>
       <div className="space-y-6">
         <Link
-          to={`/teams/${team?.slug}/projects/${task?.project_id}`}
+          to="/teams/$teamSlug/projects/$projectId" params={{ teamSlug: team?.slug ?? '', projectId: task?.project_id ?? '' }}
           className="flex items-center gap-2 text-sm text-muted-foreground"
         >
           <ChevronLeft className="h-4 w-4" />

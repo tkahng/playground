@@ -5,7 +5,6 @@ import { CreateTeamDisabledTooltip } from "@/components/create-team-disabled-too
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DataTable } from "@/components/data-table";
 import { accountSidebarLinks } from "@/components/links";
-import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { GetError } from "@/lib/error";
@@ -126,7 +125,7 @@ export default function AccountTeamsPage() {
                   header: "Name",
                   cell: ({ row }) => (
                     <Link
-                      to={`${RouteMap.TEAM_LIST}/${row.original.team?.slug}/dashboard`}
+                      to='/teams/$teamSlug/dashboard' params={{ teamSlug: row.original.team?.slug ?? '' }}
                       className="hover:underline text-blue-500"
                     >
                       {row.original.team?.name}

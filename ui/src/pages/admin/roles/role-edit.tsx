@@ -48,7 +48,7 @@ export default function RoleEdit() {
   ]);
   const queryClient = useQueryClient();
   const { user } = useAuthProvider();
-  const { roleId } = useParams<{ roleId: string }>();
+  const { roleId } = useParams({ strict: false });
   const {
     data,
     isLoading: loading,
@@ -119,7 +119,7 @@ export default function RoleEdit() {
     }
   }, [data, form]);
   if (!user) {
-    navigate(RouteMap.SIGNIN);
+    navigate({ to: RouteMap.SIGNIN });
   }
   if (loading) return <CenteredSpinner />;
   if (error) return <p>Error: {error.message}</p>;

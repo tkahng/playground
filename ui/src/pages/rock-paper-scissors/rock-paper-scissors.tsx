@@ -25,7 +25,7 @@ export default function RockPaperScissorsPage() {
       const t = setTimeout(() => {
         toast("Unlock more with a plan!", {
           description: "Subscribe to access protected routes and features.",
-          action: { label: "See plans →", onClick: () => navigate("/pricing") },
+          action: { label: "See plans →", onClick: () => navigate({ to: "/pricing" }) },
         });
       }, 2000);
       return () => clearTimeout(t);

@@ -1,7 +1,6 @@
 import { useSearchParams } from "@/hooks/use-search-params";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { DataTable } from "@/components/data-table";
-import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import {
   DialogClose,
@@ -105,7 +104,7 @@ export default function RolesListPage() {
             cell: ({ row }) => {
               return (
                 <Link
-                  to={`${RouteMap.ADMIN_ROLES}/${row.original.id}`}
+                  to='/admin/roles/$roleId' params={{ roleId: row.original.id }}
                   className="hover:underline text-blue-500"
                 >
                   {row.original.name}
@@ -165,7 +164,7 @@ function RoleEllipsisDropdown({
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_ROLES}/${roleId}`);
+              navigate({ to: '/admin/roles/$roleId', params: { roleId } });
             }}
           >
             <Button variant="ghost" size="sm">

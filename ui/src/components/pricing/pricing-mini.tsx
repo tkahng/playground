@@ -55,16 +55,15 @@ export default function PricingMini({ products, subscription }: Props) {
       if (!user) {
         toast.error("Please login to checkout.");
         return navigate({
-          pathname: "/signin",
-          search:
-            "redirect_to=" +
-            encodeURIComponent(location.pathname + (location.searchStr || "")),
+          to: "/signin",
+          search: { redirect_to: encodeURIComponent(window.location.pathname + window.location.search) },
         });
       }
       if (!team || teamMember?.role !== "owner") {
         toast.error("You must be an owner to checkout.");
         return navigate({
-          pathname: `/teams/${team?.slug}/settings/billing`,
+          to: "/teams/$teamSlug/settings/billing",
+          params: { teamSlug: team?.slug ?? "" },
         });
       }
       setPriceIdLoading(values.price_id);

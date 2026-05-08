@@ -74,11 +74,11 @@ export default function SayHelloPage() {
     onSuccess: async () => {
       toast.success("Hello sent!");
       if (!progress.saidHello) {
-        const nextPath = user ? "/account/teams" : "/signup";
+        const nextPath = (user ? "/account/teams" : "/signup") as "/account/teams" | "/signup";
         const nextLabel = user ? "Create a team →" : "Sign up →";
         toast("Ready to go further?", {
           description: "Build a team and start collaborating on projects.",
-          action: { label: nextLabel, onClick: () => navigate(nextPath) },
+          action: { label: nextLabel, onClick: () => navigate({ to: nextPath }) },
         });
       }
       markStep("saidHello");

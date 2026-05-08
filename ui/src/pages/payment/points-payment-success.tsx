@@ -12,7 +12,7 @@ export default function PointsPaymentSuccessPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigate(RouteMap.POINTS_SETTINGS);
+      navigate({ to: RouteMap.POINTS_SETTINGS });
     }, REDIRECT_DELAY_MS);
     return () => clearTimeout(timer);
   }, [navigate]);

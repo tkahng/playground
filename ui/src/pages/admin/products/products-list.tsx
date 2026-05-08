@@ -1,7 +1,6 @@
 import { useSearchParams } from "@/hooks/use-search-params";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { DataTable } from "@/components/data-table";
-import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -73,7 +72,7 @@ export default function ProductsListPage() {
             cell: ({ row }) => {
               return (
                 <Link
-                  to={`${RouteMap.ADMIN_PRODUCTS}/${row.original.id}`}
+                  to='/admin/products/$productId' params={{ productId: row.original.id }}
                   className="hover:underline text-blue-500"
                 >
                   {row.original.id}
@@ -143,7 +142,7 @@ function ProductEllipsisDropdown({ productId }: { productId: string }) {
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_PRODUCTS}/${productId}`);
+              navigate({ to: '/admin/products/$productId', params: { productId } });
             }}
           >
             <Button variant="ghost" size="sm">
@@ -154,7 +153,7 @@ function ProductEllipsisDropdown({ productId }: { productId: string }) {
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_PRODUCTS}/${productId}`);
+              navigate({ to: '/admin/products/$productId', params: { productId } });
             }}
           >
             <Button variant="ghost" size="sm">

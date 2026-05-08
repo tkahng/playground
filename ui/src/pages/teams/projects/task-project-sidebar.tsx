@@ -6,6 +6,7 @@ import { taskProjectList } from "@/lib/task-queries";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useRouterState } from "@tanstack/react-router";
+
 export default function TaskProjectSidebar() {
   const { user: auth } = useAuthProvider();
   const { team: currentTeam } = useTeam();
@@ -61,9 +62,10 @@ export default function TaskProjectSidebar() {
         {projects?.data?.map((item) => (
           <Link
             key={item.id}
-            to={`/teams/${currentTeam?.slug}/projects/${item.id}`}
+            to="/teams/$teamSlug/projects/$projectId"
+            params={{ teamSlug: currentTeam?.slug ?? '', projectId: item.id }}
             className={cn(
-              pathname.startsWith(`/projects/${item.id}`)
+              pathname.startsWith(`/teams/${currentTeam?.slug}/projects/${item.id}`)
                 ? "underline"
                 : "text-muted-foreground",
               "text-md font-normal hover:text-primary transition-colors hover:bg-muted rounded-md p-2",
@@ -77,7 +79,8 @@ export default function TaskProjectSidebar() {
         </div>
         {projects?.meta.has_more && (
           <Link
-            to={`/projects`}
+            to="/teams/$teamSlug/dashboard"
+            params={{ teamSlug: currentTeam?.slug ?? '' }}
             className={cn(
               "text-sm font-normal hover:text-primary transition-colors hover:bg-muted rounded-md p-2 flex",
             )}

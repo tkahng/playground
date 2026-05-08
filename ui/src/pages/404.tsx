@@ -33,11 +33,9 @@ export default function NotFoundPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-2 justify-center">
-            <Button variant="outline" asChild>
-              <Link to="javascript:history.back()">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Go Back
-              </Link>
+            <Button variant="outline" onClick={() => window.history.back()}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Go Back
             </Button>
             <Button variant="outline" asChild>
               <Link to="/">

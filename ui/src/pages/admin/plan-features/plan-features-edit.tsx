@@ -29,7 +29,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function PlanFeaturesEditPage() {
   const { user } = useAuthProvider();
-  const { productId } = useParams<{ productId: string }>();
+  const { productId } = useParams({ strict: false });
   const queryClient = useQueryClient();
 
   const { data, isLoading, isError, error } = useQuery({

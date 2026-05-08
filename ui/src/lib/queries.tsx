@@ -60,7 +60,7 @@ export const useMeQuery = () => {
 
 export const useTeamBySlugQuery = () => {
   const { user } = useAuthProvider();
-  const { teamSlug } = useParams<{ teamSlug: string }>();
+  const { teamSlug } = useParams({ strict: false });
   return useQuery({
     select: (data): TeamWithMember => {
       return {
@@ -78,6 +78,6 @@ export const useTeamBySlugQuery = () => {
       }
       return getTeamBySlug(user!.tokens.access_token, teamSlug);
     },
-    enabled: !!user?.tokens?.access_token?.length && !!teamSlug?.length,
+    enabled: !!user?.tokens?.access_token && !!teamSlug,
   });
 };

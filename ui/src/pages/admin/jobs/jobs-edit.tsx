@@ -47,7 +47,7 @@ export default function JobsEdit() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuthProvider();
-  const { jobId } = useParams<{ jobId: string }>();
+  const { jobId } = useParams({ strict: false });
   const {
     data: job,
     isLoading: loading,
@@ -112,7 +112,7 @@ export default function JobsEdit() {
     }
   }, [job, form]);
   if (!user) {
-    navigate(RouteMap.SIGNIN);
+    navigate({ to: RouteMap.SIGNIN });
   }
   if (loading) return <CenteredSpinner />;
   if (error) return <p>Error: {error.message}</p>;

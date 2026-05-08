@@ -61,12 +61,12 @@ export function UserNav() {
   const isAdmin = auth?.roles?.includes("superuser");
   const links2 = [...userDropdownLinks, ...(isAdmin ? [RouteLinks.ADMIN] : [])];
   function handleSelectTeam(team: Team) {
-    navigate(`/teams/${team.slug}/dashboard`, { flushSync: true });
+    navigate({ to: '/teams/$teamSlug/dashboard', params: { teamSlug: team.slug } });
   }
   const handleLogout = async (event: React.FormEvent) => {
     event.preventDefault();
     await logout();
-    navigate(RouteMap.HOME);
+    navigate({ to: RouteMap.HOME });
   };
   if (!auth) {
     return (

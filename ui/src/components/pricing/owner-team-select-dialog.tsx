@@ -182,7 +182,7 @@ export function OwnerTeamSelectDialog({
           </DialogClose>
           {selectedSLug && (
             <Button asChild>
-              <Link to={`/teams/${selectedSLug}/settings/billing`}>
+              <Link to='/teams/$teamSlug/settings/billing' params={{ teamSlug: selectedSLug ?? '' }}>
                 Continue
               </Link>
             </Button>

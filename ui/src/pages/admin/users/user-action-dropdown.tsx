@@ -1,4 +1,3 @@
-import { RouteMap } from "@/components/route-map";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -26,7 +25,7 @@ export function UserActionDropdown({ userId }: { userId: string }) {
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_USERS}/${userId}`);
+              navigate({ to: '/admin/users/$userId', params: { userId } });
             }}
           >
             <Button variant="ghost" size="sm">
@@ -37,7 +36,7 @@ export function UserActionDropdown({ userId }: { userId: string }) {
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(`${RouteMap.ADMIN_USERS}/${userId}?tab=roles`);
+              navigate({ to: '/admin/users/$userId', params: { userId }, search: { tab: 'roles' } });
             }}
           >
             <Button variant="ghost" size="sm">

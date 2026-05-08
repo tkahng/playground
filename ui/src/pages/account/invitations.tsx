@@ -82,10 +82,8 @@ export default function InvitationsPage() {
                 cell: ({ row }) => {
                   return (
                     <Link
-                      to={{
-                        pathname: `/team-invitation`,
-                        search: `?token=${row.original.token}`,
-                      }}
+                      to="/team-invitation"
+                      search={{ token: row.original.token }}
                       className="hover:underline text-blue-500"
                       onClick={() => handleSelectTeam(row.original.team!)}
                     >

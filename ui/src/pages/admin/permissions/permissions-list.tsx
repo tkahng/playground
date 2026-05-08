@@ -1,6 +1,5 @@
 import { useSearchParams } from "@/hooks/use-search-params";
 import { DataTable } from "@/components/data-table";
-import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { deletePermission, permissionsPaginate } from "@/lib/api";
 import {
@@ -87,7 +86,7 @@ export default function PermissionListPage() {
             cell: ({ row }) => {
               return (
                 <Link
-                  to={`${RouteMap.ADMIN_PERMISSIONS}/${row.original.id}`}
+                  to='/admin/permissions/$permissionId' params={{ permissionId: row.original.id }}
                   className="hover:underline text-blue-500"
                 >
                   {row.original.name}

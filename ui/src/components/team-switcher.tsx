@@ -31,7 +31,7 @@ import { CreateTeamDialog } from "./create-team-dialog";
 import { CenteredSpinner } from "./centered-spinner";
 
 export default function TeamSwitcher() {
-  const { teamSlug } = useParams<{ teamSlug: string }>();
+  const { teamSlug } = useParams({ strict: false });
   const navigate = useNavigate();
   const { user } = useAuthProvider();
   const [open, setOpen] = useState(false);
@@ -56,7 +56,7 @@ export default function TeamSwitcher() {
   function handleSelectTeam(team: Team) {
     mutation.mutate({ teamId: team.id });
     setOpen(false);
-    navigate(`/teams/${team.slug}/dashboard`);
+    navigate({ to: '/teams/$teamSlug/dashboard', params: { teamSlug: team.slug } });
   }
   return (
     <div className="ml-6">

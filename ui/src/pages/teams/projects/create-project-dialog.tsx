@@ -66,9 +66,9 @@ export function CreateProjectDialog() {
       setDialogOpen(false);
       toast.success("Project created!", {
         description: "Unlock more features by subscribing to a plan.",
-        action: { label: "See plans →", onClick: () => navigate("/pricing") },
+        action: { label: "See plans →", onClick: () => navigate({ to: "/pricing" }) },
       });
-      navigate(`/teams/${currentTeam?.slug}/projects/${data?.id}`);
+      navigate({ to: '/teams/$teamSlug/projects/$projectId', params: { teamSlug: currentTeam?.slug ?? '', projectId: data?.id ?? '' } });
     },
     onError: (error: ApiError) => {
       toast.error(error.message, {

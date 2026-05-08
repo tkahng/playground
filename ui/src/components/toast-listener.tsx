@@ -3,19 +3,17 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 
 export const ToastListener = ({ children }: { children: React.ReactNode }) => {
-  const location = useRouterState({ select: (s) => s.location });
   const navigate = useNavigate();
+  const location = useRouterState({ select: (s) => s.location });
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
+    const params = new URLSearchParams(location.searchStr);
     const error = params.get("error");
 
     if (error) {
       params.delete("error");
-      navigate({
-        search: () => Object.fromEntries(params.entries()),
-        replace: true,
-      });
+      // @ts-expect-error – search schema not declared per-route; runtime is correct
+      navigate({ search: () => Object.fromEntries(params.entries()), replace: true });
       toast.error("Error", {
         description: error,
         action: {

@@ -7,18 +7,14 @@ export function useQueryParams(name: string) {
   const value = searchParams.get(name);
 
   const onClick = (next: string | null) => {
-    navigate({
-      search: (prev) => {
-        const newParams = { ...(prev as Record<string, string>) };
-        if (next) {
-          newParams[name] = next;
-        } else {
-          delete newParams[name];
-        }
-        return newParams;
-      },
-      replace: true,
-    });
+    const params = new URLSearchParams(search);
+    if (next) {
+      params.set(name, next);
+    } else {
+      params.delete(name);
+    }
+    // @ts-expect-error – search schema not declared per-route; runtime is correct
+    navigate({ search: () => Object.fromEntries(params.entries()), replace: true });
   };
 
   return { param: value, onClick };

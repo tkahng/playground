@@ -160,13 +160,11 @@ export default function PricingTeam({ products, subscription }: Props) {
                       asChild
                     >
                       <Link
-                        to={{
-                          pathname: "/signin",
-                          search:
-                            "redirect_to=" +
-                            encodeURIComponent(
-                              location.pathname + (location.searchStr || ""),
-                            ),
+                        to="/signin"
+                        search={{
+                          redirect_to: encodeURIComponent(
+                            window.location.pathname + window.location.search,
+                          ),
                         }}
                       >
                         Subscribe
