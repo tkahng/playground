@@ -1,3 +1,4 @@
+import { useSearchParams } from "@/hooks/use-search-params";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { CreateTeamDialog } from "@/components/create-team-dialog";
 import { DataTable } from "@/components/data-table";
@@ -6,7 +7,7 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { getUserTeamMembers } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
-import { Link, useSearchParams } from "react-router";
+import { Link } from "@tanstack/react-router";
 
 export default function TeamListPage() {
   const { user } = useAuthProvider();

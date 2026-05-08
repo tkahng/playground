@@ -1,3 +1,4 @@
+import { useSearchParams } from "@/hooks/use-search-params";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { DataTable } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { CheckCheck, CheckCircle, Circle } from "lucide-react";
-import { useSearchParams } from "react-router";
+import {  } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { TeamNotificationActionDropdown } from "./team-notifications-action";
 

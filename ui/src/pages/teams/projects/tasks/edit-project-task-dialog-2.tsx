@@ -30,7 +30,7 @@ import { Task } from "@/schema.types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 

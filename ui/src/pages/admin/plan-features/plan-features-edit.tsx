@@ -17,7 +17,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useParams } from "react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 

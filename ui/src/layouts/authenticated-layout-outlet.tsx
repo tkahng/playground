@@ -1,18 +1,12 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { createLedgerWallet } from "@/lib/api";
+import { Navigate, Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
-import {
-  createSearchParams,
-  Navigate,
-  Outlet,
-  useLocation,
-} from "react-router";
 
 export default function AuthenticatedLayoutOutlet() {
-  const location = useLocation();
+  const location = useRouterState({ select: (s) => s.location });
   const { pathname } = location;
   const { user, checkAuth, getOrRefreshToken } = useAuthProvider();
-  // const { team, teamMember } = useTeam();
   const isMounted = useRef(false);
   useEffect(() => {
     if (!isMounted.current) {
@@ -26,42 +20,12 @@ export default function AuthenticatedLayoutOutlet() {
   }, [checkAuth, getOrRefreshToken, location, user]);
 
   if (!user) {
+    const redirectTo = pathname + (location.searchStr || "");
     if (pathname.startsWith("/team-invitation")) {
-      return (
-        <Navigate
-          to={{
-            pathname: "/signup",
-            search: createSearchParams({
-              redirect_to: location.pathname + location.search,
-            }).toString(),
-          }}
-        />
-      );
+      return <Navigate to="/signup" search={{ redirect_to: redirectTo }} />;
     }
-    return (
-      <Navigate
-        to={{
-          pathname: "/signin",
-          search: createSearchParams({
-            redirect_to: location.pathname + location.search,
-          }).toString(),
-        }}
-      />
-    );
+    return <Navigate to="/signin" search={{ redirect_to: redirectTo }} />;
   }
-  // if (user) {
-  //   // if (pathname === "/") {
-  //   //   if (team && teamMember?.user_id === user.user.id) {
-  //   //     return <Navigate to={`/teams/${team.slug}/dashboard`} />;
-  //   //   } else {
-  //   //     return <Navigate to="/teams" />;
-  //   //   }
-  //   // }
-  //   // if (pathname === "/dashboard") {
-  //   //   if (team && teamMember?.user_id === user.user.id) {
-  //   //     return <Navigate to={`/teams/${team.slug}/dashboard`} />;
-  //   //   }
-  //   // }
-  // }
-  return <Outlet context={{ user }} />;
+
+  return <Outlet />;
 }

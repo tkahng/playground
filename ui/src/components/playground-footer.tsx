@@ -1,5 +1,5 @@
 import { Facebook, Github, Linkedin, Twitter } from "lucide-react";
-import { NavLink } from "react-router";
+import { NavLink } from "@tanstack/react-router";
 // container mx-auto flex h-14 items-center justify-between  lg:px-6
 export function PlaygroundFooter() {
   return (

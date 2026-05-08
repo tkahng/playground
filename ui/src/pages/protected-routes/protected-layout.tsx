@@ -2,7 +2,7 @@ import { CenteredSpinner } from "@/components/centered-spinner";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { permissionsList } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
-import { Outlet } from "react-router";
+import { Outlet } from "@tanstack/react-router";
 
 export default function ProtectedRouteLayout() {
   const { data, isLoading, isError, error } = useQuery({

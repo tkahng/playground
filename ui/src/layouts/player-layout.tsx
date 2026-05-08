@@ -13,9 +13,9 @@ import { isErrorModel } from "@/lib/error";
 import { rpsGameQueries } from "@/lib/rps-game-queries";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { Outlet } from "@tanstack/react-router";
+import { PropsWithChildren, useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Outlet } from "react-router";
 import { toast } from "sonner";
 import z from "zod";
 
@@ -24,7 +24,8 @@ const formSchema = z.object({
     message: "name must be at least 2 characters.",
   }),
 });
-export default function PlayerLayout() {
+
+export default function PlayerLayout({ children }: PropsWithChildren) {
   const { user } = useAuthProvider();
   const { player, setPlayer } = usePlayer();
   const { data, isLoading, error, isError } = useQuery({
@@ -116,5 +117,5 @@ export default function PlayerLayout() {
     );
   }
 
-  return <Outlet />;
+  return children ? <>{children}</> : <Outlet />;
 }

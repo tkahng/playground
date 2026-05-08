@@ -45,7 +45,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { CalendarIcon, Check, ChevronsUpDown } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { z } from "zod";
 

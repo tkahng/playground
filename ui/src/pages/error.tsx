@@ -1,5 +1,6 @@
+import { useSearchParams } from "@/hooks/use-search-params";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useSearchParams } from "react-router";
+import {  } from "@tanstack/react-router";
 
 export function Page() {
   const [searchParams] = useSearchParams();

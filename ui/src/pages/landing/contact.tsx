@@ -14,7 +14,7 @@ import {
   Phone,
   Twitter,
 } from "lucide-react";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 
 export default function LandingContactPage() {
   return (

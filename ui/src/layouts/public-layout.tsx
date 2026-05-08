@@ -1,8 +1,9 @@
 import { PlaygroundLandingHeader } from "@/components/playground-landing-header";
 import { PlaygroundMinimalFooter } from "@/components/playground-minimal-footer";
-import { Outlet } from "react-router";
+import { Outlet } from "@tanstack/react-router";
+import { PropsWithChildren } from "react";
 
-export default function PublicLayout() {
+export default function PublicLayout({ children }: PropsWithChildren) {
   return (
     <>
       <div className="relative flex min-h-dvh flex-col">
@@ -10,7 +11,7 @@ export default function PublicLayout() {
           <PlaygroundLandingHeader />
         </div>
         <main className="flex-1">
-          <Outlet />
+          {children ?? <Outlet />}
         </main>
         <PlaygroundMinimalFooter />
       </div>

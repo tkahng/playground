@@ -3,7 +3,7 @@ import { PlaygroundMinimalFooter } from "@/components/playground-minimal-footer"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, Brain, HelpCircle, Home, Search } from "lucide-react";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 
 export default function NotFoundPage() {
   return (

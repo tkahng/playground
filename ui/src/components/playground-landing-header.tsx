@@ -2,7 +2,7 @@ import { LinkDto } from "@/components/links";
 import PlaygroundLogo from "@/components/playground-logo";
 import { UserNav } from "@/components/user-nav";
 import { cn } from "@/lib/utils";
-import { Link, useLocation } from "react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import {
   Sheet,
   SheetContent,
@@ -20,7 +20,7 @@ export function PlaygroundLandingHeader({
   leftLinks?: LinkDto[];
   rightLinks?: LinkDto[];
 }) {
-  const { pathname } = useLocation();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const combinedLinks = [...(leftLinks?.length ? leftLinks : [])];
   return (
     <header>

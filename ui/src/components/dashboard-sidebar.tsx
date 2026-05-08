@@ -1,6 +1,6 @@
 import { LinkDto } from "@/components/links";
 import { cn } from "@/lib/utils";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import BackLink from "./back-link";
 
 export const DashboardSidebar = ({

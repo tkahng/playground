@@ -22,7 +22,7 @@ import {
   Mail,
 } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 import { z } from "zod";
 // Form validation schema
 const formSchema = z.object({

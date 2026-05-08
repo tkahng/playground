@@ -16,7 +16,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Link, useSearchParams } from "react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import z from "zod";
 
@@ -24,7 +24,8 @@ const formSchema = z.object({
   token: z.string().nonempty(),
 });
 export default function ConfirmVerification() {
-  const [searchParams] = useSearchParams();
+  const _rawSearch = useRouterState({ select: (s) => s.location.searchStr });
+  const searchParams = new URLSearchParams(_rawSearch);
   const token = searchParams.get("token");
   const { user } = useAuthProvider();
   const [confirmed, setConfirmed] = useState(false);

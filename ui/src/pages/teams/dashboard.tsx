@@ -1,3 +1,4 @@
+import { useSearchParams } from "@/hooks/use-search-params";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { DataTablePagination } from "@/components/data-table-pagination";
 import { ErrorCard } from "@/components/error-card";
@@ -15,7 +16,7 @@ import {
   getPaginationRowModel,
 } from "@tanstack/react-table";
 import { FolderOpen, UserPlus } from "lucide-react";
-import { useSearchParams } from "react-router";
+import {  } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { CreateProjectAiDialog } from "./projects/create-project-ai-dialog";
 import { CreateProjectDialog } from "./projects/create-project-dialog";

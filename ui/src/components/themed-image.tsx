@@ -13,8 +13,14 @@ export const ThemedImage = ({
 } & ThemedImageSourc) => {
   return (
     <>
-      <img src={dark} className={cn("hidden dark:block", className)} />
-      <img src={light} className={cn("dark:hidden", className)} />
+      <img
+        src={dark}
+        className={cn("hidden dark:block w-full h-auto object-contain", className)}
+      />
+      <img
+        src={light}
+        className={cn("dark:hidden w-full h-auto object-contain", className)}
+      />
     </>
   );
 };

@@ -5,11 +5,11 @@ import { useTeam } from "@/hooks/use-team";
 import { taskProjectList } from "@/lib/task-queries";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useLocation } from "react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 export default function TaskProjectSidebar() {
   const { user: auth } = useAuthProvider();
   const { team: currentTeam } = useTeam();
-  const { pathname } = useLocation();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const {
     data: projects,
     isLoading,

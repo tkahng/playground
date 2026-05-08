@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { ProductWithPrices, SubscriptionWithPrice, User } from "@/schema.types";
 
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 import { z } from "zod";
 
 interface Props {

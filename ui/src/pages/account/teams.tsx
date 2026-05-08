@@ -1,3 +1,4 @@
+import { useSearchParams } from "@/hooks/use-search-params";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { CreateTeamDialog } from "@/components/create-team-dialog";
 import { CreateTeamDisabledTooltip } from "@/components/create-team-disabled-tooltip";
@@ -12,7 +13,7 @@ import { getUserTeamMembers } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { Users } from "lucide-react";
-import { NavLink, useSearchParams } from "react-router";
+import { Link } from "@tanstack/react-router";
 
 export default function AccountTeamsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -107,12 +108,12 @@ export default function AccountTeamsPage() {
                   </Button>
                   <p className="text-xs text-muted-foreground">
                     Verify your email first —{" "}
-                    <NavLink
+                    <Link
                       to="/account/settings"
                       className="underline hover:no-underline"
                     >
                       go to Settings
-                    </NavLink>
+                    </Link>
                   </p>
                 </div>
               )}
@@ -124,12 +125,12 @@ export default function AccountTeamsPage() {
                   accessorKey: "name",
                   header: "Name",
                   cell: ({ row }) => (
-                    <NavLink
+                    <Link
                       to={`${RouteMap.TEAM_LIST}/${row.original.team?.slug}/dashboard`}
                       className="hover:underline text-blue-500"
                     >
                       {row.original.team?.name}
-                    </NavLink>
+                    </Link>
                   ),
                 },
                 {

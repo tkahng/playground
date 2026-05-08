@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Link } from "react-router";
+import { Link } from "@tanstack/react-router";
 import { Clock, MoreHorizontal, Trash2 } from "lucide-react";
 
 import {

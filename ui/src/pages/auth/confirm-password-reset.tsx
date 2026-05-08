@@ -1,5 +1,5 @@
 import { RouteMap } from "@/components/route-map";
-import { Link, useSearchParams } from "react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 
 import { PlaygroundLandingHeader } from "@/components/playground-landing-header";
 import { PlaygroundMinimalFooter } from "@/components/playground-minimal-footer";
@@ -39,7 +39,8 @@ export const resetPasswordSchema = z.object({
 });
 
 export default function ResetPasswordPage() {
-  const [searchParams] = useSearchParams();
+  const rawSearch = useRouterState({ select: (s) => s.location.searchStr });
+  const searchParams = new URLSearchParams(rawSearch);
   const token = searchParams.get("token");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

@@ -1,8 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Feature, features } from "@/pages/landing/features-list";
+import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
-import { Link } from "react-router";
-import { HashLink } from "react-router-hash-link";
 
 export default function Features() {
   return (
@@ -22,19 +21,22 @@ export default function Features() {
         {/* Quick-jump nav */}
         <nav className="flex flex-wrap gap-2 sm:justify-center mb-16">
           {features.map((f, i) => (
-            <HashLink
+            <a
               key={f.fragment}
-              to={`#${f.fragment}`}
-              scroll={(el) =>
-                el.scrollIntoView({ behavior: "smooth", block: "center" })
-              }
+              href={`#${f.fragment}`}
+              onClick={(e) => {
+                e.preventDefault();
+                document
+                  .getElementById(f.fragment)
+                  ?.scrollIntoView({ behavior: "smooth", block: "center" });
+              }}
               className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-sm text-muted-foreground hover:border-primary hover:text-foreground transition-colors"
             >
               <span className="text-xs font-mono text-muted-foreground/60">
                 {String(i + 1).padStart(2, "0")}
               </span>
               {f.title}
-            </HashLink>
+            </a>
           ))}
         </nav>
 
@@ -69,23 +71,25 @@ function FeatureCard({
   return (
     <div
       id={feature.fragment}
-      className="flex flex-col md:flex-row items-center gap-x-12 gap-y-8 md:even:flex-row-reverse scroll-mt-8"
+      className="flex flex-col md:flex-row items-center gap-8 md:gap-16 md:even:flex-row-reverse scroll-mt-8"
     >
       {/* Image */}
-      {feature.featureImageComponent ? (
-        <div className="w-fit bg-muted rounded-xl shrink-0">
-          {feature.featureImageComponent}
+      <div className="w-full md:basis-1/2 md:shrink-0 min-w-0">
+        <div className="rounded-2xl border border-border/50 bg-muted overflow-hidden p-6 flex items-center justify-center">
+          {feature.featureImageComponent ? (
+            <div className="w-full flex items-center justify-center">
+              {feature.featureImageComponent}
+            </div>
+          ) : (
+            <div className="aspect-[4/3] w-full flex items-center justify-center">
+              {feature.icon}
+            </div>
+          )}
         </div>
-      ) : (
-        <div className="w-full aspect-[4/3] bg-muted rounded-xl border border-border/50 basis-1/2 shrink-0">
-          <div className="flex items-center justify-center w-full h-full">
-            {feature.icon}
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* Text */}
-      <div className="basis-1/2 shrink-0 flex flex-col gap-4">
+      <div className="w-full md:basis-1/2 md:shrink-0 min-w-0 flex flex-col gap-4">
         {/* Step + badge row */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-xs text-muted-foreground/60 bg-muted px-2 py-0.5 rounded">
@@ -120,16 +124,19 @@ function FeatureCard({
             </Button>
           )}
           {nextFeature && (
-            <HashLink
-              to={`#${nextFeature.fragment}`}
-              scroll={(el) =>
-                el.scrollIntoView({ behavior: "smooth", block: "center" })
-              }
+            <a
+              href={`#${nextFeature.fragment}`}
+              onClick={(e) => {
+                e.preventDefault();
+                document
+                  .getElementById(nextFeature.fragment)
+                  ?.scrollIntoView({ behavior: "smooth", block: "center" });
+              }}
               className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
             >
               Next: {nextFeature.title}
               <ArrowRight className="h-3.5 w-3.5" />
-            </HashLink>
+            </a>
           )}
         </div>
       </div>

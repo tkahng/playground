@@ -1,6 +1,6 @@
 import { taskProjectGet } from "@/lib/task-queries";
 import { useQuery } from "@tanstack/react-query";
-import { useParams } from "react-router";
+import { useParams } from "@tanstack/react-router";
 import { useAuthProvider } from "./use-auth-provider";
 
 /**
@@ -9,10 +9,7 @@ import { useAuthProvider } from "./use-auth-provider";
  */
 export function useProject() {
   const { user } = useAuthProvider();
-  const { projectId } = useParams<{
-    projectId: string;
-    teamSlug: string;
-  }>();
+  const { projectId } = useParams({ strict: false });
   return useQuery({
     queryKey: [{ key: "project", project_id: projectId }],
     queryFn: async () => {

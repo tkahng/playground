@@ -1,4 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  RouterContextProvider,
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+  Outlet,
+} from "@tanstack/react-router";
 import { render, type RenderOptions } from "@testing-library/react";
 import React from "react";
 import { AuthContext, type AuthContextType } from "@/context/auth-context";
@@ -41,12 +48,21 @@ export function createTestQueryClient() {
   });
 }
 
+const testRootRoute = createRootRoute({ component: Outlet });
+const testRouteTree = testRootRoute.addChildren([]);
+const testRouter = createRouter({
+  routeTree: testRouteTree,
+  history: createMemoryHistory({ initialEntries: ["/"] }),
+});
+
 function AllProviders({ children }: { children: React.ReactNode }) {
   const queryClient = createTestQueryClient();
   return (
     <QueryClientProvider client={queryClient}>
       <AuthContext.Provider value={mockAuthContext}>
-        {children}
+        <RouterContextProvider router={testRouter}>
+          {children}
+        </RouterContextProvider>
       </AuthContext.Provider>
     </QueryClientProvider>
   );

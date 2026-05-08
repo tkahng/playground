@@ -6,7 +6,7 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { adminPlanFeaturesList } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { Pencil } from "lucide-react";
-import { NavLink, useNavigate } from "react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 
 export default function PlanFeaturesListPage() {
   const { user } = useAuthProvider();
@@ -34,12 +34,12 @@ export default function PlanFeaturesListPage() {
             accessorKey: "stripe_product_id",
             header: "Product ID",
             cell: ({ row }) => (
-              <NavLink
+              <Link
                 to={`${RouteMap.ADMIN_PLAN_FEATURES}/${row.original.stripe_product_id}`}
                 className="hover:underline text-blue-500"
               >
                 {row.original.stripe_product_id}
-              </NavLink>
+              </Link>
             ),
           },
           {

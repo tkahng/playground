@@ -17,17 +17,17 @@ import { Label } from "@/components/ui/label";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { decodeRedirectTo } from "@/lib/url";
 import { SigninInput } from "@/schema.types";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router";
 import { toast } from "sonner";
 
 export default function SigninPage() {
   const { user } = useAuthProvider();
   const [input, setInput] = useState<SigninInput>({ email: "", password: "" });
   const [loading, setLoading] = useState(false);
-  // let navigateTo: string = "/account/dashboard";
-  const { search } = useLocation();
+  const location = useRouterState({ select: (s) => s.location });
+  const search = location.searchStr;
   const navigate = useNavigate();
   const { login } = useAuthProvider();
 
@@ -44,8 +44,10 @@ export default function SigninPage() {
       await login({ email: email || input.email, password: input.password });
       setLoading(false);
       navigate({
-        pathname: navigateTo.pathname,
-        search: navigateTo.search,
+        to: navigateTo.pathname,
+        search: navigateTo.search
+          ? Object.fromEntries(new URLSearchParams(navigateTo.search).entries())
+          : {},
       });
     } catch (error) {
       if (error instanceof Error) {
@@ -139,22 +141,18 @@ export default function SigninPage() {
               Forgot your password?{" "}
               <Link
                 className="text-primary underline-offset-4 hover:underline"
-                to={{
-                  pathname: RouteMap.FORGOT_PASSWORD,
-                  search: search,
-                }}
+                to={RouteMap.FORGOT_PASSWORD}
+                search={search ? Object.fromEntries(params.entries()) : {}}
               >
                 Reset password
               </Link>
             </div>
             <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link
                 className="text-primary underline-offset-4 hover:underline"
-                to={{
-                  pathname: RouteMap.SIGNUP,
-                  search: search,
-                }}
+                to={RouteMap.SIGNUP}
+                search={search ? Object.fromEntries(params.entries()) : {}}
               >
                 Sign up
               </Link>

@@ -1,3 +1,4 @@
+import { useSearchParams } from "@/hooks/use-search-params";
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
@@ -9,7 +10,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
-import { NavLink, useSearchParams } from "react-router";
+import { Link } from "@tanstack/react-router";
 import { CreatePermissionDialog } from "./create-permission-dialog";
 import { PermissionsActionDropdown } from "./permissions-action-dropdown";
 import { CenteredSpinner } from "@/components/centered-spinner";
@@ -85,12 +86,12 @@ export default function PermissionListPage() {
             header: "Name",
             cell: ({ row }) => {
               return (
-                <NavLink
+                <Link
                   to={`${RouteMap.ADMIN_PERMISSIONS}/${row.original.id}`}
                   className="hover:underline text-blue-500"
                 >
                   {row.original.name}
-                </NavLink>
+                </Link>
               );
             },
           },

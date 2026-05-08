@@ -1,6 +1,10 @@
-import { Outlet } from "react-router";
+import { Outlet } from "@tanstack/react-router";
+import { PropsWithChildren } from "react";
 
-export default function PageSectionLayout({ title }: { title?: string }) {
+export default function PageSectionLayout({
+  title,
+  children,
+}: PropsWithChildren<{ title?: string }>) {
   return (
     <div className="flex-1">
       {title && (
@@ -13,7 +17,7 @@ export default function PageSectionLayout({ title }: { title?: string }) {
         </header>
       )}
       <div className="mx-auto px-8 py-8 justify-start items-stretch flex-1 max-w-[1200px]">
-        <Outlet />
+        {children ?? <Outlet />}
       </div>
     </div>
   );

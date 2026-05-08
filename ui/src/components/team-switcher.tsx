@@ -26,7 +26,7 @@ import { useUpdateMemberLastSelectedAt } from "@/lib/mutation";
 import { Team } from "@/schema.types";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { CreateTeamDialog } from "./create-team-dialog";
 import { CenteredSpinner } from "./centered-spinner";
 

@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Ellipsis, Pencil } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 
 export function UserActionDropdown({ userId }: { userId: string }) {
   // const editDialog = useDialog();

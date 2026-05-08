@@ -1,3 +1,4 @@
+import { useSearchParams } from "@/hooks/use-search-params";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { DataTable } from "@/components/data-table";
 import { RouteMap } from "@/components/route-map";
@@ -23,7 +24,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { Ellipsis, Pencil, Trash } from "lucide-react";
 import { useState } from "react";
-import { NavLink, useNavigate, useSearchParams } from "react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 export default function RolesListPage() {
@@ -103,12 +104,12 @@ export default function RolesListPage() {
             header: "Name",
             cell: ({ row }) => {
               return (
-                <NavLink
+                <Link
                   to={`${RouteMap.ADMIN_ROLES}/${row.original.id}`}
                   className="hover:underline text-blue-500"
                 >
                   {row.original.name}
-                </NavLink>
+                </Link>
               );
             },
           },

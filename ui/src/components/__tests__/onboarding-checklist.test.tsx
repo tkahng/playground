@@ -1,6 +1,5 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "@/test/test-utils";
 import type { OnboardingProgress } from "@/hooks/use-onboarding-progress";
@@ -43,9 +42,7 @@ function setupMocks(
 
 function renderChecklist() {
   return render(
-    <MemoryRouter>
-      <OnboardingChecklist />
-    </MemoryRouter>,
+    <OnboardingChecklist />,
   );
 }
 

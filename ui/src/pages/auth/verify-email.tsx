@@ -26,7 +26,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import z from "zod";
 
@@ -35,7 +35,8 @@ const otpSchema = z.object({
 });
 export default function VerifyEmailPage() {
   const { user, checkAuth } = useAuthProvider();
-  const [searchParams] = useSearchParams();
+  const rawSearch = useRouterState({ select: (s) => s.location.searchStr });
+  const searchParams = new URLSearchParams(rawSearch);
   const redirectTo = searchParams.get("redirect_to");
   const [isPending, setIsPending] = useState(false);
   const navigate = useNavigate();

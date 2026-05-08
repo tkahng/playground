@@ -58,7 +58,7 @@ export const features: Feature[] = [
       <ThemedImage
         dark={SayHelloDark}
         light={SayHelloLight}
-        className="max-h-100"
+       
       />
     ),
   },
@@ -81,7 +81,7 @@ export const features: Feature[] = [
       <ThemedImage
         dark={AuthenticationDark}
         light={AuthenticationLight}
-        className="max-h-100"
+       
       />
     ),
   },
@@ -101,7 +101,7 @@ export const features: Feature[] = [
     detailLink: "/account/teams",
     detailLinkText: "Go to Teams",
     featureImageComponent: (
-      <ThemedImage dark={TeamDark} light={TeamLight} className="max-h-100" />
+      <ThemedImage dark={TeamDark} light={TeamLight} />
     ),
   },
   {
@@ -123,7 +123,7 @@ export const features: Feature[] = [
       <ThemedImage
         dark={ProjectsDark}
         light={ProjectsLight}
-        className="max-h-100"
+       
       />
     ),
   },
@@ -146,7 +146,7 @@ export const features: Feature[] = [
       <ThemedImage
         dark={PaymentDark}
         light={PaymentLight}
-        className="max-h-100"
+       
       />
     ),
   },
@@ -169,7 +169,7 @@ export const features: Feature[] = [
       <ThemedImage
         dark={ChooseYourMoveDark}
         light={ChooseYourMoveLight}
-        className="max-h-100"
+       
       />
     ),
   },
@@ -187,7 +187,7 @@ export const features: Feature[] = [
     ],
     landingLink: "/features#admin",
     featureImageComponent: (
-      <ThemedImage dark={AdminDark} light={AdminLight} className="max-h-100" />
+      <ThemedImage dark={AdminDark} light={AdminLight} />
     ),
   },
 ];

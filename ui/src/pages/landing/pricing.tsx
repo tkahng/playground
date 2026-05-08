@@ -5,7 +5,7 @@ import { useOnboardingProgress } from "@/hooks/use-onboarding-progress";
 import { getProductsWithPrices } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 
 export default function PricingPage() {

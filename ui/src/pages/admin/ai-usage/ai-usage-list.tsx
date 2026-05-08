@@ -1,3 +1,4 @@
+import { useSearchParams } from "@/hooks/use-search-params";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { DataTable } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { adminAiUsageList } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { useState } from "react";
-import { useSearchParams } from "react-router";
+
 
 export default function AdminAiUsageListPage() {
   const { user } = useAuthProvider();

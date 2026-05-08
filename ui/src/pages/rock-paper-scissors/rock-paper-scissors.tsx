@@ -1,9 +1,10 @@
+import { useSearchParams } from "@/hooks/use-search-params";
 import { useOnboardingProgress } from "@/hooks/use-onboarding-progress";
 import { rpsGameQueries } from "@/lib/rps-game-queries";
 import { RpsGameWithParticipants } from "@/schema.types";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { GameResult } from "../account/rock-paper-scissors/game-result";
 import { ErrorCard } from "@/components/error-card";

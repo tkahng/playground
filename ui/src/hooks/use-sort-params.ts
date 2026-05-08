@@ -1,32 +1,37 @@
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { ChangeEvent } from "react";
-import { useSearchParams } from "react-router";
 
 export const useSortParams = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
-
+  const navigate = useNavigate();
+  const search = useRouterState({ select: (s) => s.location.searchStr });
+  const searchParams = new URLSearchParams(search);
   const objectParams = Object.fromEntries(searchParams);
+
+  const setSearchParams = (params: Record<string, string>) => {
+    navigate({ search: () => params, replace: true });
+  };
 
   const handleFieldChange =
     (field: string) => (event: ChangeEvent<HTMLInputElement>) => {
-      const params = Object.fromEntries([...searchParams]);
       setSearchParams({
-        ...params,
+        ...objectParams,
         page: "0",
         [field]: String(event.target.value),
       });
     };
 
   const handlePageChange = (_event: unknown, newPage: number) => {
-    const params = Object.fromEntries([...searchParams]);
-    setSearchParams({ ...params, page: String(newPage) });
+    setSearchParams({ ...objectParams, page: String(newPage) });
   };
 
   const handleTableFieldChange = (fields: string[], values: string[]) => {
-    const params = Object.fromEntries([...searchParams]);
-    const obj = fields.reduce((accumulator, element, index) => {
-      return { ...accumulator, [element]: values[index] };
-    }, {});
-    setSearchParams({ ...params, ...obj });
+    const obj = fields.reduce<Record<string, string>>(
+      (accumulator, element, index) => {
+        return { ...accumulator, [element]: values[index] ?? "" };
+      },
+      {}
+    );
+    setSearchParams({ ...objectParams, ...obj });
   };
 
   return {
@@ -35,6 +40,5 @@ export const useSortParams = () => {
     handleTableFieldChange,
     searchParams: objectParams,
     setSearchParams,
-    // setPaginationParams,
   };
 };

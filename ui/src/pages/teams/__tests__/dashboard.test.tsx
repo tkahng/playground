@@ -1,5 +1,4 @@
 import { screen, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "@/test/test-utils";
 
@@ -51,9 +50,7 @@ function mockProjects(
 
 function renderDashboard() {
   return render(
-    <MemoryRouter>
-      <TeamDashboard />
-    </MemoryRouter>,
+    <TeamDashboard />,
   );
 }
 

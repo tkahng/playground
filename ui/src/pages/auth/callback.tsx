@@ -1,8 +1,8 @@
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { decodeRedirectTo } from "@/lib/url";
+import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
 export default function CallbackComponent() {
@@ -21,34 +21,32 @@ export default function CallbackComponent() {
       const error = params.get("error");
       console.log("OAuth callback:", { code, error });
       if (error) {
-        // Handle error (e.g., display an error message)
         console.error("OAuth error:", error);
         isMounted.current = false;
         toast.error(error);
-        navigate("/"); // Redirect to login page or error page
+        navigate({ to: "/" });
         return;
       }
 
       if (code) {
-        // Exchange the authorization code for an access token
-        // (This part depends on your OAuth2 provider and backend implementation)
         auth
           .getOrRefreshToken(code)
           .then(() => {
-            // Store the access token and refresh token
             isMounted.current = false;
-            // Redirect to a protected route
             navigate({
-              pathname: redirectTo.pathname,
-              search: redirectTo.search,
+              to: redirectTo.pathname,
+              search: redirectTo.search
+                ? Object.fromEntries(
+                    new URLSearchParams(redirectTo.search).entries()
+                  )
+                : undefined,
             });
           })
-          .catch((error) => {
-            // Handle error (e.g., display an error message)
-            console.error("Error exchanging code for token:", error);
-            toast.error(error);
+          .catch((err) => {
+            console.error("Error exchanging code for token:", err);
+            toast.error(String(err));
             isMounted.current = false;
-            navigate("/signin"); // Redirect to login page or error page
+            navigate({ to: "/signin" });
           });
       }
     }

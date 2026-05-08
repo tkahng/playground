@@ -8,14 +8,14 @@ import { useTeam } from "@/hooks/use-team";
 import { isErrorModel } from "@/lib/error";
 import { getTeamBySlug } from "@/lib/team-queries";
 import { useQuery } from "@tanstack/react-query";
+import { Navigate, Outlet, useParams, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Navigate, Outlet, useLocation, useParams } from "react-router";
 import { toast } from "sonner";
 
 export default function TeamDashboardLayout() {
   const { user } = useAuthProvider();
-  const { pathname } = useLocation();
-  const { teamSlug } = useParams<{ teamSlug: string }>();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { teamSlug } = useParams({ strict: false });
   const { setTeam, team, teamMember } = useTeam();
   const { isLoading, error, refetch } = useQuery({
     queryKey: [{ key: "team-by-slug-layout", teamSlug }] as const,
@@ -27,18 +27,13 @@ export default function TeamDashboardLayout() {
         throw new Error("Team slug is required");
       }
       const response = await getTeamBySlug(user.tokens.access_token, teamSlug);
-
       setTeam({ ...response.team, member: response.member });
       return response;
     },
     enabled: false,
   });
-  // const isMounted = useRef(false);
+
   useEffect(() => {
-    // if (!isMounted.current) {
-    //   isMounted.current = true;
-    //   refetch().then(() => {});
-    // }
     refetch().then(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamSlug]);
@@ -55,13 +50,7 @@ export default function TeamDashboardLayout() {
         },
       });
     }
-    return (
-      <Navigate
-        to={{
-          pathname: "/teams",
-        }}
-      />
-    );
+    return <Navigate to="/teams" />;
   }
   if (isLoading) {
     return <CenteredSpinner />;
@@ -73,22 +62,10 @@ export default function TeamDashboardLayout() {
     return <div>No user found.</div>;
   }
   if (isNotUserTeam) {
-    return (
-      <Navigate
-        to={{
-          pathname: "/teams",
-        }}
-      />
-    );
+    return <Navigate to="/teams" />;
   }
   if (pathname === "/teams/settings/billing") {
-    return (
-      <Navigate
-        to={{
-          pathname: `/teams/${team.slug}/settings/billing`,
-        }}
-      />
-    );
+    return <Navigate to={`/teams/${team.slug}/settings/billing`} />;
   }
   return (
     <div className="min-h-screen flex flex-col">

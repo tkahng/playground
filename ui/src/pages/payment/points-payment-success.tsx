@@ -3,7 +3,7 @@ import { PlaygroundMinimalFooter } from "@/components/playground-minimal-footer"
 import { RouteMap } from "@/components/route-map";
 import { CheckCircle } from "lucide-react";
 import { useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate } from "@tanstack/react-router";
 
 const REDIRECT_DELAY_MS = 3000;
 
