@@ -132,9 +132,6 @@ const (
 // StripeProductTypeMetadataKey is the metadata key used to store the product type.
 const StripeProductTypeMetadataKey = "type"
 
-// StripeProductDailyAiTokensMetadataKey is the metadata key for daily AI token quota.
-// Value should be a decimal integer string, e.g. "100000".
-const StripeProductDailyAiTokensMetadataKey = "daily_ai_tokens"
 
 // StripePricingType represents the type of pricing for a Stripe product
 // It can be either "one_time" or "recurring"
@@ -574,4 +571,13 @@ type SubscriptionWithPrice struct {
 	Price        StripePrice        `json:"price"`
 	Subscription StripeSubscription `json:"subscription"`
 	Product      StripeProduct      `json:"product"`
+}
+
+type PlanFeatures struct {
+	_               struct{}  `db:"plan_features" schema:"billing" json:"-"`
+	ID              uuid.UUID `db:"id,pk" json:"id"`
+	StripeProductID string    `db:"stripe_product_id" json:"stripe_product_id"`
+	DailyAiTokens   int64     `db:"daily_ai_tokens" json:"daily_ai_tokens"`
+	CreatedAt       time.Time `db:"created_at" json:"created_at"`
+	UpdatedAt       time.Time `db:"updated_at" json:"updated_at"`
 }

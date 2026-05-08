@@ -29,6 +29,7 @@ func NewAdapterDecorators() *StorageAdapterDecorator {
 		GisFunc:            &DBGisStoreDecorator{},
 		LedgerFunc:         &DbLedgerStoreDecorator{},
 		AiUsageFunc:        &AiUsageStoreDecorator{},
+		PlanFeaturesFunc:   &PlanFeaturesStoreDecorator{},
 	}
 }
 
@@ -56,6 +57,7 @@ func NewDbAdapterDecorators(db database.Dbx) *StorageAdapterDecorator {
 		GisFunc:          NewDBGisStoreDecorator(db),
 		LedgerFunc:       NewDbLedgerStoreDecorator(db),
 		AiUsageFunc:      NewAiUsageStoreDecorator(db),
+		PlanFeaturesFunc: NewPlanFeaturesStoreDecorator(db),
 	}
 }
 
@@ -119,6 +121,7 @@ type StorageAdapterDecorator struct {
 	GisFunc            *DBGisStoreDecorator
 	LedgerFunc         *DbLedgerStoreDecorator
 	AiUsageFunc        *AiUsageStoreDecorator
+	PlanFeaturesFunc   *PlanFeaturesStoreDecorator
 }
 
 // Gis implements [StorageAdapterInterface].
@@ -339,6 +342,13 @@ func (s *StorageAdapterDecorator) AiUsage() AiUsageStoreInterface {
 		return s.AiUsageFunc
 	}
 	return s.Delegate.AiUsage()
+}
+
+func (s *StorageAdapterDecorator) PlanFeatures() PlanFeaturesStoreInterface {
+	if s.PlanFeaturesFunc != nil {
+		return s.PlanFeaturesFunc
+	}
+	return s.Delegate.PlanFeatures()
 }
 
 var _ StorageAdapterInterface = (*StorageAdapterDecorator)(nil)
