@@ -42,9 +42,7 @@ export function TaskEditDropdown2({
           <DropdownMenuItem
             onSelect={() => {
               setDropdownOpen(false);
-              navigate(
-                `/teams/${team?.slug}/projects/${task.project_id}/tasks/${task.id}`
-              );
+              navigate({ to: '/teams/$teamSlug/projects/$projectId/tasks/$taskId', params: { teamSlug: team?.slug ?? '', projectId: task.project_id, taskId: task.id } });
             }}
           >
             <Button variant="ghost" size="sm">

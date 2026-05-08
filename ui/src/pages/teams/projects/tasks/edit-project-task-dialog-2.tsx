@@ -122,7 +122,7 @@ export function EditTaskDialog2({
           <DialogTitle>Edit Task Details</DialogTitle>
           <DialogDescription>{task.name}</DialogDescription>
           <Link
-            to={`/teams/${team?.slug}/projects/${task.project_id}/tasks/${task.id}`}
+            to="/teams/$teamSlug/projects/$projectId/tasks/$taskId" params={{ teamSlug: team?.slug ?? '', projectId: task.project_id, taskId: task.id }}
           >
             View Task
           </Link>

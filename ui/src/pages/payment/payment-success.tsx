@@ -62,13 +62,13 @@ export default function PaymentSuccessPage() {
 
           <div className="flex flex-col sm:flex-row gap-2">
             <Button variant="outline" className="flex-1" asChild>
-              <Link to={`/teams/${team?.slug}/dashboard`}>
+              <Link to="/teams/$teamSlug/dashboard" params={{ teamSlug: team?.slug ?? '' }}>
                 <Home className="mr-2 h-4 w-4" />
                 Dashboard
               </Link>
             </Button>
             <Button className="flex-1" asChild>
-              <Link to={`/teams/${team?.slug}/settings/billing`}>
+              <Link to="/teams/$teamSlug/settings/billing" params={{ teamSlug: team?.slug ?? '' }}>
                 <Settings className="mr-2 h-4 w-4" />
                 Manage Subscription
               </Link>

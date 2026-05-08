@@ -72,7 +72,7 @@ export default function TeamListPage() {
             cell: ({ row }) => {
               return (
                 <Link
-                  to={`${RouteMap.TEAM_LIST}/${row.original.team?.slug}/dashboard`}
+                  to="/teams/$teamSlug/dashboard" params={{ teamSlug: row.original.team?.slug ?? '' }}
                   className="hover:underline text-blue-500"
                 >
                   {row.original.team?.name}

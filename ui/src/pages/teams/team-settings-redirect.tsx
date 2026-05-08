@@ -6,5 +6,5 @@ export default function TeamSettingsRedirect() {
   if (!team) {
     return <Navigate to="/teams" />;
   }
-  return <Navigate to={`/teams/${team.slug}/settings/billing`} />;
+  return <Navigate to="/teams/$teamSlug/settings/billing" params={{ teamSlug: team.slug }} />;
 }

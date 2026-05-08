@@ -45,7 +45,7 @@ export function ProjectCard({ project, team, onDelete }: ProjectCardProps) {
   };
 
   return (
-    <Link to={`/teams/${team?.slug}/projects/${project.id}`} className="block">
+    <Link to="/teams/$teamSlug/projects/$projectId" params={{ teamSlug: team?.slug ?? '', projectId: project.id }} className="block">
       <Card className="group cursor-pointer transition-all hover:shadow-md hover:border-primary/20">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">

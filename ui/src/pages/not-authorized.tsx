@@ -34,11 +34,13 @@ export default function NotAuthorizedPage() {
       </CardContent>
       <CardFooter className="flex flex-col space-y-2">
         <div className="flex flex-col sm:flex-row w-full gap-2">
-          <Button variant="outline" className="flex-1" asChild>
-            <Link to="javascript:history.back()">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Go Back
-            </Link>
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => window.history.back()}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Go Back
           </Button>
           <Button variant="outline" className="flex-1" asChild>
             <Link to="/">
