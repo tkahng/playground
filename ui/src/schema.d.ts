@@ -21,6 +21,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/ai-usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List AI usage records
+         * @description Paginated list of AI token usage records, filterable by team and date range.
+         */
+        get: operations["admin-ai-usage-list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/jobs": {
         parameters: {
             query?: never;
@@ -1847,6 +1867,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/teams/{team-id}/ai-usage": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Team AI usage status
+         * @description Returns today's consumed tokens, the daily limit, and remaining tokens for the team.
+         */
+        get: operations["team-ai-usage-status"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/teams/{team-id}/invitations": {
         parameters: {
             query?: never;
@@ -2127,6 +2167,44 @@ export interface components {
              */
             readonly $schema?: string;
             permission_ids: string[] | null;
+        };
+        AdminAiUsageRecord: {
+            /** Format: int64 */
+            completion_tokens: number;
+            /** Format: date-time */
+            created_at: string;
+            id: string;
+            /** Format: int64 */
+            prompt_tokens: number;
+            team_id: string;
+            team_member_id: string;
+            /** Format: int64 */
+            total_tokens: number;
+            user_id: string;
+        };
+        AiUsageStatus: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/AiUsageStatus.json
+             */
+            readonly $schema?: string;
+            /** Format: int64 */
+            consumed: number;
+            /** Format: int64 */
+            limit: number;
+            /** Format: int64 */
+            remaining: number;
+        };
+        ApiPaginatedResponseAdminAiUsageRecord: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponseAdminAiUsageRecord.json
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["AdminAiUsageRecord"][] | null;
+            meta: components["schemas"]["Meta"];
         };
         ApiPaginatedResponseApiUser: {
             /**
@@ -3723,6 +3801,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["IndexOutputBody"];
+                };
+            };
+            /** @description Error */
+            default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-ai-usage-list": {
+        parameters: {
+            query?: {
+                page?: number;
+                per_page?: number;
+                team_id?: string;
+                since?: string;
+                until?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiPaginatedResponseAdminAiUsageRecord"];
                 };
             };
             /** @description Error */
@@ -9587,6 +9700,55 @@ export interface operations {
             };
             /** @description Bad Request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "team-ai-usage-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiUsageStatus"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
                 headers: {
                     [name: string]: unknown;
                 };

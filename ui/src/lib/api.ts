@@ -1216,59 +1216,27 @@ export const permissionsList = async () => {
   return data;
 };
 
-export type AdminAiUsageRecord = {
-  id: string;
-  user_id: string;
-  team_id: string | null;
-  team_member_id: string | null;
-  prompt_tokens: number;
-  completion_tokens: number;
-  total_tokens: number;
-  created_at: string;
-};
-
-export type AdminAiUsageListParams = {
-  page?: number;
-  per_page?: number;
-  team_id?: string;
-  since?: string;
-  until?: string;
-};
+export type AiUsageStatus = components["schemas"]["AiUsageStatus"];
 
 export const adminAiUsageList = async (
   token: string,
-  params: AdminAiUsageListParams = {}
-): Promise<{ data: AdminAiUsageRecord[]; meta: { total: number; page: number; per_page: number; has_more: boolean } }> => {
-  const query = new URLSearchParams();
-  if (params.page !== undefined) query.set("page", String(params.page));
-  if (params.per_page !== undefined) query.set("per_page", String(params.per_page));
-  if (params.team_id) query.set("team_id", params.team_id);
-  if (params.since) query.set("since", params.since);
-  if (params.until) query.set("until", params.until);
-  const res = await fetch(`/api/admin/ai-usage?${query}`, {
+  params: operations["admin-ai-usage-list"]["parameters"]["query"] = {}
+) => {
+  const { data, error } = await client.GET("/api/admin/ai-usage", {
     headers: { Authorization: `Bearer ${token}` },
+    params: { query: params },
   });
-  if (!res.ok) throw new ApiError(`Failed to fetch AI usage: ${res.statusText}`);
-  return res.json();
+  if (error) throw ApiError.fromErrorModel(error);
+  return data;
 };
 
-export type AiUsageStatus = {
-  consumed: number;
-  limit: number;
-  remaining: number;
-};
-
-export const teamAiUsageStatus = async (
-  token: string,
-  teamId: string
-): Promise<AiUsageStatus> => {
-  const res = await fetch(`/api/teams/${teamId}/ai-usage`, {
+export const teamAiUsageStatus = async (token: string, teamId: string) => {
+  const { data, error } = await client.GET("/api/teams/{team-id}/ai-usage", {
     headers: { Authorization: `Bearer ${token}` },
+    params: { path: { "team-id": teamId } },
   });
-  if (!res.ok) {
-    throw new ApiError(`Failed to fetch AI usage: ${res.statusText}`);
-  }
-  return res.json() as Promise<AiUsageStatus>;
+  if (error) throw ApiError.fromErrorModel(error);
+  return data;
 };
 
 export const adminPlanFeaturesList = async (token: string) => {
