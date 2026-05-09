@@ -18,6 +18,7 @@ func bindTeamsApi(appApi *Api) {
 			middleware.TeamFromParam(app),
 			middleware.TeamFromParamSlug(app),
 			middleware.TeamMemberFromParam(app),
+			middleware.SseTicketAuth(app),
 			middleware.TeamInfoFromContext(app),
 		)...,
 	)
@@ -192,6 +193,7 @@ func bindTeamsApi(appApi *Api) {
 	)
 
 	appApi.GetInvitationByTokenBind(teamsGroup)
+	appApi.IssueSSETicketBind(teamsGroup)
 	appApi.TeamMembersSseEventsBind(teamsGroup)
 
 	appApi.FindTeamMembersNotificationsBind(teamsGroup)

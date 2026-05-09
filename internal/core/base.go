@@ -20,6 +20,7 @@ import (
 	"github.com/tkahng/playground/internal/tools/logger"
 	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/sse"
+	"github.com/tkahng/playground/internal/tools/ticket"
 )
 
 var _ App = (*BaseApp)(nil)
@@ -62,6 +63,7 @@ type BaseApp struct {
 	fs filesystem.FileSystem
 
 	sseManager sse.Manager
+	sseTickets *ticket.Store
 
 	eventManager events.EventManager
 
@@ -171,6 +173,14 @@ func (app *BaseApp) SseManager() sse.Manager {
 		panic("sse manager not initialized")
 	}
 	return app.sseManager
+}
+
+// SseTickets implements App.
+func (app *BaseApp) SseTickets() *ticket.Store {
+	if app.sseTickets == nil {
+		panic("sse tickets not initialized")
+	}
+	return app.sseTickets
 }
 
 // check settings -------------------------------------------------------------------------------------

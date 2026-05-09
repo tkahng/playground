@@ -15,6 +15,7 @@ import (
 	"github.com/tkahng/playground/internal/tools/filesystem"
 	"github.com/tkahng/playground/internal/tools/mailer"
 	"github.com/tkahng/playground/internal/tools/sse"
+	"github.com/tkahng/playground/internal/tools/ticket"
 )
 
 type App interface {
@@ -70,6 +71,8 @@ type App interface {
 	NotificationPublisher() services.Notifier
 
 	SseManager() sse.Manager
+
+	SseTickets() *ticket.Store
 
 	EventManager() events.EventManager
 

@@ -12,7 +12,7 @@ import (
 func bindTaskApi(appApi *Api) {
 	api := appApi.Api()
 	app := appApi.App()
-	// checkTaskOwnerMiddleware := middleware.CheckTaskOwnerMiddleware(api, appApi.App())
+	checkTaskOwnerMiddleware := middleware.CheckTaskOwnerMiddleware(appApi.App())
 
 	taskGroup := huma.NewGroup(api)
 	taskGroup.UseMiddleware(
@@ -23,7 +23,7 @@ func bindTaskApi(appApi *Api) {
 			middleware.TeamInfoFromContext(app),
 		)...,
 	)
-	// taskGroup.UseMiddleware(checkTaskOwnerMiddleware)
+	taskGroup.UseMiddleware(humamiddleware.HumaChiMiddlewares(checkTaskOwnerMiddleware)...)
 	// task list
 	appApi.TeamTaskListBind(taskGroup)
 	// task create

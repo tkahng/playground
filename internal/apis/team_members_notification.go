@@ -26,12 +26,51 @@ func TeamChannel(teamMemberId string) string {
 
 type TeamMemberSseInput struct {
 	TeamMemberID string `path:"team-member-id"`
-	AccessToken  string `query:"access_token"`
+	Ticket       string `query:"ticket"`
 }
 
-type PlaygroundSecurityExtensions struct {
-	TeamMemberID uuid.UUID `json:"team_member_id"`
-	AccessToken  string    `json:"access_token"`
+type IssueSSETicketResponse struct {
+	Body struct {
+		Ticket string `json:"ticket"`
+	}
+}
+
+func (api *Api) IssueSSETicketBind(humapi huma.API) {
+	huma.Register(
+		humapi,
+		huma.Operation{
+			OperationID: "issue-sse-ticket",
+			Method:      http.MethodPost,
+			Path:        "/team-members/{team-member-id}/sse/ticket",
+			Summary:     "issue-sse-ticket",
+			Description: "Issue a short-lived (60 s) ticket for SSE authentication",
+			Tags:        []string{"Team Members"},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.MemberIDBelongsToUser(),
+			),
+			Errors: []int{http.StatusUnauthorized},
+		},
+		func(ctx context.Context, input *struct {
+			TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
+		}) (*IssueSSETicketResponse, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			userInfo := contextstore.GetContextUserInfo(ctx)
+			if userInfo == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			t := api.App().SseTickets().Issue(userInfo.User.ID, teamInfo.Member.ID)
+			resp := &IssueSSETicketResponse{}
+			resp.Body.Ticket = t
+			return resp, nil
+		},
+	)
 }
 
 func (api *Api) TeamMembersSseEventsBind(humapi huma.API) {
