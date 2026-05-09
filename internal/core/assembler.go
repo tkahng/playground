@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ThreeDotsLabs/watermill/components/cqrs"
 	"github.com/tkahng/playground/internal/auth"
@@ -10,6 +11,7 @@ import (
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/token"
 	"github.com/tkahng/playground/internal/tools/sse"
+	"github.com/tkahng/playground/internal/tools/ticket"
 	"github.com/tkahng/playground/internal/userreaction"
 )
 
@@ -48,6 +50,7 @@ func (a *Assembler) validate(app *BaseApp) {
 		{"teamInvitation", app.teamInvitation},
 		{"notifierPublisher", app.notifierPublisher},
 		{"sseManager", app.sseManager},
+		{"sseTickets", app.sseTickets},
 		{"eventManager", app.eventManager},
 		{"jobManager", app.jobManager},
 		{"jobService", app.jobService},
@@ -126,6 +129,7 @@ func (a *Assembler) setBasicServices(app *BaseApp) {
 
 	app.eventManager = events.NewEventManager(logger)
 	app.sseManager = sse.NewManager(logger)
+	app.sseTickets = ticket.New(60 * time.Second)
 
 	app.jobManager = jobs.NewDbJobManager(dbx)
 	app.jobService = services.NewJobService(app.jobManager)

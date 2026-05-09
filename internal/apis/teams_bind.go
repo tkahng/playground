@@ -192,6 +192,7 @@ func bindTeamsApi(appApi *Api) {
 	)
 
 	appApi.GetInvitationByTokenBind(teamsGroup)
+	appApi.IssueSSETicketBind(teamsGroup)
 	appApi.TeamMembersSseEventsBind(teamsGroup)
 
 	appApi.FindTeamMembersNotificationsBind(teamsGroup)

@@ -15,6 +15,59 @@ import (
 	appHttp "github.com/tkahng/playground/internal/tools/http"
 )
 
+// SseTicketAuth authenticates SSE connections via a short-lived ticket issued by
+// POST /team-members/{id}/sse/ticket. It runs before TeamInfoFromContext and sets
+// UserInfo in context so that TeamInfoFromContext can resolve the team membership
+// normally. It is a no-op when the user is already authenticated via JWT.
+func SseTicketAuth(app core.App) HTTPMiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			rawCtx := r.Context()
+
+			// JWT auth already ran — skip ticket logic.
+			if contextstore.GetContextUserInfo(rawCtx) != nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			t := appHttp.GetQuery(r, "ticket")
+			if t == "" {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			userID, teamMemberID, ok := app.SseTickets().Validate(t)
+			if !ok {
+				appHttp.WriteErr(w, r, http.StatusUnauthorized, "invalid or expired SSE ticket")
+				return
+			}
+
+			// The {team-member-id} path param must match the ticket's team member.
+			if pathID := appHttp.GetParam(r, "team-member-id"); pathID != "" {
+				parsed, err := uuid.Parse(pathID)
+				if err != nil || parsed != teamMemberID {
+					appHttp.WriteErr(w, r, http.StatusUnauthorized, "SSE ticket does not match requested team member")
+					return
+				}
+			}
+
+			user, err := app.Adapter().User().FindUserByID(rawCtx, userID)
+			if err != nil || user == nil {
+				appHttp.WriteErr(w, r, http.StatusUnauthorized, "user not found")
+				return
+			}
+			userInfo, err := app.Adapter().User().GetUserInfo(rawCtx, user.Email)
+			if err != nil || userInfo == nil {
+				appHttp.WriteErr(w, r, http.StatusUnauthorized, "user info not found")
+				return
+			}
+
+			r = r.WithContext(contextstore.SetContextUserInfo(rawCtx, userInfo))
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // RequireTeamInfo checks if the request has team info
 func RequireTeamInfo() HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {

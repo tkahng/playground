@@ -3,6 +3,7 @@ package middleware
 import (
 	"log/slog"
 	"net/http"
+	"slices"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
@@ -130,46 +131,44 @@ func TaskProjectFromParam(app core.App) HTTPMiddlewareFunc {
 }
 
 func CheckTaskOwnerMiddleware(app core.App) HTTPMiddlewareFunc {
+	_ = app
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			rawCtx := r.Context()
-			taskId := apphttp.GetParam(r, "task-id")
-			if taskId == "" {
+
+			// Only enforce ownership on mutating methods.
+			if r.Method == http.MethodGet {
 				next.ServeHTTP(w, r)
 				return
 			}
-			id, err := uuid.Parse(taskId)
-			if err != nil {
-				apphttp.WriteErr(w, r, http.StatusBadRequest, "invalid task id", err)
-				return
-			}
-			task, err := app.Adapter().Task().FindTaskByID(rawCtx, id)
-			if err != nil {
-				apphttp.WriteErr(w, r, http.StatusInternalServerError, "error getting task", err)
-				return
-			}
+
+			// Reuse task already loaded by TaskFromParam — no extra DB query.
+			task := contextstore.GetContextTask(rawCtx)
 			if task == nil {
-				apphttp.WriteErr(w, r, http.StatusNotFound, "task not found at middleware")
+				next.ServeHTTP(w, r)
 				return
 			}
+
 			userInfo := contextstore.GetContextUserInfo(rawCtx)
 			if userInfo == nil {
 				apphttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware")
 				return
 			}
+
 			teamInfo := contextstore.GetContextTeamInfo(rawCtx)
 			if teamInfo == nil {
 				apphttp.WriteErr(w, r, http.StatusUnauthorized, "unauthorized at middleware")
 				return
 			}
-			// if task.CreatedByMemberID != teamInfo.Member.ID {
-			// 	if slices.Contains(userInfo.Permissions, "superuser") {
-			// 		next(ctx)
-			// 		return
-			// 	}
-			// 	apphttp.WriteErr(w, r, http.StatusForbidden, "task user id does not match user id")
-			// 	return
-			// }
+
+			if task.CreatedByMemberID != nil && *task.CreatedByMemberID != teamInfo.Member.ID {
+				if slices.Contains(userInfo.Permissions, "superuser") {
+					next.ServeHTTP(w, r)
+					return
+				}
+				apphttp.WriteErr(w, r, http.StatusForbidden, "only the task creator can modify this task")
+				return
+			}
 			next.ServeHTTP(w, r)
 		})
 	}

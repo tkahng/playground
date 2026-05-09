@@ -41,6 +41,7 @@ func bindMiddlewares(api API) {
 		humamiddleware.HumaChiMiddlewares(
 			middleware.RecovererMiddleware(),
 			middleware.AuthMiddleware(api.App()),
+			middleware.SseTicketAuth(api.App()),
 			middleware.RequireAuthMiddleware(),
 		)...,
 	)

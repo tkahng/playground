@@ -51,7 +51,7 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 	}
 	event, err := webhook.ConstructEvent(payload, input.Signature, cfg.Webhook)
 	if err != nil {
-		slog.ErrorContext(ctx, "⚠️  Webhook error while parsing basic request", slog.Any("error", err), slog.String("payload", string(payload)))
+		slog.ErrorContext(ctx, "⚠️  Webhook error while parsing basic request", slog.Any("error", err), slog.Int("payload_bytes", len(payload)))
 		return nil, huma.Error400BadRequest(err.Error())
 	}
 	payment := api.App().Payment()
