@@ -79,7 +79,7 @@ func NewDbPoller(store JobStore, dispatcher Dispatcher, opts ...PollerOptsFunc) 
 		opts: pollerOpts{
 			Interval: 5 * time.Second,
 			Timeout:  30 * time.Second,
-			Size:     10,
+			Size:     1,
 		},
 	}
 	for _, opt := range opts {
