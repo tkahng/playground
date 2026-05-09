@@ -619,9 +619,6 @@ func TestApi_FindUserInvitations(t *testing.T) {
 					true,
 				)
 				assert.NoError(t, err)
-				if err := app.JobManager().PollOnce(ctx); err != nil {
-					t.Fatal(err)
-				}
 				inviteeUserInfo := core.CreateUserWithOptions(t, app, core.UserWithEmail(inviteeEmail), core.UserWithVerifiedNow())
 				header := core.CreateTokenHeader(t, app, inviteeUserInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
@@ -654,9 +651,6 @@ func TestApi_FindUserInvitations(t *testing.T) {
 					true,
 				)
 				assert.NoError(t, err)
-				if err := app.JobManager().PollOnce(ctx); err != nil {
-					t.Fatal(err)
-				}
 				inviteeUserInfo := core.CreateUserWithOptions(t, app, core.UserWithEmail(inviteeEmail), core.UserWithVerifiedNow())
 				header := core.CreateTokenHeader(t, app, inviteeUserInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
@@ -703,9 +697,6 @@ func TestApi_FindInvitations(t *testing.T) {
 					true,
 				)
 				assert.NoError(t, err)
-				if err := app.JobManager().PollOnce(ctx); err != nil {
-					t.Fatal(err)
-				}
 				header := core.CreateTokenHeader(t, app, teamInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
@@ -737,9 +728,6 @@ func TestApi_FindInvitations(t *testing.T) {
 					true,
 				)
 				assert.NoError(t, err)
-				if err := app.JobManager().PollOnce(ctx); err != nil {
-					t.Fatal(err)
-				}
 				header := core.CreateTokenHeader(t, app, teamInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
@@ -771,9 +759,6 @@ func TestApi_FindInvitations(t *testing.T) {
 					true,
 				)
 				assert.NoError(t, err)
-				if err := app.JobManager().PollOnce(ctx); err != nil {
-					t.Fatal(err)
-				}
 				header := core.CreateTokenHeader(t, app, teamInfo.User.Email)
 				scenario.Headers = append(scenario.Headers, header)
 			},
