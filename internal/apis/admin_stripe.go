@@ -214,6 +214,31 @@ func (api *Api) AdminStripeProductsPermissionsCreate(ctx context.Context, input 
 	return nil, nil
 }
 
+type AdminStripeSyncOutput struct {
+	Body struct {
+		Message          string `json:"message"`
+		ProductsSynced   bool   `json:"products_synced"`
+		PricesSynced     bool   `json:"prices_synced"`
+	}
+}
+
+func (api *Api) AdminStripeSyncProductsAndPrices(ctx context.Context, _ *struct{}) (*AdminStripeSyncOutput, error) {
+	if err := api.App().Payment().UpsertPriceProductFromStripe(ctx); err != nil {
+		return nil, huma.Error500InternalServerError("Failed to sync Stripe products and prices", err)
+	}
+	return &AdminStripeSyncOutput{
+		Body: struct {
+			Message        string `json:"message"`
+			ProductsSynced bool   `json:"products_synced"`
+			PricesSynced   bool   `json:"prices_synced"`
+		}{
+			Message:        "Stripe products and prices synced successfully",
+			ProductsSynced: true,
+			PricesSynced:   true,
+		},
+	}, nil
+}
+
 func (api *Api) AdminStripeProductsPermissionDelete(ctx context.Context, input *struct {
 	ProductID    string `path:"product-id" required:"true"`
 	PermissionID string `path:"permission-id" required:"true" format:"uuid"`

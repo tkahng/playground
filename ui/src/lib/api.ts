@@ -1049,6 +1049,29 @@ export const adminResetUserPassword = async (
   return data;
 };
 
+export const adminStripeSyncProductsAndPrices = async (token: string) => {
+  const response = await fetch("/api/admin/stripe/sync", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new ApiError(
+      body?.detail ?? response.statusText,
+      body?.title ?? "Stripe sync failed",
+      response.status
+    );
+  }
+  return response.json() as Promise<{
+    message: string;
+    products_synced: boolean;
+    prices_synced: boolean;
+  }>;
+};
+
 export const adminStripeProducts = async (
   token: string,
   args: operations["admin-stripe-products"]["parameters"]["query"]
