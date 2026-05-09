@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/core"
@@ -102,7 +103,7 @@ func TestApi_CreateInvitation(t *testing.T) {
 func ExtractFistMessageTokenFromMailer(t testing.TB, app *core.BaseApp) string {
 	t.Helper()
 	mailer := core.ExtractTestMailer(t, app)
-	assert.Len(t, mailer.Messages, 1)
+	require.Len(t, mailer.Messages, 1)
 	raw := html.UnescapeString(mailer.Messages[0].Body)
 	fmt.Println(raw)
 	stoken, err := test.GetLinkParam(raw, "token")
