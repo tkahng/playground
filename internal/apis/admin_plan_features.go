@@ -7,6 +7,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
 )
 
@@ -40,17 +41,35 @@ type PlanFeaturesUpsertInput struct {
 	Body      PlanFeaturesUpsertBody `json:"body"`
 }
 
-func (api *Api) AdminPlanFeaturesList(ctx context.Context, _ *struct{}) (*struct {
-	Body []*PlanFeature
-}, error) {
-	rows, err := api.App().Adapter().PlanFeatures().List(ctx)
+type PlanFeaturesListParams struct {
+	PaginatedInput
+	SortParams
+}
+
+func (api *Api) AdminPlanFeaturesList(ctx context.Context, input *PlanFeaturesListParams) (*ApiPaginatedOutput[*PlanFeature], error) {
+	filter := &stores.PlanFeaturesFilter{
+		PaginatedInput: stores.PaginatedInput{
+			Page:    input.Page,
+			PerPage: input.PerPage,
+		},
+		SortParams: stores.SortParams{
+			SortBy:    input.SortBy,
+			SortOrder: input.SortOrder,
+		},
+	}
+	rows, err := api.App().Adapter().PlanFeatures().List(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	return &struct {
-		Body []*PlanFeature
-	}{
-		Body: mapper.Map(rows, fromModelPlanFeature),
+	count, err := api.App().Adapter().PlanFeatures().CountPlanFeatures(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+	return &ApiPaginatedOutput[*PlanFeature]{
+		Body: ApiPaginatedResponse[*PlanFeature]{
+			Data: mapper.Map(rows, fromModelPlanFeature),
+			Meta: ApiGenerateMeta(&input.PaginatedInput, count),
+		},
 	}, nil
 }
 

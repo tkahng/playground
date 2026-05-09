@@ -1,6 +1,13 @@
 import { useSearchParams } from "@/hooks/use-search-params";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { DataTable } from "@/components/data-table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { adminStripeSubscriptions } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
@@ -12,6 +19,8 @@ export default function SubscriptionsListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
+  const sortBy = searchParams.get("sort_by") || "updated_at";
+  const sortOrder = (searchParams.get("sort_order") || "desc") as "asc" | "desc";
 
   const onPaginationChange = (updater: Updater<PaginationState>) => {
     const newState =
@@ -21,10 +30,12 @@ export default function SubscriptionsListPage() {
     setSearchParams({
       page: String(newState.pageIndex),
       per_page: String(newState.pageSize),
+      sort_by: sortBy,
+      sort_order: sortOrder,
     });
   };
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["subscription-list", pageIndex, pageSize],
+    queryKey: ["subscription-list", pageIndex, pageSize, sortBy, sortOrder],
     queryFn: async () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
@@ -32,8 +43,8 @@ export default function SubscriptionsListPage() {
       const data = await adminStripeSubscriptions(user.tokens.access_token, {
         page: pageIndex,
         per_page: pageSize,
-        sort_by: "updated_at",
-        sort_order: "desc",
+        sort_by: sortBy,
+        sort_order: sortOrder,
         expand: ["price", "product", "user"],
       });
       return data;
@@ -53,6 +64,37 @@ export default function SubscriptionsListPage() {
         This is a list of subscriptions. For more details, visit the stripe
         dashboard.
       </p>
+      <div className="flex items-center gap-2">
+        <Select
+          value={sortBy}
+          onValueChange={(v) =>
+            setSearchParams({ page: "0", per_page: String(pageSize), sort_by: v, sort_order: sortOrder })
+          }
+        >
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="updated_at">Updated At</SelectItem>
+            <SelectItem value="created_at">Created At</SelectItem>
+            <SelectItem value="status">Status</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={sortOrder}
+          onValueChange={(v) =>
+            setSearchParams({ page: "0", per_page: String(pageSize), sort_by: sortBy, sort_order: v })
+          }
+        >
+          <SelectTrigger className="w-[120px]">
+            <SelectValue placeholder="Order" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="desc">Descending</SelectItem>
+            <SelectItem value="asc">Ascending</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       <DataTable
         columns={[

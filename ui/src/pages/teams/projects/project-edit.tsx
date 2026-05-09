@@ -49,7 +49,7 @@ export default function ProjectEdit() {
       return await taskList(user!.tokens.access_token, project!.id, {
         sort_by: "rank",
         sort_order: "asc",
-        per_page: 50,
+        per_page: 100,
         q: input,
       });
     },
@@ -100,6 +100,11 @@ export default function ProjectEdit() {
         />
       </div>
       <p>Manage your tasks.</p>
+      {tasks?.meta && tasks.meta.total > 100 && (
+        <p className="text-sm text-muted-foreground">
+          Showing 100 of {tasks.meta.total} tasks. Use the filter to narrow results.
+        </p>
+      )}
       <KanbanBoard cards={tasks?.data || []} projectId={project.id!} />
 
       {/* <KanbanBoardProvider>

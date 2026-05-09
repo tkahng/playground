@@ -1,20 +1,43 @@
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { DataTable } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
+import { useSearchParams } from "@/hooks/use-search-params";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { adminPlanFeaturesList } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
+import { PaginationState, Updater } from "@tanstack/react-table";
 import { Pencil } from "lucide-react";
 import { Link, useNavigate } from "@tanstack/react-router";
 
 export default function PlanFeaturesListPage() {
   const { user } = useAuthProvider();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pageIndex = parseInt(searchParams.get("page") || "0", 10);
+  const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
+
+  const onPaginationChange = (updater: Updater<PaginationState>) => {
+    const newState =
+      typeof updater === "function"
+        ? updater({ pageIndex, pageSize })
+        : updater;
+    if (newState.pageIndex !== pageIndex || newState.pageSize !== pageSize) {
+      setSearchParams({
+        page: String(newState.pageIndex),
+        per_page: String(newState.pageSize),
+      });
+    }
+  };
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["plan-features-list"],
+    queryKey: ["plan-features-list", pageIndex, pageSize],
     queryFn: async () => {
       if (!user?.tokens.access_token) throw new Error("Missing access token");
-      return adminPlanFeaturesList(user.tokens.access_token);
+      return adminPlanFeaturesList(user.tokens.access_token, {
+        page: pageIndex,
+        per_page: pageSize,
+        sort_by: "updated_at",
+        sort_order: "desc",
+      });
     },
   });
 
@@ -62,7 +85,11 @@ export default function PlanFeaturesListPage() {
             ),
           },
         ]}
-        data={data ?? []}
+        data={data?.data ?? []}
+        rowCount={data?.meta.total ?? 0}
+        paginationState={{ pageIndex, pageSize }}
+        onPaginationChange={onPaginationChange}
+        paginationEnabled
       />
     </div>
   );

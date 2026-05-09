@@ -2276,6 +2276,16 @@ export interface components {
             data: components["schemas"]["PermissionSource"][] | null;
             meta: components["schemas"]["Meta"];
         };
+        ApiPaginatedResponsePlanFeature: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiPaginatedResponsePlanFeature.json
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["PlanFeature"][] | null;
+            meta: components["schemas"]["Meta"];
+        };
         ApiPaginatedResponsePlayer: {
             /**
              * Format: uri
@@ -4289,7 +4299,12 @@ export interface operations {
     };
     "admin-plan-features-list": {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                per_page?: number;
+                sort_by?: string;
+                sort_order?: "asc" | "desc";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4302,7 +4317,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PlanFeature"][] | null;
+                    "application/json": components["schemas"]["ApiPaginatedResponsePlanFeature"];
                 };
             };
             /** @description Error */

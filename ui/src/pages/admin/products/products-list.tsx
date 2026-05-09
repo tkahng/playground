@@ -8,6 +8,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { adminStripeProducts } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
@@ -22,6 +29,8 @@ export default function ProductsListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
+  const sortBy = searchParams.get("sort_by") || "updated_at";
+  const sortOrder = (searchParams.get("sort_order") || "desc") as "asc" | "desc";
 
   const onPaginationChange = (updater: Updater<PaginationState>) => {
     const newState =
@@ -31,10 +40,12 @@ export default function ProductsListPage() {
     setSearchParams({
       page: String(newState.pageIndex),
       per_page: String(newState.pageSize),
+      sort_by: sortBy,
+      sort_order: sortOrder,
     });
   };
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["products-list", pageIndex, pageSize],
+    queryKey: ["products-list", pageIndex, pageSize, sortBy, sortOrder],
     queryFn: async () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
@@ -42,8 +53,8 @@ export default function ProductsListPage() {
       const data = await adminStripeProducts(user.tokens.access_token, {
         page: pageIndex,
         per_page: pageSize,
-        sort_by: "updated_at",
-        sort_order: "desc",
+        sort_by: sortBy,
+        sort_order: sortOrder,
         expand: ["prices", "permissions"],
       });
       return data;
@@ -63,6 +74,36 @@ export default function ProductsListPage() {
         Edit product roles and permissions. For more information, visit the
         stripe dashboard.
       </p>
+      <div className="flex items-center gap-2">
+        <Select
+          value={sortBy}
+          onValueChange={(v) =>
+            setSearchParams({ page: "0", per_page: String(pageSize), sort_by: v, sort_order: sortOrder })
+          }
+        >
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="updated_at">Updated At</SelectItem>
+            <SelectItem value="created_at">Created At</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select
+          value={sortOrder}
+          onValueChange={(v) =>
+            setSearchParams({ page: "0", per_page: String(pageSize), sort_by: sortBy, sort_order: v })
+          }
+        >
+          <SelectTrigger className="w-[120px]">
+            <SelectValue placeholder="Order" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="desc">Descending</SelectItem>
+            <SelectItem value="asc">Ascending</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       <DataTable
         columns={[

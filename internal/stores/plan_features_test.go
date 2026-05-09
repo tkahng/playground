@@ -182,12 +182,85 @@ func TestPlanFeaturesStore_List(t *testing.T) {
 			}
 		}
 
-		rows, err := adapter.PlanFeatures().List(ctx)
+		rows, err := adapter.PlanFeatures().List(ctx, &stores.PlanFeaturesFilter{
+			PaginatedInput: stores.PaginatedInput{Page: 0, PerPage: 100},
+		})
 		if err != nil {
 			t.Fatalf("List() error = %v", err)
 		}
 		if len(rows) < 2 {
 			t.Errorf("List() = %d rows, want at least 2", len(rows))
+		}
+	})
+}
+
+func TestPlanFeaturesStore_CountPlanFeatures(t *testing.T) {
+	t.Parallel()
+	test.SkipIfShort(t)
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewStorageAdapter(db)
+		seedStripeProduct(t, ctx, adapter, "prod_count_1")
+		seedStripeProduct(t, ctx, adapter, "prod_count_2")
+
+		for _, id := range []string{"prod_count_1", "prod_count_2"} {
+			_, err := adapter.PlanFeatures().Upsert(ctx, &models.PlanFeatures{
+				StripeProductID: id,
+				DailyAiTokens:   10_000,
+			})
+			if err != nil {
+				t.Fatalf("Upsert(%s) error = %v", id, err)
+			}
+		}
+
+		count, err := adapter.PlanFeatures().CountPlanFeatures(ctx, &stores.PlanFeaturesFilter{})
+		if err != nil {
+			t.Fatalf("CountPlanFeatures() error = %v", err)
+		}
+		if count < 2 {
+			t.Errorf("CountPlanFeatures() = %d, want at least 2", count)
+		}
+	})
+}
+
+func TestPlanFeaturesStore_ListPagination(t *testing.T) {
+	t.Parallel()
+	test.SkipIfShort(t)
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewStorageAdapter(db)
+		ids := []string{"prod_page_1", "prod_page_2", "prod_page_3"}
+		for _, id := range ids {
+			seedStripeProduct(t, ctx, adapter, id)
+			_, err := adapter.PlanFeatures().Upsert(ctx, &models.PlanFeatures{
+				StripeProductID: id,
+				DailyAiTokens:   10_000,
+			})
+			if err != nil {
+				t.Fatalf("Upsert(%s) error = %v", id, err)
+			}
+		}
+
+		page0, err := adapter.PlanFeatures().List(ctx, &stores.PlanFeaturesFilter{
+			PaginatedInput: stores.PaginatedInput{Page: 0, PerPage: 2},
+		})
+		if err != nil {
+			t.Fatalf("List(page=0, per_page=2) error = %v", err)
+		}
+		if len(page0) != 2 {
+			t.Errorf("List(page=0, per_page=2) = %d rows, want 2", len(page0))
+		}
+
+		page1, err := adapter.PlanFeatures().List(ctx, &stores.PlanFeaturesFilter{
+			PaginatedInput: stores.PaginatedInput{Page: 1, PerPage: 2},
+		})
+		if err != nil {
+			t.Fatalf("List(page=1, per_page=2) error = %v", err)
+		}
+		if len(page1) < 1 {
+			t.Errorf("List(page=1, per_page=2) = %d rows, want at least 1", len(page1))
+		}
+
+		if page0[0].StripeProductID == page1[0].StripeProductID {
+			t.Error("page 0 and page 1 returned the same first row")
 		}
 	})
 }

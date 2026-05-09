@@ -2,6 +2,14 @@ import { useSearchParams } from "@/hooks/use-search-params";
 import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import { DataTable } from "@/components/data-table";
 import { teamSettingLinks } from "@/components/links";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { useTeam } from "@/hooks/use-team";
 import { getTeamTeamMembers } from "@/lib/team-queries";
@@ -9,9 +17,10 @@ import { MemberRowDropdownMenuDialog } from "@/pages/teams/settings/member-row-d
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
 import { CheckCircle, XCircle } from "lucide-react";
-import {  } from "@tanstack/react-router";
 import { InviteTeamMemberDialog } from "./invite-team-member-dialog";
 import { CenteredSpinner } from "@/components/centered-spinner";
+
+type Role = "owner" | "member" | "guest";
 
 export default function TeamMembersSettingPage() {
   const { user } = useAuthProvider();
@@ -19,6 +28,11 @@ export default function TeamMembersSettingPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
+  const q = searchParams.get("q") || "";
+  const sortBy = searchParams.get("sort_by") || "user.name";
+  const sortOrder = (searchParams.get("sort_order") || "asc") as "asc" | "desc";
+  const roleFilter = (searchParams.get("role") || "all") as Role | "all";
+
   const onPaginationChange = (updater: Updater<PaginationState>) => {
     const newState =
       typeof updater === "function"
@@ -28,18 +42,27 @@ export default function TeamMembersSettingPage() {
       setSearchParams({
         page: String(newState.pageIndex),
         per_page: String(newState.pageSize),
+        q,
+        sort_by: sortBy,
+        sort_order: sortOrder,
+        role: roleFilter,
       });
     }
   };
+
+  const roles: Role[] | undefined =
+    roleFilter !== "all" ? [roleFilter] : undefined;
+
   const { data, isPending, isError, error } = useQuery({
     queryKey: [
-      {
-        key: "team-team-members",
-        team_id: team?.id,
-        page: pageIndex,
-        per_page: pageSize,
-        active: true,
-      },
+      "team-team-members",
+      team?.id,
+      pageIndex,
+      pageSize,
+      q,
+      sortBy,
+      sortOrder,
+      roleFilter,
     ],
     queryFn: async () => {
       if (!user?.tokens.access_token) {
@@ -53,7 +76,11 @@ export default function TeamMembersSettingPage() {
         teamId: team.id,
         page: pageIndex,
         perPage: pageSize,
+        search: q || undefined,
         active: true,
+        sortBy,
+        sortOrder,
+        roles,
       });
     },
   });
@@ -68,6 +95,7 @@ export default function TeamMembersSettingPage() {
   if (!team) {
     return <div>Team not found</div>;
   }
+
   return (
     <div className="flex">
       <DashboardSidebar links={teamSettingLinks(team?.slug)} />
@@ -77,6 +105,89 @@ export default function TeamMembersSettingPage() {
             Manage your team's members. Invite team members to join your team.
           </p>
           <InviteTeamMemberDialog />
+        </div>
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search members..."
+            value={q}
+            onChange={(e) =>
+              setSearchParams({
+                page: "0",
+                per_page: String(pageSize),
+                q: e.target.value,
+                sort_by: sortBy,
+                sort_order: sortOrder,
+                role: roleFilter,
+              })
+            }
+            className="max-w-sm"
+          />
+          <Select
+            value={roleFilter}
+            onValueChange={(v) =>
+              setSearchParams({
+                page: "0",
+                per_page: String(pageSize),
+                q,
+                sort_by: sortBy,
+                sort_order: sortOrder,
+                role: v,
+              })
+            }
+          >
+            <SelectTrigger className="w-[130px]">
+              <SelectValue placeholder="Role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All roles</SelectItem>
+              <SelectItem value="owner">Owner</SelectItem>
+              <SelectItem value="member">Member</SelectItem>
+              <SelectItem value="guest">Guest</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={sortBy}
+            onValueChange={(v) =>
+              setSearchParams({
+                page: "0",
+                per_page: String(pageSize),
+                q,
+                sort_by: v,
+                sort_order: sortOrder,
+                role: roleFilter,
+              })
+            }
+          >
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="user.name">Name</SelectItem>
+              <SelectItem value="user.email">Email</SelectItem>
+              <SelectItem value="user.created_at">Joined</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={sortOrder}
+            onValueChange={(v) =>
+              setSearchParams({
+                page: "0",
+                per_page: String(pageSize),
+                q,
+                sort_by: sortBy,
+                sort_order: v,
+                role: roleFilter,
+              })
+            }
+          >
+            <SelectTrigger className="w-[130px]">
+              <SelectValue placeholder="Order" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="asc">Ascending</SelectItem>
+              <SelectItem value="desc">Descending</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <DataTable
           data={data.data || []}

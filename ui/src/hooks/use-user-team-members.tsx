@@ -13,7 +13,7 @@ export const useUserTeamMembers = (
         key: "get-user-team-members",
         user_id: user?.user.id,
         page: 0,
-        per_page: 20,
+        per_page: 100,
         ...props,
       },
     ] as const,
@@ -24,7 +24,7 @@ export const useUserTeamMembers = (
       const { data, meta } = await getUserTeamMembers({
         token: user.tokens.access_token,
         page: 0,
-        per_page: 20,
+        per_page: 100,
         ...props,
       });
 

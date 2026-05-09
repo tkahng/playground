@@ -80,7 +80,7 @@ export function EditProjectTaskDialog({
         key: "team-team-members",
         team_id: team?.id,
         page: 0,
-        per_page: 20,
+        per_page: 100,
         active: true,
       },
     ],
@@ -89,7 +89,7 @@ export function EditProjectTaskDialog({
         token: user!.tokens.access_token,
         teamId: teamMember!.team_id,
         page: 0,
-        perPage: 20,
+        perPage: 100,
         active: true,
       });
     },

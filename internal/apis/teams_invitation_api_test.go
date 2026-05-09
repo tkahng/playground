@@ -599,6 +599,188 @@ func TestApi_FindUserInvitations(t *testing.T) {
 				assert.Equal(t, apis.TeamInvitationStatusPending, resp.Data[0].Status)
 			},
 		},
+		{
+			Name:           "status filter: ?statuses=pending returns pending invitation",
+			Method:         http.MethodGet,
+			URL:            "/team-invitations?statuses=pending",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				ctx := t.Context()
+				core.CreateProductsAndPrices(t, app)
+				teamInfo := CreateTeamAndOwner(t, app)
+				sub := CreateTeamSubscription(t, app, teamInfo)
+				scenario.Store.Set("subscription", sub)
+				err := app.TeamInvitation().CreateInvitation(
+					ctx,
+					teamInfo.Team.ID,
+					teamInfo.User.ID,
+					inviteeEmail,
+					models.TeamMemberRoleMember,
+					true,
+				)
+				assert.NoError(t, err)
+				inviteeUserInfo := core.CreateUserWithOptions(t, app, core.UserWithEmail(inviteeEmail), core.UserWithVerifiedNow())
+				header := core.CreateTokenHeader(t, app, inviteeUserInfo.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				resp, err := utils.UnmarshalJSON[apis.ApiPaginatedResponse[*apis.TeamInvitation]](res.Body.Bytes())
+				assert.NoError(t, err)
+				assert.Len(t, resp.Data, 1)
+				assert.Equal(t, apis.TeamInvitationStatusPending, resp.Data[0].Status)
+				assert.Equal(t, int64(1), resp.Meta.Total)
+			},
+		},
+		{
+			Name:           "status filter: ?statuses=declined returns empty when invitation is pending",
+			Method:         http.MethodGet,
+			URL:            "/team-invitations?statuses=declined",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				ctx := t.Context()
+				core.CreateProductsAndPrices(t, app)
+				teamInfo := CreateTeamAndOwner(t, app)
+				sub := CreateTeamSubscription(t, app, teamInfo)
+				scenario.Store.Set("subscription", sub)
+				err := app.TeamInvitation().CreateInvitation(
+					ctx,
+					teamInfo.Team.ID,
+					teamInfo.User.ID,
+					inviteeEmail,
+					models.TeamMemberRoleMember,
+					true,
+				)
+				assert.NoError(t, err)
+				inviteeUserInfo := core.CreateUserWithOptions(t, app, core.UserWithEmail(inviteeEmail), core.UserWithVerifiedNow())
+				header := core.CreateTokenHeader(t, app, inviteeUserInfo.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				resp, err := utils.UnmarshalJSON[apis.ApiPaginatedResponse[*apis.TeamInvitation]](res.Body.Bytes())
+				assert.NoError(t, err)
+				assert.Empty(t, resp.Data)
+				assert.Equal(t, int64(0), resp.Meta.Total)
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
+				return testApi
+			}
+			tt.Test(t)
+		})
+	}
+}
+
+func TestApi_FindInvitations(t *testing.T) {
+	inviteeEmail := "invitee@find-test.example.com"
+	tests := []apis.ApiScenario{
+		{
+			Name:           "success: owner lists team invitations",
+			Method:         http.MethodGet,
+			URL:            "/teams/{team-id}/invitations",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				ctx := t.Context()
+				core.CreateProductsAndPrices(t, app)
+				teamInfo := CreateTeamAndOwner(t, app)
+				scenario.Store.Set("teamInfo", teamInfo)
+				scenario.URL = fmt.Sprintf("/teams/%s/invitations", teamInfo.Team.ID)
+				err := app.TeamInvitation().CreateInvitation(
+					ctx,
+					teamInfo.Team.ID,
+					teamInfo.User.ID,
+					inviteeEmail,
+					models.TeamMemberRoleMember,
+					true,
+				)
+				assert.NoError(t, err)
+				header := core.CreateTokenHeader(t, app, teamInfo.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				resp, err := utils.UnmarshalJSON[apis.ApiPaginatedResponse[*apis.TeamInvitation]](res.Body.Bytes())
+				assert.NoError(t, err)
+				assert.Len(t, resp.Data, 1)
+				assert.Equal(t, apis.TeamInvitationStatusPending, resp.Data[0].Status)
+				assert.Equal(t, int64(1), resp.Meta.Total)
+			},
+		},
+		{
+			Name:           "status filter: ?statuses=pending returns pending invitation",
+			Method:         http.MethodGet,
+			URL:            "/teams/{team-id}/invitations",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				ctx := t.Context()
+				core.CreateProductsAndPrices(t, app)
+				teamInfo := CreateTeamAndOwner(t, app)
+				scenario.Store.Set("teamInfo", teamInfo)
+				scenario.URL = fmt.Sprintf("/teams/%s/invitations?statuses=pending", teamInfo.Team.ID)
+				err := app.TeamInvitation().CreateInvitation(
+					ctx,
+					teamInfo.Team.ID,
+					teamInfo.User.ID,
+					inviteeEmail,
+					models.TeamMemberRoleMember,
+					true,
+				)
+				assert.NoError(t, err)
+				header := core.CreateTokenHeader(t, app, teamInfo.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				resp, err := utils.UnmarshalJSON[apis.ApiPaginatedResponse[*apis.TeamInvitation]](res.Body.Bytes())
+				assert.NoError(t, err)
+				assert.Len(t, resp.Data, 1)
+				assert.Equal(t, apis.TeamInvitationStatusPending, resp.Data[0].Status)
+				assert.Equal(t, int64(1), resp.Meta.Total)
+			},
+		},
+		{
+			Name:           "status filter: ?statuses=declined returns empty when invitation is pending",
+			Method:         http.MethodGet,
+			URL:            "/teams/{team-id}/invitations",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				ctx := t.Context()
+				core.CreateProductsAndPrices(t, app)
+				teamInfo := CreateTeamAndOwner(t, app)
+				scenario.Store.Set("teamInfo", teamInfo)
+				scenario.URL = fmt.Sprintf("/teams/%s/invitations?statuses=declined", teamInfo.Team.ID)
+				err := app.TeamInvitation().CreateInvitation(
+					ctx,
+					teamInfo.Team.ID,
+					teamInfo.User.ID,
+					inviteeEmail,
+					models.TeamMemberRoleMember,
+					true,
+				)
+				assert.NoError(t, err)
+				header := core.CreateTokenHeader(t, app, teamInfo.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				resp, err := utils.UnmarshalJSON[apis.ApiPaginatedResponse[*apis.TeamInvitation]](res.Body.Bytes())
+				assert.NoError(t, err)
+				assert.Empty(t, resp.Data)
+				assert.Equal(t, int64(0), resp.Meta.Total)
+			},
+		},
+		{
+			Name:            "unauthorized: no auth header returns 401",
+			Method:          http.MethodGet,
+			URL:             "/teams/{team-id}/invitations",
+			ExpectedStatus:  http.StatusUnauthorized,
+			ExpectedContent: []string{"Unauthorized"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				core.CreateProductsAndPrices(t, app)
+				teamInfo := CreateTeamAndOwner(t, app)
+				scenario.URL = fmt.Sprintf("/teams/%s/invitations", teamInfo.Team.ID)
+			},
+		},
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {

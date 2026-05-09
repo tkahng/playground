@@ -2,6 +2,7 @@ package stores
 
 import (
 	"context"
+	"strings"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/tkahng/playground/internal/database"
@@ -9,13 +10,19 @@ import (
 	"github.com/tkahng/playground/internal/models"
 )
 
+type PlanFeaturesFilter struct {
+	PaginatedInput
+	SortParams
+}
+
 type PlanFeaturesStoreInterface interface {
 	FindByProductID(ctx context.Context, productID string) (*models.PlanFeatures, error)
 	Upsert(ctx context.Context, pf *models.PlanFeatures) (*models.PlanFeatures, error)
 	// InsertIfMissing inserts a row only when no row exists for that product yet.
 	// Used during startup sync so manually configured limits are never overwritten.
 	InsertIfMissing(ctx context.Context, pf *models.PlanFeatures) error
-	List(ctx context.Context) ([]*models.PlanFeatures, error)
+	List(ctx context.Context, filter *PlanFeaturesFilter) ([]*models.PlanFeatures, error)
+	CountPlanFeatures(ctx context.Context, filter *PlanFeaturesFilter) (int64, error)
 	WithTx(db database.Dbx) *DbPlanFeaturesStore
 }
 
@@ -50,8 +57,27 @@ func (s *DbPlanFeaturesStore) InsertIfMissing(ctx context.Context, pf *models.Pl
 	return err
 }
 
-func (s *DbPlanFeaturesStore) List(ctx context.Context) ([]*models.PlanFeatures, error) {
-	return repository.PlanFeatures.Get(ctx, s.db, nil, nil, nil, nil)
+func (s *DbPlanFeaturesStore) List(ctx context.Context, filter *PlanFeaturesFilter) ([]*models.PlanFeatures, error) {
+	q := squirrel.Select("billing.plan_features.*").From("billing.plan_features")
+	if filter != nil {
+		q = queryPagination(q, filter)
+		if filter.SortBy != "" && filter.SortOrder != "" {
+			q = q.OrderBy("billing.plan_features." + filter.SortBy + " " + strings.ToUpper(filter.SortOrder))
+		}
+	}
+	return database.QueryWithBuilder[*models.PlanFeatures](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+}
+
+func (s *DbPlanFeaturesStore) CountPlanFeatures(ctx context.Context, _ *PlanFeaturesFilter) (int64, error) {
+	q := squirrel.Select("COUNT(billing.plan_features.*)").From("billing.plan_features")
+	data, err := database.QueryWithBuilder[database.CountOutput](ctx, s.db, q.PlaceholderFormat(squirrel.Dollar))
+	if err != nil {
+		return 0, err
+	}
+	if len(data) == 0 {
+		return 0, nil
+	}
+	return data[0].Count, nil
 }
 
 func (s *DbPlanFeaturesStore) Upsert(ctx context.Context, pf *models.PlanFeatures) (*models.PlanFeatures, error) {

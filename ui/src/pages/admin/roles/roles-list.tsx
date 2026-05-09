@@ -15,6 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { ConfirmDialog, useDialog } from "@/hooks/use-dialog";
 import { deleteRole, rolesPaginate } from "@/lib/api";
@@ -31,6 +32,7 @@ export default function RolesListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const pageIndex = parseInt(searchParams.get("page") || "0", 10);
   const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
+  const q = searchParams.get("q") || "";
   const queryClient = useQueryClient();
   const onPaginationChange = (updater: Updater<PaginationState>) => {
     const newState =
@@ -41,12 +43,13 @@ export default function RolesListPage() {
       setSearchParams({
         page: String(newState.pageIndex),
         per_page: String(newState.pageSize),
+        q,
       });
     }
   };
 
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["roles-list"],
+    queryKey: ["roles-list", pageIndex, pageSize, q],
     queryFn: async () => {
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token or role ID");
@@ -54,6 +57,7 @@ export default function RolesListPage() {
       const data = await rolesPaginate(user.tokens.access_token, {
         page: pageIndex,
         per_page: pageSize,
+        q: q || undefined,
       });
       if (!data.data) {
         throw new Error("No data returned from rolesPaginate");
@@ -96,6 +100,14 @@ export default function RolesListPage() {
         </p>
         <CreateRoleDialog />
       </div>
+      <Input
+        placeholder="Search roles..."
+        value={q}
+        onChange={(e) =>
+          setSearchParams({ page: "0", per_page: String(pageSize), q: e.target.value })
+        }
+        className="max-w-sm"
+      />
       <DataTable
         columns={[
           {
