@@ -182,7 +182,9 @@ func TestPlanFeaturesStore_List(t *testing.T) {
 			}
 		}
 
-		rows, err := adapter.PlanFeatures().List(ctx)
+		rows, err := adapter.PlanFeatures().List(ctx, &stores.PlanFeaturesFilter{
+			PaginatedInput: stores.PaginatedInput{Page: 0, PerPage: 100},
+		})
 		if err != nil {
 			t.Fatalf("List() error = %v", err)
 		}

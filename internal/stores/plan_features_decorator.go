@@ -8,11 +8,12 @@ import (
 )
 
 type PlanFeaturesStoreDecorator struct {
-	Delegate              *DbPlanFeaturesStore
-	FindByProductIDFunc   func(ctx context.Context, productID string) (*models.PlanFeatures, error)
-	UpsertFunc            func(ctx context.Context, pf *models.PlanFeatures) (*models.PlanFeatures, error)
-	InsertIfMissingFunc   func(ctx context.Context, pf *models.PlanFeatures) error
-	ListFunc              func(ctx context.Context) ([]*models.PlanFeatures, error)
+	Delegate                *DbPlanFeaturesStore
+	FindByProductIDFunc     func(ctx context.Context, productID string) (*models.PlanFeatures, error)
+	UpsertFunc              func(ctx context.Context, pf *models.PlanFeatures) (*models.PlanFeatures, error)
+	InsertIfMissingFunc     func(ctx context.Context, pf *models.PlanFeatures) error
+	ListFunc                func(ctx context.Context, filter *PlanFeaturesFilter) ([]*models.PlanFeatures, error)
+	CountPlanFeaturesFunc   func(ctx context.Context, filter *PlanFeaturesFilter) (int64, error)
 }
 
 var _ PlanFeaturesStoreInterface = (*PlanFeaturesStoreDecorator)(nil)
@@ -30,6 +31,7 @@ func (s *PlanFeaturesStoreDecorator) Cleanup() {
 	s.UpsertFunc = nil
 	s.InsertIfMissingFunc = nil
 	s.ListFunc = nil
+	s.CountPlanFeaturesFunc = nil
 }
 
 func (s *PlanFeaturesStoreDecorator) FindByProductID(ctx context.Context, productID string) (*models.PlanFeatures, error) {
@@ -53,9 +55,16 @@ func (s *PlanFeaturesStoreDecorator) InsertIfMissing(ctx context.Context, pf *mo
 	return s.Delegate.InsertIfMissing(ctx, pf)
 }
 
-func (s *PlanFeaturesStoreDecorator) List(ctx context.Context) ([]*models.PlanFeatures, error) {
+func (s *PlanFeaturesStoreDecorator) List(ctx context.Context, filter *PlanFeaturesFilter) ([]*models.PlanFeatures, error) {
 	if s.ListFunc != nil {
-		return s.ListFunc(ctx)
+		return s.ListFunc(ctx, filter)
 	}
-	return s.Delegate.List(ctx)
+	return s.Delegate.List(ctx, filter)
+}
+
+func (s *PlanFeaturesStoreDecorator) CountPlanFeatures(ctx context.Context, filter *PlanFeaturesFilter) (int64, error) {
+	if s.CountPlanFeaturesFunc != nil {
+		return s.CountPlanFeaturesFunc(ctx, filter)
+	}
+	return s.Delegate.CountPlanFeatures(ctx, filter)
 }

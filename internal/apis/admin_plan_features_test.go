@@ -49,11 +49,11 @@ func TestApi_AdminPlanFeaturesList(t *testing.T) {
 				Headers:        []string{header},
 				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
 				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
-					var body []*apis.PlanFeature
+					var body apis.ApiPaginatedResponse[*apis.PlanFeature]
 					if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
 						t.Fatalf("decode error: %v", err)
 					}
-					if len(body) == 0 {
+					if len(body.Data) == 0 {
 						t.Error("expected at least one plan feature row")
 					}
 				},

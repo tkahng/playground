@@ -142,7 +142,8 @@ func (api *Api) CencelInvitation(ctx context.Context, input *CancelInvitationInp
 type FindInvitationsInput struct {
 	PaginatedInput
 	SortParams
-	TeamID string `path:"team-id" required:"true" format:"uuid"`
+	TeamID   string                 `path:"team-id" required:"true" format:"uuid"`
+	Statuses []TeamInvitationStatus `query:"statuses,omitempty" required:"false" minimum:"1" maximum:"10" enum:"pending,accepted,declined,cancelled"`
 }
 type TeamInvitationStatus string
 
@@ -203,6 +204,9 @@ func (api *Api) FindInvitations(ctx context.Context, input *FindInvitationsInput
 	filter.SortBy = input.SortBy
 	filter.SortOrder = input.SortOrder
 	filter.TeamIds = []uuid.UUID{parsedTeamId}
+	filter.Statuses = mapper.Map(input.Statuses, func(s TeamInvitationStatus) models.TeamInvitationStatus {
+		return models.TeamInvitationStatus(s)
+	})
 	invitations, err := api.App().Adapter().TeamInvitation().FindTeamInvitations(
 		ctx,
 		filter,
@@ -268,6 +272,7 @@ func (api *Api) LoadTeamInvitationRelations(ctx context.Context, invitations []*
 type FindUserTeamInvitationsInput struct {
 	PaginatedInput
 	SortParams
+	Statuses []TeamInvitationStatus `query:"statuses,omitempty" required:"false" minimum:"1" maximum:"10" enum:"pending,accepted,declined,cancelled"`
 }
 
 func (api *Api) GetUserTeamInvitations(ctx context.Context, input *FindUserTeamInvitationsInput) (*ApiPaginatedOutput[*TeamInvitation], error) {
@@ -282,6 +287,9 @@ func (api *Api) GetUserTeamInvitations(ctx context.Context, input *FindUserTeamI
 	filter.SortBy = input.SortBy
 	filter.SortOrder = input.SortOrder
 	filter.Emails = []string{userInfo.User.Email}
+	filter.Statuses = mapper.Map(input.Statuses, func(s TeamInvitationStatus) models.TeamInvitationStatus {
+		return models.TeamInvitationStatus(s)
+	})
 	invitations, err := api.App().Adapter().TeamInvitation().FindTeamInvitations(
 		ctx,
 		filter,
