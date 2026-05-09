@@ -62,7 +62,7 @@ export function ProductPermissionsDialog({
         product_id: productId,
         product_reverse: true,
         page: 0,
-        per_page: 50,
+        per_page: 100,
       });
       return data;
     },

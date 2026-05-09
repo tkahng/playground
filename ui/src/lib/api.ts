@@ -367,7 +367,7 @@ export const getUserRoles = async (token: string, id: string) => {
     params: {
       query: {
         page: 0,
-        perPage: 50,
+        per_page: 100,
         user_id: id,
       },
     },
@@ -412,7 +412,7 @@ export const getUserPermissions = async (
         },
         query: {
           page: 0,
-          per_page: 50,
+          per_page: 100,
           reverse,
         },
       },
@@ -420,7 +420,7 @@ export const getUserPermissions = async (
         Authorization: `Bearer ${token}`,
       },
     }
-  ); // TODO: add pagination
+  );
   if (error) {
     throw ApiError.fromErrorModel(error);
   }

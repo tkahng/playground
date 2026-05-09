@@ -49,7 +49,7 @@ export function CreateRolePermissionDialog({ roleId }: { roleId: string }) {
       }
       const data = await permissionsPaginate(user.tokens.access_token, {
         page: 0,
-        per_page: 50,
+        per_page: 100,
         role_id: roleId,
         role_reverse: true,
       });
