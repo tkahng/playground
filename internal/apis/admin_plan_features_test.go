@@ -236,3 +236,94 @@ func TestApi_AdminPlanFeaturesUpsert(t *testing.T) {
 		}
 	})
 }
+
+func TestApi_AdminPlanFeaturesListPaginationMeta(t *testing.T) {
+	test.SkipIfShort(t)
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		adminUser := core.CreateUserWithOptions(
+			t,
+			testApi.App,
+			core.UserWithEmail("admin-meta@k2dv.io"),
+			core.UserWithPermission(shared.PermissionNameAdmin),
+		)
+		header := core.CreateTokenHeader(t, testApi.App, adminUser.User.Email)
+
+		products := []string{"prod_meta_1", "prod_meta_2", "prod_meta_3"}
+		for _, id := range products {
+			p := &models.StripeProduct{ID: id, Active: true, Name: id, Metadata: map[string]string{}}
+			if err := testApi.App.Adapter().Product().UpsertProduct(ctx, p); err != nil {
+				t.Fatalf("UpsertProduct(%s) error = %v", id, err)
+			}
+			if _, err := testApi.App.Adapter().PlanFeatures().Upsert(ctx, &models.PlanFeatures{
+				StripeProductID: id,
+				DailyAiTokens:   10_000,
+			}); err != nil {
+				t.Fatalf("PlanFeatures.Upsert(%s) error = %v", id, err)
+			}
+		}
+
+		tests := []apis.ApiScenario{
+			{
+				Name:           "meta.total reflects seeded rows",
+				Method:         http.MethodGet,
+				URL:            "/admin/plan-features",
+				ExpectedStatus: http.StatusOK,
+				Headers:        []string{header},
+				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+					var body apis.ApiPaginatedResponse[*apis.PlanFeature]
+					if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+						t.Fatalf("decode error: %v", err)
+					}
+					if body.Meta.Total < int64(len(products)) {
+						t.Errorf("meta.total = %d, want at least %d", body.Meta.Total, len(products))
+					}
+				},
+			},
+			{
+				Name:           "per_page=1 returns one row with correct meta",
+				Method:         http.MethodGet,
+				URL:            "/admin/plan-features?page=0&per_page=1",
+				ExpectedStatus: http.StatusOK,
+				Headers:        []string{header},
+				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+					var body apis.ApiPaginatedResponse[*apis.PlanFeature]
+					if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+						t.Fatalf("decode error: %v", err)
+					}
+					if len(body.Data) != 1 {
+						t.Errorf("data len = %d, want 1", len(body.Data))
+					}
+					if body.Meta.PerPage != 1 {
+						t.Errorf("meta.per_page = %d, want 1", body.Meta.PerPage)
+					}
+					if body.Meta.Total < int64(len(products)) {
+						t.Errorf("meta.total = %d, want at least %d", body.Meta.Total, len(products))
+					}
+				},
+			},
+			{
+				Name:           fmt.Sprintf("per_page=%d returns all seeded rows", len(products)),
+				Method:         http.MethodGet,
+				URL:            fmt.Sprintf("/admin/plan-features?page=0&per_page=%d", len(products)),
+				ExpectedStatus: http.StatusOK,
+				Headers:        []string{header},
+				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+					var body apis.ApiPaginatedResponse[*apis.PlanFeature]
+					if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+						t.Fatalf("decode error: %v", err)
+					}
+					if len(body.Data) < len(products) {
+						t.Errorf("data len = %d, want at least %d", len(body.Data), len(products))
+					}
+				},
+			},
+		}
+		for _, tt := range tests {
+			tt.Test(t)
+		}
+	})
+}
