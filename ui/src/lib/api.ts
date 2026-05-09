@@ -436,7 +436,7 @@ export const getUserPermissions2 = async (token: string, userId: string) => {
         },
         query: {
           page: 0,
-          per_page: 50,
+          per_page: 100,
           reverse: true,
         },
       },
@@ -444,7 +444,7 @@ export const getUserPermissions2 = async (token: string, userId: string) => {
         Authorization: `Bearer ${token}`,
       },
     }
-  ); // TODO: add pagination
+  );
   if (error) {
     throw ApiError.fromErrorModel(error);
   }
@@ -1206,7 +1206,7 @@ export const permissionsList = async () => {
     params: {
       query: {
         page: 0,
-        perPage: 50,
+        per_page: 100,
       },
     },
   });
@@ -1239,9 +1239,13 @@ export const teamAiUsageStatus = async (token: string, teamId: string) => {
   return data;
 };
 
-export const adminPlanFeaturesList = async (token: string) => {
+export const adminPlanFeaturesList = async (
+  token: string,
+  params: operations["admin-plan-features-list"]["parameters"]["query"] = {}
+) => {
   const { data, error } = await client.GET("/api/admin/plan-features", {
     headers: { Authorization: `Bearer ${token}` },
+    params: { query: params },
   });
   if (error) throw ApiError.fromErrorModel(error);
   return data;
