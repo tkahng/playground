@@ -66,6 +66,11 @@ func TestPoller_Run(t *testing.T) {
 		if !testJobs.Worker.Success {
 			t.Errorf("Poller.Run() job success = %v", testJobs.Worker.Success)
 		}
+		// Remove committed jobs immediately so parallel package tests cannot
+		// claim them via PollOnce before the outer t.Cleanup runs.
+		if _, err := repository.Job.Delete(ctx, dbx, &map[string]any{}); err != nil {
+			t.Errorf("subtest job cleanup error: %v", err)
+		}
 		// Cancel poller context
 		close(done)
 		cancel()
