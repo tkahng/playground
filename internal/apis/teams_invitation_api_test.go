@@ -785,10 +785,11 @@ func TestApi_FindInvitations(t *testing.T) {
 			},
 		},
 		{
-			Name:           "unauthorized: no auth header returns 401",
-			Method:         http.MethodGet,
-			URL:            "/teams/{team-id}/invitations",
-			ExpectedStatus: http.StatusUnauthorized,
+			Name:            "unauthorized: no auth header returns 401",
+			Method:          http.MethodGet,
+			URL:             "/teams/{team-id}/invitations",
+			ExpectedStatus:  http.StatusUnauthorized,
+			ExpectedContent: []string{"Unauthorized"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				core.CreateProductsAndPrices(t, app)
 				teamInfo := CreateTeamAndOwner(t, app)
