@@ -111,10 +111,11 @@ func TestApi_TaskOwnership(t *testing.T) {
 			},
 		},
 		{
-			Name:           "non-owner GET is still allowed",
-			Method:         http.MethodGet,
-			URL:            "/tasks/{task-id}",
-			ExpectedStatus: http.StatusOK,
+			Name:            "non-owner GET is still allowed",
+			Method:          http.MethodGet,
+			URL:             "/tasks/{task-id}",
+			ExpectedStatus:  http.StatusOK,
+			ExpectedContent: []string{`"status"`},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, sc *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)

@@ -161,7 +161,7 @@ func CheckTaskOwnerMiddleware(app core.App) HTTPMiddlewareFunc {
 				return
 			}
 
-			if task.CreatedByMemberID == nil || *task.CreatedByMemberID != teamInfo.Member.ID {
+			if task.CreatedByMemberID != nil && *task.CreatedByMemberID != teamInfo.Member.ID {
 				if slices.Contains(userInfo.Permissions, "superuser") {
 					next.ServeHTTP(w, r)
 					return

@@ -43,8 +43,8 @@ func TestApi_IssueSSETicket(t *testing.T) {
 			Name:            "unauthenticated request is rejected",
 			Method:          http.MethodPost,
 			URL:             "/team-members/{team-member-id}/sse/ticket",
-			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"team info not found"},
+			ExpectedStatus:  http.StatusUnauthorized,
+			ExpectedContent: []string{"you are not authenticated"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, sc *apis.ApiScenario) {
 				team := CreateTeamAndOwner(t, app)
 				sc.URL = fmt.Sprintf("/team-members/%s/sse/ticket", team.Member.ID)
@@ -55,8 +55,8 @@ func TestApi_IssueSSETicket(t *testing.T) {
 			Name:            "cross-member ticket request is rejected",
 			Method:          http.MethodPost,
 			URL:             "/team-members/{team-member-id}/sse/ticket",
-			ExpectedStatus:  http.StatusUnauthorized,
-			ExpectedContent: []string{"unauthorized"},
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"team info not found"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, sc *apis.ApiScenario) {
 				team1 := CreateTeamAndOwner(t, app)
 				team2 := CreateTeamAndOwner(t, app)

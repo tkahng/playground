@@ -18,7 +18,6 @@ func bindTeamsApi(appApi *Api) {
 			middleware.TeamFromParam(app),
 			middleware.TeamFromParamSlug(app),
 			middleware.TeamMemberFromParam(app),
-			middleware.SseTicketAuth(app),
 			middleware.TeamInfoFromContext(app),
 		)...,
 	)
