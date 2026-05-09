@@ -365,6 +365,18 @@ func bindAdminApi(appApi *Api) {
 	// admin permissions delete
 	huma.Register(adminGroup, huma.Operation{OperationID: "admin-permissions-delete", Method: http.MethodDelete, Path: "/permissions/{id}", Summary: "Delete permission", Description: "Delete permission", Tags: []string{"Admin", "Permissions"}, Errors: []int{http.StatusNotFound}, Security: []map[string][]string{{shared.BearerAuthSecurityKey: {}}}}, appApi.AdminPermissionsDelete)
 
+	// admin stripe sync products and prices
+	huma.Register(adminGroup, huma.Operation{
+		OperationID: "admin-stripe-sync",
+		Method:      http.MethodPost,
+		Path:        "/stripe/sync",
+		Summary:     "Sync Stripe products and prices",
+		Description: "Pulls all products and prices from Stripe and upserts them into the local database. Safe to run multiple times.",
+		Tags:        []string{"Admin", "Product", "Stripe"},
+		Errors:      []int{http.StatusInternalServerError},
+		Security:    []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
+	}, appApi.AdminStripeSyncProductsAndPrices)
+
 	// admin stripe subscriptions
 	huma.Register(adminGroup, huma.Operation{OperationID: "admin-stripe-subscriptions", Method: http.MethodGet, Path: "/subscriptions", Summary: "Admin stripe subscriptions", Description: "List of stripe subscriptions", Tags: []string{"Admin", "Subscription", "Stripe"}, Errors: []int{http.StatusNotFound}, Security: []map[string][]string{{shared.BearerAuthSecurityKey: {}}}}, appApi.AdminStripeSubscriptions)
 	// admin stripe subscriptions get
