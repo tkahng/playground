@@ -68,6 +68,9 @@ export const getTeamTeamMembers = async ({
   perPage = 10,
   search,
   active = true,
+  sortBy,
+  sortOrder,
+  roles,
 }: {
   token: string;
   teamId: string;
@@ -75,6 +78,9 @@ export const getTeamTeamMembers = async ({
   perPage?: number;
   search?: string;
   active?: boolean;
+  sortBy?: string;
+  sortOrder?: "asc" | "desc";
+  roles?: ("owner" | "member" | "guest")[];
 }) => {
   const { data, error } = await client.GET("/api/teams/{team-id}/members", {
     headers: {
@@ -87,8 +93,11 @@ export const getTeamTeamMembers = async ({
       query: {
         page,
         per_page: perPage,
-        q: search,
+        q: search || undefined,
         active,
+        sort_by: sortBy,
+        sort_order: sortOrder,
+        roles: roles && roles.length > 0 ? roles : undefined,
       },
     },
   });
