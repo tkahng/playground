@@ -13,6 +13,7 @@ import { ClassValue } from "clsx";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { CreateGameDialog } from "./create-game-dialog";
+import { ChallengeHouseDialog } from "./challenge-house-dialog";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { RouteMap } from "@/components/route-map";
 import { PlayerInteractionDialog } from "@/components/player-interaction-dialog";
@@ -137,9 +138,12 @@ export default function RockPaperScissors() {
             </Link>
           ))}
       </div>
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <p>Start a new Game with a friend</p>
-        <CreateGameDialog />
+        <div className="flex items-center gap-2">
+          <ChallengeHouseDialog />
+          <CreateGameDialog />
+        </div>
       </div>
       <DataTable
         columns={[

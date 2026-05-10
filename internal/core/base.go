@@ -320,8 +320,17 @@ func (app *BaseApp) syncPlanFeatures(ctx context.Context) {
 	app.Logger().InfoContext(ctx, "plan features sync complete")
 }
 
+func (app *BaseApp) seedHousePlayer(ctx context.Context) {
+	if err := services.SeedHousePlayer(ctx, app.Adapter()); err != nil {
+		app.Logger().ErrorContext(ctx, "house player seed failed", slog.Any("error", err))
+		return
+	}
+	app.Logger().InfoContext(ctx, "house player ready")
+}
+
 func (app *BaseApp) RunBackgroundProcesses(ctx context.Context) {
 	app.syncPlanFeatures(ctx)
+	app.seedHousePlayer(ctx)
 
 	run := func(name string, fn func()) {
 		app.bgWg.Add(1)

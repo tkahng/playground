@@ -200,6 +200,13 @@ func TestSyncPlanFeatures_SeedsFreeRow(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 
+		// Remove any free row committed by server startup (e.g. seedHousePlayer or
+		// syncPlanFeatures called outside a transaction). Deletion is rolled back at
+		// the end of the test so it doesn't affect other tests.
+		if _, err := db.Exec(ctx, "DELETE FROM billing.plan_features WHERE stripe_product_id = $1", services.FreeTierProductID); err != nil {
+			t.Fatalf("cleanup free row: %v", err)
+		}
+
 		// No "free" row before sync.
 		before, err := adapter.PlanFeatures().FindByProductID(ctx, services.FreeTierProductID)
 		if err != nil {

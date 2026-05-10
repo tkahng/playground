@@ -2,6 +2,9 @@ import { client } from "@/lib/client";
 import { ApiError } from "@/lib/error";
 import { components, operations } from "@/schema";
 
+
+export type ChallengeHouseResult = components["schemas"]["ChallengeHouseResponse"];
+
 export class RpsGameQueries {
   async PutUserPlayer({
     token,
@@ -229,6 +232,28 @@ export class RpsGameQueries {
       throw ApiError.fromErrorModel(error);
     }
     return data;
+  }
+
+  async challengeHouse({
+    token,
+    move,
+    betAmount,
+  }: {
+    token: string;
+    move: "rock" | "paper" | "scissors";
+    betAmount?: number;
+  }): Promise<ChallengeHouseResult> {
+    const { data, error } = await client.POST("/api/games/rps/house", {
+      headers: { Authorization: `Bearer ${token}` },
+      body: {
+        move,
+        ...(betAmount !== undefined ? { bet_amount: betAmount } : {}),
+      },
+    });
+    if (error) {
+      throw ApiError.fromErrorModel(error);
+    }
+    return data.data;
   }
 }
 

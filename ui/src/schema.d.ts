@@ -41,6 +41,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/admin/house/enabled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Enable or disable the house player
+         * @description Sets the house player's enabled flag. When disabled, POST /games/rps/house returns 403.
+         */
+        put: operations["admin-house-toggle"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/admin/house/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * House player stats
+         * @description Total games, win/lose/tie counts, and bet amounts for the house player.
+         */
+        get: operations["admin-house-stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/admin/jobs": {
         parameters: {
             query?: never;
@@ -901,6 +941,26 @@ export interface paths {
          * @description Verify
          */
         post: operations["verify-post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/rps/house": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * challenge the house
+         * @description Play RPS against the house bot. Result is immediate. Cooldown applies between games.
+         */
+        post: operations["challenge-house"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2651,6 +2711,15 @@ export interface components {
             data: components["schemas"]["UserAccountOutput"][] | null;
             meta: components["schemas"]["Meta"];
         };
+        ApiSingleResponseChallengeHouseResponse: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiSingleResponseChallengeHouseResponse.json
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["ChallengeHouseResponse"];
+        };
         ApiSingleResponseFriendship: {
             /**
              * Format: uri
@@ -2659,6 +2728,15 @@ export interface components {
              */
             readonly $schema?: string;
             data: components["schemas"]["Friendship"];
+        };
+        ApiSingleResponseHouseStatsResponse: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiSingleResponseHouseStatsResponse.json
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["HouseStatsResponse"];
         };
         ApiSingleResponsePlayer: {
             /**
@@ -2726,6 +2804,29 @@ export interface components {
             readonly $schema?: string;
             /** Format: uuid */
             player_id: string;
+        };
+        ChallengeHouseInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ChallengeHouseInput.json
+             */
+            readonly $schema?: string;
+            /**
+             * Format: int64
+             * @description Optional points wager (max 500).
+             */
+            bet_amount?: number;
+            /** @enum {string} */
+            move: "rock" | "paper" | "scissors";
+        };
+        ChallengeHouseResponse: {
+            /** Format: date-time */
+            cooldown_ends_at: string;
+            house_message?: string;
+            invited_participant: components["schemas"]["RpsParticipant"];
+            requesting_participant: components["schemas"]["RpsParticipant"];
+            rps_game: components["schemas"]["RpsGame"];
         };
         "Check-password-resetRequest": {
             /**
@@ -2919,6 +3020,30 @@ export interface components {
             latitude: number;
             /** Format: double */
             longitude: number;
+        };
+        HouseStatsResponse: {
+            /** Format: int64 */
+            betted_games: number;
+            enabled: boolean;
+            /** Format: int64 */
+            house_wins: number;
+            /** Format: int64 */
+            ties: number;
+            /** Format: int64 */
+            total_bet_amount: number;
+            /** Format: int64 */
+            total_games: number;
+            /** Format: int64 */
+            user_wins: number;
+        };
+        HouseToggleInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/HouseToggleInput.json
+             */
+            readonly $schema?: string;
+            enabled: boolean;
         };
         IndexOutputBody: {
             /**
@@ -4186,6 +4311,95 @@ export interface operations {
             };
             /** @description Error */
             default: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-house-toggle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseToggleInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponseHouseStatsResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "admin-house-stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponseHouseStatsResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -7133,6 +7347,84 @@ export interface operations {
             };
             /** @description Unprocessable Entity */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "challenge-house": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChallengeHouseInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponseChallengeHouseResponse"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

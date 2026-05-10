@@ -118,7 +118,8 @@ func (a *Assembler) setBasicServices(app *BaseApp) {
 	dbx := app.Db()
 	app.ledger = services.NewDbLedgerService(adapter)
 	app.betting = services.NewDbBettingService(adapter, app.ledger)
-	app.rpsGame = services.NewDbRpsGameService(adapter, app.betting)
+	app.rpsGame = services.NewDbRpsGameService(adapter, app.betting).
+		WithHouseThinkDelay(2 * time.Second)
 	app.hash = services.NewHashService()
 	app.encrypt = services.NewCrypto(cfg.EncryptionKey)
 	app.jwt = services.NewJwtService()
