@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"context"
 	"log/slog"
 	"net/http"
 
@@ -49,12 +48,9 @@ func SetCurrentPlayerMiddleware(app core.App) func(next http.Handler) http.Handl
 			}
 			newCtx := contextstore.SetContextCurrentPlayer(ctx, player)
 			r = r.WithContext(newCtx)
-			go func() {
-				bgCtx := context.Background()
-				if err := app.Adapter().Gaming().UpdatePlayerLastSeen(bgCtx, player.ID); err != nil {
-					slog.Warn("update player last_seen_at failed", "player_id", player.ID, "error", err)
-				}
-			}()
+			if err := app.Adapter().Gaming().UpdatePlayerLastSeen(ctx, player.ID); err != nil {
+				slog.Warn("update player last_seen_at failed", "player_id", player.ID, "error", err)
+			}
 			next.ServeHTTP(w, r)
 		})
 	}
