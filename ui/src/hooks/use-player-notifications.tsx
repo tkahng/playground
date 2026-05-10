@@ -2,7 +2,10 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { usePlayer } from "@/hooks/use-current-player";
 import { friendsQueries } from "@/lib/friends-queries";
 import { useQueryClient } from "@tanstack/react-query";
-import { useEventSource } from "@react-nano/use-event-source";
+import {
+  useEventSource,
+  useEventSourceListener,
+} from "@react-nano/use-event-source";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export function usePlayerNotifications() {
@@ -10,8 +13,6 @@ export function usePlayerNotifications() {
   const { player } = usePlayer();
   const queryClient = useQueryClient();
 
-  // Track the token+playerId combination we've already issued a ticket for
-  // so that object-reference churn on `player` doesn't re-issue tickets.
   const issuedForRef = useRef<string | null>(null);
   const [sseUrl, setSseUrl] = useState<string | null>(null);
 
@@ -22,7 +23,7 @@ export function usePlayerNotifications() {
     if (!token || !playerId) return;
 
     const key = `${token}:${playerId}`;
-    if (issuedForRef.current === key) return; // already connected for this identity
+    if (issuedForRef.current === key) return;
 
     let cancelled = false;
     issuedForRef.current = key;
@@ -35,7 +36,6 @@ export function usePlayerNotifications() {
         }
       })
       .catch(() => {
-        // Reset so the next mount can retry
         issuedForRef.current = null;
       });
 
@@ -44,9 +44,40 @@ export function usePlayerNotifications() {
     };
   }, [token, playerId]);
 
+  // useEventSource requires a string; pass empty string when not yet connected
+  // so the hook is always called unconditionally (React rules).
+  const [eventSource] = useEventSource(sseUrl ?? "", false);
+
+  // Only attach listeners when we have a real URL (and thus a real connection).
+  const activeSource = sseUrl ? eventSource : null;
+
   const onFriendRequest = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: [{ key: "friend-requests" }] });
   }, [queryClient]);
 
-  useEventSource(sseUrl, "friend_request", onFriendRequest);
+  const onRpsGameEvent = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: [{ key: "rps-games" }] });
+    queryClient.invalidateQueries({ queryKey: [{ key: "find-rps-game" }] });
+  }, [queryClient]);
+
+  useEventSourceListener(
+    activeSource,
+    ["friend_request"],
+    onFriendRequest,
+    [onFriendRequest]
+  );
+
+  useEventSourceListener(
+    activeSource,
+    [
+      "rps_game_challenged",
+      "rps_game_completed",
+      "rps_rematch_requested",
+      "rps_rematch_accepted",
+      "rps_rematch_declined",
+      "rps_rematch_expired",
+    ],
+    onRpsGameEvent,
+    [onRpsGameEvent]
+  );
 }
