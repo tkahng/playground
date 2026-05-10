@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
@@ -30,7 +31,8 @@ type FriendshipFilter struct {
 	RequestingPlayerIds          []uuid.UUID               `query:"requesting_player_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	InvitedPlayerIds             []uuid.UUID               `query:"invited_player_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	RequestingOrInvitedPlayerIds []uuid.UUID               `query:"requesting_or_invited_player_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
-	Statuses                     []models.FriendshipStatus `query:"statuses,omitempty" required:"false" minimum:"1" maximum:"100" enum:"pending,accepted,declined"`
+	Statuses                     []models.FriendshipStatus `query:"statuses,omitempty" required:"false" minimum:"1" maximum:"100" enum:"pending,accepted,declined,blocked"`
+	CreatedAfter                 *time.Time                `query:"-"`
 }
 
 func (s *DBGamingStore) friendshipFilterSelect(sq squirrel.SelectBuilder, filter *FriendshipFilter) squirrel.SelectBuilder {
@@ -56,6 +58,9 @@ func (s *DBGamingStore) friendshipFilterSelect(sq squirrel.SelectBuilder, filter
 				squirrel.Eq{"gaming.friendships.invited_player_id": filter.RequestingOrInvitedPlayerIds},
 			},
 		)
+	}
+	if filter.CreatedAfter != nil {
+		sq = sq.Where(squirrel.GtOrEq{"gaming.friendships.created_at": *filter.CreatedAfter})
 	}
 
 	return sq

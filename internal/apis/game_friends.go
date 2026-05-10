@@ -141,10 +141,12 @@ func bindListFriendRequestsApi(api huma.API, app core.App) {
 			if currentPlayer == nil {
 				return nil, huma.Error401Unauthorized("no player found")
 			}
+			cutoff := time.Now().UTC().AddDate(0, 0, -30)
 			filter := &stores.FriendshipFilter{
 				PaginatedInput:               repository.PaginatedInput{Page: input.Page, PerPage: input.PerPage},
 				RequestingOrInvitedPlayerIds: []uuid.UUID{currentPlayer.ID},
 				Statuses:                     []models.FriendshipStatus{models.FriendshipStatusPending},
+				CreatedAfter:                 &cutoff,
 			}
 			friendships, err := app.Adapter().Gaming().FindFriendships(ctx, filter)
 			if err != nil {
