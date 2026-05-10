@@ -12,6 +12,8 @@ type Player struct {
 	Email                 string        `db:"email" json:"email"`
 	DisplayName           *string       `db:"display_name" json:"display_name,omitempty" required:"false"`
 	UserID                *uuid.UUID    `db:"user_id" json:"user_id,omitempty" required:"false"`
+	IsHouse               bool          `db:"is_house" json:"is_house" default:"false"`
+	LastHouseGameAt       *time.Time    `db:"last_house_game_at" json:"last_house_game_at,omitempty" required:"false"`
 	Metadata              []byte        `db:"metadata" json:"metadata"`
 	CreatedAt             time.Time     `db:"created_at" json:"created_at"`
 	UpdatedAt             time.Time     `db:"updated_at" json:"updated_at"`
