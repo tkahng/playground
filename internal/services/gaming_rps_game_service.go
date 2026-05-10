@@ -87,9 +87,31 @@ type RpsGameRequestInput struct {
 	HostUserID *uuid.UUID
 }
 
+func (d *DbRpsGameService) playerHasActiveGame(ctx context.Context, playerID uuid.UUID) (bool, error) {
+	count, err := d.adapter.Gaming().CountRpsGames(ctx, &stores.RpsGameFilter{
+		ParticipantIds: []uuid.UUID{playerID},
+		Statuses:       []models.RpsGameStatus{models.RpsGameStatusPending},
+	})
+	if err != nil {
+		return false, fmt.Errorf("check active game for player %s: %w", playerID, err)
+	}
+	return count > 0, nil
+}
+
 func (d *DbRpsGameService) RequestGame(ctx context.Context, input *RpsGameRequestInput) (*RpsGameWithParticipants, error) {
 	if input.RequestingPlayerID == input.InvitedPlayerID {
 		return nil, errors.New("cannot challenge yourself")
+	}
+	// Enforce one active game per player.
+	if active, err := d.playerHasActiveGame(ctx, input.RequestingPlayerID); err != nil {
+		return nil, err
+	} else if active {
+		return nil, apierrors.Conflict("you already have an active game in progress")
+	}
+	if active, err := d.playerHasActiveGame(ctx, input.InvitedPlayerID); err != nil {
+		return nil, err
+	} else if active {
+		return nil, apierrors.Conflict("invited player already has an active game in progress")
 	}
 	// Validate betting prerequisites.
 	if input.BetAmount != nil {
