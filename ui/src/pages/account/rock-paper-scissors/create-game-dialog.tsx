@@ -27,13 +27,19 @@ export type MoveProps = {
   move: Move;
 };
 
-export function CreateGameDialog() {
+export function CreateGameDialog({
+  initialPlayer,
+  trigger,
+}: {
+  initialPlayer?: Player | null;
+  trigger?: React.ReactNode;
+}) {
   const { user } = useAuthProvider();
   const queryClient = useQueryClient();
   const { props: dialogProps } = useDialog();
-  const [player, setPlayer] = useState<Player | null>(null);
+  const [player, setPlayer] = useState<Player | null>(initialPlayer ?? null);
 
-  const [searched, setSearched] = useState(false);
+  const [searched, setSearched] = useState(!!initialPlayer);
   const [emailRequest, setEmailRequest] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const [betEnabled, setBetEnabled] = useState(false);
@@ -143,14 +149,14 @@ export function CreateGameDialog() {
   return (
     <Dialog {...dialogProps}>
       <DialogTrigger asChild>
-        <Button>Play a game with a friend</Button>
+        {trigger ?? <Button>Play a game with a friend</Button>}
       </DialogTrigger>
 
       <DialogContent
         onCloseAutoFocus={() => {
-          setPlayer(null);
+          if (!initialPlayer) setPlayer(null);
           setEmailRequest(false);
-          setSearched(false);
+          if (!initialPlayer) setSearched(false);
           setBetEnabled(false);
           setBetAmount(undefined);
           searchForm.reset();

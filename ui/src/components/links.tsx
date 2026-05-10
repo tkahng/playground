@@ -37,6 +37,11 @@ export const RouteLinks = {
     current: (pathname: string) =>
       pathname === RouteMap.ACCOUNT_ROCK_PAPER_SCISSORS,
   },
+  ACCOUNT_FRIENDS: {
+    to: RouteMap.ACCOUNT_FRIENDS,
+    title: "Friends",
+    current: (pathname: string) => pathname === RouteMap.ACCOUNT_FRIENDS,
+  },
   ROCK_PAPER_SCISSORS: {
     to: RouteMap.ROCK_PAPER_SCISSORS,
     title: "Rock Paper Scissors",
@@ -187,6 +192,7 @@ export const userDashboardLinks: LinkDto[] = [
   RouteLinks.ACCOUNT_DASHBOARD,
   RouteLinks.ACCOUNT_TEAMS,
   RouteLinks.ACCOUNT_ROCK_PAPER_SCISSORS,
+  RouteLinks.ACCOUNT_FRIENDS,
   RouteLinks.SETTINGS,
 ];
 

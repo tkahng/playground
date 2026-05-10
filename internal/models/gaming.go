@@ -20,13 +20,14 @@ type Player struct {
 	InvitedFriendships    []*Frindship `db:"invited_friendships" src:"id" dest:"invited_player_id" table:"gaming.friendships" json:"invited_friendships,omitempty"`
 }
 
-// enum:"pending,accepted,declined"
+// enum:"pending,accepted,declined,blocked"
 type FriendshipStatus string
 
 const (
 	FriendshipStatusPending  FriendshipStatus = "pending"
 	FriendshipStatusAccepted FriendshipStatus = "accepted"
 	FriendshipStatusDeclined FriendshipStatus = "declined"
+	FriendshipStatusBlocked  FriendshipStatus = "blocked"
 )
 
 type Frindship struct {

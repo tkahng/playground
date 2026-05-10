@@ -208,6 +208,27 @@ func TestDBGamingStore_CreateUpdateFindCount(t *testing.T) {
 		if totalFriendShipCount != 45 {
 			t.Errorf("CountFriendships() = %v, want %v", totalFriendShipCount, 0)
 		}
+		// verify blocked status can be persisted
+		blockedFriendship, err := gamingStore.CreateFriendship(ctx, &models.Frindship{
+			RequestingPlayerID: players[0].ID,
+			InvitedPlayerID:    players[1].ID,
+			Status:             models.FriendshipStatusBlocked,
+		})
+		if err != nil {
+			t.Fatalf("CreateFriendship(blocked) error = %v", err)
+		}
+		if blockedFriendship.Status != models.FriendshipStatusBlocked {
+			t.Errorf("CreateFriendship(blocked) status = %v, want %v", blockedFriendship.Status, models.FriendshipStatusBlocked)
+		}
+		blockedCount, err := gamingStore.CountFriendships(ctx, &FriendshipFilter{
+			Statuses: []models.FriendshipStatus{models.FriendshipStatusBlocked},
+		})
+		if err != nil {
+			t.Fatalf("CountFriendships(blocked) error = %v", err)
+		}
+		if blockedCount != 1 {
+			t.Errorf("CountFriendships(blocked) = %v, want 1", blockedCount)
+		}
 		// delete
 		toDeleteIds := []uuid.UUID{}
 		for _, f := range accepted {
