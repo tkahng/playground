@@ -23,6 +23,7 @@ type DbGamingStoreDecorator struct {
 	FindPlayersFunc           func(ctx context.Context, filter *PlayersFilter) ([]*models.Player, error)
 	UpdateFriendshipFunc      func(ctx context.Context, player *models.Friendship) (*models.Friendship, error)
 	UpdatePlayerFunc          func(ctx context.Context, player *models.Player) (*models.Player, error)
+	UpdatePlayerLastSeenFunc  func(ctx context.Context, playerID uuid.UUID) error
 	CreateRpsGameFunc              func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
 	UpdateRpsGameFunc              func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
 	FindRpsGameFunc                func(ctx context.Context, filter *RpsGameFilter) (*models.RpsGame, error)
@@ -42,6 +43,11 @@ type DbGamingStoreDecorator struct {
 	UpdateRpsGameInviteFunc   func(ctx context.Context, player *models.RpsGameInvite) (*models.RpsGameInvite, error)
 	FindRpsGameInviteFunc     func(ctx context.Context, filter *RpsGameInviteFilter) (*models.RpsGameInvite, error)
 	FindRpsGameInvitesFunc    func(ctx context.Context, filter *RpsGameInviteFilter) ([]*models.RpsGameInvite, error)
+
+	CreateRpsRematchRequestFunc      func(ctx context.Context, req *models.RpsRematchRequest) (*models.RpsRematchRequest, error)
+	FindRpsRematchRequestFunc        func(ctx context.Context, filter *RpsRematchFilter) (*models.RpsRematchRequest, error)
+	UpdateRpsRematchRequestFunc      func(ctx context.Context, req *models.RpsRematchRequest) (*models.RpsRematchRequest, error)
+	FindExpiredPendingRpsRematchesFunc func(ctx context.Context) ([]*models.RpsRematchRequest, error)
 
 	WithTxFunc func(db database.Dbx) *DBGamingStore
 }
@@ -376,6 +382,17 @@ func (s *DbGamingStoreDecorator) UpdatePlayer(ctx context.Context, player *model
 	return s.Delegate.UpdatePlayer(ctx, player)
 }
 
+// UpdatePlayerLastSeen implements [GamingStore].
+func (s *DbGamingStoreDecorator) UpdatePlayerLastSeen(ctx context.Context, playerID uuid.UUID) error {
+	if s.UpdatePlayerLastSeenFunc != nil {
+		return s.UpdatePlayerLastSeenFunc(ctx, playerID)
+	}
+	if s.Delegate == nil {
+		return fmt.Errorf("Gaming store decorator UpdatePlayerLastSeen %w", ErrDelegateNil)
+	}
+	return s.Delegate.UpdatePlayerLastSeen(ctx, playerID)
+}
+
 // WithTx implements [GamingStore].
 func (s *DbGamingStoreDecorator) WithTx(db database.Dbx) *DBGamingStore {
 	if s.WithTxFunc != nil {
@@ -417,6 +434,46 @@ func (s *DbGamingStoreDecorator) FindExpiredPendingBetGames(ctx context.Context)
 		return nil, fmt.Errorf("Gaming store decorator FindExpiredPendingBetGames %w", ErrDelegateNil)
 	}
 	return s.Delegate.FindExpiredPendingBetGames(ctx)
+}
+
+func (s *DbGamingStoreDecorator) CreateRpsRematchRequest(ctx context.Context, req *models.RpsRematchRequest) (*models.RpsRematchRequest, error) {
+	if s.CreateRpsRematchRequestFunc != nil {
+		return s.CreateRpsRematchRequestFunc(ctx, req)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator CreateRpsRematchRequest %w", ErrDelegateNil)
+	}
+	return s.Delegate.CreateRpsRematchRequest(ctx, req)
+}
+
+func (s *DbGamingStoreDecorator) FindRpsRematchRequest(ctx context.Context, filter *RpsRematchFilter) (*models.RpsRematchRequest, error) {
+	if s.FindRpsRematchRequestFunc != nil {
+		return s.FindRpsRematchRequestFunc(ctx, filter)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator FindRpsRematchRequest %w", ErrDelegateNil)
+	}
+	return s.Delegate.FindRpsRematchRequest(ctx, filter)
+}
+
+func (s *DbGamingStoreDecorator) UpdateRpsRematchRequest(ctx context.Context, req *models.RpsRematchRequest) (*models.RpsRematchRequest, error) {
+	if s.UpdateRpsRematchRequestFunc != nil {
+		return s.UpdateRpsRematchRequestFunc(ctx, req)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator UpdateRpsRematchRequest %w", ErrDelegateNil)
+	}
+	return s.Delegate.UpdateRpsRematchRequest(ctx, req)
+}
+
+func (s *DbGamingStoreDecorator) FindExpiredPendingRpsRematches(ctx context.Context) ([]*models.RpsRematchRequest, error) {
+	if s.FindExpiredPendingRpsRematchesFunc != nil {
+		return s.FindExpiredPendingRpsRematchesFunc(ctx)
+	}
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator FindExpiredPendingRpsRematches %w", ErrDelegateNil)
+	}
+	return s.Delegate.FindExpiredPendingRpsRematches(ctx)
 }
 
 var _ GamingStore = (*DbGamingStoreDecorator)(nil)

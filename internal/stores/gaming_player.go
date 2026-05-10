@@ -35,6 +35,7 @@ type GamingPlayerStore interface {
 	GetHouseGameAggregates(ctx context.Context, housePlayerID uuid.UUID) (*HouseGameAggregates, error)
 	CreatePlayer(ctx context.Context, player *models.Player) (*models.Player, error)
 	UpdatePlayer(ctx context.Context, player *models.Player) (*models.Player, error)
+	UpdatePlayerLastSeen(ctx context.Context, playerID uuid.UUID) error
 	DeletePlayers(ctx context.Context, filter *PlayersFilter) (int64, error)
 	CountPlayers(ctx context.Context, filter *PlayersFilter) (int64, error)
 }
@@ -240,6 +241,12 @@ func (s *DBGamingStore) CreatePlayer(ctx context.Context, player *models.Player)
 
 func (s *DBGamingStore) UpdatePlayer(ctx context.Context, player *models.Player) (*models.Player, error) {
 	return repository.Player.PutOne(ctx, s.db, player)
+}
+
+func (s *DBGamingStore) UpdatePlayerLastSeen(ctx context.Context, playerID uuid.UUID) error {
+	const q = `UPDATE gaming.players SET last_seen_at = clock_timestamp(), updated_at = clock_timestamp() WHERE id = $1`
+	_, err := database.Exec(ctx, s.db, q, playerID)
+	return err
 }
 
 func (s *DBGamingStore) DeletePlayers(ctx context.Context, filter *PlayersFilter) (int64, error) {

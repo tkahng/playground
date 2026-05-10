@@ -18,9 +18,10 @@ func (j RpsGameExpiryJobArgs) Kind() string {
 	return RpsGameExpirySweepKind
 }
 
-// RpsGameExpiryServiceInterface is the subset of RpsGameService needed by the expiry worker.
+// RpsGameExpiryServiceInterface is the subset of RpsGameService needed by the expiry workers.
 type RpsGameExpiryServiceInterface interface {
 	ExpireGamesAndRefundBets(ctx context.Context) (int, error)
+	ExpireRematches(ctx context.Context) (int, error)
 }
 
 type RpsGameExpiryWorker struct {

@@ -95,6 +95,9 @@ var (
 	RpsGameInviteBuilder = NewSQLBuilder[models.RpsGameInvite](
 		UuidV7Generator,
 	)
+	RpsRematchRequestBuilder = NewSQLBuilder[models.RpsRematchRequest](
+		UuidV7Generator,
+	)
 	PopulatedPlaceBuilder = NewSQLBuilder[models.PopulatedPlace]()
 
 	LedgerAccountBuilder  = NewSQLBuilder[models.LedgerAccount](UuidV7Generator)
@@ -131,7 +134,8 @@ var (
 	Friendship          Repository[models.Friendship]          = NewPostgresRepository(FriendshipBuilder)
 	RpsGame            Repository[models.RpsGame]            = NewPostgresRepository(RpsGameBuilder)
 	RpsParticipant     Repository[models.RpsParticipant]     = NewPostgresRepository(RpsParticipantBuilder)
-	RpsGameInvite      Repository[models.RpsGameInvite]      = NewPostgresRepository(RpsGameInviteBuilder)
+	RpsGameInvite        Repository[models.RpsGameInvite]        = NewPostgresRepository(RpsGameInviteBuilder)
+	RpsRematchRequest    Repository[models.RpsRematchRequest]    = NewPostgresRepository(RpsRematchRequestBuilder)
 	PopulatedPlace     Repository[models.PopulatedPlace]     = NewPostgresRepository(PopulatedPlaceBuilder)
 
 	LedgerAccount  Repository[models.LedgerAccount]  = NewPostgresRepository(LedgerAccountBuilder)

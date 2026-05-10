@@ -27,6 +27,10 @@ func (m *mockRpsGameService) ExpireGamesAndRefundBets(_ context.Context) (int, e
 	return m.processed, m.err
 }
 
+func (m *mockRpsGameService) ExpireRematches(_ context.Context) (int, error) {
+	return 0, nil
+}
+
 type mockEnqueuer struct {
 	enqueued []*jobs.EnqueueParams
 	err      error
