@@ -217,6 +217,45 @@ func ToApiRpsParticipant(participant *models.RpsParticipant) *RpsParticipant {
 	}
 }
 
+// enum:"pending,accepted,declined,blocked"
+type FriendshipStatus string
+
+const (
+	FriendshipStatusPending  FriendshipStatus = "pending"
+	FriendshipStatusAccepted FriendshipStatus = "accepted"
+	FriendshipStatusDeclined FriendshipStatus = "declined"
+	FriendshipStatusBlocked  FriendshipStatus = "blocked"
+)
+
+type Friendship struct {
+	ID                 uuid.UUID        `json:"id"`
+	RequestingPlayerID uuid.UUID        `json:"requesting_player_id"`
+	InvitedPlayerID    uuid.UUID        `json:"invited_player_id"`
+	Status             FriendshipStatus `json:"status" enum:"pending,accepted,declined,blocked"`
+	RespondedAt        *time.Time       `json:"responded_at,omitempty"`
+	CreatedAt          time.Time        `json:"created_at"`
+	UpdatedAt          time.Time        `json:"updated_at"`
+	RequestingPlayer   *Player          `json:"requesting_player,omitempty"`
+	InvitedPlayer      *Player          `json:"invited_player,omitempty"`
+}
+
+func ToApiFriendship(f *models.Friendship) *Friendship {
+	if f == nil {
+		return nil
+	}
+	return &Friendship{
+		ID:                 f.ID,
+		RequestingPlayerID: f.RequestingPlayerID,
+		InvitedPlayerID:    f.InvitedPlayerID,
+		Status:             FriendshipStatus(f.Status),
+		RespondedAt:        f.RespondedAt,
+		CreatedAt:          f.CreatedAt,
+		UpdatedAt:          f.UpdatedAt,
+		RequestingPlayer:   ToApiPlayer(f.RequestingPlayer),
+		InvitedPlayer:      ToApiPlayer(f.InvitedPlayer),
+	}
+}
+
 type RpsGameInvite struct {
 	_                  struct{}  `db:"rps_game_invites" schema:"gaming" json:"-"`
 	ID                 uuid.UUID `db:"id,pk" json:"id"`

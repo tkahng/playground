@@ -44,4 +44,6 @@ export const RouteMap = {
 
   TEAM_LIST: "/teams",
   TEAM_LIST_SLUG: "/teams/:teamSlug",
+
+  ACCOUNT_FRIENDS: "/account/friends",
 };

@@ -1,6 +1,7 @@
 import { useSearchParams } from "@/hooks/use-search-params";
 import { DataTable } from "@/components/data-table";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { usePlayer } from "@/hooks/use-current-player";
 import { rpsGameQueries } from "@/lib/rps-game-queries";
 import { useQuery } from "@tanstack/react-query";
 import { PaginationState, Updater } from "@tanstack/react-table";
@@ -14,9 +15,11 @@ import { Badge } from "@/components/ui/badge";
 import { CreateGameDialog } from "./create-game-dialog";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { RouteMap } from "@/components/route-map";
+import { PlayerInteractionDialog } from "@/components/player-interaction-dialog";
 
 export default function RockPaperScissors() {
   const userInfo = useAuthProvider();
+  const { player: currentPlayer } = usePlayer();
   const [searchParams, setSearchParams] = useSearchParams();
   const gameId = searchParams.get("game_id");
 
@@ -166,7 +169,16 @@ export default function RockPaperScissors() {
           {
             header: "Opponent",
             cell: ({ row }) => {
-              return row.original.opponent?.player?.email || "";
+              const opponentPlayer = row.original.opponent?.player;
+              if (!opponentPlayer) return "";
+              return (
+                <PlayerInteractionDialog
+                  player={opponentPlayer}
+                  currentPlayerId={currentPlayer?.id}
+                >
+                  {opponentPlayer.display_name || opponentPlayer.email}
+                </PlayerInteractionDialog>
+              );
             },
           },
           {

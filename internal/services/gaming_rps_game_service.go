@@ -53,23 +53,17 @@ func (d *DbRpsGameService) FindPlayerByParams(ctx context.Context, params *Playe
 	})
 }
 
-// PlayerCanPlayWithPlayer implements [RpsGameService].
+// PlayerCanPlayWithPlayer returns false when either player has blocked the other.
 func (d *DbRpsGameService) PlayerCanPlayWithPlayer(ctx context.Context, requestingPlayerID uuid.UUID, invitedPlayerID uuid.UUID) (bool, error) {
-	friendship, err := d.adapter.Gaming().FindFriendship(ctx, &stores.FriendshipFilter{
-		RequestingPlayerIds: []uuid.UUID{requestingPlayerID},
-		InvitedPlayerIds:    []uuid.UUID{invitedPlayerID},
+	pair := [2]uuid.UUID{requestingPlayerID, invitedPlayerID}
+	f, err := d.adapter.Gaming().FindFriendship(ctx, &stores.FriendshipFilter{
+		PlayerPair: &pair,
+		Statuses:   []models.FriendshipStatus{models.FriendshipStatusBlocked},
 	})
 	if err != nil {
 		return false, err
 	}
-	if friendship != nil {
-		if friendship.Status == models.FriendshipStatusDeclined {
-			return false, nil
-		}
-		return true, nil
-	}
-
-	return true, nil
+	return f == nil, nil
 }
 
 var _ RpsGameService = (*DbRpsGameService)(nil)

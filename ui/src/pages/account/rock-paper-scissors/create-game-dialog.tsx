@@ -6,7 +6,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { Switch } from "@/components/ui/switch";
 import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { usePlayer } from "@/hooks/use-current-player";
 import { useDialog } from "@/hooks/use-dialog";
+import { friendsQueries, Friendship } from "@/lib/friends-queries";
 import { rpsGameQueries } from "@/lib/rps-game-queries";
 import { Player } from "@/schema.types";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,13 +29,69 @@ export type MoveProps = {
   move: Move;
 };
 
-export function CreateGameDialog() {
+function FriendsQuickPick({
+  token,
+  currentPlayerId,
+  onSelect,
+}: {
+  token?: string;
+  currentPlayerId?: string;
+  onSelect: (player: Player) => void;
+}) {
+  const { data, isLoading } = useQuery({
+    queryKey: [{ key: "friends" }],
+    enabled: !!token,
+    queryFn: () => friendsQueries.listFriends({ token: token! }),
+  });
+
+  const friends = data?.data ?? [];
+  if (isLoading || friends.length === 0) return null;
+
+  const friendPlayers = friends
+    .map((f: Friendship) => {
+      if (f.requesting_player_id === currentPlayerId) return f.invited_player;
+      return f.requesting_player;
+    })
+    .filter(Boolean) as Player[];
+
+  if (friendPlayers.length === 0) return null;
+
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1.5">
+        Challenge a friend
+      </p>
+      <div className="flex flex-col gap-1 max-h-32 overflow-y-auto">
+        {friendPlayers.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            className="text-left text-sm px-2 py-1.5 rounded hover:bg-accent transition-colors"
+            onClick={() => onSelect(p)}
+          >
+            {p.display_name || p.email}
+          </button>
+        ))}
+      </div>
+      <hr className="mt-3" />
+    </div>
+  );
+}
+
+export function CreateGameDialog({
+  initialPlayer,
+  trigger,
+}: {
+  initialPlayer?: Player | null;
+  trigger?: React.ReactNode;
+}) {
   const { user } = useAuthProvider();
+  const { player: currentPlayer } = usePlayer();
   const queryClient = useQueryClient();
   const { props: dialogProps } = useDialog();
-  const [player, setPlayer] = useState<Player | null>(null);
+  const [player, setPlayer] = useState<Player | null>(initialPlayer ?? null);
 
-  const [searched, setSearched] = useState(false);
+  const [searched, setSearched] = useState(!!initialPlayer);
   const [emailRequest, setEmailRequest] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
   const [betEnabled, setBetEnabled] = useState(false);
@@ -143,20 +201,29 @@ export function CreateGameDialog() {
   return (
     <Dialog {...dialogProps}>
       <DialogTrigger asChild>
-        <Button>Play a game with a friend</Button>
+        {trigger ?? <Button>Play a game with a friend</Button>}
       </DialogTrigger>
 
       <DialogContent
         onCloseAutoFocus={() => {
-          setPlayer(null);
+          if (!initialPlayer) setPlayer(null);
           setEmailRequest(false);
-          setSearched(false);
+          if (!initialPlayer) setSearched(false);
           setBetEnabled(false);
           setBetAmount(undefined);
           searchForm.reset();
         }}
       >
         <div className="space-y-4">
+          {/* friends quick-pick */}
+          {!searched && !emailRequest && !initialPlayer && (
+            <FriendsQuickPick
+              token={user?.tokens.access_token}
+              currentPlayerId={currentPlayer?.id}
+              onSelect={(p) => { setPlayer(p as unknown as Player); setSearched(true); }}
+            />
+          )}
+
           {/* search input */}
 
           {!searched && !emailRequest && (

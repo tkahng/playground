@@ -13,15 +13,15 @@ type DbGamingStoreDecorator struct {
 	Delegate                  *DBGamingStore
 	CountFriendshipsFunc      func(ctx context.Context, filter *FriendshipFilter) (int64, error)
 	CountPlayersFunc          func(ctx context.Context, filter *PlayersFilter) (int64, error)
-	CreateFriendshipFunc      func(ctx context.Context, friendship *models.Frindship) (*models.Frindship, error)
+	CreateFriendshipFunc      func(ctx context.Context, friendship *models.Friendship) (*models.Friendship, error)
 	CreatePlayerFunc          func(ctx context.Context, player *models.Player) (*models.Player, error)
 	DeleteFriendshipsFunc     func(ctx context.Context, filter *FriendshipFilter) (int64, error)
 	DeletePlayersFunc         func(ctx context.Context, filter *PlayersFilter) (int64, error)
-	FindFriendshipFunc        func(ctx context.Context, filter *FriendshipFilter) (*models.Frindship, error)
-	FindFriendshipsFunc       func(ctx context.Context, filter *FriendshipFilter) ([]*models.Frindship, error)
+	FindFriendshipFunc        func(ctx context.Context, filter *FriendshipFilter) (*models.Friendship, error)
+	FindFriendshipsFunc       func(ctx context.Context, filter *FriendshipFilter) ([]*models.Friendship, error)
 	FindPlayerFunc            func(ctx context.Context, filter *PlayersFilter) (*models.Player, error)
 	FindPlayersFunc           func(ctx context.Context, filter *PlayersFilter) ([]*models.Player, error)
-	UpdateFriendshipFunc      func(ctx context.Context, player *models.Frindship) (*models.Frindship, error)
+	UpdateFriendshipFunc      func(ctx context.Context, player *models.Friendship) (*models.Friendship, error)
 	UpdatePlayerFunc          func(ctx context.Context, player *models.Player) (*models.Player, error)
 	CreateRpsGameFunc              func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
 	UpdateRpsGameFunc              func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
@@ -244,7 +244,7 @@ func (s *DbGamingStoreDecorator) CountPlayers(ctx context.Context, filter *Playe
 }
 
 // CreateFriendship implements [GamingStore].
-func (s *DbGamingStoreDecorator) CreateFriendship(ctx context.Context, friendship *models.Frindship) (*models.Frindship, error) {
+func (s *DbGamingStoreDecorator) CreateFriendship(ctx context.Context, friendship *models.Friendship) (*models.Friendship, error) {
 	if s.CreateFriendshipFunc != nil {
 		return s.CreateFriendshipFunc(ctx, friendship)
 	}
@@ -295,7 +295,7 @@ func NewDbGamingStoreDecorator(db database.Dbx) *DbGamingStoreDecorator {
 }
 
 // FindFriendship implements [GamingStore].
-func (s *DbGamingStoreDecorator) FindFriendship(ctx context.Context, filter *FriendshipFilter) (*models.Frindship, error) {
+func (s *DbGamingStoreDecorator) FindFriendship(ctx context.Context, filter *FriendshipFilter) (*models.Friendship, error) {
 	if s.FindFriendshipFunc != nil {
 		return s.FindFriendshipFunc(ctx, filter)
 	}
@@ -306,7 +306,7 @@ func (s *DbGamingStoreDecorator) FindFriendship(ctx context.Context, filter *Fri
 }
 
 // FindFriendships implements [GamingStore].
-func (s *DbGamingStoreDecorator) FindFriendships(ctx context.Context, filter *FriendshipFilter) ([]*models.Frindship, error) {
+func (s *DbGamingStoreDecorator) FindFriendships(ctx context.Context, filter *FriendshipFilter) ([]*models.Friendship, error) {
 	if s.FindFriendshipsFunc != nil {
 		return s.FindFriendshipsFunc(ctx, filter)
 	}
@@ -339,7 +339,7 @@ func (s *DbGamingStoreDecorator) FindPlayers(ctx context.Context, filter *Player
 }
 
 // UpdateFriendship implements [GamingStore].
-func (s *DbGamingStoreDecorator) UpdateFriendship(ctx context.Context, player *models.Frindship) (*models.Frindship, error) {
+func (s *DbGamingStoreDecorator) UpdateFriendship(ctx context.Context, player *models.Friendship) (*models.Friendship, error) {
 	if s.UpdateFriendshipFunc != nil {
 		return s.UpdateFriendshipFunc(ctx, player)
 	}
