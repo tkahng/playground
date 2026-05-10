@@ -33,5 +33,7 @@ type GamingStore interface {
 	RpsParticipantStore
 	// invites
 	RpsGameInviteStore
+	// rematches
+	RpsRematchStore
 	WithTx(db database.Dbx) *DBGamingStore
 }

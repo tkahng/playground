@@ -54,6 +54,11 @@ type RpsGameService interface {
 	// ExpireGamesAndRefundBets finds all pending bet games whose expiry has passed,
 	// marks each cancelled, and voids the host's pending escrow transfer.
 	ExpireGamesAndRefundBets(ctx context.Context) (int, error)
+	// rematch
+	RequestRematch(ctx context.Context, input *RematchRequestInput) (*models.RpsRematchRequest, error)
+	AcceptRematch(ctx context.Context, rematchID uuid.UUID, invitedPlayerID uuid.UUID) (*models.RpsRematchRequest, error)
+	DeclineRematch(ctx context.Context, rematchID uuid.UUID, invitedPlayerID uuid.UUID) (*models.RpsRematchRequest, error)
+	ExpireRematches(ctx context.Context) (int, error)
 }
 
 type DbRpsGameService struct {

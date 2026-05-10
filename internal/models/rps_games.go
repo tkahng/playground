@@ -6,6 +6,33 @@ import (
 	"github.com/google/uuid"
 )
 
+// enum:"pending,accepted,declined,expired"
+type RpsRematchStatus string
+
+const (
+	RpsRematchStatusPending  RpsRematchStatus = "pending"
+	RpsRematchStatusAccepted RpsRematchStatus = "accepted"
+	RpsRematchStatusDeclined RpsRematchStatus = "declined"
+	RpsRematchStatusExpired  RpsRematchStatus = "expired"
+)
+
+type RpsRematchRequest struct {
+	_                   struct{}         `db:"rps_rematch_requests" schema:"gaming" json:"-"`
+	ID                  uuid.UUID        `db:"id,pk" json:"id"`
+	OriginalGameID      uuid.UUID        `db:"original_game_id" json:"original_game_id"`
+	RequestingPlayerID  uuid.UUID        `db:"requesting_player_id" json:"requesting_player_id"`
+	InvitedPlayerID     uuid.UUID        `db:"invited_player_id" json:"invited_player_id"`
+	Status              RpsRematchStatus `db:"status" json:"status" default:"pending" enum:"pending,accepted,declined,expired"`
+	NewGameID           *uuid.UUID       `db:"new_game_id" json:"new_game_id,omitempty"`
+	ExpiresAt           time.Time        `db:"expires_at" json:"expires_at"`
+	Metadata            []byte           `db:"metadata" json:"metadata"`
+	CreatedAt           time.Time        `db:"created_at" json:"created_at"`
+	UpdatedAt           time.Time        `db:"updated_at" json:"updated_at"`
+	RequestingPlayer    *Player          `db:"requesting_player" src:"requesting_player_id" dest:"id" table:"gaming.players" json:"requesting_player,omitempty"`
+	InvitedPlayer       *Player          `db:"invited_player" src:"invited_player_id" dest:"id" table:"gaming.players" json:"invited_player,omitempty"`
+	OriginalGame        *RpsGame         `db:"original_game" src:"original_game_id" dest:"id" table:"gaming.rps_games" json:"original_game,omitempty"`
+}
+
 // enum:"pending,cancelled,completed"
 type RpsGameStatus string
 
