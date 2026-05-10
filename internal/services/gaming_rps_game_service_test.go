@@ -793,6 +793,9 @@ func TestDbRpsGameService_RequestGame_BlockedWhenRequesterHasActiveGame(t *testi
 		if err == nil {
 			t.Fatal("expected error when requester already has active game, got nil")
 		}
+		if err.Error() != "you already have an active game in progress" {
+			t.Errorf("unexpected error message: %q", err.Error())
+		}
 	})
 }
 
@@ -823,6 +826,169 @@ func TestDbRpsGameService_RequestGame_BlockedWhenInvitedHasActiveGame(t *testing
 		})
 		if err == nil {
 			t.Fatal("expected error when invited player already has active game, got nil")
+		}
+		if err.Error() != "invited player already has an active game in progress" {
+			t.Errorf("unexpected error message: %q", err.Error())
+		}
+	})
+}
+
+func TestDbRpsGameService_RequestGame_AllowedAfterRequesterGameCompleted(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		rpsService := NewDbRpsGameService(adapter, NewDbBettingService(adapter, NewDbLedgerService(adapter)))
+
+		p1 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("reqcomp_p1@example.com"))
+		p2 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("reqcomp_p2@example.com"))
+		p3 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("reqcomp_p3@example.com"))
+
+		first, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   p1.ID,
+			InvitedPlayerID:      p2.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      3600,
+		})
+		if err != nil {
+			t.Fatalf("first RequestGame() error = %v", err)
+		}
+		_, err = rpsService.RespondToGameRequest(ctx, &GameRequestResponse{
+			InvitedPlayerID: p2.ID,
+			GameID:          first.RpsGame.ID,
+			Status:          models.RpsGameStatusCompleted,
+			Move:            models.RpsParticipantMoveRock,
+		})
+		if err != nil {
+			t.Fatalf("RespondToGameRequest() error = %v", err)
+		}
+
+		_, err = rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   p1.ID,
+			InvitedPlayerID:      p3.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      3600,
+		})
+		if err != nil {
+			t.Fatalf("second RequestGame() after completion should succeed, got error: %v", err)
+		}
+	})
+}
+
+func TestDbRpsGameService_RequestGame_AllowedAfterRequesterGameCancelled(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		rpsService := NewDbRpsGameService(adapter, NewDbBettingService(adapter, NewDbLedgerService(adapter)))
+
+		p1 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("reqcanc_p1@example.com"))
+		p2 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("reqcanc_p2@example.com"))
+		p3 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("reqcanc_p3@example.com"))
+
+		first, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   p1.ID,
+			InvitedPlayerID:      p2.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      3600,
+		})
+		if err != nil {
+			t.Fatalf("first RequestGame() error = %v", err)
+		}
+		_, err = rpsService.RespondToGameRequest(ctx, &GameRequestResponse{
+			InvitedPlayerID: p2.ID,
+			GameID:          first.RpsGame.ID,
+			Status:          models.RpsGameStatusCancelled,
+		})
+		if err != nil {
+			t.Fatalf("RespondToGameRequest(cancel) error = %v", err)
+		}
+
+		_, err = rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   p1.ID,
+			InvitedPlayerID:      p3.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      3600,
+		})
+		if err != nil {
+			t.Fatalf("second RequestGame() after cancellation should succeed, got error: %v", err)
+		}
+	})
+}
+
+func TestDbRpsGameService_RequestGame_AllowedAfterInvitedGameCompleted(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		rpsService := NewDbRpsGameService(adapter, NewDbBettingService(adapter, NewDbLedgerService(adapter)))
+
+		p1 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("invcomp_p1@example.com"))
+		p2 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("invcomp_p2@example.com"))
+		p3 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("invcomp_p3@example.com"))
+
+		first, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   p1.ID,
+			InvitedPlayerID:      p2.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      3600,
+		})
+		if err != nil {
+			t.Fatalf("first RequestGame() error = %v", err)
+		}
+		_, err = rpsService.RespondToGameRequest(ctx, &GameRequestResponse{
+			InvitedPlayerID: p2.ID,
+			GameID:          first.RpsGame.ID,
+			Status:          models.RpsGameStatusCompleted,
+			Move:            models.RpsParticipantMoveScissors,
+		})
+		if err != nil {
+			t.Fatalf("RespondToGameRequest() error = %v", err)
+		}
+
+		// p2 was the invited player — should now be free to join a new game
+		_, err = rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   p3.ID,
+			InvitedPlayerID:      p2.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      3600,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame() inviting p2 after completion should succeed, got error: %v", err)
+		}
+	})
+}
+
+func TestDbRpsGameService_RequestGame_AllowedAfterInvitedGameCancelled(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		rpsService := NewDbRpsGameService(adapter, NewDbBettingService(adapter, NewDbLedgerService(adapter)))
+
+		p1 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("invcanc_p1@example.com"))
+		p2 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("invcanc_p2@example.com"))
+		p3 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("invcanc_p3@example.com"))
+
+		first, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   p1.ID,
+			InvitedPlayerID:      p2.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      3600,
+		})
+		if err != nil {
+			t.Fatalf("first RequestGame() error = %v", err)
+		}
+		_, err = rpsService.RespondToGameRequest(ctx, &GameRequestResponse{
+			InvitedPlayerID: p2.ID,
+			GameID:          first.RpsGame.ID,
+			Status:          models.RpsGameStatusCancelled,
+		})
+		if err != nil {
+			t.Fatalf("RespondToGameRequest(cancel) error = %v", err)
+		}
+
+		// p2 was the invited player — should now be free to join a new game
+		_, err = rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   p3.ID,
+			InvitedPlayerID:      p2.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      3600,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame() inviting p2 after cancellation should succeed, got error: %v", err)
 		}
 	})
 }
