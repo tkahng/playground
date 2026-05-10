@@ -48,6 +48,7 @@ import { Route as AuthenticatedProtectedProtectedLayoutPermissionRouteImport } f
 import { Route as AuthenticatedAccountAccountLayoutTeamsInvitationsRouteImport } from './routes/_authenticated/account/_accountLayout/teams-invitations'
 import { Route as AuthenticatedAccountAccountLayoutTeamsRouteImport } from './routes/_authenticated/account/_accountLayout/teams'
 import { Route as AuthenticatedAccountAccountLayoutRockPaperScissorsRouteImport } from './routes/_authenticated/account/_accountLayout/rock-paper-scissors'
+import { Route as AuthenticatedAccountAccountLayoutFriendsRouteImport } from './routes/_authenticated/account/_accountLayout/friends'
 import { Route as AuthenticatedAccountAccountLayoutDashboardRouteImport } from './routes/_authenticated/account/_accountLayout/dashboard'
 import { Route as AuthenticatedAdminAdminLayoutUsersIndexRouteImport } from './routes/_authenticated/admin/_adminLayout/users/index'
 import { Route as AuthenticatedAdminAdminLayoutSubscriptionsIndexRouteImport } from './routes/_authenticated/admin/_adminLayout/subscriptions/index'
@@ -279,6 +280,12 @@ const AuthenticatedAccountAccountLayoutRockPaperScissorsRoute =
     path: '/rock-paper-scissors',
     getParentRoute: () => AuthenticatedAccountAccountLayoutRoute,
   } as any)
+const AuthenticatedAccountAccountLayoutFriendsRoute =
+  AuthenticatedAccountAccountLayoutFriendsRouteImport.update({
+    id: '/friends',
+    path: '/friends',
+    getParentRoute: () => AuthenticatedAccountAccountLayoutRoute,
+  } as any)
 const AuthenticatedAccountAccountLayoutDashboardRoute =
   AuthenticatedAccountAccountLayoutDashboardRouteImport.update({
     id: '/dashboard',
@@ -459,6 +466,7 @@ export interface FileRoutesByFullPath {
   '/payment/success': typeof AuthenticatedPaymentSuccessRoute
   '/teams/': typeof AuthenticatedTeamsIndexRoute
   '/account/dashboard': typeof AuthenticatedAccountAccountLayoutDashboardRoute
+  '/account/friends': typeof AuthenticatedAccountAccountLayoutFriendsRoute
   '/account/rock-paper-scissors': typeof AuthenticatedAccountAccountLayoutRockPaperScissorsRoute
   '/account/teams': typeof AuthenticatedAccountAccountLayoutTeamsRoute
   '/account/teams-invitations': typeof AuthenticatedAccountAccountLayoutTeamsInvitationsRoute
@@ -518,6 +526,7 @@ export interface FileRoutesByTo {
   '/payment/success': typeof AuthenticatedPaymentSuccessRoute
   '/teams': typeof AuthenticatedTeamsIndexRoute
   '/account/dashboard': typeof AuthenticatedAccountAccountLayoutDashboardRoute
+  '/account/friends': typeof AuthenticatedAccountAccountLayoutFriendsRoute
   '/account/rock-paper-scissors': typeof AuthenticatedAccountAccountLayoutRockPaperScissorsRoute
   '/account/teams': typeof AuthenticatedAccountAccountLayoutTeamsRoute
   '/account/teams-invitations': typeof AuthenticatedAccountAccountLayoutTeamsInvitationsRoute
@@ -583,6 +592,7 @@ export interface FileRoutesById {
   '/_authenticated/protected/_protectedLayout': typeof AuthenticatedProtectedProtectedLayoutRouteWithChildren
   '/_authenticated/teams/': typeof AuthenticatedTeamsIndexRoute
   '/_authenticated/account/_accountLayout/dashboard': typeof AuthenticatedAccountAccountLayoutDashboardRoute
+  '/_authenticated/account/_accountLayout/friends': typeof AuthenticatedAccountAccountLayoutFriendsRoute
   '/_authenticated/account/_accountLayout/rock-paper-scissors': typeof AuthenticatedAccountAccountLayoutRockPaperScissorsRoute
   '/_authenticated/account/_accountLayout/teams': typeof AuthenticatedAccountAccountLayoutTeamsRoute
   '/_authenticated/account/_accountLayout/teams-invitations': typeof AuthenticatedAccountAccountLayoutTeamsInvitationsRoute
@@ -645,6 +655,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/teams/'
     | '/account/dashboard'
+    | '/account/friends'
     | '/account/rock-paper-scissors'
     | '/account/teams'
     | '/account/teams-invitations'
@@ -704,6 +715,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/teams'
     | '/account/dashboard'
+    | '/account/friends'
     | '/account/rock-paper-scissors'
     | '/account/teams'
     | '/account/teams-invitations'
@@ -768,6 +780,7 @@ export interface FileRouteTypes {
     | '/_authenticated/protected/_protectedLayout'
     | '/_authenticated/teams/'
     | '/_authenticated/account/_accountLayout/dashboard'
+    | '/_authenticated/account/_accountLayout/friends'
     | '/_authenticated/account/_accountLayout/rock-paper-scissors'
     | '/_authenticated/account/_accountLayout/teams'
     | '/_authenticated/account/_accountLayout/teams-invitations'
@@ -1084,6 +1097,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountAccountLayoutRockPaperScissorsRouteImport
       parentRoute: typeof AuthenticatedAccountAccountLayoutRoute
     }
+    '/_authenticated/account/_accountLayout/friends': {
+      id: '/_authenticated/account/_accountLayout/friends'
+      path: '/friends'
+      fullPath: '/account/friends'
+      preLoaderRoute: typeof AuthenticatedAccountAccountLayoutFriendsRouteImport
+      parentRoute: typeof AuthenticatedAccountAccountLayoutRoute
+    }
     '/_authenticated/account/_accountLayout/dashboard': {
       id: '/_authenticated/account/_accountLayout/dashboard'
       path: '/dashboard'
@@ -1264,6 +1284,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAccountAccountLayoutRouteChildren {
   AuthenticatedAccountAccountLayoutDashboardRoute: typeof AuthenticatedAccountAccountLayoutDashboardRoute
+  AuthenticatedAccountAccountLayoutFriendsRoute: typeof AuthenticatedAccountAccountLayoutFriendsRoute
   AuthenticatedAccountAccountLayoutRockPaperScissorsRoute: typeof AuthenticatedAccountAccountLayoutRockPaperScissorsRoute
   AuthenticatedAccountAccountLayoutTeamsRoute: typeof AuthenticatedAccountAccountLayoutTeamsRoute
   AuthenticatedAccountAccountLayoutTeamsInvitationsRoute: typeof AuthenticatedAccountAccountLayoutTeamsInvitationsRoute
@@ -1276,6 +1297,8 @@ const AuthenticatedAccountAccountLayoutRouteChildren: AuthenticatedAccountAccoun
   {
     AuthenticatedAccountAccountLayoutDashboardRoute:
       AuthenticatedAccountAccountLayoutDashboardRoute,
+    AuthenticatedAccountAccountLayoutFriendsRoute:
+      AuthenticatedAccountAccountLayoutFriendsRoute,
     AuthenticatedAccountAccountLayoutRockPaperScissorsRoute:
       AuthenticatedAccountAccountLayoutRockPaperScissorsRoute,
     AuthenticatedAccountAccountLayoutTeamsRoute:
