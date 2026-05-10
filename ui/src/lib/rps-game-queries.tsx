@@ -1,6 +1,15 @@
 import { client } from "@/lib/client";
 import { ApiError } from "@/lib/error";
 import { components, operations } from "@/schema";
+import { Participant } from "@/schema.types";
+
+export type ChallengeHouseResult = {
+  rps_game: components["schemas"]["RpsGame"];
+  requesting_participant: Participant;
+  invited_participant: Participant;
+  house_message?: string;
+  cooldown_ends_at: string;
+};
 
 export class RpsGameQueries {
   async PutUserPlayer({
@@ -229,6 +238,33 @@ export class RpsGameQueries {
       throw ApiError.fromErrorModel(error);
     }
     return data;
+  }
+
+  async challengeHouse({
+    token,
+    move,
+    betAmount,
+  }: {
+    token: string;
+    move: "rock" | "paper" | "scissors";
+    betAmount?: number;
+  }): Promise<ChallengeHouseResult> {
+    const res = await fetch("/api/games/rps/house", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        move,
+        ...(betAmount !== undefined ? { bet_amount: betAmount } : {}),
+      }),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      throw new Error(json?.detail ?? json?.title ?? "Challenge failed");
+    }
+    return json.data as ChallengeHouseResult;
   }
 }
 
