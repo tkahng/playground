@@ -47,7 +47,6 @@ import { Route as AuthenticatedTeamsTeamSlugTeamLayoutRouteImport } from './rout
 import { Route as AuthenticatedProtectedProtectedLayoutPermissionRouteImport } from './routes/_authenticated/protected/_protectedLayout/$permission'
 import { Route as AuthenticatedAccountAccountLayoutTeamsInvitationsRouteImport } from './routes/_authenticated/account/_accountLayout/teams-invitations'
 import { Route as AuthenticatedAccountAccountLayoutTeamsRouteImport } from './routes/_authenticated/account/_accountLayout/teams'
-import { Route as AuthenticatedAccountAccountLayoutSettingsRouteImport } from './routes/_authenticated/account/_accountLayout/settings'
 import { Route as AuthenticatedAccountAccountLayoutRockPaperScissorsRouteImport } from './routes/_authenticated/account/_accountLayout/rock-paper-scissors'
 import { Route as AuthenticatedAccountAccountLayoutDashboardRouteImport } from './routes/_authenticated/account/_accountLayout/dashboard'
 import { Route as AuthenticatedAdminAdminLayoutUsersIndexRouteImport } from './routes/_authenticated/admin/_adminLayout/users/index'
@@ -58,6 +57,7 @@ import { Route as AuthenticatedAdminAdminLayoutPlanFeaturesIndexRouteImport } fr
 import { Route as AuthenticatedAdminAdminLayoutPermissionsIndexRouteImport } from './routes/_authenticated/admin/_adminLayout/permissions/index'
 import { Route as AuthenticatedAdminAdminLayoutJobsIndexRouteImport } from './routes/_authenticated/admin/_adminLayout/jobs/index'
 import { Route as AuthenticatedAdminAdminLayoutAiUsageIndexRouteImport } from './routes/_authenticated/admin/_adminLayout/ai-usage/index'
+import { Route as AuthenticatedAccountAccountLayoutSettingsIndexRouteImport } from './routes/_authenticated/account/_accountLayout/settings/index'
 import { Route as AuthenticatedTeamsTeamSlugTeamLayoutDashboardRouteImport } from './routes/_authenticated/teams/$teamSlug/_teamLayout/dashboard'
 import { Route as AuthenticatedAdminAdminLayoutUsersUserIdRouteImport } from './routes/_authenticated/admin/_adminLayout/users/$userId'
 import { Route as AuthenticatedAdminAdminLayoutRolesRoleIdRouteImport } from './routes/_authenticated/admin/_adminLayout/roles/$roleId'
@@ -273,12 +273,6 @@ const AuthenticatedAccountAccountLayoutTeamsRoute =
     path: '/teams',
     getParentRoute: () => AuthenticatedAccountAccountLayoutRoute,
   } as any)
-const AuthenticatedAccountAccountLayoutSettingsRoute =
-  AuthenticatedAccountAccountLayoutSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedAccountAccountLayoutRoute,
-  } as any)
 const AuthenticatedAccountAccountLayoutRockPaperScissorsRoute =
   AuthenticatedAccountAccountLayoutRockPaperScissorsRouteImport.update({
     id: '/rock-paper-scissors',
@@ -339,6 +333,12 @@ const AuthenticatedAdminAdminLayoutAiUsageIndexRoute =
     path: '/ai-usage/',
     getParentRoute: () => AuthenticatedAdminAdminLayoutRoute,
   } as any)
+const AuthenticatedAccountAccountLayoutSettingsIndexRoute =
+  AuthenticatedAccountAccountLayoutSettingsIndexRouteImport.update({
+    id: '/settings/',
+    path: '/settings/',
+    getParentRoute: () => AuthenticatedAccountAccountLayoutRoute,
+  } as any)
 const AuthenticatedTeamsTeamSlugTeamLayoutDashboardRoute =
   AuthenticatedTeamsTeamSlugTeamLayoutDashboardRouteImport.update({
     id: '/dashboard',
@@ -383,15 +383,15 @@ const AuthenticatedAdminAdminLayoutJobsJobIdRoute =
   } as any)
 const AuthenticatedAccountAccountLayoutSettingsPointsRoute =
   AuthenticatedAccountAccountLayoutSettingsPointsRouteImport.update({
-    id: '/points',
-    path: '/points',
-    getParentRoute: () => AuthenticatedAccountAccountLayoutSettingsRoute,
+    id: '/settings/points',
+    path: '/settings/points',
+    getParentRoute: () => AuthenticatedAccountAccountLayoutRoute,
   } as any)
 const AuthenticatedAccountAccountLayoutSettingsBillingRoute =
   AuthenticatedAccountAccountLayoutSettingsBillingRouteImport.update({
-    id: '/billing',
-    path: '/billing',
-    getParentRoute: () => AuthenticatedAccountAccountLayoutSettingsRoute,
+    id: '/settings/billing',
+    path: '/settings/billing',
+    getParentRoute: () => AuthenticatedAccountAccountLayoutRoute,
   } as any)
 const AuthenticatedTeamsTeamSlugTeamLayoutSettingsIndexRoute =
   AuthenticatedTeamsTeamSlugTeamLayoutSettingsIndexRouteImport.update({
@@ -460,7 +460,6 @@ export interface FileRoutesByFullPath {
   '/teams/': typeof AuthenticatedTeamsIndexRoute
   '/account/dashboard': typeof AuthenticatedAccountAccountLayoutDashboardRoute
   '/account/rock-paper-scissors': typeof AuthenticatedAccountAccountLayoutRockPaperScissorsRoute
-  '/account/settings': typeof AuthenticatedAccountAccountLayoutSettingsRouteWithChildren
   '/account/teams': typeof AuthenticatedAccountAccountLayoutTeamsRoute
   '/account/teams-invitations': typeof AuthenticatedAccountAccountLayoutTeamsInvitationsRoute
   '/protected/$permission': typeof AuthenticatedProtectedProtectedLayoutPermissionRoute
@@ -477,6 +476,7 @@ export interface FileRoutesByFullPath {
   '/admin/roles/$roleId': typeof AuthenticatedAdminAdminLayoutRolesRoleIdRoute
   '/admin/users/$userId': typeof AuthenticatedAdminAdminLayoutUsersUserIdRoute
   '/teams/$teamSlug/dashboard': typeof AuthenticatedTeamsTeamSlugTeamLayoutDashboardRoute
+  '/account/settings/': typeof AuthenticatedAccountAccountLayoutSettingsIndexRoute
   '/admin/ai-usage/': typeof AuthenticatedAdminAdminLayoutAiUsageIndexRoute
   '/admin/jobs/': typeof AuthenticatedAdminAdminLayoutJobsIndexRoute
   '/admin/permissions/': typeof AuthenticatedAdminAdminLayoutPermissionsIndexRoute
@@ -519,7 +519,6 @@ export interface FileRoutesByTo {
   '/teams': typeof AuthenticatedTeamsIndexRoute
   '/account/dashboard': typeof AuthenticatedAccountAccountLayoutDashboardRoute
   '/account/rock-paper-scissors': typeof AuthenticatedAccountAccountLayoutRockPaperScissorsRoute
-  '/account/settings': typeof AuthenticatedAccountAccountLayoutSettingsRouteWithChildren
   '/account/teams': typeof AuthenticatedAccountAccountLayoutTeamsRoute
   '/account/teams-invitations': typeof AuthenticatedAccountAccountLayoutTeamsInvitationsRoute
   '/protected/$permission': typeof AuthenticatedProtectedProtectedLayoutPermissionRoute
@@ -534,6 +533,7 @@ export interface FileRoutesByTo {
   '/admin/roles/$roleId': typeof AuthenticatedAdminAdminLayoutRolesRoleIdRoute
   '/admin/users/$userId': typeof AuthenticatedAdminAdminLayoutUsersUserIdRoute
   '/teams/$teamSlug/dashboard': typeof AuthenticatedTeamsTeamSlugTeamLayoutDashboardRoute
+  '/account/settings': typeof AuthenticatedAccountAccountLayoutSettingsIndexRoute
   '/admin/ai-usage': typeof AuthenticatedAdminAdminLayoutAiUsageIndexRoute
   '/admin/jobs': typeof AuthenticatedAdminAdminLayoutJobsIndexRoute
   '/admin/permissions': typeof AuthenticatedAdminAdminLayoutPermissionsIndexRoute
@@ -584,7 +584,6 @@ export interface FileRoutesById {
   '/_authenticated/teams/': typeof AuthenticatedTeamsIndexRoute
   '/_authenticated/account/_accountLayout/dashboard': typeof AuthenticatedAccountAccountLayoutDashboardRoute
   '/_authenticated/account/_accountLayout/rock-paper-scissors': typeof AuthenticatedAccountAccountLayoutRockPaperScissorsRoute
-  '/_authenticated/account/_accountLayout/settings': typeof AuthenticatedAccountAccountLayoutSettingsRouteWithChildren
   '/_authenticated/account/_accountLayout/teams': typeof AuthenticatedAccountAccountLayoutTeamsRoute
   '/_authenticated/account/_accountLayout/teams-invitations': typeof AuthenticatedAccountAccountLayoutTeamsInvitationsRoute
   '/_authenticated/protected/_protectedLayout/$permission': typeof AuthenticatedProtectedProtectedLayoutPermissionRoute
@@ -601,6 +600,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/_adminLayout/roles/$roleId': typeof AuthenticatedAdminAdminLayoutRolesRoleIdRoute
   '/_authenticated/admin/_adminLayout/users/$userId': typeof AuthenticatedAdminAdminLayoutUsersUserIdRoute
   '/_authenticated/teams/$teamSlug/_teamLayout/dashboard': typeof AuthenticatedTeamsTeamSlugTeamLayoutDashboardRoute
+  '/_authenticated/account/_accountLayout/settings/': typeof AuthenticatedAccountAccountLayoutSettingsIndexRoute
   '/_authenticated/admin/_adminLayout/ai-usage/': typeof AuthenticatedAdminAdminLayoutAiUsageIndexRoute
   '/_authenticated/admin/_adminLayout/jobs/': typeof AuthenticatedAdminAdminLayoutJobsIndexRoute
   '/_authenticated/admin/_adminLayout/permissions/': typeof AuthenticatedAdminAdminLayoutPermissionsIndexRoute
@@ -646,7 +646,6 @@ export interface FileRouteTypes {
     | '/teams/'
     | '/account/dashboard'
     | '/account/rock-paper-scissors'
-    | '/account/settings'
     | '/account/teams'
     | '/account/teams-invitations'
     | '/protected/$permission'
@@ -663,6 +662,7 @@ export interface FileRouteTypes {
     | '/admin/roles/$roleId'
     | '/admin/users/$userId'
     | '/teams/$teamSlug/dashboard'
+    | '/account/settings/'
     | '/admin/ai-usage/'
     | '/admin/jobs/'
     | '/admin/permissions/'
@@ -705,7 +705,6 @@ export interface FileRouteTypes {
     | '/teams'
     | '/account/dashboard'
     | '/account/rock-paper-scissors'
-    | '/account/settings'
     | '/account/teams'
     | '/account/teams-invitations'
     | '/protected/$permission'
@@ -720,6 +719,7 @@ export interface FileRouteTypes {
     | '/admin/roles/$roleId'
     | '/admin/users/$userId'
     | '/teams/$teamSlug/dashboard'
+    | '/account/settings'
     | '/admin/ai-usage'
     | '/admin/jobs'
     | '/admin/permissions'
@@ -769,7 +769,6 @@ export interface FileRouteTypes {
     | '/_authenticated/teams/'
     | '/_authenticated/account/_accountLayout/dashboard'
     | '/_authenticated/account/_accountLayout/rock-paper-scissors'
-    | '/_authenticated/account/_accountLayout/settings'
     | '/_authenticated/account/_accountLayout/teams'
     | '/_authenticated/account/_accountLayout/teams-invitations'
     | '/_authenticated/protected/_protectedLayout/$permission'
@@ -786,6 +785,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/_adminLayout/roles/$roleId'
     | '/_authenticated/admin/_adminLayout/users/$userId'
     | '/_authenticated/teams/$teamSlug/_teamLayout/dashboard'
+    | '/_authenticated/account/_accountLayout/settings/'
     | '/_authenticated/admin/_adminLayout/ai-usage/'
     | '/_authenticated/admin/_adminLayout/jobs/'
     | '/_authenticated/admin/_adminLayout/permissions/'
@@ -1077,13 +1077,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountAccountLayoutTeamsRouteImport
       parentRoute: typeof AuthenticatedAccountAccountLayoutRoute
     }
-    '/_authenticated/account/_accountLayout/settings': {
-      id: '/_authenticated/account/_accountLayout/settings'
-      path: '/settings'
-      fullPath: '/account/settings'
-      preLoaderRoute: typeof AuthenticatedAccountAccountLayoutSettingsRouteImport
-      parentRoute: typeof AuthenticatedAccountAccountLayoutRoute
-    }
     '/_authenticated/account/_accountLayout/rock-paper-scissors': {
       id: '/_authenticated/account/_accountLayout/rock-paper-scissors'
       path: '/rock-paper-scissors'
@@ -1154,6 +1147,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAdminLayoutAiUsageIndexRouteImport
       parentRoute: typeof AuthenticatedAdminAdminLayoutRoute
     }
+    '/_authenticated/account/_accountLayout/settings/': {
+      id: '/_authenticated/account/_accountLayout/settings/'
+      path: '/settings'
+      fullPath: '/account/settings/'
+      preLoaderRoute: typeof AuthenticatedAccountAccountLayoutSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedAccountAccountLayoutRoute
+    }
     '/_authenticated/teams/$teamSlug/_teamLayout/dashboard': {
       id: '/_authenticated/teams/$teamSlug/_teamLayout/dashboard'
       path: '/dashboard'
@@ -1205,17 +1205,17 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/account/_accountLayout/settings/points': {
       id: '/_authenticated/account/_accountLayout/settings/points'
-      path: '/points'
+      path: '/settings/points'
       fullPath: '/account/settings/points'
       preLoaderRoute: typeof AuthenticatedAccountAccountLayoutSettingsPointsRouteImport
-      parentRoute: typeof AuthenticatedAccountAccountLayoutSettingsRoute
+      parentRoute: typeof AuthenticatedAccountAccountLayoutRoute
     }
     '/_authenticated/account/_accountLayout/settings/billing': {
       id: '/_authenticated/account/_accountLayout/settings/billing'
-      path: '/billing'
+      path: '/settings/billing'
       fullPath: '/account/settings/billing'
       preLoaderRoute: typeof AuthenticatedAccountAccountLayoutSettingsBillingRouteImport
-      parentRoute: typeof AuthenticatedAccountAccountLayoutSettingsRoute
+      parentRoute: typeof AuthenticatedAccountAccountLayoutRoute
     }
     '/_authenticated/teams/$teamSlug/_teamLayout/settings/': {
       id: '/_authenticated/teams/$teamSlug/_teamLayout/settings/'
@@ -1262,30 +1262,14 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AuthenticatedAccountAccountLayoutSettingsRouteChildren {
-  AuthenticatedAccountAccountLayoutSettingsBillingRoute: typeof AuthenticatedAccountAccountLayoutSettingsBillingRoute
-  AuthenticatedAccountAccountLayoutSettingsPointsRoute: typeof AuthenticatedAccountAccountLayoutSettingsPointsRoute
-}
-
-const AuthenticatedAccountAccountLayoutSettingsRouteChildren: AuthenticatedAccountAccountLayoutSettingsRouteChildren =
-  {
-    AuthenticatedAccountAccountLayoutSettingsBillingRoute:
-      AuthenticatedAccountAccountLayoutSettingsBillingRoute,
-    AuthenticatedAccountAccountLayoutSettingsPointsRoute:
-      AuthenticatedAccountAccountLayoutSettingsPointsRoute,
-  }
-
-const AuthenticatedAccountAccountLayoutSettingsRouteWithChildren =
-  AuthenticatedAccountAccountLayoutSettingsRoute._addFileChildren(
-    AuthenticatedAccountAccountLayoutSettingsRouteChildren,
-  )
-
 interface AuthenticatedAccountAccountLayoutRouteChildren {
   AuthenticatedAccountAccountLayoutDashboardRoute: typeof AuthenticatedAccountAccountLayoutDashboardRoute
   AuthenticatedAccountAccountLayoutRockPaperScissorsRoute: typeof AuthenticatedAccountAccountLayoutRockPaperScissorsRoute
-  AuthenticatedAccountAccountLayoutSettingsRoute: typeof AuthenticatedAccountAccountLayoutSettingsRouteWithChildren
   AuthenticatedAccountAccountLayoutTeamsRoute: typeof AuthenticatedAccountAccountLayoutTeamsRoute
   AuthenticatedAccountAccountLayoutTeamsInvitationsRoute: typeof AuthenticatedAccountAccountLayoutTeamsInvitationsRoute
+  AuthenticatedAccountAccountLayoutSettingsBillingRoute: typeof AuthenticatedAccountAccountLayoutSettingsBillingRoute
+  AuthenticatedAccountAccountLayoutSettingsPointsRoute: typeof AuthenticatedAccountAccountLayoutSettingsPointsRoute
+  AuthenticatedAccountAccountLayoutSettingsIndexRoute: typeof AuthenticatedAccountAccountLayoutSettingsIndexRoute
 }
 
 const AuthenticatedAccountAccountLayoutRouteChildren: AuthenticatedAccountAccountLayoutRouteChildren =
@@ -1294,12 +1278,16 @@ const AuthenticatedAccountAccountLayoutRouteChildren: AuthenticatedAccountAccoun
       AuthenticatedAccountAccountLayoutDashboardRoute,
     AuthenticatedAccountAccountLayoutRockPaperScissorsRoute:
       AuthenticatedAccountAccountLayoutRockPaperScissorsRoute,
-    AuthenticatedAccountAccountLayoutSettingsRoute:
-      AuthenticatedAccountAccountLayoutSettingsRouteWithChildren,
     AuthenticatedAccountAccountLayoutTeamsRoute:
       AuthenticatedAccountAccountLayoutTeamsRoute,
     AuthenticatedAccountAccountLayoutTeamsInvitationsRoute:
       AuthenticatedAccountAccountLayoutTeamsInvitationsRoute,
+    AuthenticatedAccountAccountLayoutSettingsBillingRoute:
+      AuthenticatedAccountAccountLayoutSettingsBillingRoute,
+    AuthenticatedAccountAccountLayoutSettingsPointsRoute:
+      AuthenticatedAccountAccountLayoutSettingsPointsRoute,
+    AuthenticatedAccountAccountLayoutSettingsIndexRoute:
+      AuthenticatedAccountAccountLayoutSettingsIndexRoute,
   }
 
 const AuthenticatedAccountAccountLayoutRouteWithChildren =

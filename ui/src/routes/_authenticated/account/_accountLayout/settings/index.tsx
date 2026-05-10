@@ -11,7 +11,7 @@ function AccountSettings() {
 }
 
 export const Route = createFileRoute(
-  "/_authenticated/account/_accountLayout/settings"
+  "/_authenticated/account/_accountLayout/settings/"
 )({
   component: AccountSettings,
 });
