@@ -61,7 +61,6 @@ func (api *Api) IssuePlayerSSETicketBind(humapi huma.API) {
 			if currentPlayer == nil {
 				return nil, huma.Error401Unauthorized("no player found")
 			}
-			// Reuse the existing ticket store; store player ID as the "teamMemberID" field.
 			t := api.App().SseTickets().Issue(userInfo.User.ID, currentPlayer.ID)
 			resp := &IssuePlayerSSETicketResponse{}
 			resp.Body.Ticket = t

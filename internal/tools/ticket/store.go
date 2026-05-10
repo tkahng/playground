@@ -8,9 +8,9 @@ import (
 )
 
 type entry struct {
-	UserID       uuid.UUID
-	TeamMemberID uuid.UUID
-	expiresAt    time.Time
+	UserID     uuid.UUID
+	ResourceID uuid.UUID // team-member ID or player ID depending on the SSE endpoint
+	expiresAt  time.Time
 }
 
 // Store is a short-lived in-memory ticket store used for SSE authentication.
@@ -30,23 +30,24 @@ func New(ttl time.Duration) *Store {
 }
 
 // Issue creates a new ticket valid for the store's TTL and returns its ID.
-func (s *Store) Issue(userID, teamMemberID uuid.UUID) string {
+// resourceID is the team-member or player ID depending on the SSE channel.
+func (s *Store) Issue(userID, resourceID uuid.UUID) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.purge()
 	id := uuid.New().String()
 	s.entries[id] = entry{
-		UserID:       userID,
-		TeamMemberID: teamMemberID,
-		expiresAt:    time.Now().Add(s.ttl),
+		UserID:     userID,
+		ResourceID: resourceID,
+		expiresAt:  time.Now().Add(s.ttl),
 	}
 	return id
 }
 
-// Validate returns the user and team-member IDs associated with a ticket.
+// Validate returns the userID and resourceID associated with a ticket.
 // The ticket remains valid (multi-use) until it expires, allowing EventSource
 // auto-reconnects within the TTL window.
-func (s *Store) Validate(ticket string) (userID, teamMemberID uuid.UUID, ok bool) {
+func (s *Store) Validate(ticket string) (userID, resourceID uuid.UUID, ok bool) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	e, exists := s.entries[ticket]
@@ -57,7 +58,7 @@ func (s *Store) Validate(ticket string) (userID, teamMemberID uuid.UUID, ok bool
 		delete(s.entries, ticket)
 		return uuid.Nil, uuid.Nil, false
 	}
-	return e.UserID, e.TeamMemberID, true
+	return e.UserID, e.ResourceID, true
 }
 
 // Revoke removes a ticket immediately.
