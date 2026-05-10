@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/tools/types"
@@ -236,5 +239,39 @@ func TestDBGamingStore_DeletePlayers_Registered(t *testing.T) {
 		if playerCount != 1 {
 			t.Errorf("FindPlayers() got %d players, want 1", playerCount)
 		}
+	})
+}
+
+func TestDBGamingStore_UpdatePlayerLastSeen(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		store := NewDBGamingStore(db)
+		player, err := store.CreatePlayer(ctx, &models.Player{Email: "lastseen@test.example"})
+		require.NoError(t, err)
+		assert.Nil(t, player.LastSeenAt)
+
+		before := time.Now().UTC().Add(-time.Second)
+		require.NoError(t, store.UpdatePlayerLastSeen(ctx, player.ID))
+		after := time.Now().UTC().Add(time.Second)
+
+		updated, err := store.FindPlayer(ctx, &PlayersFilter{Ids: []uuid.UUID{player.ID}})
+		require.NoError(t, err)
+		require.NotNil(t, updated.LastSeenAt)
+		assert.True(t, updated.LastSeenAt.After(before), "last_seen_at should be after test start")
+		assert.True(t, updated.LastSeenAt.Before(after), "last_seen_at should be before test end")
+	})
+}
+
+func TestDBGamingStore_UpdatePlayerLastSeen_IdempotentOnRepeatCalls(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		store := NewDBGamingStore(db)
+		player, err := store.CreatePlayer(ctx, &models.Player{Email: "lastseen2@test.example"})
+		require.NoError(t, err)
+
+		require.NoError(t, store.UpdatePlayerLastSeen(ctx, player.ID))
+		require.NoError(t, store.UpdatePlayerLastSeen(ctx, player.ID))
+
+		updated, err := store.FindPlayer(ctx, &PlayersFilter{Ids: []uuid.UUID{player.ID}})
+		require.NoError(t, err)
+		assert.NotNil(t, updated.LastSeenAt)
 	})
 }
