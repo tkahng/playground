@@ -160,6 +160,7 @@ func bindFindPlayersApi(api huma.API, app core.App) {
 			filter.PerPage = input.PerPage
 			filter.SortBy = input.SortBy
 			filter.SortOrder = input.SortOrder
+			filter.IsHouse = types.OptionalParam[bool]{IsSet: true, Value: false}
 			players, err := app.Adapter().Gaming().FindPlayers(ctx, filter)
 			if err != nil {
 				return nil, err
@@ -204,10 +205,8 @@ func bindFindRegisteredPlayerByEmailApi(api huma.API, app core.App) {
 			}
 			filter := &stores.PlayersFilter{}
 			filter.Emails = []string{input.Email}
-			filter.Registered = types.OptionalParam[bool]{
-				Value: true,
-				IsSet: true,
-			}
+			filter.Registered = types.OptionalParam[bool]{Value: true, IsSet: true}
+			filter.IsHouse = types.OptionalParam[bool]{Value: false, IsSet: true}
 			filter.Page = 0
 			filter.PerPage = 1
 			player, err := app.Adapter().Gaming().FindPlayer(ctx, filter)

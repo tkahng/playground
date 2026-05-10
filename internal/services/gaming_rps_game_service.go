@@ -432,10 +432,13 @@ func determineRpsResult(hostMove, guestMove models.RpsParticipantMove) (models.R
 }
 
 func (d *DbRpsGameService) ChallengeHouse(ctx context.Context, input *ChallengeHouseInput) (*ChallengeHouseResult, error) {
-	// 1. Fetch house player.
+	// 1. Fetch house player and check it is enabled.
 	house, err := GetHousePlayer(ctx, d.adapter)
 	if err != nil {
 		return nil, fmt.Errorf("get house player: %w", err)
+	}
+	if !IsHouseEnabled(house.Metadata) {
+		return nil, apierrors.Forbidden("house player is currently disabled")
 	}
 
 	// 2. Requesting player must not have an active game.

@@ -504,4 +504,8 @@ func bindAdminApi(appApi *Api) {
 		},
 		appApi.AdminUpdateJob,
 	)
+
+	// house player admin
+	bindAdminHouseStatsApi(adminGroup, appApi.App())
+	bindAdminHouseToggleApi(adminGroup, appApi.App())
 }
