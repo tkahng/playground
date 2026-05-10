@@ -117,8 +117,8 @@ export default function RockPaperScissors() {
     <div>
       <div className="flex items-center gap-3 mb-1">
         <h1>Rock Paper Scissors</h1>
-        {balanceData && (
-          balanceData.available_balance <= 0 ? (
+        {balanceData &&
+          (balanceData.available_balance <= 0 ? (
             <Link
               to={RouteMap.POINTS_SETTINGS}
               className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium text-amber-600 underline underline-offset-2 hover:text-amber-700"
@@ -126,11 +126,13 @@ export default function RockPaperScissors() {
               🪙 0 pts — Buy Points
             </Link>
           ) : (
-            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium">
+            <Link
+              to={RouteMap.POINTS_SETTINGS}
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium"
+            >
               🪙 {balanceData.available_balance ?? 0} pts
-            </span>
-          )
-        )}
+            </Link>
+          ))}
       </div>
       <div className="flex items-center justify-between">
         <p>Start a new Game with a friend</p>
