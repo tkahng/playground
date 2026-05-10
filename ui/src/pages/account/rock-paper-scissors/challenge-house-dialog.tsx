@@ -101,7 +101,7 @@ export function ChallengeHouseDialog({ trigger }: { trigger?: React.ReactNode })
               opponent="🏠 The House"
               playerMove={userMove}
               opponentMove={houseMove}
-              betAmount={betEnabled ? betAmount : undefined}
+              betAmount={result.rps_game.bet_amount ?? undefined}
               betResult={userResult}
             />
 

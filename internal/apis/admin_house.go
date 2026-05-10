@@ -7,6 +7,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/services"
+	"github.com/tkahng/playground/internal/shared"
 )
 
 type HouseStatsResponse struct {
@@ -28,8 +29,9 @@ func bindAdminHouseStatsApi(api huma.API, app core.App) {
 			Path:        "/house/stats",
 			Summary:     "House player stats",
 			Description: "Total games, win/lose/tie counts, and bet amounts for the house player.",
-			Tags:        []string{"Admin", "Games"},
-			Errors:      []int{http.StatusNotFound},
+			Tags:     []string{"Admin", "Games"},
+			Errors:   []int{http.StatusNotFound},
+			Security: []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
 		},
 		func(ctx context.Context, _ *struct{}) (*ApiSingleOutput[*HouseStatsResponse], error) {
 			stats, err := services.GetHousePlayerStats(ctx, app.Adapter())
@@ -66,8 +68,9 @@ func bindAdminHouseToggleApi(api huma.API, app core.App) {
 			Path:        "/house/enabled",
 			Summary:     "Enable or disable the house player",
 			Description: "Sets the house player's enabled flag. When disabled, POST /games/rps/house returns 403.",
-			Tags:        []string{"Admin", "Games"},
-			Errors:      []int{http.StatusNotFound},
+			Tags:     []string{"Admin", "Games"},
+			Errors:   []int{http.StatusNotFound},
+			Security: []map[string][]string{{shared.BearerAuthSecurityKey: {}}},
 		},
 		func(ctx context.Context, input *struct {
 			Body HouseToggleInput

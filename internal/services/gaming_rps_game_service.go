@@ -418,7 +418,7 @@ func randomHouseMove() models.RpsParticipantMove {
 	return houseMoves[rand.Intn(len(houseMoves))]
 }
 
-// determineRpsResult returns (hostResult, guestResult).
+// determineRpsResult returns (hostResult, houseResult).
 func determineRpsResult(hostMove, guestMove models.RpsParticipantMove) (models.RpsParticipantResult, models.RpsParticipantResult) {
 	if hostMove == guestMove {
 		return models.RpsParticipantResultTie, models.RpsParticipantResultTie
@@ -486,12 +486,29 @@ func (d *DbRpsGameService) ChallengeHouse(ctx context.Context, input *ChallengeH
 
 	// 5. Decide house move before touching the DB.
 	houseMove := randomHouseMove()
-	hostResult, guestResult := determineRpsResult(input.RequestingPlayerMove, houseMove)
+	hostResult, houseResult := determineRpsResult(input.RequestingPlayerMove, houseMove)
 	now := time.Now().UTC()
 
 	var gameResult *RpsGameWithParticipants
 
 	txErr := d.adapter.RunInTxCtx(ctx, func(txCtx context.Context) error {
+		// Re-read player inside the transaction and re-check cooldown to close
+		// the race window between the pre-flight check and the DB write.
+		freshRequester, err := d.adapter.Gaming().FindPlayer(txCtx, &stores.PlayersFilter{
+			Ids: []uuid.UUID{input.RequestingPlayerID},
+		})
+		if err != nil {
+			return fmt.Errorf("re-read player: %w", err)
+		}
+		if freshRequester != nil && freshRequester.LastHouseGameAt != nil {
+			if time.Since(*freshRequester.LastHouseGameAt) < HouseCooldown {
+				remaining := HouseCooldown - time.Since(*freshRequester.LastHouseGameAt)
+				return apierrors.TooManyRequests(fmt.Sprintf(
+					"house cooldown active — try again in %s", remaining.Truncate(time.Second),
+				))
+			}
+		}
+
 		// Create game (completed immediately — no waiting for guest).
 		game, err := d.adapter.Gaming().CreateRpsGame(txCtx, &models.RpsGame{
 			ExpiresAt: now.Add(30 * time.Second), // short expiry; game is already done
@@ -518,7 +535,7 @@ func (d *DbRpsGameService) ChallengeHouse(ctx context.Context, input *ChallengeH
 				PlayerID: house.ID,
 				Move:     houseMove,
 				GameID:   game.ID,
-				Result:   guestResult,
+				Result:   houseResult,
 				Status:   models.RpsParticipantStatusCompleted,
 				Type:     models.RpsParticipantTypeGuest,
 			},
@@ -588,7 +605,7 @@ func (d *DbRpsGameService) ChallengeHouse(ctx context.Context, input *ChallengeH
 		Game:           gameResult,
 		CooldownEndsAt: now.Add(HouseCooldown),
 	}
-	if input.BetAmount != nil && guestResult == models.RpsParticipantResultWin {
+	if input.BetAmount != nil && houseResult == models.RpsParticipantResultWin {
 		msg := HouseWinsMessage
 		result.HouseMessage = &msg
 	}

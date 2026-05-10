@@ -324,6 +324,14 @@ func (s *DbGamingStoreDecorator) FindHousePlayer(ctx context.Context) (*models.P
 	return s.Delegate.FindHousePlayer(ctx)
 }
 
+// GetHouseGameAggregates implements [GamingStore].
+func (s *DbGamingStoreDecorator) GetHouseGameAggregates(ctx context.Context, housePlayerID uuid.UUID) (*HouseGameAggregates, error) {
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator GetHouseGameAggregates %w", ErrDelegateNil)
+	}
+	return s.Delegate.GetHouseGameAggregates(ctx, housePlayerID)
+}
+
 // FindPlayer implements [GamingStore].
 func (s *DbGamingStoreDecorator) FindPlayer(ctx context.Context, filter *PlayersFilter) (*models.Player, error) {
 	if s.FindPlayerFunc != nil {

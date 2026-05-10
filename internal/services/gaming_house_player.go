@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/google/uuid"
-	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/types"
@@ -51,7 +49,7 @@ type HousePlayerStats struct {
 	Enabled        bool  `json:"enabled"`
 }
 
-// GetHousePlayerStats computes stats for the house player across all completed games.
+// GetHousePlayerStats computes stats for the house player in a single SQL pass.
 func GetHousePlayerStats(ctx context.Context, adapter stores.StorageAdapterInterface) (*HousePlayerStats, error) {
 	house, err := adapter.Gaming().FindHousePlayer(ctx)
 	if err != nil {
@@ -61,65 +59,18 @@ func GetHousePlayerStats(ctx context.Context, adapter stores.StorageAdapterInter
 		return nil, fmt.Errorf("house player not found")
 	}
 
-	totalGames, err := adapter.Gaming().CountRpsGames(ctx, &stores.RpsGameFilter{
-		ParticipantIds: []uuid.UUID{house.ID},
-	})
+	agg, err := adapter.Gaming().GetHouseGameAggregates(ctx, house.ID)
 	if err != nil {
-		return nil, fmt.Errorf("count house games: %w", err)
-	}
-
-	// House participant records give win/lose/tie from the house's perspective.
-	houseParticipants, err := adapter.Gaming().FindRpsParticipants(ctx, &stores.RpsParticipantFilter{
-		PlayerIds: []uuid.UUID{house.ID},
-		Statuses:  []models.RpsParticipantStatus{models.RpsParticipantStatusCompleted},
-		PaginatedInput: repository.PaginatedInput{
-			Page:    0,
-			PerPage: 1_000_000,
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("find house participants: %w", err)
-	}
-
-	var houseWins, userWins, ties int64
-	for _, p := range houseParticipants {
-		switch p.Result {
-		case models.RpsParticipantResultWin:
-			houseWins++
-		case models.RpsParticipantResultLose:
-			userWins++
-		case models.RpsParticipantResultTie:
-			ties++
-		}
-	}
-
-	// Sum bet amounts from all house games.
-	houseGames, err := adapter.Gaming().FindRpsGames(ctx, &stores.RpsGameFilter{
-		ParticipantIds: []uuid.UUID{house.ID},
-		PaginatedInput: repository.PaginatedInput{
-			Page:    0,
-			PerPage: 1_000_000,
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("find house games: %w", err)
-	}
-
-	var bettedGames, totalBetAmount int64
-	for _, g := range houseGames {
-		if g.BetAmount != nil && *g.BetAmount > 0 {
-			bettedGames++
-			totalBetAmount += *g.BetAmount
-		}
+		return nil, fmt.Errorf("aggregate house stats: %w", err)
 	}
 
 	return &HousePlayerStats{
-		TotalGames:     totalGames,
-		BettedGames:    bettedGames,
-		HouseWins:      houseWins,
-		UserWins:       userWins,
-		Ties:           ties,
-		TotalBetAmount: totalBetAmount,
+		TotalGames:     agg.TotalGames,
+		BettedGames:    agg.BettedGames,
+		HouseWins:      agg.HouseWins,
+		UserWins:       agg.UserWins,
+		Ties:           agg.Ties,
+		TotalBetAmount: agg.TotalBetAmount,
 		Enabled:        IsHouseEnabled(house.Metadata),
 	}, nil
 }

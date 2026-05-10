@@ -240,7 +240,9 @@ export class RpsGameQueries {
     betAmount,
   }: {
     token: string;
-  } & components["schemas"]["ChallengeHouseInput"] & { betAmount?: number }): Promise<ChallengeHouseResult> {
+    move: "rock" | "paper" | "scissors";
+    betAmount?: number;
+  }): Promise<ChallengeHouseResult> {
     const { data, error } = await client.POST("/api/games/rps/house", {
       headers: { Authorization: `Bearer ${token}` },
       body: {

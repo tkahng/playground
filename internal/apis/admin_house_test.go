@@ -58,9 +58,9 @@ func TestAdminHouseStats_OK(t *testing.T) {
 				Name:            "stats rejected without auth",
 				Method:          http.MethodGet,
 				URL:             "/admin/house/stats",
-				ExpectedStatus:  http.StatusForbidden,
+				ExpectedStatus:  http.StatusUnauthorized,
 				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
-				ExpectedContent: []string{"Forbidden"},
+				ExpectedContent: []string{"Unauthorized"},
 			},
 		}
 		for _, s := range scenarios {
@@ -131,9 +131,9 @@ func TestAdminHouseToggle_EnableDisable(t *testing.T) {
 				Name:            "toggle rejected without auth",
 				Method:          http.MethodPut,
 				URL:             "/admin/house/enabled",
-				ExpectedStatus:  http.StatusForbidden,
+				ExpectedStatus:  http.StatusUnauthorized,
 				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
-				ExpectedContent: []string{"Forbidden"},
+				ExpectedContent: []string{"Unauthorized"},
 			},
 		}
 		for _, s := range scenarios {

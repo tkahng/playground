@@ -32,6 +32,7 @@ function makeResult(overrides: {
   userResult?: "win" | "lose" | "tie";
   houseMessage?: string;
   cooldownEndsAt?: string;
+  betAmount?: number;
 } = {}) {
   const {
     userMove = "rock",
@@ -39,6 +40,7 @@ function makeResult(overrides: {
     userResult = "win",
     houseMessage,
     cooldownEndsAt = new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+    betAmount,
   } = overrides;
   return {
     rps_game: {
@@ -46,6 +48,7 @@ function makeResult(overrides: {
       status: "completed",
       expires_at: new Date(Date.now() + 30000).toISOString(),
       metadata: {},
+      bet_amount: betAmount,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
@@ -497,7 +500,7 @@ describe("ChallengeHouseDialog", () => {
 
     it("shows bet outcome in result when bet was placed", async () => {
       mockQueries.challengeHouse.mockResolvedValue(
-        makeResult({ userResult: "win", houseMessage: undefined }),
+        makeResult({ userResult: "win", houseMessage: undefined, betAmount: 50 }),
       );
       const user = userEvent.setup();
       render(<ChallengeHouseDialog />);

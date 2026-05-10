@@ -16,10 +16,23 @@ import (
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
+// HouseGameAggregates holds stats computed in a single SQL pass.
+type HouseGameAggregates struct {
+	TotalGames     int64 `db:"total_games"`
+	BettedGames    int64 `db:"betted_games"`
+	TotalBetAmount int64 `db:"total_bet_amount"`
+	HouseWins      int64 `db:"house_wins"`
+	UserWins       int64 `db:"user_wins"`
+	Ties           int64 `db:"ties"`
+}
+
 type GamingPlayerStore interface {
 	FindPlayers(ctx context.Context, filter *PlayersFilter) ([]*models.Player, error)
 	FindPlayer(ctx context.Context, filter *PlayersFilter) (*models.Player, error)
 	FindHousePlayer(ctx context.Context) (*models.Player, error)
+	// GetHouseGameAggregates returns win/loss/tie counts and bet totals for the
+	// house player in a single SQL query rather than fetching rows into Go memory.
+	GetHouseGameAggregates(ctx context.Context, housePlayerID uuid.UUID) (*HouseGameAggregates, error)
 	CreatePlayer(ctx context.Context, player *models.Player) (*models.Player, error)
 	UpdatePlayer(ctx context.Context, player *models.Player) (*models.Player, error)
 	DeletePlayers(ctx context.Context, filter *PlayersFilter) (int64, error)
@@ -190,6 +203,29 @@ func (s *DBGamingStore) FindHousePlayer(ctx context.Context) (*models.Player, er
 	return s.FindPlayer(ctx, &PlayersFilter{
 		IsHouse: types.OptionalParam[bool]{IsSet: true, Value: true},
 	})
+}
+
+func (s *DBGamingStore) GetHouseGameAggregates(ctx context.Context, housePlayerID uuid.UUID) (*HouseGameAggregates, error) {
+	const query = `
+		SELECT
+			COUNT(DISTINCT g.id)                                                        AS total_games,
+			COUNT(DISTINCT CASE WHEN g.bet_amount > 0 THEN g.id END)                   AS betted_games,
+			COALESCE(SUM(CASE WHEN g.bet_amount > 0 THEN g.bet_amount ELSE 0 END), 0)  AS total_bet_amount,
+			COUNT(CASE WHEN p.result = 'win'  AND p.status = 'completed' THEN 1 END)   AS house_wins,
+			COUNT(CASE WHEN p.result = 'lose' AND p.status = 'completed' THEN 1 END)   AS user_wins,
+			COUNT(CASE WHEN p.result = 'tie'  AND p.status = 'completed' THEN 1 END)   AS ties
+		FROM gaming.rps_participants p
+		JOIN gaming.rps_games g ON g.id = p.game_id
+		WHERE p.player_id = $1
+	`
+	rows, err := database.QueryAll[*HouseGameAggregates](ctx, s.db, query, housePlayerID)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return &HouseGameAggregates{}, nil
+	}
+	return rows[0], nil
 }
 
 func (s *DBGamingStore) CreatePlayer(ctx context.Context, player *models.Player) (*models.Player, error) {
