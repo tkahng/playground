@@ -1,42 +1,13 @@
 import { client } from "@/lib/client";
 import { ApiError } from "@/lib/error";
-import { components } from "@/schema";
+import { components, operations } from "@/schema";
 
+export type Friendship = components["schemas"]["Friendship"];
 export type Player = components["schemas"]["Player"];
+export type FriendshipStatus = Friendship["status"];
 
-export type FriendshipStatus = "pending" | "accepted" | "declined" | "blocked";
-
-export interface Friendship {
-  id: string;
-  requesting_player_id: string;
-  invited_player_id: string;
-  status: FriendshipStatus;
-  responded_at?: string | null;
-  created_at: string;
-  updated_at: string;
-  requesting_player?: Player | null;
-  invited_player?: Player | null;
-}
-
-export interface FriendshipResponse {
-  data: Friendship;
-}
-
-export interface FriendshipsListResponse {
-  data: Friendship[] | null;
-  meta: {
-    page: number;
-    per_page: number;
-    total: number;
-    next_page?: number | null;
-    prev_page?: number | null;
-    has_more: boolean;
-  };
-}
-
-export interface FriendshipNullableResponse {
-  data: Friendship | null;
-}
+type PaginatedFriendships = components["schemas"]["ApiPaginatedResponseFriendship"];
+type SingleFriendship = components["schemas"]["ApiSingleResponseFriendship"];
 
 class FriendsQueries {
   async listFriends({
@@ -47,13 +18,13 @@ class FriendsQueries {
     token: string;
     page?: number;
     per_page?: number;
-  }): Promise<FriendshipsListResponse> {
+  }): Promise<PaginatedFriendships> {
     const { data, error } = await client.GET("/api/players/friends", {
       headers: { Authorization: `Bearer ${token}` },
       params: { query: { page, per_page } },
-    } as Parameters<typeof client.GET>[1]);
+    });
     if (error) throw ApiError.fromErrorModel(error);
-    return data as unknown as FriendshipsListResponse;
+    return data;
   }
 
   async listFriendRequests({
@@ -64,13 +35,13 @@ class FriendsQueries {
     token: string;
     page?: number;
     per_page?: number;
-  }): Promise<FriendshipsListResponse> {
+  }): Promise<PaginatedFriendships> {
     const { data, error } = await client.GET("/api/players/friends/requests", {
       headers: { Authorization: `Bearer ${token}` },
       params: { query: { page, per_page } },
-    } as Parameters<typeof client.GET>[1]);
+    });
     if (error) throw ApiError.fromErrorModel(error);
-    return data as unknown as FriendshipsListResponse;
+    return data;
   }
 
   async sendFriendRequest({
@@ -79,16 +50,16 @@ class FriendsQueries {
   }: {
     token: string;
     invitedPlayerId: string;
-  }): Promise<FriendshipResponse> {
-    const { data, error } = await client.POST(
-      "/api/players/friends/requests",
-      {
-        headers: { Authorization: `Bearer ${token}` },
-        body: { invited_player_id: invitedPlayerId },
-      } as Parameters<typeof client.POST>[1],
-    );
+  }): Promise<SingleFriendship> {
+    const body: components["schemas"]["SendFriendRequestBody"] = {
+      invited_player_id: invitedPlayerId,
+    };
+    const { data, error } = await client.POST("/api/players/friends/requests", {
+      headers: { Authorization: `Bearer ${token}` },
+      body,
+    });
     if (error) throw ApiError.fromErrorModel(error);
-    return data as unknown as FriendshipResponse;
+    return data;
   }
 
   async acceptFriendRequest({
@@ -97,16 +68,16 @@ class FriendsQueries {
   }: {
     token: string;
     requestId: string;
-  }): Promise<FriendshipResponse> {
+  }): Promise<SingleFriendship> {
     const { data, error } = await client.POST(
       "/api/players/friends/requests/{request-id}/accept",
       {
         headers: { Authorization: `Bearer ${token}` },
         params: { path: { "request-id": requestId } },
-      } as Parameters<typeof client.POST>[1],
+      },
     );
     if (error) throw ApiError.fromErrorModel(error);
-    return data as unknown as FriendshipResponse;
+    return data;
   }
 
   async declineFriendRequest({
@@ -115,16 +86,16 @@ class FriendsQueries {
   }: {
     token: string;
     requestId: string;
-  }): Promise<FriendshipResponse> {
+  }): Promise<SingleFriendship> {
     const { data, error } = await client.POST(
       "/api/players/friends/requests/{request-id}/decline",
       {
         headers: { Authorization: `Bearer ${token}` },
         params: { path: { "request-id": requestId } },
-      } as Parameters<typeof client.POST>[1],
+      },
     );
     if (error) throw ApiError.fromErrorModel(error);
-    return data as unknown as FriendshipResponse;
+    return data;
   }
 
   async removeFriend({
@@ -139,7 +110,7 @@ class FriendsQueries {
       {
         headers: { Authorization: `Bearer ${token}` },
         params: { path: { "friendship-id": friendshipId } },
-      } as Parameters<typeof client.DELETE>[1],
+      },
     );
     if (error) throw ApiError.fromErrorModel(error);
   }
@@ -150,13 +121,16 @@ class FriendsQueries {
   }: {
     token: string;
     playerId: string;
-  }): Promise<FriendshipResponse> {
+  }): Promise<SingleFriendship> {
+    const body: components["schemas"]["BlockPlayerBody"] = {
+      player_id: playerId,
+    };
     const { data, error } = await client.POST("/api/players/block", {
       headers: { Authorization: `Bearer ${token}` },
-      body: { player_id: playerId },
-    } as Parameters<typeof client.POST>[1]);
+      body,
+    });
     if (error) throw ApiError.fromErrorModel(error);
-    return data as unknown as FriendshipResponse;
+    return data;
   }
 
   async unblockPlayer({
@@ -169,7 +143,7 @@ class FriendsQueries {
     const { error } = await client.DELETE("/api/players/block/{player-id}", {
       headers: { Authorization: `Bearer ${token}` },
       params: { path: { "player-id": playerId } },
-    } as Parameters<typeof client.DELETE>[1]);
+    });
     if (error) throw ApiError.fromErrorModel(error);
   }
 
@@ -179,17 +153,35 @@ class FriendsQueries {
   }: {
     token: string;
     playerId: string;
-  }): Promise<FriendshipNullableResponse> {
+  }): Promise<SingleFriendship> {
     const { data, error } = await client.GET(
       "/api/players/{player-id}/friendship",
       {
         headers: { Authorization: `Bearer ${token}` },
         params: { path: { "player-id": playerId } },
-      } as Parameters<typeof client.GET>[1],
+      },
     );
     if (error) throw ApiError.fromErrorModel(error);
-    return data as unknown as FriendshipNullableResponse;
+    return data;
+  }
+
+  async issuePlayerSseTicket({
+    token,
+  }: {
+    token: string;
+  }): Promise<components["schemas"]["IssuePlayerSSETicketResponseBody"]> {
+    const { data, error } = await client.POST("/api/players/sse/ticket", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (error) throw ApiError.fromErrorModel(error);
+    return data;
   }
 }
 
 export const friendsQueries = new FriendsQueries();
+
+// Re-export operation parameter types for convenience.
+export type ListFriendsParams =
+  operations["list-friends"]["parameters"]["query"];
+export type ListFriendRequestsParams =
+  operations["list-friend-requests"]["parameters"]["query"];

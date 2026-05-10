@@ -8,7 +8,7 @@ import { RouteMap } from "@/components/route-map";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { usePlayer } from "@/hooks/use-current-player";
 import { useDialog } from "@/hooks/use-dialog";
-import { friendsQueries, Friendship, Player as FriendPlayer } from "@/lib/friends-queries";
+import { friendsQueries, Friendship } from "@/lib/friends-queries";
 import { rpsGameQueries } from "@/lib/rps-game-queries";
 import { Player } from "@/schema.types";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -36,7 +36,7 @@ function FriendsQuickPick({
 }: {
   token?: string;
   currentPlayerId?: string;
-  onSelect: (player: FriendPlayer) => void;
+  onSelect: (player: Player) => void;
 }) {
   const { data, isLoading } = useQuery({
     queryKey: [{ key: "friends" }],
@@ -52,7 +52,7 @@ function FriendsQuickPick({
       if (f.requesting_player_id === currentPlayerId) return f.invited_player;
       return f.requesting_player;
     })
-    .filter(Boolean) as FriendPlayer[];
+    .filter(Boolean) as Player[];
 
   if (friendPlayers.length === 0) return null;
 

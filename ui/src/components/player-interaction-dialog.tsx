@@ -1,5 +1,6 @@
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { friendsQueries, Friendship, Player } from "@/lib/friends-queries";
+import { friendsQueries, Friendship } from "@/lib/friends-queries";
+import { Player } from "@/schema.types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
