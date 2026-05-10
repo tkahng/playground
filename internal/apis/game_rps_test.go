@@ -606,3 +606,71 @@ func Test_SendGameRequestToRegisteredPlayer_Success(t *testing.T) {
 		}
 	})
 }
+
+func Test_SendGameRequest_BlockedPlayer_Fails(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		requester := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		target := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		// requester blocks target
+		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+			RequestingPlayerID: requester.ID,
+			InvitedPlayerID:    target.ID,
+			Status:             models.FriendshipStatusBlocked,
+		})
+		assert.NoError(t, err)
+
+		body, _ := json.Marshal(map[string]any{
+			"inviting_player_id": target.ID.String(),
+			"move":               "rock",
+		})
+		scenario := &apis.ApiScenario{
+			Name:           "blocked player cannot receive game request",
+			Method:         http.MethodPost,
+			URL:            "/games/rps/requests",
+			ExpectedStatus: http.StatusBadRequest,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, requester.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.Body = strings.NewReader(string(body))
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+func Test_SendGameRequest_BlockedByTarget_Fails(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		requester := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		target := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		// target blocks requester (reverse direction)
+		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+			RequestingPlayerID: target.ID,
+			InvitedPlayerID:    requester.ID,
+			Status:             models.FriendshipStatusBlocked,
+		})
+		assert.NoError(t, err)
+
+		body, _ := json.Marshal(map[string]any{
+			"inviting_player_id": target.ID.String(),
+			"move":               "rock",
+		})
+		scenario := &apis.ApiScenario{
+			Name:           "target blocked requester — still cannot send game",
+			Method:         http.MethodPost,
+			URL:            "/games/rps/requests",
+			ExpectedStatus: http.StatusBadRequest,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, requester.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.Body = strings.NewReader(string(body))
+			},
+		}
+		scenario.Test(t)
+	})
+}

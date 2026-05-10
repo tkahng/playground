@@ -666,16 +666,75 @@ func TestDbRpsGameService_PlayerCanPlayWithPlayer_DeclinedFriendship(t *testing.
 		p1 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("decline_p1@example.com"))
 		p2 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("decline_p2@example.com"))
 
-		// MustCreateFriendship(store, invitedPlayer=p2, requestingPlayer=p1)
-		// PlayerCanPlayWithPlayer filters by RequestingPlayerIds=[p1], InvitedPlayerIds=[p2]
 		stores.MustCreateFriendship(t, ctx, adapter.Gaming(), p2, p1, stores.WithStatus(models.FriendshipStatusDeclined))
+
+		// Declined friendship should NOT prevent gameplay — only blocks do.
+		canPlay, err := rpsService.PlayerCanPlayWithPlayer(ctx, p1.ID, p2.ID)
+		if err != nil {
+			t.Fatalf("PlayerCanPlayWithPlayer() error = %v", err)
+		}
+		if !canPlay {
+			t.Error("PlayerCanPlayWithPlayer() = false, want true for declined friendship")
+		}
+	})
+}
+
+func TestDbRpsGameService_PlayerCanPlayWithPlayer_BlockedByRequester(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		rpsService := NewDbRpsGameService(adapter, NewDbBettingService(adapter, NewDbLedgerService(adapter)))
+
+		p1 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("block_req_p1@example.com"))
+		p2 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("block_req_p2@example.com"))
+
+		// p1 blocks p2: requesting=p1, invited=p2
+		stores.MustCreateFriendship(t, ctx, adapter.Gaming(), p1, p2, stores.WithStatus(models.FriendshipStatusBlocked))
 
 		canPlay, err := rpsService.PlayerCanPlayWithPlayer(ctx, p1.ID, p2.ID)
 		if err != nil {
 			t.Fatalf("PlayerCanPlayWithPlayer() error = %v", err)
 		}
 		if canPlay {
-			t.Error("PlayerCanPlayWithPlayer() = true, want false for declined friendship")
+			t.Error("PlayerCanPlayWithPlayer() = true, want false when requester has blocked invited")
+		}
+	})
+}
+
+func TestDbRpsGameService_PlayerCanPlayWithPlayer_BlockedByInvited(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		rpsService := NewDbRpsGameService(adapter, NewDbBettingService(adapter, NewDbLedgerService(adapter)))
+
+		p1 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("block_inv_p1@example.com"))
+		p2 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("block_inv_p2@example.com"))
+
+		// p2 blocks p1: requesting=p2, invited=p1 — reverse direction
+		stores.MustCreateFriendship(t, ctx, adapter.Gaming(), p2, p1, stores.WithStatus(models.FriendshipStatusBlocked))
+
+		canPlay, err := rpsService.PlayerCanPlayWithPlayer(ctx, p1.ID, p2.ID)
+		if err != nil {
+			t.Fatalf("PlayerCanPlayWithPlayer() error = %v", err)
+		}
+		if canPlay {
+			t.Error("PlayerCanPlayWithPlayer() = true, want false when invited has blocked requester")
+		}
+	})
+}
+
+func TestDbRpsGameService_PlayerCanPlayWithPlayer_Strangers(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		rpsService := NewDbRpsGameService(adapter, NewDbBettingService(adapter, NewDbLedgerService(adapter)))
+
+		p1 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("stranger_p1@example.com"))
+		p2 := stores.MustCreatePlayer(t, ctx, adapter.Gaming(), stores.WithPlayerEmail("stranger_p2@example.com"))
+
+		canPlay, err := rpsService.PlayerCanPlayWithPlayer(ctx, p1.ID, p2.ID)
+		if err != nil {
+			t.Fatalf("PlayerCanPlayWithPlayer() error = %v", err)
+		}
+		if !canPlay {
+			t.Error("PlayerCanPlayWithPlayer() = false, want true for players with no relationship")
 		}
 	})
 }
