@@ -239,7 +239,7 @@ type Friendship struct {
 	InvitedPlayer      *Player          `json:"invited_player,omitempty"`
 }
 
-func ToApiFriendship(f *models.Frindship) *Friendship {
+func ToApiFriendship(f *models.Friendship) *Friendship {
 	if f == nil {
 		return nil
 	}

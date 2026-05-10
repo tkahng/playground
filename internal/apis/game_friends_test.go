@@ -51,20 +51,20 @@ func Test_ListFriends_WithAcceptedFriendships(t *testing.T) {
 		friend2 := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
 		// create accepted friendships
-		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: player.ID,
 			InvitedPlayerID:    friend1.ID,
 			Status:             models.FriendshipStatusAccepted,
 		})
 		assert.NoError(t, err)
-		_, err = testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		_, err = testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: friend2.ID,
 			InvitedPlayerID:    player.ID,
 			Status:             models.FriendshipStatusAccepted,
 		})
 		assert.NoError(t, err)
 		// create a pending friendship — should NOT appear in friends list
-		_, err = testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		_, err = testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: player.ID,
 			InvitedPlayerID:    core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true)).ID,
 			Status:             models.FriendshipStatusPending,
@@ -101,14 +101,14 @@ func Test_ListFriendRequests_IncomingAndOutgoing(t *testing.T) {
 		invitee := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
 		// incoming request (requester → player)
-		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: requester.ID,
 			InvitedPlayerID:    player.ID,
 			Status:             models.FriendshipStatusPending,
 		})
 		assert.NoError(t, err)
 		// outgoing request (player → invitee)
-		_, err = testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		_, err = testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: player.ID,
 			InvitedPlayerID:    invitee.ID,
 			Status:             models.FriendshipStatusPending,
@@ -196,7 +196,7 @@ func Test_SendFriendRequest_AlreadyPending_Fails(t *testing.T) {
 		player := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		target := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
-		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: player.ID,
 			InvitedPlayerID:    target.ID,
 			Status:             models.FriendshipStatusPending,
@@ -227,7 +227,7 @@ func Test_SendFriendRequest_AfterDecline_Succeeds(t *testing.T) {
 		player := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		target := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
-		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: player.ID,
 			InvitedPlayerID:    target.ID,
 			Status:             models.FriendshipStatusDeclined,
@@ -262,7 +262,7 @@ func Test_AcceptFriendRequest_Success(t *testing.T) {
 		requester := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		invitee := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
-		friendship, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		friendship, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: requester.ID,
 			InvitedPlayerID:    invitee.ID,
 			Status:             models.FriendshipStatusPending,
@@ -295,7 +295,7 @@ func Test_AcceptFriendRequest_WrongPlayer_Fails(t *testing.T) {
 		invitee := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		bystander := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
-		friendship, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		friendship, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: requester.ID,
 			InvitedPlayerID:    invitee.ID,
 			Status:             models.FriendshipStatusPending,
@@ -324,7 +324,7 @@ func Test_DeclineFriendRequest_Success(t *testing.T) {
 		requester := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		invitee := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
-		friendship, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		friendship, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: requester.ID,
 			InvitedPlayerID:    invitee.ID,
 			Status:             models.FriendshipStatusPending,
@@ -356,7 +356,7 @@ func Test_RemoveFriend_Success(t *testing.T) {
 		player := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		friend := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
-		friendship, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		friendship, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: player.ID,
 			InvitedPlayerID:    friend.ID,
 			Status:             models.FriendshipStatusAccepted,
@@ -392,7 +392,7 @@ func Test_RemoveFriend_NotInFriendship_Fails(t *testing.T) {
 		player2 := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		bystander := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
-		friendship, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		friendship, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: player1.ID,
 			InvitedPlayerID:    player2.ID,
 			Status:             models.FriendshipStatusAccepted,
@@ -451,7 +451,7 @@ func Test_BlockPlayer_RemovesExistingFriendship(t *testing.T) {
 		target := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
 		// Pre-existing accepted friendship
-		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: player.ID,
 			InvitedPlayerID:    target.ID,
 			Status:             models.FriendshipStatusAccepted,
@@ -493,7 +493,7 @@ func Test_BlockPlayer_CannotSendFriendRequest_After(t *testing.T) {
 		target := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
 		// block first
-		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: player.ID,
 			InvitedPlayerID:    target.ID,
 			Status:             models.FriendshipStatusBlocked,
@@ -524,7 +524,7 @@ func Test_UnblockPlayer_Success(t *testing.T) {
 		player := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		target := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
-		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: player.ID,
 			InvitedPlayerID:    target.ID,
 			Status:             models.FriendshipStatusBlocked,
@@ -578,7 +578,7 @@ func Test_GetFriendship_Pending_RequestingDirection(t *testing.T) {
 		player := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		other := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
-		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: player.ID,
 			InvitedPlayerID:    other.ID,
 			Status:             models.FriendshipStatusPending,
@@ -611,7 +611,7 @@ func Test_GetFriendship_Pending_InvitedDirection(t *testing.T) {
 		player := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		other := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
-		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: other.ID,
 			InvitedPlayerID:    player.ID,
 			Status:             models.FriendshipStatusPending,
@@ -644,7 +644,7 @@ func Test_GetFriendship_Accepted(t *testing.T) {
 		player := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		other := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
-		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: player.ID,
 			InvitedPlayerID:    other.ID,
 			Status:             models.FriendshipStatusAccepted,
@@ -677,7 +677,7 @@ func Test_GetFriendship_Blocked(t *testing.T) {
 		player := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		other := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
-		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: player.ID,
 			InvitedPlayerID:    other.ID,
 			Status:             models.FriendshipStatusBlocked,

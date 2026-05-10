@@ -67,15 +67,15 @@ func MustCreatePlayer(t testing.TB, ctx context.Context, gamingStore GamingStore
 	return newPlayer
 }
 
-type FriendshipOptionFunc func(opt *models.Frindship)
+type FriendshipOptionFunc func(opt *models.Friendship)
 
 func WithStatus(status models.FriendshipStatus) FriendshipOptionFunc {
-	return func(opt *models.Frindship) {
+	return func(opt *models.Friendship) {
 		opt.Status = status
 	}
 }
-func MustCreateFriendship(t testing.TB, ctx context.Context, gamingStore GamingStore, player1, player2 *models.Player, fns ...FriendshipOptionFunc) *models.Frindship {
-	friendship := &models.Frindship{
+func MustCreateFriendship(t testing.TB, ctx context.Context, gamingStore GamingStore, player1, player2 *models.Player, fns ...FriendshipOptionFunc) *models.Friendship {
+	friendship := &models.Friendship{
 		InvitedPlayerID:    player1.ID,
 		RequestingPlayerID: player2.ID,
 		Status:             models.FriendshipStatusPending,

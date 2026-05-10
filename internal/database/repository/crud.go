@@ -83,7 +83,7 @@ var (
 	PlayerBuilder = NewSQLBuilder[models.Player](
 		UuidV7Generator,
 	)
-	FrindshipBuilder = NewSQLBuilder[models.Frindship](
+	FriendshipBuilder = NewSQLBuilder[models.Friendship](
 		UuidV7Generator,
 	)
 	RpsGameBuilder = NewSQLBuilder[models.RpsGame](
@@ -128,7 +128,7 @@ var (
 	Job                Repository[models.JobRow]             = NewPostgresRepository(JobBuilder)
 	UserReaction       Repository[models.UserReaction]       = NewPostgresRepository(UserReactionBuilder)
 	Player             Repository[models.Player]             = NewPostgresRepository(PlayerBuilder)
-	Frindship          Repository[models.Frindship]          = NewPostgresRepository(FrindshipBuilder)
+	Friendship          Repository[models.Friendship]          = NewPostgresRepository(FriendshipBuilder)
 	RpsGame            Repository[models.RpsGame]            = NewPostgresRepository(RpsGameBuilder)
 	RpsParticipant     Repository[models.RpsParticipant]     = NewPostgresRepository(RpsParticipantBuilder)
 	RpsGameInvite      Repository[models.RpsGameInvite]      = NewPostgresRepository(RpsGameInviteBuilder)

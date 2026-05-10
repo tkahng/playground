@@ -20,9 +20,9 @@ func TestDBGamingStore_CreateUpdateFindCount(t *testing.T) {
 
 		// declaration
 		players := []*models.Player{}
-		friendships := []*models.Frindship{}
-		friendshipsMap := map[uuid.UUID]*models.Frindship{}
-		playerIdFriendshipMap := map[uuid.UUID][]*models.Frindship{}
+		friendships := []*models.Friendship{}
+		friendshipsMap := map[uuid.UUID]*models.Friendship{}
+		playerIdFriendshipMap := map[uuid.UUID][]*models.Friendship{}
 
 		playerCount := 10
 
@@ -38,7 +38,7 @@ func TestDBGamingStore_CreateUpdateFindCount(t *testing.T) {
 			// for each progressive player, increment i as to avoid duplicate friendships
 			for j := i + 1; j < len(players); j++ {
 				player2 := players[j]
-				friendship, err := gamingStore.CreateFriendship(ctx, &models.Frindship{
+				friendship, err := gamingStore.CreateFriendship(ctx, &models.Friendship{
 					RequestingPlayerID: player1.ID,
 					InvitedPlayerID:    player2.ID,
 				})
@@ -91,8 +91,8 @@ func TestDBGamingStore_CreateUpdateFindCount(t *testing.T) {
 			models.FriendshipStatusDeclined,
 		)
 		// declare slices
-		accepted := []*models.Frindship{}
-		declined := []*models.Frindship{}
+		accepted := []*models.Friendship{}
+		declined := []*models.Friendship{}
 
 		// for each friendship
 		for _, f := range friendships {
@@ -121,8 +121,8 @@ func TestDBGamingStore_CreateUpdateFindCount(t *testing.T) {
 			t.Errorf("The sum of the lengths of accepted and declined should be equal to the length of friendships. got %v, want %v", len(accepted)+len(declined), len(friendships))
 		}
 		// find -------------------------------------------------------------------
-		acceptedMap := map[uuid.UUID]*models.Frindship{}
-		declinedMap := map[uuid.UUID]*models.Frindship{}
+		acceptedMap := map[uuid.UUID]*models.Friendship{}
+		declinedMap := map[uuid.UUID]*models.Friendship{}
 		for _, player := range players {
 			// find friendships accepted
 			playerFriendshipsAccepted, err := gamingStore.FindFriendships(ctx, &FriendshipFilter{
@@ -227,7 +227,7 @@ func TestDBGamingStore_CreateUpdateFindCount(t *testing.T) {
 			t.Errorf("DeleteFriendships() = %v, want %v", deleted, len(toDeleteIds))
 		}
 		// verify blocked status can be persisted (after clearing all records)
-		blockedFriendship, err := gamingStore.CreateFriendship(ctx, &models.Frindship{
+		blockedFriendship, err := gamingStore.CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: players[0].ID,
 			InvitedPlayerID:    players[1].ID,
 			Status:             models.FriendshipStatusBlocked,

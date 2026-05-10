@@ -35,7 +35,7 @@ func bindFriendApi(humaApi huma.API, app core.App) {
 
 // populateFriendshipPlayers batch-fetches all unique players referenced by the
 // given friendships in a single DB query and assigns them in-place.
-func populateFriendshipPlayers(ctx context.Context, adapter stores.StorageAdapterInterface, friendships []*models.Frindship) error {
+func populateFriendshipPlayers(ctx context.Context, adapter stores.StorageAdapterInterface, friendships []*models.Friendship) error {
 	if len(friendships) == 0 {
 		return nil
 	}
@@ -71,7 +71,7 @@ func populateFriendshipPlayers(ctx context.Context, adapter stores.StorageAdapte
 
 // findFriendshipBetween finds the friendship record between two specific players (in either direction)
 // using a single DB query.
-func findFriendshipBetween(ctx context.Context, adapter stores.StorageAdapterInterface, playerA, playerB uuid.UUID) (*models.Frindship, error) {
+func findFriendshipBetween(ctx context.Context, adapter stores.StorageAdapterInterface, playerA, playerB uuid.UUID) (*models.Friendship, error) {
 	pair := [2]uuid.UUID{playerA, playerB}
 	return adapter.Gaming().FindFriendship(ctx, &stores.FriendshipFilter{
 		PlayerPair: &pair,
@@ -242,7 +242,7 @@ func bindSendFriendRequestApi(api huma.API, app core.App) {
 					}
 				}
 			}
-			friendship, err := app.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+			friendship, err := app.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 				RequestingPlayerID: currentPlayer.ID,
 				InvitedPlayerID:    input.Body.InvitedPlayerID,
 				Status:             models.FriendshipStatusPending,
@@ -322,7 +322,7 @@ func bindAcceptFriendRequestApi(api huma.API, app core.App) {
 				return nil, err
 			}
 			
-			if err := populateFriendshipPlayers(ctx, app.Adapter(), []*models.Frindship{updated}); err != nil {
+			if err := populateFriendshipPlayers(ctx, app.Adapter(), []*models.Friendship{updated}); err != nil {
 				return nil, err
 			}
 			return &ApiSingleOutput[*Friendship]{
@@ -382,7 +382,7 @@ func bindDeclineFriendRequestApi(api huma.API, app core.App) {
 				return nil, err
 			}
 			
-			if err := populateFriendshipPlayers(ctx, app.Adapter(), []*models.Frindship{updated}); err != nil {
+			if err := populateFriendshipPlayers(ctx, app.Adapter(), []*models.Friendship{updated}); err != nil {
 				return nil, err
 			}
 			return &ApiSingleOutput[*Friendship]{
@@ -497,7 +497,7 @@ func bindBlockPlayerApi(api huma.API, app core.App) {
 				}
 			}
 			now := time.Now().UTC()
-			blocked, err := app.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+			blocked, err := app.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 				RequestingPlayerID: currentPlayer.ID,
 				InvitedPlayerID:    input.Body.PlayerID,
 				Status:             models.FriendshipStatusBlocked,
@@ -586,7 +586,7 @@ func bindGetFriendshipApi(api huma.API, app core.App) {
 			}
 			if friendship != nil {
 				
-				if err := populateFriendshipPlayers(ctx, app.Adapter(), []*models.Frindship{friendship}); err != nil {
+				if err := populateFriendshipPlayers(ctx, app.Adapter(), []*models.Friendship{friendship}); err != nil {
 					return nil, err
 				}
 			}

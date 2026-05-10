@@ -614,7 +614,7 @@ func Test_SendGameRequest_BlockedPlayer_Fails(t *testing.T) {
 		target := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
 		// requester blocks target
-		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: requester.ID,
 			InvitedPlayerID:    target.ID,
 			Status:             models.FriendshipStatusBlocked,
@@ -649,7 +649,7 @@ func Test_SendGameRequest_BlockedByTarget_Fails(t *testing.T) {
 		target := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
 		// target blocks requester (reverse direction)
-		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Frindship{
+		_, err := testApi.App.Adapter().Gaming().CreateFriendship(ctx, &models.Friendship{
 			RequestingPlayerID: target.ID,
 			InvitedPlayerID:    requester.ID,
 			Status:             models.FriendshipStatusBlocked,
