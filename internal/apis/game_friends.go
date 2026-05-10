@@ -15,7 +15,6 @@ import (
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/notification"
-	"github.com/tkahng/playground/internal/populator"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
@@ -34,37 +33,48 @@ func bindFriendApi(humaApi huma.API, app core.App) {
 	bindGetFriendshipApi(humaApi, app)
 }
 
-func populateFriendshipPlayers(ctx context.Context, pop populator.Populator, friendships []*models.Frindship) error {
+// populateFriendshipPlayers batch-fetches all unique players referenced by the
+// given friendships in a single DB query and assigns them in-place.
+func populateFriendshipPlayers(ctx context.Context, adapter stores.StorageAdapterInterface, friendships []*models.Frindship) error {
+	if len(friendships) == 0 {
+		return nil
+	}
+	seen := make(map[uuid.UUID]struct{}, len(friendships)*2)
+	ids := make([]uuid.UUID, 0, len(friendships)*2)
 	for _, f := range friendships {
-		rp, err := pop.GetPlayerByID(ctx, f.RequestingPlayerID)
-		if err != nil {
-			return err
+		if _, ok := seen[f.RequestingPlayerID]; !ok {
+			seen[f.RequestingPlayerID] = struct{}{}
+			ids = append(ids, f.RequestingPlayerID)
 		}
-		f.RequestingPlayer = rp
-		ip, err := pop.GetPlayerByID(ctx, f.InvitedPlayerID)
-		if err != nil {
-			return err
+		if _, ok := seen[f.InvitedPlayerID]; !ok {
+			seen[f.InvitedPlayerID] = struct{}{}
+			ids = append(ids, f.InvitedPlayerID)
 		}
-		f.InvitedPlayer = ip
+	}
+	players, err := adapter.Gaming().FindPlayers(ctx, &stores.PlayersFilter{
+		Ids:            ids,
+		PaginatedInput: repository.PaginatedInput{Page: 0, PerPage: int64(len(ids))},
+	})
+	if err != nil {
+		return err
+	}
+	byID := make(map[uuid.UUID]*models.Player, len(players))
+	for _, p := range players {
+		byID[p.ID] = p
+	}
+	for _, f := range friendships {
+		f.RequestingPlayer = byID[f.RequestingPlayerID]
+		f.InvitedPlayer = byID[f.InvitedPlayerID]
 	}
 	return nil
 }
 
-// findFriendshipBetween finds the friendship record between two specific players (in either direction).
+// findFriendshipBetween finds the friendship record between two specific players (in either direction)
+// using a single DB query.
 func findFriendshipBetween(ctx context.Context, adapter stores.StorageAdapterInterface, playerA, playerB uuid.UUID) (*models.Frindship, error) {
-	f, err := adapter.Gaming().FindFriendship(ctx, &stores.FriendshipFilter{
-		RequestingPlayerIds: []uuid.UUID{playerA},
-		InvitedPlayerIds:    []uuid.UUID{playerB},
-	})
-	if err != nil {
-		return nil, err
-	}
-	if f != nil {
-		return f, nil
-	}
+	pair := [2]uuid.UUID{playerA, playerB}
 	return adapter.Gaming().FindFriendship(ctx, &stores.FriendshipFilter{
-		RequestingPlayerIds: []uuid.UUID{playerB},
-		InvitedPlayerIds:    []uuid.UUID{playerA},
+		PlayerPair: &pair,
 	})
 }
 
@@ -104,8 +114,8 @@ func bindListFriendsApi(api huma.API, app core.App) {
 			if err != nil {
 				return nil, err
 			}
-			pop := populator.New(app.Adapter())
-			if err := populateFriendshipPlayers(ctx, pop, friendships); err != nil {
+			
+			if err := populateFriendshipPlayers(ctx, app.Adapter(), friendships); err != nil {
 				return nil, err
 			}
 			return &ApiPaginatedOutput[*Friendship]{
@@ -156,8 +166,8 @@ func bindListFriendRequestsApi(api huma.API, app core.App) {
 			if err != nil {
 				return nil, err
 			}
-			pop := populator.New(app.Adapter())
-			if err := populateFriendshipPlayers(ctx, pop, friendships); err != nil {
+			
+			if err := populateFriendshipPlayers(ctx, app.Adapter(), friendships); err != nil {
 				return nil, err
 			}
 			return &ApiPaginatedOutput[*Friendship]{
@@ -311,8 +321,8 @@ func bindAcceptFriendRequestApi(api huma.API, app core.App) {
 			if err != nil {
 				return nil, err
 			}
-			pop := populator.New(app.Adapter())
-			if err := populateFriendshipPlayers(ctx, pop, []*models.Frindship{updated}); err != nil {
+			
+			if err := populateFriendshipPlayers(ctx, app.Adapter(), []*models.Frindship{updated}); err != nil {
 				return nil, err
 			}
 			return &ApiSingleOutput[*Friendship]{
@@ -371,8 +381,8 @@ func bindDeclineFriendRequestApi(api huma.API, app core.App) {
 			if err != nil {
 				return nil, err
 			}
-			pop := populator.New(app.Adapter())
-			if err := populateFriendshipPlayers(ctx, pop, []*models.Frindship{updated}); err != nil {
+			
+			if err := populateFriendshipPlayers(ctx, app.Adapter(), []*models.Frindship{updated}); err != nil {
 				return nil, err
 			}
 			return &ApiSingleOutput[*Friendship]{
@@ -575,8 +585,8 @@ func bindGetFriendshipApi(api huma.API, app core.App) {
 				return nil, err
 			}
 			if friendship != nil {
-				pop := populator.New(app.Adapter())
-				if err := populateFriendshipPlayers(ctx, pop, []*models.Frindship{friendship}); err != nil {
+				
+				if err := populateFriendshipPlayers(ctx, app.Adapter(), []*models.Frindship{friendship}); err != nil {
 					return nil, err
 				}
 			}
