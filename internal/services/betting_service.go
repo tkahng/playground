@@ -32,6 +32,21 @@ type BettingService interface {
 
 	// RefundBothBets voids both pending bets (edge case: both placed but game expired).
 	RefundBothBets(ctx context.Context, hostPendingTransferID, guestPendingTransferID uuid.UUID) error
+
+	// SettleHouseGame settles a house-vs-player bet without a real house escrow.
+	// User wins  → void pending + mint betAmount from issuance to user wallet.
+	// House wins → post pending + burn from escrow to issuance.
+	// Tie        → void pending (no additional transfer).
+	SettleHouseGame(ctx context.Context, input SettleHouseGameInput) error
+}
+
+type SettleHouseGameInput struct {
+	GameID                uuid.UUID
+	HostUserID            uuid.UUID
+	HostPendingTransferID uuid.UUID
+	BetAmount             int64
+	// UserResult is the result from the user's (host's) perspective.
+	UserResult models.RpsParticipantResult
 }
 
 // PlaceGuestAndSettleInput carries all data needed to finalise a bet when the guest responds.
@@ -245,6 +260,67 @@ func (s *DbBettingService) RefundBothBets(ctx context.Context, hostPendingTransf
 		return fmt.Errorf("void guest bet: %w", err)
 	}
 	return nil
+}
+
+// SettleHouseGame settles a house-vs-player bet. No real house escrow exists —
+// the house is backed by the system issuance account.
+func (s *DbBettingService) SettleHouseGame(ctx context.Context, input SettleHouseGameInput) error {
+	refType := models.ReferenceTypeRpsGame
+
+	userWallet, err := s.ledger.GetOrCreateUserWallet(ctx, input.HostUserID)
+	if err != nil {
+		return fmt.Errorf("user wallet: %w", err)
+	}
+	issuance, err := s.ledger.GetSystemAccount(ctx, models.SystemAccountPointsIssuance)
+	if err != nil {
+		return fmt.Errorf("issuance account: %w", err)
+	}
+	escrow, err := s.ledger.GetSystemAccount(ctx, models.SystemAccountGameEscrow)
+	if err != nil {
+		return fmt.Errorf("escrow account: %w", err)
+	}
+
+	switch input.UserResult {
+	case models.RpsParticipantResultWin:
+		// Void the user's pending escrow (return their bet).
+		if _, err = s.ledger.VoidPendingTransfer(ctx, input.HostPendingTransferID); err != nil {
+			return fmt.Errorf("void host bet: %w", err)
+		}
+		// Mint winnings from issuance to user wallet.
+		_, err = s.ledger.PostTransfer(ctx, PostTransferInput{
+			LedgerCode:      "POINTS",
+			DebitAccountID:  issuance.ID,
+			CreditAccountID: userWallet.ID,
+			Amount:          input.BetAmount,
+			TransferCode:    models.TransferCodeBetWin,
+			ReferenceType:   &refType,
+			ReferenceID:     &input.GameID,
+		})
+
+	case models.RpsParticipantResultLose:
+		// Post the pending (move funds to escrow), then burn to issuance.
+		if _, err = s.ledger.PostPendingTransfer(ctx, input.HostPendingTransferID); err != nil {
+			return fmt.Errorf("post host pending: %w", err)
+		}
+		_, err = s.ledger.PostTransfer(ctx, PostTransferInput{
+			LedgerCode:      "POINTS",
+			DebitAccountID:  escrow.ID,
+			CreditAccountID: issuance.ID,
+			Amount:          input.BetAmount,
+			TransferCode:    models.TransferCodeBetWin,
+			ReferenceType:   &refType,
+			ReferenceID:     &input.GameID,
+		})
+
+	default:
+		// Tie: void the pending (full refund, no net transfer).
+		_, err = s.ledger.VoidPendingTransfer(ctx, input.HostPendingTransferID)
+		if err != nil {
+			return fmt.Errorf("void host bet (tie): %w", err)
+		}
+		return nil
+	}
+	return err
 }
 
 // PointsPurchaseFulfillInput holds the data needed to credit a user after a Stripe purchase.
