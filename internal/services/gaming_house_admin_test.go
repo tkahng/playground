@@ -74,6 +74,17 @@ func TestChallengeHouse_Forbidden_WhenDisabled(t *testing.T) {
 	})
 }
 
+func TestGetHousePlayerStats_ErrorWhenNotSeeded(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+
+		_, err := GetHousePlayerStats(ctx, adapter)
+		if err == nil {
+			t.Fatal("expected error when house player is not seeded, got nil")
+		}
+	})
+}
+
 func TestGetHousePlayerStats_Empty(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)

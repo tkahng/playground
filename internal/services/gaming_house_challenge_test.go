@@ -296,6 +296,113 @@ func TestChallengeHouse_WithBet_Tie(t *testing.T) {
 	})
 }
 
+func TestChallengeHouse_WithBet_BalanceMovesCorrectly(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		svc := newHouseTestService(t, ctx, adapter)
+
+		user := mustCreateUser(t, ctx, adapter, "bet_bal@example.com")
+		player := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("bet_bal@example.com"),
+			stores.WithUserID(user.ID),
+		)
+		mustFundPlayerWallet(t, ctx, adapter, ledger, &user.ID, 500)
+
+		betAmt := int64(100)
+		result, err := svc.ChallengeHouse(ctx, &ChallengeHouseInput{
+			RequestingPlayerID:   player.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			BetAmount:            &betAmt,
+			HostUserID:           &user.ID,
+		})
+		if err != nil {
+			t.Fatalf("ChallengeHouse() error = %v", err)
+		}
+
+		bal, err := ledger.GetUserBalance(ctx, user.ID)
+		if err != nil {
+			t.Fatalf("GetUserBalance: %v", err)
+		}
+		userResult := result.Game.RequestingParticipant.Result
+		switch userResult {
+		case models.RpsParticipantResultWin:
+			if bal != 600 {
+				t.Errorf("user win: balance = %d, want 600", bal)
+			}
+		case models.RpsParticipantResultLose:
+			if bal != 400 {
+				t.Errorf("user lose: balance = %d, want 400", bal)
+			}
+			if result.HouseMessage == nil {
+				t.Error("HouseMessage should be set when house wins a bet")
+			} else if *result.HouseMessage != HouseWinsMessage {
+				t.Errorf("HouseMessage = %q, want %q", *result.HouseMessage, HouseWinsMessage)
+			}
+		case models.RpsParticipantResultTie:
+			if bal != 500 {
+				t.Errorf("tie: balance = %d, want 500", bal)
+			}
+			if result.HouseMessage != nil {
+				t.Error("HouseMessage should be nil on tie")
+			}
+		}
+		// Win case should also have no house_message
+		if userResult == models.RpsParticipantResultWin && result.HouseMessage != nil {
+			t.Error("HouseMessage should be nil when user wins")
+		}
+	})
+}
+
+func TestChallengeHouse_BetZero_Rejected(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		svc := newHouseTestService(t, ctx, adapter)
+
+		user := mustCreateUser(t, ctx, adapter, "betzero@example.com")
+		player := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("betzero@example.com"),
+			stores.WithUserID(user.ID),
+		)
+
+		zero := int64(0)
+		_, err := svc.ChallengeHouse(ctx, &ChallengeHouseInput{
+			RequestingPlayerID:   player.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			BetAmount:            &zero,
+			HostUserID:           &user.ID,
+		})
+		if err == nil {
+			t.Fatal("expected error for zero bet amount, got nil")
+		}
+	})
+}
+
+func TestChallengeHouse_HostUserIDMismatch_Rejected(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		svc := newHouseTestService(t, ctx, adapter)
+
+		user := mustCreateUser(t, ctx, adapter, "mismatch_u@example.com")
+		player := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("mismatch_u@example.com"),
+			stores.WithUserID(user.ID),
+		)
+		otherUser := mustCreateUser(t, ctx, adapter, "mismatch_other@example.com")
+
+		betAmt := int64(50)
+		_, err := svc.ChallengeHouse(ctx, &ChallengeHouseInput{
+			RequestingPlayerID:   player.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			BetAmount:            &betAmt,
+			HostUserID:           &otherUser.ID, // wrong user
+		})
+		if err == nil {
+			t.Fatal("expected error when HostUserID does not match requesting player, got nil")
+		}
+	})
+}
+
 func TestChallengeHouse_HouseMessage_OnlyWhenBetAndHouseWins(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
@@ -307,13 +414,15 @@ func TestChallengeHouse_HouseMessage_OnlyWhenBetAndHouseWins(t *testing.T) {
 			stores.WithPlayerEmail("hmsg@example.com"),
 			stores.WithUserID(user.ID),
 		)
-		mustFundPlayerWallet(t, ctx, adapter, ledger, &user.ID, 500)
+		// Fund enough for up to 50 losses at 50 pts each.
+		mustFundPlayerWallet(t, ctx, adapter, ledger, &user.ID, 5000)
 
 		betAmt := int64(50)
-		// Run games until we see house win with a bet (to verify house_message appears).
-		// Also verify no-bet games never have house_message.
 		var sawHouseMsg bool
-		for i := 0; i < 30 && !sawHouseMsg; i++ {
+		for range 50 {
+			if sawHouseMsg {
+				break
+			}
 			// Reset cooldown so we can keep playing.
 			player.LastHouseGameAt = nil
 			if _, err := adapter.Gaming().UpdatePlayer(ctx, player); err != nil {
@@ -326,7 +435,6 @@ func TestChallengeHouse_HouseMessage_OnlyWhenBetAndHouseWins(t *testing.T) {
 				HostUserID:           &user.ID,
 			})
 			if err != nil {
-				// May hit insufficient balance — stop.
 				break
 			}
 			if result.HouseMessage != nil {
@@ -336,9 +444,10 @@ func TestChallengeHouse_HouseMessage_OnlyWhenBetAndHouseWins(t *testing.T) {
 				sawHouseMsg = true
 			}
 		}
-		// This test is probabilistic; over 30 games with random moves,
-		// the house wins ~1/3 of the time so we almost certainly see house_message.
-		_ = sawHouseMsg
+		// Over 50 games the house wins ~1/3 → P(never) ≈ (2/3)^50 < 0.01%.
+		if !sawHouseMsg {
+			t.Error("house_message was never set across 50 bet games — expected at least one house win")
+		}
 	})
 }
 
