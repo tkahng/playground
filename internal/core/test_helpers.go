@@ -31,6 +31,21 @@ func MustCreateGame(t testing.TB, app App, requestingPlayerID, invitingPlayerID 
 	return game
 }
 
+func MustCompleteGame(t testing.TB, app App, game *services.RpsGameWithParticipants, invitedMove models.RpsParticipantMove) *services.RpsGameWithParticipants {
+	t.Helper()
+	ctx := t.Context()
+	completed, err := app.RpsGame().RespondToGameRequest(ctx, &services.GameRequestResponse{
+		InvitedPlayerID: game.InvitedParticipant.PlayerID,
+		GameID:          game.RpsGame.ID,
+		Status:          models.RpsGameStatusCompleted,
+		Move:            invitedMove,
+	})
+	if err != nil {
+		t.Fatalf("MustCompleteGame RespondToGameRequest() error = %v", err)
+	}
+	return completed
+}
+
 func ExtractTestMailer(t testing.TB, testApi App) *mailer.TestMailer {
 	var testMailer *mailer.TestMailer
 	if m, ok := testApi.Mailer().(*mailer.TestMailer); ok {
