@@ -208,7 +208,24 @@ func TestDBGamingStore_CreateUpdateFindCount(t *testing.T) {
 		if totalFriendShipCount != 45 {
 			t.Errorf("CountFriendships() = %v, want %v", totalFriendShipCount, 0)
 		}
-		// verify blocked status can be persisted
+		// delete
+		toDeleteIds := []uuid.UUID{}
+		for _, f := range accepted {
+			toDeleteIds = append(toDeleteIds, f.ID)
+		}
+		for _, f := range declined {
+			toDeleteIds = append(toDeleteIds, f.ID)
+		}
+		deleted, err := gamingStore.DeleteFriendships(ctx, &FriendshipFilter{
+			Ids: toDeleteIds,
+		})
+		if err != nil {
+			t.Fatalf("DeleteFriendships() error = %v", err)
+		}
+		if deleted != int64(len(toDeleteIds)) {
+			t.Errorf("DeleteFriendships() = %v, want %v", deleted, len(toDeleteIds))
+		}
+		// verify blocked status can be persisted (after clearing all records)
 		blockedFriendship, err := gamingStore.CreateFriendship(ctx, &models.Frindship{
 			RequestingPlayerID: players[0].ID,
 			InvitedPlayerID:    players[1].ID,
@@ -228,23 +245,6 @@ func TestDBGamingStore_CreateUpdateFindCount(t *testing.T) {
 		}
 		if blockedCount != 1 {
 			t.Errorf("CountFriendships(blocked) = %v, want 1", blockedCount)
-		}
-		// delete
-		toDeleteIds := []uuid.UUID{}
-		for _, f := range accepted {
-			toDeleteIds = append(toDeleteIds, f.ID)
-		}
-		for _, f := range declined {
-			toDeleteIds = append(toDeleteIds, f.ID)
-		}
-		deleted, err := gamingStore.DeleteFriendships(ctx, &FriendshipFilter{
-			Ids: toDeleteIds,
-		})
-		if err != nil {
-			t.Fatalf("DeleteFriendships() error = %v", err)
-		}
-		if deleted != int64(len(toDeleteIds)) {
-			t.Errorf("DeleteFriendships() = %v, want %v", deleted, len(toDeleteIds))
 		}
 	})
 }

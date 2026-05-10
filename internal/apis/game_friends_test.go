@@ -174,11 +174,12 @@ func Test_SendFriendRequest_ToSelf_Fails(t *testing.T) {
 
 		body, _ := json.Marshal(apis.SendFriendRequestBody{InvitedPlayerID: player.ID})
 		scenario := &apis.ApiScenario{
-			Name:           "self request",
-			Method:         http.MethodPost,
-			URL:            "/players/friends/requests",
-			ExpectedStatus: http.StatusBadRequest,
-			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			Name:            "self request",
+			Method:          http.MethodPost,
+			URL:             "/players/friends/requests",
+			ExpectedStatus:  http.StatusBadRequest,
+			ExpectedContent: []string{"cannot send friend request to yourself"},
+			TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, player.Email)
 				scenario.Headers = []string{tokenHeader}
@@ -204,11 +205,12 @@ func Test_SendFriendRequest_AlreadyPending_Fails(t *testing.T) {
 
 		body, _ := json.Marshal(apis.SendFriendRequestBody{InvitedPlayerID: target.ID})
 		scenario := &apis.ApiScenario{
-			Name:           "already pending",
-			Method:         http.MethodPost,
-			URL:            "/players/friends/requests",
-			ExpectedStatus: http.StatusConflict,
-			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			Name:            "already pending",
+			Method:          http.MethodPost,
+			URL:             "/players/friends/requests",
+			ExpectedStatus:  http.StatusConflict,
+			ExpectedContent: []string{"friend request already pending"},
+			TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, player.Email)
 				scenario.Headers = []string{tokenHeader}
@@ -301,11 +303,12 @@ func Test_AcceptFriendRequest_WrongPlayer_Fails(t *testing.T) {
 		assert.NoError(t, err)
 
 		scenario := &apis.ApiScenario{
-			Name:           "wrong player",
-			Method:         http.MethodPost,
-			URL:            fmt.Sprintf("/players/friends/requests/%s/accept", friendship.ID),
-			ExpectedStatus: http.StatusForbidden,
-			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			Name:            "wrong player",
+			Method:          http.MethodPost,
+			URL:             fmt.Sprintf("/players/friends/requests/%s/accept", friendship.ID),
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"not authorized to accept this request"},
+			TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, bystander.Email)
 				scenario.Headers = []string{tokenHeader}
@@ -397,11 +400,12 @@ func Test_RemoveFriend_NotInFriendship_Fails(t *testing.T) {
 		assert.NoError(t, err)
 
 		scenario := &apis.ApiScenario{
-			Name:           "bystander cannot remove",
-			Method:         http.MethodDelete,
-			URL:            fmt.Sprintf("/players/friends/%s", friendship.ID),
-			ExpectedStatus: http.StatusForbidden,
-			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			Name:            "bystander cannot remove",
+			Method:          http.MethodDelete,
+			URL:             fmt.Sprintf("/players/friends/%s", friendship.ID),
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"not authorized"},
+			TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, bystander.Email)
 				scenario.Headers = []string{tokenHeader}
@@ -498,11 +502,12 @@ func Test_BlockPlayer_CannotSendFriendRequest_After(t *testing.T) {
 
 		body, _ := json.Marshal(apis.SendFriendRequestBody{InvitedPlayerID: target.ID})
 		scenario := &apis.ApiScenario{
-			Name:           "cannot request blocked player",
-			Method:         http.MethodPost,
-			URL:            "/players/friends/requests",
-			ExpectedStatus: http.StatusConflict,
-			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			Name:            "cannot request blocked player",
+			Method:          http.MethodPost,
+			URL:             "/players/friends/requests",
+			ExpectedStatus:  http.StatusConflict,
+			ExpectedContent: []string{"cannot send friend request to blocked player"},
+			TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, player.Email)
 				scenario.Headers = []string{tokenHeader}

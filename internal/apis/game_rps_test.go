@@ -626,11 +626,12 @@ func Test_SendGameRequest_BlockedPlayer_Fails(t *testing.T) {
 			"move":               "rock",
 		})
 		scenario := &apis.ApiScenario{
-			Name:           "blocked player cannot receive game request",
-			Method:         http.MethodPost,
-			URL:            "/games/rps/requests",
-			ExpectedStatus: http.StatusBadRequest,
-			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			Name:            "blocked player cannot receive game request",
+			Method:          http.MethodPost,
+			URL:             "/games/rps/requests",
+			ExpectedStatus:  http.StatusBadRequest,
+			ExpectedContent: []string{"player can't play with invited player"},
+			TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, requester.Email)
 				scenario.Headers = []string{tokenHeader}
@@ -660,11 +661,12 @@ func Test_SendGameRequest_BlockedByTarget_Fails(t *testing.T) {
 			"move":               "rock",
 		})
 		scenario := &apis.ApiScenario{
-			Name:           "target blocked requester — still cannot send game",
-			Method:         http.MethodPost,
-			URL:            "/games/rps/requests",
-			ExpectedStatus: http.StatusBadRequest,
-			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			Name:            "target blocked requester — still cannot send game",
+			Method:          http.MethodPost,
+			URL:             "/games/rps/requests",
+			ExpectedStatus:  http.StatusBadRequest,
+			ExpectedContent: []string{"player can't play with invited player"},
+			TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, requester.Email)
 				scenario.Headers = []string{tokenHeader}
