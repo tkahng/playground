@@ -2,6 +2,7 @@ package apis
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -13,12 +14,14 @@ import (
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/notification"
 	"github.com/tkahng/playground/internal/populator"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/security"
+	"github.com/tkahng/playground/internal/tools/sse"
 	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/internal/tools/utils"
 	"github.com/tkahng/playground/internal/workers"
@@ -121,6 +124,51 @@ func bindFindCurrentPlayersRpsGamesApi(api huma.API, app core.App) {
 	)
 }
 
+// emitRpsGameCompleted sends SSE completion events to both participants (best-effort).
+func emitRpsGameCompleted(ctx context.Context, app core.App, result *services.RpsGameWithParticipants) {
+	if result == nil {
+		return
+	}
+	type side struct {
+		playerID   uuid.UUID
+		result     string
+		yourMove   string
+		oppMove    string
+	}
+	sides := []side{}
+	if result.RequestingParticipant != nil && result.InvitedParticipant != nil {
+		sides = append(sides,
+			side{
+				playerID: result.RequestingParticipant.PlayerID,
+				result:   string(result.RequestingParticipant.Result),
+				yourMove: string(result.RequestingParticipant.Move),
+				oppMove:  string(result.InvitedParticipant.Move),
+			},
+			side{
+				playerID: result.InvitedParticipant.PlayerID,
+				result:   string(result.InvitedParticipant.Result),
+				yourMove: string(result.InvitedParticipant.Move),
+				oppMove:  string(result.RequestingParticipant.Move),
+			},
+		)
+	}
+	for _, s := range sides {
+		payload := notification.NewNotificationPayload(
+			"Game over",
+			"Your Rock Paper Scissors result is ready",
+			notification.RpsGameCompletedData{
+				GameID:       result.RpsGame.ID,
+				Result:       s.result,
+				YourMove:     s.yourMove,
+				OpponentMove: s.oppMove,
+			},
+		)
+		if err := app.SseManager().Send(sse.PlayerChannel(s.playerID.String()), payload); err != nil {
+			slog.WarnContext(ctx, "rps completed SSE notify failed", "player_id", s.playerID, "error", err)
+		}
+	}
+}
+
 func getRpsGameInviteFromTokenQuery(app core.App, ctx context.Context, token string) (*models.RpsGameInvite, error) {
 	rpsGameInvite, err := app.Adapter().Gaming().FindRpsGameInvite(ctx, &stores.RpsGameInviteFilter{
 		Tokens: []string{token},
@@ -186,6 +234,7 @@ func bindSubmitMoveWithTokenApi(api huma.API, app core.App) {
 			if txErr != nil {
 				return nil, txErr
 			}
+			emitRpsGameCompleted(ctx, app, rpsGameWithParticipants)
 			return &ApiSingleOutput[*RpsGameWithParticipants]{
 				Body: ApiSingleResponse[*RpsGameWithParticipants]{
 					Data: &RpsGameWithParticipants{
@@ -302,6 +351,7 @@ func bindSubmitMoveToRpsGameApi(api huma.API, app core.App) {
 			if txErr != nil {
 				return nil, txErr
 			}
+			emitRpsGameCompleted(ctx, app, rpsGameWithParticipants)
 			return &ApiSingleOutput[*RpsGameWithParticipants]{
 				Body: ApiSingleResponse[*RpsGameWithParticipants]{
 					Data: &RpsGameWithParticipants{
@@ -505,6 +555,19 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 			})
 			if txErr != nil {
 				return nil, txErr
+			}
+			// Notify the invited player via SSE (best-effort).
+			challengedPayload := notification.NewNotificationPayload(
+				"New challenge",
+				currentPlayer.Email+" challenged you to Rock Paper Scissors",
+				notification.RpsGameChallengedData{
+					GameID:             rpsGameWithParticipants.RpsGame.ID,
+					RequestingPlayerID: currentPlayer.ID,
+					RequestingEmail:    currentPlayer.Email,
+				},
+			)
+			if err := app.SseManager().Send(sse.PlayerChannel(player.ID.String()), challengedPayload); err != nil {
+				slog.WarnContext(ctx, "rps challenge SSE notify failed", "error", err)
 			}
 			return &ApiSingleOutput[*RpsGameWithParticipants]{
 				Body: ApiSingleResponse[*RpsGameWithParticipants]{
