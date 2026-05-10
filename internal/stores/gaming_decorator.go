@@ -23,6 +23,7 @@ type DbGamingStoreDecorator struct {
 	FindPlayersFunc           func(ctx context.Context, filter *PlayersFilter) ([]*models.Player, error)
 	UpdateFriendshipFunc      func(ctx context.Context, player *models.Friendship) (*models.Friendship, error)
 	UpdatePlayerFunc          func(ctx context.Context, player *models.Player) (*models.Player, error)
+	UpdatePlayerLastSeenFunc  func(ctx context.Context, playerID uuid.UUID) error
 	CreateRpsGameFunc              func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
 	UpdateRpsGameFunc              func(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
 	FindRpsGameFunc                func(ctx context.Context, filter *RpsGameFilter) (*models.RpsGame, error)
@@ -374,6 +375,17 @@ func (s *DbGamingStoreDecorator) UpdatePlayer(ctx context.Context, player *model
 		return nil, fmt.Errorf("Gaming store decorator UpdatePlayer %w", ErrDelegateNil)
 	}
 	return s.Delegate.UpdatePlayer(ctx, player)
+}
+
+// UpdatePlayerLastSeen implements [GamingStore].
+func (s *DbGamingStoreDecorator) UpdatePlayerLastSeen(ctx context.Context, playerID uuid.UUID) error {
+	if s.UpdatePlayerLastSeenFunc != nil {
+		return s.UpdatePlayerLastSeenFunc(ctx, playerID)
+	}
+	if s.Delegate == nil {
+		return fmt.Errorf("Gaming store decorator UpdatePlayerLastSeen %w", ErrDelegateNil)
+	}
+	return s.Delegate.UpdatePlayerLastSeen(ctx, playerID)
 }
 
 // WithTx implements [GamingStore].

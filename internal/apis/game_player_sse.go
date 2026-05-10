@@ -138,8 +138,14 @@ func (api *Api) PlayerSseEventsBind(humapi huma.API) {
 			Errors: []int{http.StatusUnauthorized},
 		},
 		map[string]any{
-			"friend_request": &notification.NotificationPayload[notification.FriendRequestNotificationData]{},
-			"ping":           &PingMessage{},
+			"friend_request":       &notification.NotificationPayload[notification.FriendRequestNotificationData]{},
+			"rps_game_challenged":  &notification.NotificationPayload[notification.RpsGameChallengedData]{},
+			"rps_game_completed":   &notification.NotificationPayload[notification.RpsGameCompletedData]{},
+			"rps_rematch_requested": &notification.NotificationPayload[notification.RpsRematchRequestedData]{},
+			"rps_rematch_accepted": &notification.NotificationPayload[notification.RpsRematchAcceptedData]{},
+			"rps_rematch_declined": &notification.NotificationPayload[notification.RpsRematchDeclinedData]{},
+			"rps_rematch_expired":  &notification.NotificationPayload[notification.RpsRematchExpiredData]{},
+			"ping":                 &PingMessage{},
 		},
 		handler,
 	)
