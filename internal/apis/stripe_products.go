@@ -105,14 +105,15 @@ func (api *Api) StripeProductsWithPrices(ctx context.Context, input *StripeProdu
 	for _, u := range products {
 		ids = append(ids, u.ID)
 	}
-	prices, err := api.App().Adapter().Price().LoadPricesByProductIds(ctx, ids...)
-	if err != nil {
-		return nil, err
-	}
-	for i, products := range products {
-		price := prices[i]
-		if len(price) > 0 {
-			products.Prices = price
+	if len(ids) > 0 {
+		prices, err := api.App().Adapter().Price().LoadPricesByProductIds(ctx, ids...)
+		if err != nil {
+			return nil, err
+		}
+		for i, product := range products {
+			if price := prices[i]; len(price) > 0 {
+				product.Prices = price
+			}
 		}
 	}
 

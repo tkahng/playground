@@ -206,6 +206,9 @@ func (s *DbPriceStore) FindPrice(ctx context.Context, filter *StripePriceFilter)
 }
 
 func (s *DbPriceStore) LoadPricesByProductIds(ctx context.Context, productIds ...string) ([][]*models.StripePrice, error) {
+	if len(productIds) == 0 {
+		return nil, nil
+	}
 	prices, err := repository.StripePrice.Get(
 		ctx,
 		s.db,
