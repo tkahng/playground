@@ -40,7 +40,8 @@ type PlayersFilter struct {
 
 func (s *DBGamingStore) playerFilterSelect(qs squirrel.SelectBuilder, filter *PlayersFilter) squirrel.SelectBuilder {
 	if filter == nil {
-		return qs
+		// No filter: exclude house players by default.
+		return qs.Where(squirrel.Eq{"gaming.players.is_house": false})
 	}
 	if filter.Ids != nil {
 		qs = qs.Where(squirrel.Eq{"gaming.players.id": filter.Ids})
@@ -69,6 +70,10 @@ func (s *DBGamingStore) playerFilterSelect(qs squirrel.SelectBuilder, filter *Pl
 	}
 	if filter.IsHouse.IsSet {
 		qs = qs.Where(squirrel.Eq{"gaming.players.is_house": filter.IsHouse.Value})
+	} else if filter.Ids == nil {
+		// Default: exclude the house player from all general queries.
+		// ID-specific lookups (e.g., resolving participant players) bypass this.
+		qs = qs.Where(squirrel.Eq{"gaming.players.is_house": false})
 	}
 	return qs
 }
@@ -100,6 +105,12 @@ func (s *DBGamingStore) playerFilterDelete(qs squirrel.DeleteBuilder, filter *Pl
 		} else {
 			qs = qs.Where(fmt.Sprintf("%s IS NULL", "gaming.players.user_id"))
 		}
+	}
+	if filter.IsHouse.IsSet {
+		qs = qs.Where(squirrel.Eq{"gaming.players.is_house": filter.IsHouse.Value})
+	} else if filter.Ids == nil {
+		// Prevent accidental bulk deletion of the house player.
+		qs = qs.Where(squirrel.Eq{"gaming.players.is_house": false})
 	}
 	return qs
 }

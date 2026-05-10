@@ -6,6 +6,7 @@ import (
 
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func TestSeedHousePlayer_CreatesOnFirstRun(t *testing.T) {
@@ -48,18 +49,15 @@ func TestSeedHousePlayer_IdempotentOnRepeatRuns(t *testing.T) {
 			}
 		}
 
-		players, err := adapter.Gaming().FindPlayers(ctx, nil)
+		// FindPlayers(nil) excludes house by default — query explicitly.
+		housePlayers, err := adapter.Gaming().FindPlayers(ctx, &stores.PlayersFilter{
+			IsHouse: types.OptionalParam[bool]{IsSet: true, Value: true},
+		})
 		if err != nil {
-			t.Fatalf("FindPlayers() error = %v", err)
+			t.Fatalf("FindPlayers(house) error = %v", err)
 		}
-		houseCount := 0
-		for _, p := range players {
-			if p.IsHouse {
-				houseCount++
-			}
-		}
-		if houseCount != 1 {
-			t.Errorf("house player count = %d after 3 seed calls, want 1", houseCount)
+		if len(housePlayers) != 1 {
+			t.Errorf("house player count = %d after 3 seed calls, want 1", len(housePlayers))
 		}
 	})
 }
@@ -88,6 +86,11 @@ func TestGetHousePlayer_ReturnsHouseAfterSeed(t *testing.T) {
 func TestGetHousePlayer_ErrorWhenNotSeeded(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
+
+		// Remove any pre-seeded house player within this transaction (rolled back after test).
+		_, _ = adapter.Gaming().DeletePlayers(ctx, &stores.PlayersFilter{
+			IsHouse: types.OptionalParam[bool]{IsSet: true, Value: true},
+		})
 
 		_, err := GetHousePlayer(ctx, adapter)
 		if err == nil {

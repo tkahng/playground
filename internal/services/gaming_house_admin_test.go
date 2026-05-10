@@ -7,6 +7,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func TestIsHouseEnabled_DefaultsToTrue(t *testing.T) {
@@ -77,6 +78,11 @@ func TestChallengeHouse_Forbidden_WhenDisabled(t *testing.T) {
 func TestGetHousePlayerStats_ErrorWhenNotSeeded(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
+
+		// Remove any pre-seeded house player within this transaction (rolled back after test).
+		_, _ = adapter.Gaming().DeletePlayers(ctx, &stores.PlayersFilter{
+			IsHouse: types.OptionalParam[bool]{IsSet: true, Value: true},
+		})
 
 		_, err := GetHousePlayerStats(ctx, adapter)
 		if err == nil {
