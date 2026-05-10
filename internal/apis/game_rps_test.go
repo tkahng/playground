@@ -26,21 +26,14 @@ func Test_FindCurrentPlayersRpsGames(t *testing.T) {
 		registeredPlayer := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		registeredPlayer2 := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		registeredPlayer3 := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
-		for i := range 5 {
-			switch i % 2 {
-			case 0:
-				_ = core.MustCreateGame(t, testApi.App, registeredPlayer.ID, registeredPlayer2.ID, models.RpsParticipantMovePaper)
-			case 1:
-				_ = core.MustCreateGame(t, testApi.App, registeredPlayer2.ID, registeredPlayer.ID, models.RpsParticipantMovePaper)
-			}
+		// Each game must be completed before creating the next: one active game per player.
+		for range 5 {
+			g := core.MustCreateGame(t, testApi.App, registeredPlayer.ID, registeredPlayer2.ID, models.RpsParticipantMovePaper)
+			core.MustCompleteGame(t, testApi.App, g, models.RpsParticipantMoveRock)
 		}
-		for i := range 5 {
-			switch i % 2 {
-			case 0:
-				_ = core.MustCreateGame(t, testApi.App, registeredPlayer3.ID, registeredPlayer2.ID, models.RpsParticipantMovePaper)
-			case 1:
-				_ = core.MustCreateGame(t, testApi.App, registeredPlayer2.ID, registeredPlayer3.ID, models.RpsParticipantMovePaper)
-			}
+		for range 5 {
+			g := core.MustCreateGame(t, testApi.App, registeredPlayer3.ID, registeredPlayer2.ID, models.RpsParticipantMovePaper)
+			core.MustCompleteGame(t, testApi.App, g, models.RpsParticipantMoveRock)
 		}
 		count, err := testApi.App.Adapter().Gaming().CountRpsGames(ctx, nil)
 		assert.NoError(t, err)
