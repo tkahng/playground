@@ -47,7 +47,7 @@ export const SelectedRpsGameDialog = ({
       }
       let player: Participant;
       let opponent: Participant;
-      if (game.invited_participant.player?.email === userInfo.user.user.email) {
+      if (game.invited_participant.player_id === userInfo.user.user.id) {
         player = game.invited_participant;
         opponent = game.requesting_participant;
       } else {

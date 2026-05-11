@@ -159,7 +159,7 @@ export default function RockPaperScissors() {
             header: "Your Move",
             cell: ({ row }) => {
               if (row.original.player?.status === "completed") {
-                return row.original.player.move;
+                return row.original.player.move ?? "—";
               }
               if (row.original.player?.status === "pending") {
                 return "Pending";

@@ -7,8 +7,10 @@ type Result = "win" | "lose" | "tie";
 interface GameResultProps {
   result: Result;
   opponent: string;
-  playerMove: Move;
-  opponentMove: Move;
+  // Moves are nullable in the API schema (hidden on pending games) but are
+  // always set by the time a completed game is displayed here.
+  playerMove: Move | null | undefined;
+  opponentMove: Move | null | undefined;
   betAmount?: number;
   betResult?: Result;
 }
@@ -86,9 +88,9 @@ export function GameResult({
               You
             </p>
             <div className="text-7xl mb-3 animate-in zoom-in duration-300 delay-100">
-              {moveEmojis[playerMove]}
+              {playerMove ? moveEmojis[playerMove] : "❓"}
             </div>
-            <p className="text-lg font-semibold capitalize">{playerMove}</p>
+            <p className="text-lg font-semibold capitalize">{playerMove ?? "—"}</p>
           </div>
 
           {/* VS Divider */}
@@ -102,9 +104,9 @@ export function GameResult({
               Opponent
             </p>
             <div className="text-7xl mb-3 animate-in zoom-in duration-300 delay-200">
-              {moveEmojis[opponentMove]}
+              {opponentMove ? moveEmojis[opponentMove] : "❓"}
             </div>
-            <p className="text-lg font-semibold capitalize">{opponentMove}</p>
+            <p className="text-lg font-semibold capitalize">{opponentMove ?? "—"}</p>
           </div>
         </div>
       </Card>
