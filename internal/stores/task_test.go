@@ -1229,6 +1229,8 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 					assert.Equal(t, tt.want.Status, got.Status)
 					assert.Equal(t, tt.want.TeamID, got.TeamID)
 					assert.Equal(t, tt.want.CreatedByMemberID, got.CreatedByMemberID)
+					assert.NotNil(t, got.WorkflowID)
+					assert.NotNil(t, got.WorkflowStatusID)
 
 					tasks, err := taskStore.ListTasks(tt.args.ctx, &stores.TaskFilter{
 						ProjectIds: []uuid.UUID{got.ID},
@@ -1244,6 +1246,7 @@ func TestCreateTaskProjectWithTasks(t *testing.T) {
 						assert.Equal(t, tt.want.Tasks[i].Status, task.Status)
 						assert.Equal(t, tt.want.Tasks[i].TeamID, task.TeamID)
 						assert.Equal(t, tt.want.Tasks[i].CreatedByMemberID, task.CreatedByMemberID)
+						assert.NotNil(t, task.WorkflowStatusID)
 					}
 				}
 			})
@@ -1336,6 +1339,7 @@ func TestCreateTaskFromInput(t *testing.T) {
 					assert.Equal(t, tt.want.Description, got.Description)
 					assert.Equal(t, tt.want.Status, got.Status)
 					assert.Equal(t, tt.want.Rank, got.Rank)
+					assert.NotNil(t, got.WorkflowStatusID)
 				}
 			})
 		}
@@ -1544,6 +1548,9 @@ func TestUpdateTaskProject(t *testing.T) {
 					if updatedProject.Rank != tt.args.input.Rank {
 						t.Errorf("Task project order not updated. got = %v, want %v", updatedProject.Rank, tt.args.input.Rank)
 					}
+					if updatedProject.WorkflowStatusID == nil {
+						t.Errorf("Task project workflow status was not set")
+					}
 				}
 			})
 		}
@@ -1689,6 +1696,9 @@ func TestUpdateTaskPositionStatus(t *testing.T) {
 					}
 					if updatedTask.Status != tt.args.status {
 						t.Errorf("Task status not updated. got = %v, want %v", updatedTask.Status, tt.args.status)
+					}
+					if updatedTask.WorkflowStatusID == nil {
+						t.Errorf("Task workflow status was not set")
 					}
 					// find position of updated task in project by ordering by rank.
 					updatedTasks, listTaskErr := taskStore.ListTasks(tt.args.ctx, &stores.TaskFilter{
