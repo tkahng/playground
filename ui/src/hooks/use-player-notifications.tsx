@@ -7,6 +7,7 @@ import {
   useEventSourceListener,
 } from "@react-nano/use-event-source";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 export function usePlayerNotifications() {
   const { user } = useAuthProvider();
@@ -60,6 +61,12 @@ export function usePlayerNotifications() {
     queryClient.invalidateQueries({ queryKey: [{ key: "find-rps-game" }] });
   }, [queryClient]);
 
+  const onRpsGameChallenged = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: [{ key: "rps-games" }] });
+    queryClient.invalidateQueries({ queryKey: [{ key: "find-rps-game" }] });
+    toast.info("You've been challenged to Rock Paper Scissors!");
+  }, [queryClient]);
+
   const onRpsGameCompleted = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: [{ key: "rps-games" }] });
     queryClient.invalidateQueries({ queryKey: [{ key: "find-rps-game" }] });
@@ -75,8 +82,14 @@ export function usePlayerNotifications() {
 
   useEventSourceListener(
     activeSource,
+    ["rps_game_challenged"],
+    onRpsGameChallenged,
+    [onRpsGameChallenged]
+  );
+
+  useEventSourceListener(
+    activeSource,
     [
-      "rps_game_challenged",
       "rps_game_cancelled",
       "rps_rematch_requested",
       "rps_rematch_accepted",
