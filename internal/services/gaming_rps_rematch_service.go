@@ -42,26 +42,34 @@ func (d *DbRpsGameService) RequestRematch(ctx context.Context, input *RematchReq
 		return nil, apierrors.BadRequest("can only rematch a completed game")
 	}
 
-	// Check no pending rematch already exists for this game.
-	existing, err := d.adapter.Gaming().FindRpsRematchRequest(ctx, &stores.RpsRematchFilter{
-		OriginalGameIDs: []uuid.UUID{input.OriginalGameID},
-		Statuses:        []models.RpsRematchStatus{models.RpsRematchStatusPending},
+	// The duplicate check and the insert run inside a transaction so they are
+	// atomic. The partial unique index on (original_game_id) WHERE status='pending'
+	// is a DB-level backstop that survives any future refactors.
+	var result *models.RpsRematchRequest
+	txErr := d.adapter.RunInTxCtx(ctx, func(txCtx context.Context) error {
+		existing, err := d.adapter.Gaming().FindRpsRematchRequest(txCtx, &stores.RpsRematchFilter{
+			OriginalGameIDs: []uuid.UUID{input.OriginalGameID},
+			Statuses:        []models.RpsRematchStatus{models.RpsRematchStatusPending},
+		})
+		if err != nil {
+			return err
+		}
+		if existing != nil {
+			return apierrors.Conflict("a pending rematch request already exists for this game")
+		}
+		result, err = d.adapter.Gaming().CreateRpsRematchRequest(txCtx, &models.RpsRematchRequest{
+			OriginalGameID:     input.OriginalGameID,
+			RequestingPlayerID: input.RequestingPlayerID,
+			InvitedPlayerID:    input.InvitedPlayerID,
+			Status:             models.RpsRematchStatusPending,
+			ExpiresAt:          time.Now().UTC().Add(RematchTTL),
+		})
+		return err
 	})
-	if err != nil {
-		return nil, err
+	if txErr != nil {
+		return nil, txErr
 	}
-	if existing != nil {
-		return nil, apierrors.Conflict("a pending rematch request already exists for this game")
-	}
-
-	req := &models.RpsRematchRequest{
-		OriginalGameID:     input.OriginalGameID,
-		RequestingPlayerID: input.RequestingPlayerID,
-		InvitedPlayerID:    input.InvitedPlayerID,
-		Status:             models.RpsRematchStatusPending,
-		ExpiresAt:          time.Now().UTC().Add(RematchTTL),
-	}
-	return d.adapter.Gaming().CreateRpsRematchRequest(ctx, req)
+	return result, nil
 }
 
 func (d *DbRpsGameService) AcceptRematch(ctx context.Context, input *RematchAcceptInput) (*models.RpsRematchRequest, error) {

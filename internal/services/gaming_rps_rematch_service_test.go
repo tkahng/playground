@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -300,6 +301,60 @@ func TestDbRpsGameService_ExpireRematches_SkipsNonExpired(t *testing.T) {
 		count, err := svc.ExpireRematches(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, 0, count)
+	})
+}
+
+// TestDbRpsGameService_RequestRematch_ConcurrentDuplicate verifies that when two
+// goroutines simultaneously call RequestRematch for the same game, exactly one
+// succeeds and one gets a Conflict error.
+func TestDbRpsGameService_RequestRematch_ConcurrentDuplicate(t *testing.T) {
+	database.WithNewDatabase(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		svc := NewDbRpsGameService(adapter, nil)
+		game := mustRematchCompletedGame(t, ctx, adapter)
+
+		const numGoroutines = 2
+		type result struct{ err error }
+		results := make(chan result, numGoroutines)
+		var wg sync.WaitGroup
+
+		for i := 0; i < numGoroutines; i++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				_, err := svc.RequestRematch(ctx, &RematchRequestInput{
+					OriginalGameID:     game.RpsGame.ID,
+					RequestingPlayerID: game.RequestingParticipant.PlayerID,
+					InvitedPlayerID:    game.InvitedParticipant.PlayerID,
+				})
+				results <- result{err: err}
+			}()
+		}
+		wg.Wait()
+		close(results)
+
+		var successes, failures int
+		for r := range results {
+			if r.err == nil {
+				successes++
+			} else {
+				failures++
+			}
+		}
+		if successes != 1 {
+			t.Errorf("successes = %d, want exactly 1", successes)
+		}
+		if failures != 1 {
+			t.Errorf("failures = %d, want exactly 1", failures)
+		}
+
+		// Exactly one pending rematch must exist.
+		pending, err := adapter.Gaming().FindRpsRematchRequest(ctx, &stores.RpsRematchFilter{
+			OriginalGameIDs: []uuid.UUID{game.RpsGame.ID},
+			Statuses:        []models.RpsRematchStatus{models.RpsRematchStatusPending},
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, pending, "exactly one pending rematch must exist")
 	})
 }
 
