@@ -184,6 +184,10 @@ func bindRequestRematchApi(api huma.API, app core.App) {
 	)
 }
 
+type AcceptRematchInput struct {
+	Move RpsParticipantMove `json:"move" required:"true" enum:"rock,paper,scissors" doc:"The accepting player's move for the new rematch game."`
+}
+
 func bindAcceptRematchApi(api huma.API, app core.App) {
 	huma.Register(
 		api,
@@ -202,13 +206,18 @@ func bindAcceptRematchApi(api huma.API, app core.App) {
 			),
 		},
 		func(ctx context.Context, input *struct {
-			RematchID uuid.UUID `path:"rematch-id" required:"true" format:"uuid"`
+			RematchID uuid.UUID        `path:"rematch-id" required:"true" format:"uuid"`
+			Body      AcceptRematchInput
 		}) (*ApiSingleOutput[*RpsRematchRequest], error) {
 			currentPlayer := contextstore.GetContextCurrentPlayer(ctx)
 			if currentPlayer == nil {
 				return nil, huma.Error401Unauthorized("no player found")
 			}
-			rematch, err := app.RpsGame().AcceptRematch(ctx, input.RematchID, currentPlayer.ID)
+			rematch, err := app.RpsGame().AcceptRematch(ctx, &services.RematchAcceptInput{
+				RematchID:       input.RematchID,
+				InvitedPlayerID: currentPlayer.ID,
+				HostMove:        models.RpsParticipantMove(input.Body.Move),
+			})
 			if err != nil {
 				return nil, err
 			}

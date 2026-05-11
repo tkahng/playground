@@ -216,8 +216,10 @@ func Test_SubmitMove_Success(t *testing.T) {
 					assert.NotNil(t, result.Data)
 					assert.Equal(t, playerWithUser.ID, result.Data.RequestingParticipant.PlayerID)
 					assert.Equal(t, otherPlayerWithUser.ID, result.Data.InvitedParticipant.PlayerID)
-					assert.Equal(t, apis.RpsParticipantMoveRock, result.Data.RequestingParticipant.Move)
-					assert.Equal(t, apis.RpsParticipantMovePaper, result.Data.InvitedParticipant.Move)
+					assert.NotNil(t, result.Data.RequestingParticipant.Move, "host move should be visible after completion")
+					assert.Equal(t, apis.RpsParticipantMoveRock, *result.Data.RequestingParticipant.Move)
+					assert.NotNil(t, result.Data.InvitedParticipant.Move, "guest move should be visible after completion")
+					assert.Equal(t, apis.RpsParticipantMovePaper, *result.Data.InvitedParticipant.Move)
 					assert.Equal(t, apis.RpsGameStatusCompleted, result.Data.RpsGame.Status)
 					assert.Equal(t, result.Data.InvitedParticipant.Result, apis.RpsParticipantResultWin)
 				},
@@ -664,6 +666,367 @@ func Test_SendGameRequest_BlockedByTarget_Fails(t *testing.T) {
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, requester.Email)
 				scenario.Headers = []string{tokenHeader}
 				scenario.Body = strings.NewReader(string(body))
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+// Test_HostMoveHiddenWhenPending verifies that the host's move is not returned
+// to the guest via the invite-verify endpoint while the game is still pending.
+// The invite token is created directly so this test does not depend on the job
+// queue being committed within the test transaction.
+func Test_HostMoveHiddenWhenPending(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		host := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		guest := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(false))
+
+		// Create game and invite directly without going through the mailer.
+		game, err := testApi.App.RpsGame().RequestGame(ctx, &services.RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveScissors,
+			DurationSeconds:      services.GameDurationSeconds,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame error: %v", err)
+		}
+		invite, err := testApi.App.Adapter().Gaming().CreateRpsGameInvite(ctx, &models.RpsGameInvite{
+			GameID:             game.RpsGame.ID,
+			RequestingPlayerID: host.ID,
+			InvitedPlayerID:    guest.ID,
+			Token:              "test-token-hidden-move-check",
+			ExpiresAt:          game.RpsGame.ExpiresAt,
+		})
+		if err != nil {
+			t.Fatalf("CreateRpsGameInvite error: %v", err)
+		}
+
+		scenario := &apis.ApiScenario{
+			Name:           "host move is hidden from guest on pending game via invite-verify",
+			Method:         http.MethodPost,
+			URL:            "/games/rps/invites/verify",
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				body, _ := json.Marshal(apis.VerifyRpsGameInviteInput{Token: invite.Token})
+				scenario.Body = strings.NewReader(string(body))
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
+				assert.NotNil(t, result.Data)
+				assert.Equal(t, apis.RpsGameStatusPending, result.Data.RpsGame.Status)
+				// Host's move must be hidden from the guest.
+				assert.Nil(t, result.Data.RequestingParticipant.Move,
+					"host move must not be exposed to guest while game is pending")
+				assert.Equal(t, guest.ID, result.Data.InvitedParticipant.PlayerID)
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+// Test_HostMoveVisibleAfterCompletion verifies that after the game is complete,
+// both moves are returned to both players.
+func Test_HostMoveVisibleAfterCompletion(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		host := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		guest := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		game, err := testApi.App.RpsGame().RequestGame(ctx, &services.RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveScissors,
+			DurationSeconds:      services.GameDurationSeconds,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame error: %v", err)
+		}
+
+		// Guest submits rock — host (scissors) loses.
+		scenario := &apis.ApiScenario{
+			Name:           "both moves visible after completion",
+			Method:         http.MethodPost,
+			URL:            fmt.Sprintf("/games/rps/%s/submit-move", game.RpsGame.ID),
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, guest.Email)
+				scenario.Headers = []string{tokenHeader}
+				body, _ := json.Marshal(apis.SubmitMoveToGameInput{
+					Move:   apis.RpsParticipantMoveRock,
+					Status: apis.RpsGameStatusCompleted,
+				})
+				scenario.Body = strings.NewReader(string(body))
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
+				assert.NotNil(t, result.Data)
+				assert.Equal(t, apis.RpsGameStatusCompleted, result.Data.RpsGame.Status)
+				assert.NotNil(t, result.Data.RequestingParticipant.Move, "host move should be visible after completion")
+				assert.Equal(t, apis.RpsParticipantMoveScissors, *result.Data.RequestingParticipant.Move)
+				assert.NotNil(t, result.Data.InvitedParticipant.Move, "guest move should be visible after completion")
+				assert.Equal(t, apis.RpsParticipantMoveRock, *result.Data.InvitedParticipant.Move)
+				assert.Equal(t, apis.RpsParticipantResultLose, result.Data.RequestingParticipant.Result)
+				assert.Equal(t, apis.RpsParticipantResultWin, result.Data.InvitedParticipant.Result)
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+// Test_HostMoveHiddenInGameList verifies that when the guest views the game list
+// on a pending game, the host's move is nil.
+func Test_HostMoveHiddenInGameList(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		host := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		guest := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		_, err := testApi.App.RpsGame().RequestGame(ctx, &services.RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMovePaper,
+			DurationSeconds:      services.GameDurationSeconds,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame error: %v", err)
+		}
+
+		scenario := &apis.ApiScenario{
+			Name:           "host move hidden from guest in game list",
+			Method:         http.MethodGet,
+			URL:            "/players/current-player/games/rps",
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				// Authenticated as guest.
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, guest.Email)
+				scenario.Headers = []string{tokenHeader}
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
+				assert.NotEmpty(t, result.Data)
+				g := result.Data[0]
+				assert.Equal(t, apis.RpsGameStatusPending, g.RpsGame.Status)
+				assert.Nil(t, g.RequestingParticipant.Move,
+					"host move must be nil when guest views a pending game")
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+// Test_SubmitMove_WithActiveBet_HostWins verifies that the host receives the
+// full bet payout when they win.
+func Test_SubmitMove_WithActiveBet_HostWins(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		host := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		guest := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := services.NewDbLedgerService(adapter)
+
+		betAmount := int64(100)
+		var gameID string
+
+		scenario := &apis.ApiScenario{
+			Name:           "host wins bet — balances settled correctly",
+			Method:         http.MethodPost,
+			URL:            "/games/rps/{game-id}/submit-move",
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				if err := services.FulfillPointsPurchase(ctx, adapter, ledger, services.PointsPurchaseFulfillInput{
+					UserID:          *host.UserID,
+					PointsAmount:    500,
+					StripeSessionID: "cs_hostwins_host",
+				}); err != nil {
+					t.Fatalf("FulfillPointsPurchase(host): %v", err)
+				}
+				if err := services.FulfillPointsPurchase(ctx, adapter, ledger, services.PointsPurchaseFulfillInput{
+					UserID:          *guest.UserID,
+					PointsAmount:    500,
+					StripeSessionID: "cs_hostwins_guest",
+				}); err != nil {
+					t.Fatalf("FulfillPointsPurchase(guest): %v", err)
+				}
+
+				// Host plays paper.
+				game, err := app.RpsGame().RequestGame(ctx, &services.RpsGameRequestInput{
+					RequestingPlayerID:   host.ID,
+					InvitedPlayerID:      guest.ID,
+					RequestingPlayerMove: models.RpsParticipantMovePaper,
+					DurationSeconds:      services.GameDurationSeconds,
+					BetAmount:            &betAmount,
+					HostUserID:           host.UserID,
+				})
+				if err != nil {
+					t.Fatalf("RequestGame: %v", err)
+				}
+				gameID = game.RpsGame.ID.String()
+
+				scenario.Headers = []string{core.CreateTokenHeader(t, app, guest.Email)}
+				scenario.URL = strings.ReplaceAll(scenario.URL, "{game-id}", gameID)
+				// Guest plays rock — loses.
+				body, _ := json.Marshal(apis.SubmitMoveToGameInput{
+					Move:   apis.RpsParticipantMoveRock,
+					Status: apis.RpsGameStatusCompleted,
+				})
+				scenario.Body = strings.NewReader(string(body))
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
+				assert.NotNil(t, result.Data)
+				assert.Equal(t, apis.RpsGameStatusCompleted, result.Data.RpsGame.Status)
+				assert.Equal(t, apis.RpsParticipantResultWin, result.Data.RequestingParticipant.Result)
+
+				// Host wins: gains 100 → 600. Guest loses 100 → 400.
+				hostBal, err := ledger.GetUserBalance(ctx, *host.UserID)
+				assert.NoError(t, err)
+				assert.Equal(t, int64(600), hostBal, "host balance after winning bet")
+
+				guestBal, err := ledger.GetUserBalance(ctx, *guest.UserID)
+				assert.NoError(t, err)
+				assert.Equal(t, int64(400), guestBal, "guest balance after losing bet")
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+// Test_SubmitMove_WithActiveBet_Tie verifies that both bets are refunded on a tie.
+func Test_SubmitMove_WithActiveBet_Tie(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		host := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		guest := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := services.NewDbLedgerService(adapter)
+
+		betAmount := int64(100)
+		var gameID string
+
+		scenario := &apis.ApiScenario{
+			Name:           "tie — both bets refunded",
+			Method:         http.MethodPost,
+			URL:            "/games/rps/{game-id}/submit-move",
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				if err := services.FulfillPointsPurchase(ctx, adapter, ledger, services.PointsPurchaseFulfillInput{
+					UserID:          *host.UserID,
+					PointsAmount:    500,
+					StripeSessionID: "cs_tie_host",
+				}); err != nil {
+					t.Fatalf("FulfillPointsPurchase(host): %v", err)
+				}
+				if err := services.FulfillPointsPurchase(ctx, adapter, ledger, services.PointsPurchaseFulfillInput{
+					UserID:          *guest.UserID,
+					PointsAmount:    500,
+					StripeSessionID: "cs_tie_guest",
+				}); err != nil {
+					t.Fatalf("FulfillPointsPurchase(guest): %v", err)
+				}
+
+				// Both play rock.
+				game, err := app.RpsGame().RequestGame(ctx, &services.RpsGameRequestInput{
+					RequestingPlayerID:   host.ID,
+					InvitedPlayerID:      guest.ID,
+					RequestingPlayerMove: models.RpsParticipantMoveRock,
+					DurationSeconds:      services.GameDurationSeconds,
+					BetAmount:            &betAmount,
+					HostUserID:           host.UserID,
+				})
+				if err != nil {
+					t.Fatalf("RequestGame: %v", err)
+				}
+				gameID = game.RpsGame.ID.String()
+
+				scenario.Headers = []string{core.CreateTokenHeader(t, app, guest.Email)}
+				scenario.URL = strings.ReplaceAll(scenario.URL, "{game-id}", gameID)
+				body, _ := json.Marshal(apis.SubmitMoveToGameInput{
+					Move:   apis.RpsParticipantMoveRock,
+					Status: apis.RpsGameStatusCompleted,
+				})
+				scenario.Body = strings.NewReader(string(body))
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
+				assert.NotNil(t, result.Data)
+				assert.Equal(t, apis.RpsGameStatusCompleted, result.Data.RpsGame.Status)
+				assert.Equal(t, apis.RpsParticipantResultTie, result.Data.RequestingParticipant.Result)
+				assert.Equal(t, apis.RpsParticipantResultTie, result.Data.InvitedParticipant.Result)
+
+				// Both should have their original 500 restored after tie refund.
+				hostBal, err := ledger.GetUserBalance(ctx, *host.UserID)
+				assert.NoError(t, err)
+				assert.Equal(t, int64(500), hostBal, "host balance unchanged on tie")
+
+				guestBal, err := ledger.GetUserBalance(ctx, *guest.UserID)
+				assert.NoError(t, err)
+				assert.Equal(t, int64(500), guestBal, "guest balance unchanged on tie")
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+// Test_AcceptRematch_WithMove verifies that the accept rematch endpoint requires
+// a move, creates the new host participant as completed, and leaves the guest pending.
+func Test_AcceptRematch_WithMove(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		host := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		guest := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		// Play and complete a game.
+		game := core.MustCreateGame(t, testApi.App, host.ID, guest.ID, models.RpsParticipantMoveRock)
+		core.MustCompleteGame(t, testApi.App, game, models.RpsParticipantMoveScissors)
+
+		// Host requests a rematch.
+		rematch, err := testApi.App.RpsGame().RequestRematch(ctx, &services.RematchRequestInput{
+			OriginalGameID:     game.RpsGame.ID,
+			RequestingPlayerID: host.ID,
+			InvitedPlayerID:    guest.ID,
+		})
+		if err != nil {
+			t.Fatalf("RequestRematch: %v", err)
+		}
+
+		scenario := &apis.ApiScenario{
+			Name:           "guest accepts rematch with paper move",
+			Method:         http.MethodPost,
+			URL:            fmt.Sprintf("/games/rps/rematches/%s/accept", rematch.ID),
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, guest.Email)
+				scenario.Headers = []string{tokenHeader}
+				body, _ := json.Marshal(apis.AcceptRematchInput{Move: apis.RpsParticipantMovePaper})
+				scenario.Body = strings.NewReader(string(body))
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsRematchRequest]](t, res.Body.Bytes())
+				assert.NotNil(t, result.Data)
+				assert.Equal(t, apis.RpsRematchStatusAccepted, result.Data.Status)
+				assert.NotNil(t, result.Data.NewGameID)
+
+				// Inspect the new game: guest (accepting player) is now host with move set.
+				newGame, err := testApi.App.RpsGame().FindRpsGameWithParticipants(ctx, *result.Data.NewGameID)
+				if err != nil {
+					t.Fatalf("FindRpsGameWithParticipants: %v", err)
+				}
+				assert.Equal(t, guest.ID, newGame.RequestingParticipant.PlayerID)
+				assert.Equal(t, models.RpsParticipantStatusCompleted, newGame.RequestingParticipant.Status)
+				assert.Equal(t, models.RpsParticipantMovePaper, newGame.RequestingParticipant.Move)
+				// Previous host is now guest — still pending.
+				assert.Equal(t, host.ID, newGame.InvitedParticipant.PlayerID)
+				assert.Equal(t, models.RpsParticipantStatusPending, newGame.InvitedParticipant.Status)
 			},
 		}
 		scenario.Test(t)

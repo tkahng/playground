@@ -111,9 +111,24 @@ func bindFindCurrentPlayersRpsGamesApi(api huma.API, app core.App) {
 			return &ApiPaginatedOutput[*RpsGameWithParticipants]{
 				Body: ApiPaginatedResponse[*RpsGameWithParticipants]{
 					Data: mapper.Map(gamesWithParticipants, func(p *services.RpsGameWithParticipants) *RpsGameWithParticipants {
+						// For pending games, hide the host's move from the guest. The host
+						// chose their move when creating the game; revealing it before the
+						// guest responds would let the guest pick the winning move.
+						isPending := p.RpsGame != nil && p.RpsGame.Status == models.RpsGameStatusPending
+						isViewer := func(participant *models.RpsParticipant) bool {
+							return participant != nil && participant.PlayerID == currentPlayer.ID
+						}
+						viewerIsGuest := isPending &&
+							p.InvitedParticipant != nil &&
+							isViewer(p.InvitedParticipant)
+
+						requestingAPI := ToApiRpsParticipant(p.RequestingParticipant)
+						if viewerIsGuest {
+							requestingAPI = ToApiRpsParticipantMasked(p.RequestingParticipant)
+						}
 						return &RpsGameWithParticipants{
 							RpsGame:               toApiRpsGame(p.RpsGame),
-							RequestingParticipant: ToApiRpsParticipant(p.RequestingParticipant),
+							RequestingParticipant: requestingAPI,
 							InvitedParticipant:    ToApiRpsParticipant(p.InvitedParticipant),
 						}
 					}),
@@ -278,11 +293,13 @@ func bindVerifyRpsGameInviteApi(api huma.API, app core.App) {
 			if err != nil {
 				return nil, err
 			}
+			// This endpoint is called from the guest's perspective via an invite token.
+			// Hide the host's move so the guest cannot pick the winning response.
 			return &ApiSingleOutput[*RpsGameWithParticipants]{
 				Body: ApiSingleResponse[*RpsGameWithParticipants]{
 					Data: &RpsGameWithParticipants{
 						RpsGame:               toApiRpsGame(rpsGameWithParticipants.RpsGame),
-						RequestingParticipant: ToApiRpsParticipant(rpsGameWithParticipants.RequestingParticipant),
+						RequestingParticipant: ToApiRpsParticipantMasked(rpsGameWithParticipants.RequestingParticipant),
 						InvitedParticipant:    ToApiRpsParticipant(rpsGameWithParticipants.InvitedParticipant),
 					},
 				},
@@ -402,7 +419,7 @@ func SendRpsGameRequestToUnregisteredPlayer(app core.App, ctx context.Context, i
 			RequestingPlayerID:   currentPlayer.ID,
 			InvitedPlayerID:      player.ID,
 			RequestingPlayerMove: models.RpsParticipantMove(input.Move),
-			DurationSeconds:      3 * 24 * 60 * 60,
+			DurationSeconds:      services.GameDurationSeconds,
 		})
 		if err != nil {
 			return err
@@ -544,7 +561,7 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 					RequestingPlayerID:   currentPlayer.ID,
 					InvitedPlayerID:      player.ID,
 					RequestingPlayerMove: models.RpsParticipantMove(input.Body.Move),
-					DurationSeconds:      3 * 24 * 60 * 60,
+					DurationSeconds:      services.GameDurationSeconds,
 				}
 				if input.Body.BetAmount != nil {
 					reqInput.BetAmount = input.Body.BetAmount

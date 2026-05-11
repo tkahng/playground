@@ -21,6 +21,14 @@ type RematchRequestInput struct {
 	InvitedPlayerID    uuid.UUID
 }
 
+type RematchAcceptInput struct {
+	RematchID       uuid.UUID
+	InvitedPlayerID uuid.UUID
+	HostMove        models.RpsParticipantMove
+}
+
+const rematchGameDuration = 3 * 24 * time.Hour
+
 func (d *DbRpsGameService) RequestRematch(ctx context.Context, input *RematchRequestInput) (*models.RpsRematchRequest, error) {
 	game, err := d.adapter.Gaming().FindRpsGame(ctx, &stores.RpsGameFilter{
 		Ids: []uuid.UUID{input.OriginalGameID},
@@ -57,9 +65,9 @@ func (d *DbRpsGameService) RequestRematch(ctx context.Context, input *RematchReq
 	return d.adapter.Gaming().CreateRpsRematchRequest(ctx, req)
 }
 
-func (d *DbRpsGameService) AcceptRematch(ctx context.Context, rematchID uuid.UUID, invitedPlayerID uuid.UUID) (*models.RpsRematchRequest, error) {
+func (d *DbRpsGameService) AcceptRematch(ctx context.Context, input *RematchAcceptInput) (*models.RpsRematchRequest, error) {
 	rematch, err := d.adapter.Gaming().FindRpsRematchRequest(ctx, &stores.RpsRematchFilter{
-		Ids: []uuid.UUID{rematchID},
+		Ids: []uuid.UUID{input.RematchID},
 	})
 	if err != nil {
 		return nil, err
@@ -67,7 +75,7 @@ func (d *DbRpsGameService) AcceptRematch(ctx context.Context, rematchID uuid.UUI
 	if rematch == nil {
 		return nil, apierrors.NotFound("rematch request not found")
 	}
-	if rematch.InvitedPlayerID != invitedPlayerID {
+	if rematch.InvitedPlayerID != input.InvitedPlayerID {
 		return nil, apierrors.Forbidden("not the invited player")
 	}
 	if rematch.Status != models.RpsRematchStatusPending {
@@ -76,16 +84,16 @@ func (d *DbRpsGameService) AcceptRematch(ctx context.Context, rematchID uuid.UUI
 	if time.Now().UTC().After(rematch.ExpiresAt) {
 		rematch.Status = models.RpsRematchStatusExpired
 		if _, err := d.adapter.Gaming().UpdateRpsRematchRequest(ctx, rematch); err != nil {
-			slog.ErrorContext(ctx, "failed to expire rematch on accept", "rematch_id", rematchID, "error", err)
+			slog.ErrorContext(ctx, "failed to expire rematch on accept", "rematch_id", input.RematchID, "error", err)
 		}
 		return nil, apierrors.Gone("rematch request has expired")
 	}
 
-	// Create new game with roles swapped (previous guest is now host, no move yet).
-	// The new host needs to supply their move via the normal challenge flow.
-	// We just create a pending game here and both players complete it via submit-move.
+	// Create new game with roles swapped: the accepting player (previous guest) becomes
+	// the new host and submits their move now. The rematch requester (previous host)
+	// becomes the new guest and must respond via submit-move.
 	newGame, err := d.adapter.Gaming().CreateRpsGame(ctx, &models.RpsGame{
-		ExpiresAt: time.Now().UTC().Add(3 * 24 * time.Hour),
+		ExpiresAt: time.Now().UTC().Add(rematchGameDuration),
 		Status:    models.RpsGameStatusPending,
 	})
 	if err != nil {
@@ -94,16 +102,16 @@ func (d *DbRpsGameService) AcceptRematch(ctx context.Context, rematchID uuid.UUI
 
 	_, err = d.adapter.Gaming().CreateRpsParticipants(ctx, []*models.RpsParticipant{
 		{
-			PlayerID: invitedPlayerID,
-			Move:     models.RpsParticipantMoveRock,
+			PlayerID: input.InvitedPlayerID,
+			Move:     input.HostMove, // accepting player's move — submitted now
 			GameID:   newGame.ID,
 			Result:   models.RpsParticipantResultTie,
-			Status:   models.RpsParticipantStatusPending,
+			Status:   models.RpsParticipantStatusCompleted,
 			Type:     models.RpsParticipantTypeHost,
 		},
 		{
 			PlayerID: rematch.RequestingPlayerID,
-			Move:     models.RpsParticipantMoveRock,
+			Move:     models.RpsParticipantMoveRock, // placeholder; overwritten by submit-move
 			GameID:   newGame.ID,
 			Result:   models.RpsParticipantResultTie,
 			Status:   models.RpsParticipantStatusPending,

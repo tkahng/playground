@@ -115,7 +115,11 @@ func TestDbRpsGameService_AcceptRematch_CreatesNewGameWithSwappedRoles(t *testin
 		})
 		require.NoError(t, err)
 
-		accepted, err := svc.AcceptRematch(ctx, rematch.ID, game.InvitedParticipant.PlayerID)
+		accepted, err := svc.AcceptRematch(ctx, &RematchAcceptInput{
+			RematchID:       rematch.ID,
+			InvitedPlayerID: game.InvitedParticipant.PlayerID,
+			HostMove:        models.RpsParticipantMovePaper,
+		})
 		require.NoError(t, err)
 		assert.Equal(t, models.RpsRematchStatusAccepted, accepted.Status)
 		require.NotNil(t, accepted.NewGameID)
@@ -125,12 +129,15 @@ func TestDbRpsGameService_AcceptRematch_CreatesNewGameWithSwappedRoles(t *testin
 		require.NoError(t, err)
 		require.NotNil(t, newGame)
 		assert.Equal(t, models.RpsGameStatusPending, newGame.RpsGame.Status)
-		// Previous guest is now host.
+		// Previous guest is now host — with status completed (move submitted during accept).
 		assert.Equal(t, game.InvitedParticipant.PlayerID, newGame.RequestingParticipant.PlayerID)
 		assert.Equal(t, models.RpsParticipantTypeHost, newGame.RequestingParticipant.Type)
-		// Previous host is now guest.
+		assert.Equal(t, models.RpsParticipantStatusCompleted, newGame.RequestingParticipant.Status)
+		assert.Equal(t, models.RpsParticipantMovePaper, newGame.RequestingParticipant.Move)
+		// Previous host is now guest — still pending.
 		assert.Equal(t, game.RequestingParticipant.PlayerID, newGame.InvitedParticipant.PlayerID)
 		assert.Equal(t, models.RpsParticipantTypeGuest, newGame.InvitedParticipant.Type)
+		assert.Equal(t, models.RpsParticipantStatusPending, newGame.InvitedParticipant.Status)
 	})
 }
 
@@ -148,7 +155,11 @@ func TestDbRpsGameService_AcceptRematch_RejectsWrongPlayer(t *testing.T) {
 		require.NoError(t, err)
 
 		// Host tries to accept their own request — must be rejected.
-		_, err = svc.AcceptRematch(ctx, rematch.ID, game.RequestingParticipant.PlayerID)
+		_, err = svc.AcceptRematch(ctx, &RematchAcceptInput{
+			RematchID:       rematch.ID,
+			InvitedPlayerID: game.RequestingParticipant.PlayerID,
+			HostMove:        models.RpsParticipantMoveRock,
+		})
 		require.Error(t, err)
 	})
 }
@@ -171,7 +182,11 @@ func TestDbRpsGameService_AcceptRematch_RejectsExpired(t *testing.T) {
 		_, err = adapter.Gaming().UpdateRpsRematchRequest(context.Background(), rematch)
 		require.NoError(t, err)
 
-		_, err = svc.AcceptRematch(ctx, rematch.ID, game.InvitedParticipant.PlayerID)
+		_, err = svc.AcceptRematch(ctx, &RematchAcceptInput{
+			RematchID:       rematch.ID,
+			InvitedPlayerID: game.InvitedParticipant.PlayerID,
+			HostMove:        models.RpsParticipantMoveRock,
+		})
 		require.Error(t, err)
 	})
 }

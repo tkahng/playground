@@ -60,6 +60,12 @@ export function usePlayerNotifications() {
     queryClient.invalidateQueries({ queryKey: [{ key: "find-rps-game" }] });
   }, [queryClient]);
 
+  const onRpsGameCompleted = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: [{ key: "rps-games" }] });
+    queryClient.invalidateQueries({ queryKey: [{ key: "find-rps-game" }] });
+    queryClient.invalidateQueries({ queryKey: [{ key: "ledger-balance" }] });
+  }, [queryClient]);
+
   useEventSourceListener(
     activeSource,
     ["friend_request"],
@@ -71,7 +77,6 @@ export function usePlayerNotifications() {
     activeSource,
     [
       "rps_game_challenged",
-      "rps_game_completed",
       "rps_rematch_requested",
       "rps_rematch_accepted",
       "rps_rematch_declined",
@@ -79,5 +84,12 @@ export function usePlayerNotifications() {
     ],
     onRpsGameEvent,
     [onRpsGameEvent]
+  );
+
+  useEventSourceListener(
+    activeSource,
+    ["rps_game_completed"],
+    onRpsGameCompleted,
+    [onRpsGameCompleted]
   );
 }

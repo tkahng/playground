@@ -66,7 +66,7 @@ export default function RockPaperScissors() {
           let player: Participant;
           let opponent: Participant;
           if (
-            game.invited_participant.player?.email === userInfo.user.user.email
+            game.invited_participant.player_id === currentPlayer?.id
           ) {
             player = game.invited_participant;
             opponent = game.requesting_participant;

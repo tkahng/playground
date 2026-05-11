@@ -10,14 +10,16 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/apierrors"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 )
 
 const (
-	HouseMaxBet      int64         = 500
-	HouseCooldown    time.Duration = 5 * time.Minute
-	HouseWinsMessage               = "House always wins."
+	HouseMaxBet         int64         = 500
+	HouseCooldown       time.Duration = 5 * time.Minute
+	HouseWinsMessage                  = "House always wins."
+	GameDurationSeconds int64         = 3 * 24 * 60 * 60 // 3 days
 )
 
 type PlayerFindParams struct {
@@ -56,7 +58,7 @@ type RpsGameService interface {
 	ExpireGamesAndRefundBets(ctx context.Context) (int, error)
 	// rematch
 	RequestRematch(ctx context.Context, input *RematchRequestInput) (*models.RpsRematchRequest, error)
-	AcceptRematch(ctx context.Context, rematchID uuid.UUID, invitedPlayerID uuid.UUID) (*models.RpsRematchRequest, error)
+	AcceptRematch(ctx context.Context, input *RematchAcceptInput) (*models.RpsRematchRequest, error)
 	DeclineRematch(ctx context.Context, rematchID uuid.UUID, invitedPlayerID uuid.UUID) (*models.RpsRematchRequest, error)
 	ExpireRematches(ctx context.Context) (int, error)
 }
@@ -630,15 +632,30 @@ func (d *DbRpsGameService) FindRpsGameWithParticipants(ctx context.Context, game
 	if err != nil {
 		return nil, err
 	}
-	var requestingPlayer, invitedPlayer *models.RpsParticipant
+
+	// Batch-load all participant players in a single query.
+	playerIDs := make([]uuid.UUID, 0, len(participants))
 	for _, p := range participants {
-		player, err := d.adapter.Gaming().FindPlayer(ctx, &stores.PlayersFilter{
-			Ids: []uuid.UUID{p.PlayerID},
+		playerIDs = append(playerIDs, p.PlayerID)
+	}
+	var playerMap map[uuid.UUID]*models.Player
+	if len(playerIDs) > 0 {
+		players, err := d.adapter.Gaming().FindPlayers(ctx, &stores.PlayersFilter{
+			Ids: playerIDs,
+			PaginatedInput: repository.PaginatedInput{Page: 0, PerPage: 50},
 		})
 		if err != nil {
 			return nil, err
 		}
-		p.Player = player
+		playerMap = make(map[uuid.UUID]*models.Player, len(players))
+		for _, p := range players {
+			playerMap[p.ID] = p
+		}
+	}
+
+	var requestingPlayer, invitedPlayer *models.RpsParticipant
+	for _, p := range participants {
+		p.Player = playerMap[p.PlayerID]
 		if p.Type == models.RpsParticipantTypeHost {
 			requestingPlayer = p
 		}
