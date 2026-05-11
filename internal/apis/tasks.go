@@ -193,6 +193,7 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionTasksEdit),
 			),
 		},
 		func(ctx context.Context, input *UpdateTaskInput) (*struct{}, error) {

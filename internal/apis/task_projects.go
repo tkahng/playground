@@ -190,6 +190,7 @@ func (api *Api) TeamTaskProjectCreateBind(humaApi huma.API) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionProjectsCreate),
 			),
 		},
 		func(ctx context.Context, input *CreateTaskProjectWithTasksInput) (*struct {

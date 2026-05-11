@@ -15,6 +15,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/services"
+	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/types"
 )
@@ -129,6 +130,83 @@ func TestApi_TeamTaskProjectCreate(t *testing.T) {
 				assert.Equal(t, input.CreateTaskProjectWithoutTeamDTO.Status, result.Status)
 			},
 		},
+		{
+			Name:            "fail: guest cannot create project",
+			Method:          http.MethodPost,
+			URL:             "/teams/{team-id}/task-projects",
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"You do not have the required team permission: projects.create"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				guestUser := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				guest := core.CreateTeamMemberWithOptions(t, app, team1.Team.ID, guestUser.User.ID, core.TeamWithRole(models.TeamMemberRoleGuest))
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, guestUser.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/task-projects", guest.TeamID.String())
+				input := apis.CreateTaskProjectWithoutTeamWithTasks{
+					CreateTaskProjectWithoutTeamDTO: apis.CreateTaskProjectWithoutTeamDTO{
+						Name:   "New Project",
+						Status: models.TaskProjectStatusTodo,
+					},
+				}
+				scenario.Body = apis.JsonToReader(t, input)
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
+				return testApi
+			}
+			tt.Test(t)
+		})
+	}
+}
+
+func TestApi_TeamTaskProjectPermissions(t *testing.T) {
+	tests := []apis.ApiScenario{
+		{
+			Name:            "fail: member cannot update project",
+			Method:          http.MethodPut,
+			URL:             "/task-projects/{task-project-id}",
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"You do not have the required team permission: projects.manage"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				memberUser := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				core.CreateTeamMemberWithOptions(t, app, team1.Team.ID, memberUser.User.ID, core.TeamWithRole(models.TeamMemberRoleMember))
+				project := core.CreateProjectAndTasks(t, app, &team1.Member)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, memberUser.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/task-projects/%s", project.ID.String())
+				scenario.Body = apis.JsonToReader(t, stores.UpdateTaskProjectBaseDTO{
+					Name:   "Updated Project",
+					Status: models.TaskProjectStatusInProgress,
+				})
+			},
+		},
+		{
+			Name:            "fail: member cannot delete project",
+			Method:          http.MethodDelete,
+			URL:             "/task-projects/{task-project-id}",
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"You do not have the required team permission: projects.delete"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				memberUser := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				core.CreateTeamMemberWithOptions(t, app, team1.Team.ID, memberUser.User.ID, core.TeamWithRole(models.TeamMemberRoleMember))
+				project := core.CreateProjectAndTasks(t, app, &team1.Member)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, memberUser.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/task-projects/%s", project.ID.String())
+			},
+		},
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
@@ -143,6 +221,28 @@ func TestApi_TeamTaskProjectCreate(t *testing.T) {
 
 func TestApi_TeamTaskProjectTasksCreateReferences(t *testing.T) {
 	tests := []apis.ApiScenario{
+		{
+			Name:            "fail: guest cannot create task",
+			Method:          http.MethodPost,
+			URL:             "/task-projects/{task-project-id}",
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"You do not have the required team permission: tasks.create"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				guestUser := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				core.CreateTeamMemberWithOptions(t, app, team1.Team.ID, guestUser.User.ID, core.TeamWithRole(models.TeamMemberRoleGuest))
+				project := core.CreateProjectAndTasks(t, app, &team1.Member)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, guestUser.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/task-projects/%s", project.ID.String())
+				scenario.Body = apis.JsonToReader(t, services.TaskFields{
+					Name:   "Task by guest",
+					Status: models.TaskStatusTodo,
+				})
+			},
+		},
 		{
 			Name:            "fail: create task rejects assignee from another team",
 			Method:          http.MethodPost,
