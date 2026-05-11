@@ -987,6 +987,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/games/rps/rematches/{rematch-id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept a rematch request */
+        post: operations["accept-rps-rematch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/rps/rematches/{rematch-id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decline a rematch request */
+        post: operations["decline-rps-rematch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/games/rps/requests": {
         parameters: {
             query?: never;
@@ -1041,6 +1075,47 @@ export interface paths {
          * @description submit move to rps game with token
          */
         post: operations["submit-move-with-token"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/rps/{game-id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * cancel a pending rps game
+         * @description Lets the host retract their pending challenge before the guest responds. Any bet escrow is refunded.
+         */
+        post: operations["cancel-rps-game"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/games/rps/{game-id}/rematch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get pending rematch request for a game */
+        get: operations["get-rps-rematch-request"];
+        put?: never;
+        /**
+         * Request a rematch
+         * @description Request a rematch for a completed game. Invited player has 45 seconds to accept.
+         */
+        post: operations["request-rps-rematch"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1291,6 +1366,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/players/current-player/rps-stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * get current player rps stats
+         * @description Returns win/loss/tie counts and net bet totals for the authenticated player.
+         */
+        get: operations["get-current-player-rps-stats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/players/friends": {
         parameters: {
             query?: never;
@@ -1471,6 +1566,26 @@ export interface paths {
          * @description Get the friendship status between the current player and another player.
          */
         get: operations["get-friendship"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/players/{player-id}/online-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get player presence
+         * @description Returns whether the player has an active SSE connection and when they were last active.
+         */
+        get: operations["get-player-online-status"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2463,6 +2578,19 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AcceptRematchInput: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/AcceptRematchInput.json
+             */
+            readonly $schema?: string;
+            /**
+             * @description The accepting player's move for the new rematch game.
+             * @enum {string}
+             */
+            move: "rock" | "paper" | "scissors";
+        };
         "Admin-user-permissions-createRequest": {
             /**
              * Format: uri
@@ -2747,6 +2875,15 @@ export interface components {
             readonly $schema?: string;
             data: components["schemas"]["Player"];
         };
+        ApiSingleResponsePlayerRpsStatsResponse: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiSingleResponsePlayerRpsStatsResponse.json
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["PlayerRpsStatsResponse"];
+        };
         ApiSingleResponseRpsGameWithParticipants: {
             /**
              * Format: uri
@@ -2755,6 +2892,15 @@ export interface components {
              */
             readonly $schema?: string;
             data: components["schemas"]["RpsGameWithParticipants"];
+        };
+        ApiSingleResponseRpsRematchRequest: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ApiSingleResponseRpsRematchRequest.json
+             */
+            readonly $schema?: string;
+            data: components["schemas"]["RpsRematchRequest"];
         };
         ApiUser: {
             /**
@@ -2921,7 +3067,6 @@ export interface components {
              */
             readonly $schema?: string;
             name: string;
-            slug?: string;
         };
         EmailVerificationPostInput: {
             /**
@@ -3261,6 +3406,30 @@ export interface components {
             data: components["schemas"]["ProjectStatusChangedNotificationData"];
             notification: components["schemas"]["NotificationContent"];
         };
+        NotificationPayloadRpsGameChallengedData: {
+            data: components["schemas"]["RpsGameChallengedData"];
+            notification: components["schemas"]["NotificationContent"];
+        };
+        NotificationPayloadRpsGameCompletedData: {
+            data: components["schemas"]["RpsGameCompletedData"];
+            notification: components["schemas"]["NotificationContent"];
+        };
+        NotificationPayloadRpsRematchAcceptedData: {
+            data: components["schemas"]["RpsRematchAcceptedData"];
+            notification: components["schemas"]["NotificationContent"];
+        };
+        NotificationPayloadRpsRematchDeclinedData: {
+            data: components["schemas"]["RpsRematchDeclinedData"];
+            notification: components["schemas"]["NotificationContent"];
+        };
+        NotificationPayloadRpsRematchExpiredData: {
+            data: components["schemas"]["RpsRematchExpiredData"];
+            notification: components["schemas"]["NotificationContent"];
+        };
+        NotificationPayloadRpsRematchRequestedData: {
+            data: components["schemas"]["RpsRematchRequestedData"];
+            notification: components["schemas"]["NotificationContent"];
+        };
         NotificationPayloadTaskCompletedNotificationData: {
             data: components["schemas"]["TaskCompletedNotificationData"];
             notification: components["schemas"]["NotificationContent"];
@@ -3417,6 +3586,32 @@ export interface components {
             user?: components["schemas"]["ApiUser"];
             user_id?: string;
         };
+        PlayerPresenceResponseBody: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/PlayerPresenceResponseBody.json
+             */
+            readonly $schema?: string;
+            is_connected: boolean;
+            /** Format: date-time */
+            last_seen_at?: string;
+            player_id: string;
+        };
+        PlayerRpsStatsResponse: {
+            /** Format: int64 */
+            losses: number;
+            /** Format: int64 */
+            ties: number;
+            /** Format: int64 */
+            total_bet_lost: number;
+            /** Format: int64 */
+            total_bet_won: number;
+            /** Format: int64 */
+            total_games: number;
+            /** Format: int64 */
+            wins: number;
+        };
         PointsCheckoutInput: {
             /**
              * Format: uri
@@ -3516,6 +3711,17 @@ export interface components {
             /** Format: date-time */
             updated_at: string;
         };
+        RpsGameChallengedData: {
+            game_id: string;
+            requesting_email: string;
+            requesting_player_id: string;
+        };
+        RpsGameCompletedData: {
+            game_id: string;
+            opponent_move: string;
+            result: string;
+            your_move: string;
+        };
         RpsGameRequestInput: {
             /**
              * Format: uri
@@ -3545,11 +3751,8 @@ export interface components {
             game_id: string;
             id: string;
             metadata: string;
-            /**
-             * @default rock
-             * @enum {string}
-             */
-            move: "rock" | "paper" | "scissors";
+            /** @enum {string} */
+            move?: "rock" | "paper" | "scissors";
             player?: components["schemas"]["Player"];
             player_id: string;
             /** Format: date-time */
@@ -3571,6 +3774,38 @@ export interface components {
             type: "host" | "guest";
             /** Format: date-time */
             updated_at: string;
+        };
+        RpsRematchAcceptedData: {
+            new_game_id: string;
+            rematch_request_id: string;
+        };
+        RpsRematchDeclinedData: {
+            original_game_id: string;
+            rematch_request_id: string;
+        };
+        RpsRematchExpiredData: {
+            original_game_id: string;
+            rematch_request_id: string;
+        };
+        RpsRematchRequest: {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            id: string;
+            invited_player_id: string;
+            new_game_id?: string;
+            original_game_id: string;
+            requesting_player_id: string;
+            /** @enum {string} */
+            status: "pending" | "accepted" | "declined" | "expired";
+        };
+        RpsRematchRequestedData: {
+            expires_at: string;
+            original_game_id: string;
+            rematch_request_id: string;
+            requesting_email: string;
+            requesting_player_id: string;
         };
         SendFriendRequestBody: {
             /**
@@ -3762,7 +3997,7 @@ export interface components {
             /** @enum {string} */
             move: "rock" | "paper" | "scissors";
             /** @enum {string} */
-            status: "pending" | "completed" | "cancelled";
+            status: "completed" | "cancelled";
         };
         SubmitMoveWithTokenInput: {
             /**
@@ -3774,7 +4009,7 @@ export interface components {
             /** @enum {string} */
             move: "rock" | "paper" | "scissors";
             /** @enum {string} */
-            status: "pending" | "completed" | "cancelled";
+            status: "completed" | "cancelled";
             token: string;
         };
         Task: {
@@ -7483,6 +7718,153 @@ export interface operations {
                     "application/problem+json": components["schemas"]["ErrorModel"];
                 };
             };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "accept-rps-rematch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "rematch-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptRematchInput"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponseRpsRematchRequest"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "decline-rps-rematch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "rematch-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponseRpsRematchRequest"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
             /** @description Internal Server Error */
             500: {
                 headers: {
@@ -7620,6 +8002,216 @@ export interface operations {
             };
             /** @description Unauthorized */
             401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Too Many Requests */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "cancel-rps-game": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "game-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponseRpsGameWithParticipants"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "get-rps-rematch-request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "game-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponseRpsRematchRequest"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "request-rps-rematch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "game-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponseRpsRematchRequest"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -8349,6 +8941,44 @@ export interface operations {
             };
         };
     };
+    "get-current-player-rps-stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiSingleResponsePlayerRpsStatsResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "list-friends": {
         parameters: {
             query?: {
@@ -8942,6 +9572,64 @@ export interface operations {
             };
         };
     };
+    "get-player-online-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "player-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlayerPresenceResponseBody"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
     "player-sse-notifications": {
         parameters: {
             query?: {
@@ -8979,6 +9667,72 @@ export interface operations {
                          * @constant
                          */
                         event: "ping";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
+                        data: components["schemas"]["NotificationPayloadRpsGameChallengedData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "rps_game_challenged";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
+                        data: components["schemas"]["NotificationPayloadRpsGameCompletedData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "rps_game_completed";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
+                        data: components["schemas"]["NotificationPayloadRpsRematchAcceptedData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "rps_rematch_accepted";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
+                        data: components["schemas"]["NotificationPayloadRpsRematchDeclinedData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "rps_rematch_declined";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
+                        data: components["schemas"]["NotificationPayloadRpsRematchExpiredData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "rps_rematch_expired";
+                        /** @description The event ID. */
+                        id?: number;
+                        /** @description The retry time in milliseconds. */
+                        retry?: number;
+                    } | {
+                        data: components["schemas"]["NotificationPayloadRpsRematchRequestedData"];
+                        /**
+                         * @description The event name.
+                         * @constant
+                         */
+                        event: "rps_rematch_requested";
                         /** @description The event ID. */
                         id?: number;
                         /** @description The retry time in milliseconds. */

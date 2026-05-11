@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -160,6 +161,8 @@ func Test_AcceptRematch_Success_CreatesNewGame(t *testing.T) {
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				header, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, guest.Email)
 				scenario.Headers = []string{header}
+				body, _ := json.Marshal(apis.AcceptRematchInput{Move: apis.RpsParticipantMoveRock})
+				scenario.Body = strings.NewReader(string(body))
 			},
 			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsRematchRequest]](t, res.Body.Bytes())
@@ -195,6 +198,8 @@ func Test_AcceptRematch_WrongPlayerForbidden(t *testing.T) {
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				header, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, host.Email)
 				scenario.Headers = []string{header}
+				body, _ := json.Marshal(apis.AcceptRematchInput{Move: apis.RpsParticipantMoveRock})
+				scenario.Body = strings.NewReader(string(body))
 			},
 		}
 		scenario.Test(t)

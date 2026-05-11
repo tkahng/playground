@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database/queries"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
@@ -78,31 +79,53 @@ func bindFindCurrentPlayersRpsGamesApi(api huma.API, app core.App) {
 				return nil, err
 			}
 			pop := populator.New(app.Adapter())
-			gamesWithParticipants := []*services.RpsGameWithParticipants{}
-			for _, game := range games {
-				var gameWithPartipants *services.RpsGameWithParticipants = &services.RpsGameWithParticipants{
-					RpsGame: game,
-				}
-				participants, err := app.Adapter().Gaming().FindRpsParticipants(ctx, &stores.RpsParticipantFilter{
-					RpsGameIds: []uuid.UUID{game.ID},
-				})
+
+			// Batch-load all participants for this page in a single query instead
+			// of one query per game, then group by game ID.
+			gameIDs := make([]uuid.UUID, 0, len(games))
+			for _, g := range games {
+				gameIDs = append(gameIDs, g.ID)
+			}
+			allParticipants, err := app.Adapter().Gaming().FindRpsParticipants(ctx, &stores.RpsParticipantFilter{
+				RpsGameIds:     gameIDs,
+				PaginatedInput: repository.PaginatedInput{Page: 0, PerPage: int64(len(gameIDs) * 2)},
+			})
+			if err != nil {
+				return nil, err
+			}
+			// Pre-fetch all players referenced by participants (populator deduplicates).
+			for _, p := range allParticipants {
+				player, err := pop.GetPlayerByID(ctx, p.PlayerID)
 				if err != nil {
 					return nil, err
 				}
-				for _, p := range participants {
-					player, err := pop.GetPlayerByID(ctx, p.PlayerID)
-					if err != nil {
-						return nil, err
-					}
-					p.Player = player
-					if p.Type == models.RpsParticipantTypeHost {
-						gameWithPartipants.RequestingParticipant = p
-					}
-					if p.Type == models.RpsParticipantTypeGuest {
-						gameWithPartipants.InvitedParticipant = p
-					}
+				p.Player = player
+			}
+			// Index participants by game ID.
+			type gamePair struct{ host, guest *models.RpsParticipant }
+			participantsByGame := make(map[uuid.UUID]*gamePair, len(games))
+			for _, p := range allParticipants {
+				pair := participantsByGame[p.GameID]
+				if pair == nil {
+					pair = &gamePair{}
+					participantsByGame[p.GameID] = pair
 				}
-				gamesWithParticipants = append(gamesWithParticipants, gameWithPartipants)
+				if p.Type == models.RpsParticipantTypeHost {
+					pair.host = p
+				} else if p.Type == models.RpsParticipantTypeGuest {
+					pair.guest = p
+				}
+			}
+
+			gamesWithParticipants := make([]*services.RpsGameWithParticipants, 0, len(games))
+			for _, game := range games {
+				pair := participantsByGame[game.ID]
+				gwp := &services.RpsGameWithParticipants{RpsGame: game}
+				if pair != nil {
+					gwp.RequestingParticipant = pair.host
+					gwp.InvitedParticipant = pair.guest
+				}
+				gamesWithParticipants = append(gamesWithParticipants, gwp)
 			}
 			count, err := app.Adapter().Gaming().CountRpsGames(ctx, filter)
 			if err != nil {
@@ -111,9 +134,24 @@ func bindFindCurrentPlayersRpsGamesApi(api huma.API, app core.App) {
 			return &ApiPaginatedOutput[*RpsGameWithParticipants]{
 				Body: ApiPaginatedResponse[*RpsGameWithParticipants]{
 					Data: mapper.Map(gamesWithParticipants, func(p *services.RpsGameWithParticipants) *RpsGameWithParticipants {
+						// For pending games, hide the host's move from the guest. The host
+						// chose their move when creating the game; revealing it before the
+						// guest responds would let the guest pick the winning move.
+						isPending := p.RpsGame != nil && p.RpsGame.Status == models.RpsGameStatusPending
+						isViewer := func(participant *models.RpsParticipant) bool {
+							return participant != nil && participant.PlayerID == currentPlayer.ID
+						}
+						viewerIsGuest := isPending &&
+							p.InvitedParticipant != nil &&
+							isViewer(p.InvitedParticipant)
+
+						requestingAPI := ToApiRpsParticipant(p.RequestingParticipant)
+						if viewerIsGuest {
+							requestingAPI = ToApiRpsParticipantMasked(p.RequestingParticipant)
+						}
 						return &RpsGameWithParticipants{
 							RpsGame:               toApiRpsGame(p.RpsGame),
-							RequestingParticipant: ToApiRpsParticipant(p.RequestingParticipant),
+							RequestingParticipant: requestingAPI,
 							InvitedParticipant:    ToApiRpsParticipant(p.InvitedParticipant),
 						}
 					}),
@@ -188,10 +226,12 @@ func getRpsGameInviteFromTokenQuery(app core.App, ctx context.Context, token str
 type SubmitMoveWithTokenInput struct {
 	Token  string             `json:"token" required:"true" minlength:"2"`
 	Move   RpsParticipantMove `json:"move" required:"true" enum:"rock,paper,scissors"`
-	Status RpsGameStatus      `json:"status" required:"true" enum:"pending,completed,cancelled"`
+	Status RpsGameStatus      `json:"status" required:"true" enum:"completed,cancelled"`
 }
 
 func bindSubmitMoveWithTokenApi(api huma.API, app core.App) {
+	// 20 req/min per IP — unauthenticated endpoint, token is the only auth factor.
+	rl := newAuthRateLimiter(20, time.Minute)
 	huma.Register(
 		api,
 		huma.Operation{
@@ -201,8 +241,8 @@ func bindSubmitMoveWithTokenApi(api huma.API, app core.App) {
 			Summary:     "submit move to rps game with token",
 			Description: "submit move to rps game with token",
 			Tags:        []string{"Games", "Player"},
-			Errors:      []int{http.StatusUnauthorized},
-			Middlewares: humamiddleware.HumaChiMiddlewares(),
+			Errors:      []int{http.StatusUnauthorized, http.StatusTooManyRequests},
+			Middlewares: huma.Middlewares{rl},
 		},
 		func(ctx context.Context, input *struct {
 			Body SubmitMoveWithTokenInput
@@ -216,6 +256,10 @@ func bindSubmitMoveWithTokenApi(api huma.API, app core.App) {
 			if err != nil {
 				return nil, err
 			}
+			// RespondToGameRequest manages its own transaction. The invite deletion
+			// must be atomic with the settlement: wrap both in an outer transaction
+			// so RespondToGameRequest runs as a savepoint inside it, and a deletion
+			// failure rolls back the whole thing.
 			txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
 				rpsGameWithParticipants, err = app.RpsGame().RespondToGameRequest(txCtx, &services.GameRequestResponse{
 					GameID:          rpsGameWithParticipants.RpsGame.ID,
@@ -253,6 +297,7 @@ type VerifyRpsGameInviteInput struct {
 }
 
 func bindVerifyRpsGameInviteApi(api huma.API, app core.App) {
+	rl := newAuthRateLimiter(20, time.Minute)
 	huma.Register(
 		api,
 		huma.Operation{
@@ -262,9 +307,9 @@ func bindVerifyRpsGameInviteApi(api huma.API, app core.App) {
 			Summary:     "verify rps game invite",
 			Description: "verify rps game invite",
 			Tags:        []string{"Games", "Player"},
-			Errors:      []int{http.StatusUnauthorized},
+			Errors:      []int{http.StatusUnauthorized, http.StatusTooManyRequests},
 			Security:    []map[string][]string{{}},
-			Middlewares: humamiddleware.HumaChiMiddlewares(),
+			Middlewares: huma.Middlewares{rl},
 		},
 		func(ctx context.Context, input *struct {
 			Body VerifyRpsGameInviteInput
@@ -278,11 +323,13 @@ func bindVerifyRpsGameInviteApi(api huma.API, app core.App) {
 			if err != nil {
 				return nil, err
 			}
+			// This endpoint is called from the guest's perspective via an invite token.
+			// Hide the host's move so the guest cannot pick the winning response.
 			return &ApiSingleOutput[*RpsGameWithParticipants]{
 				Body: ApiSingleResponse[*RpsGameWithParticipants]{
 					Data: &RpsGameWithParticipants{
 						RpsGame:               toApiRpsGame(rpsGameWithParticipants.RpsGame),
-						RequestingParticipant: ToApiRpsParticipant(rpsGameWithParticipants.RequestingParticipant),
+						RequestingParticipant: ToApiRpsParticipantMasked(rpsGameWithParticipants.RequestingParticipant),
 						InvitedParticipant:    ToApiRpsParticipant(rpsGameWithParticipants.InvitedParticipant),
 					},
 				},
@@ -293,7 +340,7 @@ func bindVerifyRpsGameInviteApi(api huma.API, app core.App) {
 
 type SubmitMoveToGameInput struct {
 	Move   RpsParticipantMove `json:"move" required:"true" enum:"rock,paper,scissors"`
-	Status RpsGameStatus      `json:"status" required:"true" enum:"pending,completed,cancelled"`
+	Status RpsGameStatus      `json:"status" required:"true" enum:"completed,cancelled"`
 }
 
 func bindSubmitMoveToRpsGameApi(api huma.API, app core.App) {
@@ -337,19 +384,15 @@ func bindSubmitMoveToRpsGameApi(api huma.API, app core.App) {
 			if currentPlayer.ID != game.InvitedParticipant.PlayerID {
 				return nil, huma.Error401Unauthorized("not invited player")
 			}
-			var rpsGameWithParticipants *services.RpsGameWithParticipants
-			txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
-				resp := &services.GameRequestResponse{
-					GameID:          game.RpsGame.ID,
-					InvitedPlayerID: currentPlayer.ID,
-					Move:            models.RpsParticipantMove(input.Body.Move),
-					Status:          models.RpsGameStatus(input.Body.Status),
-				}
-				rpsGameWithParticipants, err = app.RpsGame().RespondToGameRequest(txCtx, resp)
-				return err
+			// RespondToGameRequest manages its own transaction.
+			rpsGameWithParticipants, err := app.RpsGame().RespondToGameRequest(ctx, &services.GameRequestResponse{
+				GameID:          game.RpsGame.ID,
+				InvitedPlayerID: currentPlayer.ID,
+				Move:            models.RpsParticipantMove(input.Body.Move),
+				Status:          models.RpsGameStatus(input.Body.Status),
 			})
-			if txErr != nil {
-				return nil, txErr
+			if err != nil {
+				return nil, err
 			}
 			emitRpsGameCompleted(ctx, app, rpsGameWithParticipants)
 			return &ApiSingleOutput[*RpsGameWithParticipants]{
@@ -402,7 +445,7 @@ func SendRpsGameRequestToUnregisteredPlayer(app core.App, ctx context.Context, i
 			RequestingPlayerID:   currentPlayer.ID,
 			InvitedPlayerID:      player.ID,
 			RequestingPlayerMove: models.RpsParticipantMove(input.Move),
-			DurationSeconds:      3 * 24 * 60 * 60,
+			DurationSeconds:      services.GameDurationSeconds,
 		})
 		if err != nil {
 			return err
@@ -538,23 +581,20 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 			if !canPlay {
 				return nil, huma.Error400BadRequest("player can't play with invited player")
 			}
-			var rpsGameWithParticipants *services.RpsGameWithParticipants
-			txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
-				reqInput := &services.RpsGameRequestInput{
-					RequestingPlayerID:   currentPlayer.ID,
-					InvitedPlayerID:      player.ID,
-					RequestingPlayerMove: models.RpsParticipantMove(input.Body.Move),
-					DurationSeconds:      3 * 24 * 60 * 60,
-				}
-				if input.Body.BetAmount != nil {
-					reqInput.BetAmount = input.Body.BetAmount
-					reqInput.HostUserID = &user.User.ID
-				}
-				rpsGameWithParticipants, err = app.RpsGame().RequestGame(txCtx, reqInput)
-				return err
-			})
-			if txErr != nil {
-				return nil, txErr
+			// RequestGame manages its own transaction.
+			reqInput := &services.RpsGameRequestInput{
+				RequestingPlayerID:   currentPlayer.ID,
+				InvitedPlayerID:      player.ID,
+				RequestingPlayerMove: models.RpsParticipantMove(input.Body.Move),
+				DurationSeconds:      services.GameDurationSeconds,
+			}
+			if input.Body.BetAmount != nil {
+				reqInput.BetAmount = input.Body.BetAmount
+				reqInput.HostUserID = &user.User.ID
+			}
+			rpsGameWithParticipants, err := app.RpsGame().RequestGame(ctx, reqInput)
+			if err != nil {
+				return nil, err
 			}
 			// Notify the invited player via SSE (best-effort).
 			challengedPayload := notification.NewNotificationPayload(
@@ -575,6 +615,66 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 						RpsGame:               toApiRpsGame(rpsGameWithParticipants.RpsGame),
 						RequestingParticipant: ToApiRpsParticipant(rpsGameWithParticipants.RequestingParticipant),
 						InvitedParticipant:    ToApiRpsParticipant(rpsGameWithParticipants.InvitedParticipant),
+					},
+				},
+			}, nil
+		},
+	)
+}
+
+func bindCancelRpsGameApi(api huma.API, app core.App) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "cancel-rps-game",
+			Method:      http.MethodPost,
+			Path:        "/games/rps/{game-id}/cancel",
+			Summary:     "cancel a pending rps game",
+			Description: "Lets the host retract their pending challenge before the guest responds. Any bet escrow is refunded.",
+			Tags:        []string{"Games", "Player"},
+			Errors:      []int{http.StatusUnauthorized, http.StatusBadRequest, http.StatusForbidden, http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireCurrentPlayerMiddelware(),
+			),
+		},
+		func(ctx context.Context, input *struct {
+			GameID string `path:"game-id" required:"true" format:"uuid"`
+		}) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
+			currentPlayer := contextstore.GetContextCurrentPlayer(ctx)
+			if currentPlayer == nil {
+				return nil, huma.Error401Unauthorized("no player found")
+			}
+			gameID, err := uuid.Parse(input.GameID)
+			if err != nil {
+				return nil, huma.Error400BadRequest("invalid game id")
+			}
+			result, err := app.RpsGame().CancelGame(ctx, gameID, currentPlayer.ID)
+			if err != nil {
+				return nil, err
+			}
+			// Notify the guest so their pending-game view updates without a reload.
+			if result.InvitedParticipant != nil {
+				payload := notification.NewNotificationPayload(
+					"Game cancelled",
+					"The challenge was retracted",
+					notification.RpsGameCancelledData{
+						GameID:             result.RpsGame.ID,
+						CancellingPlayerID: currentPlayer.ID,
+					},
+				)
+				if err := app.SseManager().Send(sse.PlayerChannel(result.InvitedParticipant.PlayerID.String()), payload); err != nil {
+					slog.WarnContext(ctx, "rps cancel SSE notify failed", "error", err)
+				}
+			}
+			return &ApiSingleOutput[*RpsGameWithParticipants]{
+				Body: ApiSingleResponse[*RpsGameWithParticipants]{
+					Data: &RpsGameWithParticipants{
+						RpsGame:               toApiRpsGame(result.RpsGame),
+						RequestingParticipant: ToApiRpsParticipant(result.RequestingParticipant),
+						InvitedParticipant:    ToApiRpsParticipant(result.InvitedParticipant),
 					},
 				},
 			}, nil

@@ -3,6 +3,7 @@ package stores
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
@@ -330,12 +331,28 @@ func (s *DbGamingStoreDecorator) FindHousePlayer(ctx context.Context) (*models.P
 	return s.Delegate.FindHousePlayer(ctx)
 }
 
+// FindPlayerForUpdate implements [GamingStore].
+func (s *DbGamingStoreDecorator) FindPlayerForUpdate(ctx context.Context, playerID uuid.UUID) (*models.Player, error) {
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator FindPlayerForUpdate %w", ErrDelegateNil)
+	}
+	return s.Delegate.FindPlayerForUpdate(ctx, playerID)
+}
+
 // GetHouseGameAggregates implements [GamingStore].
 func (s *DbGamingStoreDecorator) GetHouseGameAggregates(ctx context.Context, housePlayerID uuid.UUID) (*HouseGameAggregates, error) {
 	if s.Delegate == nil {
 		return nil, fmt.Errorf("Gaming store decorator GetHouseGameAggregates %w", ErrDelegateNil)
 	}
 	return s.Delegate.GetHouseGameAggregates(ctx, housePlayerID)
+}
+
+// GetPlayerGameAggregates implements [GamingStore].
+func (s *DbGamingStoreDecorator) GetPlayerGameAggregates(ctx context.Context, playerID uuid.UUID) (*PlayerGameAggregates, error) {
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator GetPlayerGameAggregates %w", ErrDelegateNil)
+	}
+	return s.Delegate.GetPlayerGameAggregates(ctx, playerID)
 }
 
 // FindPlayer implements [GamingStore].
@@ -434,6 +451,22 @@ func (s *DbGamingStoreDecorator) FindExpiredPendingBetGames(ctx context.Context)
 		return nil, fmt.Errorf("Gaming store decorator FindExpiredPendingBetGames %w", ErrDelegateNil)
 	}
 	return s.Delegate.FindExpiredPendingBetGames(ctx)
+}
+
+// FindPendingGamesExpiringWithin implements [GamingStore].
+func (s *DbGamingStoreDecorator) FindPendingGamesExpiringWithin(ctx context.Context, within time.Duration) ([]*models.RpsGame, error) {
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator FindPendingGamesExpiringWithin %w", ErrDelegateNil)
+	}
+	return s.Delegate.FindPendingGamesExpiringWithin(ctx, within)
+}
+
+// MarkRpsGameExpirySent implements [GamingStore].
+func (s *DbGamingStoreDecorator) MarkRpsGameExpirySent(ctx context.Context, game *models.RpsGame) error {
+	if s.Delegate == nil {
+		return fmt.Errorf("Gaming store decorator MarkRpsGameExpirySent %w", ErrDelegateNil)
+	}
+	return s.Delegate.MarkRpsGameExpirySent(ctx, game)
 }
 
 func (s *DbGamingStoreDecorator) CreateRpsRematchRequest(ctx context.Context, req *models.RpsRematchRequest) (*models.RpsRematchRequest, error) {

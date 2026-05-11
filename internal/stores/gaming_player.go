@@ -26,13 +26,30 @@ type HouseGameAggregates struct {
 	Ties           int64 `db:"ties"`
 }
 
+// PlayerGameAggregates holds per-player RPS statistics.
+type PlayerGameAggregates struct {
+	TotalGames        int64 `db:"total_games"`
+	Wins              int64 `db:"wins"`
+	Losses            int64 `db:"losses"`
+	Ties              int64 `db:"ties"`
+	TotalBetWon       int64 `db:"total_bet_won"`
+	TotalBetLost      int64 `db:"total_bet_lost"`
+}
+
 type GamingPlayerStore interface {
 	FindPlayers(ctx context.Context, filter *PlayersFilter) ([]*models.Player, error)
 	FindPlayer(ctx context.Context, filter *PlayersFilter) (*models.Player, error)
+	// FindPlayerForUpdate fetches a player row with a FOR UPDATE lock for the
+	// duration of the surrounding transaction. Use this to serialize concurrent
+	// operations on the same player (e.g. RequestGame active-game checks).
+	FindPlayerForUpdate(ctx context.Context, playerID uuid.UUID) (*models.Player, error)
 	FindHousePlayer(ctx context.Context) (*models.Player, error)
 	// GetHouseGameAggregates returns win/loss/tie counts and bet totals for the
 	// house player in a single SQL query rather than fetching rows into Go memory.
 	GetHouseGameAggregates(ctx context.Context, housePlayerID uuid.UUID) (*HouseGameAggregates, error)
+	// GetPlayerGameAggregates returns win/loss/tie counts and net bet totals for
+	// a given player in a single SQL query.
+	GetPlayerGameAggregates(ctx context.Context, playerID uuid.UUID) (*PlayerGameAggregates, error)
 	CreatePlayer(ctx context.Context, player *models.Player) (*models.Player, error)
 	UpdatePlayer(ctx context.Context, player *models.Player) (*models.Player, error)
 	UpdatePlayerLastSeen(ctx context.Context, playerID uuid.UUID) error
@@ -200,6 +217,19 @@ func (s *DBGamingStore) FindPlayer(ctx context.Context, filter *PlayersFilter) (
 	return res[0], nil
 }
 
+func (s *DBGamingStore) FindPlayerForUpdate(ctx context.Context, playerID uuid.UUID) (*models.Player, error) {
+	cols := strings.Join(repository.PlayerBuilder.ColumnNames(), ", ")
+	query := fmt.Sprintf("SELECT %s FROM gaming.players WHERE id = $1 FOR UPDATE", cols)
+	data, err := database.QueryAll[*models.Player](ctx, s.db, query, playerID)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) == 0 {
+		return nil, nil
+	}
+	return data[0], nil
+}
+
 func (s *DBGamingStore) FindHousePlayer(ctx context.Context) (*models.Player, error) {
 	return s.FindPlayer(ctx, &PlayersFilter{
 		IsHouse: types.OptionalParam[bool]{IsSet: true, Value: true},
@@ -225,6 +255,29 @@ func (s *DBGamingStore) GetHouseGameAggregates(ctx context.Context, housePlayerI
 	}
 	if len(rows) == 0 {
 		return &HouseGameAggregates{}, nil
+	}
+	return rows[0], nil
+}
+
+func (s *DBGamingStore) GetPlayerGameAggregates(ctx context.Context, playerID uuid.UUID) (*PlayerGameAggregates, error) {
+	const query = `
+		SELECT
+			COUNT(*)                                                                            AS total_games,
+			COUNT(CASE WHEN p.result = 'win'  AND p.status = 'completed' THEN 1 END)           AS wins,
+			COUNT(CASE WHEN p.result = 'lose' AND p.status = 'completed' THEN 1 END)           AS losses,
+			COUNT(CASE WHEN p.result = 'tie'  AND p.status = 'completed' THEN 1 END)           AS ties,
+			COALESCE(SUM(CASE WHEN p.result = 'win'  AND g.bet_amount > 0 THEN g.bet_amount ELSE 0 END), 0) AS total_bet_won,
+			COALESCE(SUM(CASE WHEN p.result = 'lose' AND g.bet_amount > 0 THEN g.bet_amount ELSE 0 END), 0) AS total_bet_lost
+		FROM gaming.rps_participants p
+		JOIN gaming.rps_games g ON g.id = p.game_id
+		WHERE p.player_id = $1
+	`
+	rows, err := database.QueryAll[*PlayerGameAggregates](ctx, s.db, query, playerID)
+	if err != nil {
+		return nil, err
+	}
+	if len(rows) == 0 {
+		return &PlayerGameAggregates{}, nil
 	}
 	return rows[0], nil
 }

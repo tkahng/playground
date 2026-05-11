@@ -383,14 +383,19 @@ func TestDBGamingStore_FindRpsParticipant(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		now := time.Now().UTC()
 		gameStore := NewDBGamingStore(db)
-		player1, err := gameStore.CreatePlayer(ctx, &models.Player{
-			Email: "player1@gmail.com",
-		})
+		// player1 is the guest (status=completed) across all games — no constraint issue.
+		// Each game gets its own distinct host player (status=pending) so no player
+		// appears in more than one pending participant row, satisfying the partial
+		// unique index idx_rps_participants_one_pending_per_player.
+		player1, err := gameStore.CreatePlayer(ctx, &models.Player{Email: "findpart_p1@gmail.com"})
 		require.NoError(t, err)
-		player2, err := gameStore.CreatePlayer(ctx, &models.Player{
-			Email: "player2@gmail.com",
-		})
-		require.NoError(t, err)
+		hostPlayers := make([]*models.Player, 3)
+		for i := range hostPlayers {
+			hostPlayers[i], err = gameStore.CreatePlayer(ctx, &models.Player{
+				Email: fmt.Sprintf("findpart_host%d@gmail.com", i),
+			})
+			require.NoError(t, err)
+		}
 
 		games := []*models.RpsGame{
 			{
@@ -418,7 +423,7 @@ func TestDBGamingStore_FindRpsParticipant(t *testing.T) {
 			}
 			createdGames = append(createdGames, createdGame)
 		}
-		for _, createdGame := range createdGames {
+		for i, createdGame := range createdGames {
 			ps := []*models.RpsParticipant{
 				{
 					GameID:      createdGame.ID,
@@ -431,7 +436,7 @@ func TestDBGamingStore_FindRpsParticipant(t *testing.T) {
 				},
 				{
 					GameID:      createdGame.ID,
-					PlayerID:    player2.ID,
+					PlayerID:    hostPlayers[i].ID, // distinct host per game — satisfies unique index
 					Type:        models.RpsParticipantTypeHost,
 					Status:      models.RpsParticipantStatusPending,
 					Move:        models.RpsParticipantMovePaper,

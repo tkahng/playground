@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -593,6 +594,74 @@ func TestDbRpsGameService_ExpireGamesAndRefundBets_ContinuesOnPerGameError(t *te
 	})
 }
 
+func TestDbRpsGameService_Betting_HostWins_BalancesSettledCorrectly(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		host := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("hostwins_host@example.com"),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "hostwins_host@example.com").ID),
+		)
+		guest := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("hostwins_guest@example.com"),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "hostwins_guest@example.com").ID),
+		)
+
+		mustFundPlayerWallet(t, ctx, adapter, ledger, host.UserID, 500)
+		mustFundPlayerWallet(t, ctx, adapter, ledger, guest.UserID, 500)
+
+		betAmount := int64(100)
+		// Host plays paper.
+		game, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMovePaper,
+			DurationSeconds:      GameDurationSeconds,
+			BetAmount:            &betAmount,
+			HostUserID:           host.UserID,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame() error = %v", err)
+		}
+
+		// Guest plays rock — loses.
+		responded, err := rpsService.RespondToGameRequest(ctx, &GameRequestResponse{
+			InvitedPlayerID: guest.ID,
+			GameID:          game.RpsGame.ID,
+			Status:          models.RpsGameStatusCompleted,
+			Move:            models.RpsParticipantMoveRock,
+		})
+		if err != nil {
+			t.Fatalf("RespondToGameRequest() error = %v", err)
+		}
+		if responded.RequestingParticipant.Result != models.RpsParticipantResultWin {
+			t.Errorf("host result = %v, want win", responded.RequestingParticipant.Result)
+		}
+		if responded.InvitedParticipant.Result != models.RpsParticipantResultLose {
+			t.Errorf("guest result = %v, want lose", responded.InvitedParticipant.Result)
+		}
+
+		// Host gains 100 → 600; guest loses 100 → 400.
+		hostBal, err := ledger.GetUserBalance(ctx, *host.UserID)
+		if err != nil {
+			t.Fatalf("GetUserBalance(host): %v", err)
+		}
+		if hostBal != 600 {
+			t.Errorf("host balance = %d, want 600", hostBal)
+		}
+		guestBal, err := ledger.GetUserBalance(ctx, *guest.UserID)
+		if err != nil {
+			t.Fatalf("GetUserBalance(guest): %v", err)
+		}
+		if guestBal != 400 {
+			t.Errorf("guest balance = %d, want 400", guestBal)
+		}
+	})
+}
+
 func TestDbRpsGameService_CreatePlayerByParams_Success(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
@@ -989,6 +1058,69 @@ func TestDbRpsGameService_RequestGame_AllowedAfterInvitedGameCancelled(t *testin
 		})
 		if err != nil {
 			t.Fatalf("RequestGame() inviting p2 after cancellation should succeed, got error: %v", err)
+		}
+	})
+}
+
+// TestRespondToGameRequest_Atomic verifies that a failure during the UpdateRpsParticipant
+// step rolls back the entire RespondToGameRequest — the game must remain pending and the
+// participant status must be unchanged.
+func TestRespondToGameRequest_Atomic(t *testing.T) {
+	database.WithNewDatabase(t, func(ctx context.Context, db database.Dbx) {
+		gamingDec := stores.NewDbGamingStoreDecorator(db)
+		adapter := stores.NewDbAdapterDecorators(db)
+		adapter.GamingFunc = gamingDec
+
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		svc := NewDbRpsGameService(adapter, betting)
+
+		var p1, p2 *models.Player
+		if err := adapter.RunInTxCtx(ctx, func(txCtx context.Context) error {
+			p1 = stores.MustCreatePlayer(t, txCtx, adapter.Gaming(), stores.WithPlayerEmail("atomic_p1@example.com"))
+			p2 = stores.MustCreatePlayer(t, txCtx, adapter.Gaming(), stores.WithPlayerEmail("atomic_p2@example.com"))
+			return nil
+		}); err != nil {
+			t.Fatalf("setup: %v", err)
+		}
+
+		game, err := svc.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   p1.ID,
+			InvitedPlayerID:      p2.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      3600,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame: %v", err)
+		}
+
+		// Inject a failure on UpdateRpsParticipant so the game status write
+		// succeeds but the participant write fails — rolling back the transaction.
+		gamingDec.UpdateRpsParticipantFunc = func(_ context.Context, _ *models.RpsParticipant) (*models.RpsParticipant, error) {
+			return nil, fmt.Errorf("injected participant update error")
+		}
+
+		_, err = svc.RespondToGameRequest(ctx, &GameRequestResponse{
+			InvitedPlayerID: p2.ID,
+			GameID:          game.RpsGame.ID,
+			Status:          models.RpsGameStatusCompleted,
+			Move:            models.RpsParticipantMoveScissors,
+		})
+		if err == nil {
+			t.Fatal("expected error from RespondToGameRequest, got nil")
+		}
+
+		gamingDec.UpdateRpsParticipantFunc = nil
+
+		// Game must still be pending — the write was rolled back.
+		updated, err := adapter.Gaming().FindRpsGame(ctx, &stores.RpsGameFilter{
+			Ids: []uuid.UUID{game.RpsGame.ID},
+		})
+		if err != nil {
+			t.Fatalf("FindRpsGame after rollback: %v", err)
+		}
+		if updated.Status != models.RpsGameStatusPending {
+			t.Errorf("game status = %v, want pending (should have been rolled back)", updated.Status)
 		}
 	})
 }

@@ -7,6 +7,7 @@ import {
   useEventSourceListener,
 } from "@react-nano/use-event-source";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 
 export function usePlayerNotifications() {
   const { user } = useAuthProvider();
@@ -60,6 +61,18 @@ export function usePlayerNotifications() {
     queryClient.invalidateQueries({ queryKey: [{ key: "find-rps-game" }] });
   }, [queryClient]);
 
+  const onRpsGameChallenged = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: [{ key: "rps-games" }] });
+    queryClient.invalidateQueries({ queryKey: [{ key: "find-rps-game" }] });
+    toast.info("You've been challenged to Rock Paper Scissors!");
+  }, [queryClient]);
+
+  const onRpsGameCompleted = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: [{ key: "rps-games" }] });
+    queryClient.invalidateQueries({ queryKey: [{ key: "find-rps-game" }] });
+    queryClient.invalidateQueries({ queryKey: [{ key: "ledger-balance" }] });
+  }, [queryClient]);
+
   useEventSourceListener(
     activeSource,
     ["friend_request"],
@@ -69,14 +82,34 @@ export function usePlayerNotifications() {
 
   useEventSourceListener(
     activeSource,
+    ["rps_game_challenged"],
+    onRpsGameChallenged,
+    [onRpsGameChallenged]
+  );
+
+  useEventSourceListener(
+    activeSource,
     [
-      "rps_game_challenged",
-      "rps_game_completed",
+      "rps_game_cancelled",
       "rps_rematch_requested",
       "rps_rematch_accepted",
       "rps_rematch_declined",
       "rps_rematch_expired",
     ],
+    onRpsGameEvent,
+    [onRpsGameEvent]
+  );
+
+  useEventSourceListener(
+    activeSource,
+    ["rps_game_completed"],
+    onRpsGameCompleted,
+    [onRpsGameCompleted]
+  );
+
+  useEventSourceListener(
+    activeSource,
+    ["rps_game_expiring_soon"],
     onRpsGameEvent,
     [onRpsGameEvent]
   );

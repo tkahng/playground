@@ -106,6 +106,8 @@ func (a *Assembler) registerWorkers(app *BaseApp) {
 		app.Payment(),
 		app.NotificationPublisher(),
 		app.RpsGame(),
+		app.Adapter(),
+		app.SseManager(),
 	)
 }
 

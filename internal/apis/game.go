@@ -180,33 +180,34 @@ func toApiRpsParticipantResult(result models.RpsParticipantResult) RpsParticipan
 }
 
 type RpsParticipant struct {
-	_           struct{}             `db:"rps_participants" schema:"gaming" json:"-"`
-	ID          uuid.UUID            `db:"id,pk" json:"id"`
-	GameID      uuid.UUID            `db:"game_id" json:"game_id"`
-	PlayerID    uuid.UUID            `db:"player_id" json:"player_id"`
-	Type        RpsParticipantType   `db:"type" json:"type" default:"host" enum:"host,guest"`
-	Status      RpsParticipantStatus `db:"status" json:"status" default:"pending" enum:"pending,declined,completed"`
-	Move        RpsParticipantMove   `db:"move" json:"move" default:"rock" enum:"rock,paper,scissors"`
-	Result      RpsParticipantResult `db:"result" json:"result" default:"tie" enum:"tie,win,lose"`
-	RespondedAt *time.Time           `db:"responded_at" json:"responded_at,omitempty"`
-	Metadata    []byte               `db:"metadata" json:"metadata"`
-	CreatedAt   time.Time            `db:"created_at" json:"created_at"`
-	UpdatedAt   time.Time            `db:"updated_at" json:"updated_at"`
-	Game        *RpsGame             `db:"game" src:"game_id" dest:"id" table:"gaming.rps_games" json:"game,omitempty"`
-	Player      *Player              `db:"player" src:"player_id" dest:"id" table:"gaming.players" json:"player,omitempty"`
+	_           struct{}              `db:"rps_participants" schema:"gaming" json:"-"`
+	ID          uuid.UUID             `db:"id,pk" json:"id"`
+	GameID      uuid.UUID             `db:"game_id" json:"game_id"`
+	PlayerID    uuid.UUID             `db:"player_id" json:"player_id"`
+	Type        RpsParticipantType    `db:"type" json:"type" default:"host" enum:"host,guest"`
+	Status      RpsParticipantStatus  `db:"status" json:"status" default:"pending" enum:"pending,declined,completed"`
+	Move        *RpsParticipantMove   `db:"move" json:"move,omitempty" enum:"rock,paper,scissors"`
+	Result      RpsParticipantResult  `db:"result" json:"result" default:"tie" enum:"tie,win,lose"`
+	RespondedAt *time.Time            `db:"responded_at" json:"responded_at,omitempty"`
+	Metadata    []byte                `db:"metadata" json:"metadata"`
+	CreatedAt   time.Time             `db:"created_at" json:"created_at"`
+	UpdatedAt   time.Time             `db:"updated_at" json:"updated_at"`
+	Game        *RpsGame              `db:"game" src:"game_id" dest:"id" table:"gaming.rps_games" json:"game,omitempty"`
+	Player      *Player               `db:"player" src:"player_id" dest:"id" table:"gaming.players" json:"player,omitempty"`
 }
 
 func ToApiRpsParticipant(participant *models.RpsParticipant) *RpsParticipant {
 	if participant == nil {
 		return nil
 	}
+	move := toApiRpsParticipantMove(participant.Move)
 	return &RpsParticipant{
 		ID:          participant.ID,
 		GameID:      participant.GameID,
 		PlayerID:    participant.PlayerID,
 		Type:        toApiRpsParticipantType(participant.Type),
 		Status:      toApiRpsParticipantStatus(participant.Status),
-		Move:        toApiRpsParticipantMove(participant.Move),
+		Move:        &move,
 		Result:      toApiRpsParticipantResult(participant.Result),
 		RespondedAt: participant.RespondedAt,
 		Metadata:    participant.Metadata,
@@ -215,6 +216,16 @@ func ToApiRpsParticipant(participant *models.RpsParticipant) *RpsParticipant {
 		Game:        toApiRpsGame(participant.Game),
 		Player:      ToApiPlayer(participant.Player),
 	}
+}
+
+// ToApiRpsParticipantMasked returns the participant with the move field redacted (nil).
+// Use this when the game is still pending and the viewer should not see the opponent's move.
+func ToApiRpsParticipantMasked(participant *models.RpsParticipant) *RpsParticipant {
+	p := ToApiRpsParticipant(participant)
+	if p != nil {
+		p.Move = nil
+	}
+	return p
 }
 
 // enum:"pending,accepted,declined,blocked"

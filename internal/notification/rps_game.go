@@ -49,3 +49,10 @@ type RpsRematchExpiredData struct {
 }
 
 func (RpsRematchExpiredData) Kind() string { return "rps_rematch_expired" }
+
+type RpsGameCancelledData struct {
+	GameID             uuid.UUID `json:"game_id" required:"true"`
+	CancellingPlayerID uuid.UUID `json:"cancelling_player_id" required:"true"`
+}
+
+func (RpsGameCancelledData) Kind() string { return "rps_game_cancelled" }

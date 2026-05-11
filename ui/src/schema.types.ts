@@ -135,3 +135,7 @@ export type PlayerRpsGame = {
 export type Participant = components["schemas"]["RpsParticipant"];
 
 export type Project = components["schemas"]["TaskProject"];
+
+export type RpsRematchRequest = components["schemas"]["RpsRematchRequest"];
+export type PlayerRpsStats = components["schemas"]["PlayerRpsStatsResponse"];
+export type AcceptRematchInput = components["schemas"]["AcceptRematchInput"];
