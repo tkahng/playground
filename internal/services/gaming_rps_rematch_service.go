@@ -27,7 +27,6 @@ type RematchAcceptInput struct {
 	HostMove        models.RpsParticipantMove
 }
 
-const rematchGameDuration = 3 * 24 * time.Hour
 
 func (d *DbRpsGameService) RequestRematch(ctx context.Context, input *RematchRequestInput) (*models.RpsRematchRequest, error) {
 	game, err := d.adapter.Gaming().FindRpsGame(ctx, &stores.RpsGameFilter{
@@ -89,44 +88,50 @@ func (d *DbRpsGameService) AcceptRematch(ctx context.Context, input *RematchAcce
 		return nil, apierrors.Gone("rematch request has expired")
 	}
 
-	// Create new game with roles swapped: the accepting player (previous guest) becomes
-	// the new host and submits their move now. The rematch requester (previous host)
-	// becomes the new guest and must respond via submit-move.
-	newGame, err := d.adapter.Gaming().CreateRpsGame(ctx, &models.RpsGame{
-		ExpiresAt: time.Now().UTC().Add(rematchGameDuration),
-		Status:    models.RpsGameStatusPending,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("create rematch game: %w", err)
-	}
+	// All three writes (create game, create participants, update rematch) must be
+	// atomic: if participants fail to create, the game row must not survive.
+	var updated *models.RpsRematchRequest
+	txErr := d.adapter.RunInTxCtx(ctx, func(txCtx context.Context) error {
+		newGame, err := d.adapter.Gaming().CreateRpsGame(txCtx, &models.RpsGame{
+			ExpiresAt: time.Now().UTC().Add(time.Duration(GameDurationSeconds) * time.Second),
+			Status:    models.RpsGameStatusPending,
+		})
+		if err != nil {
+			return fmt.Errorf("create rematch game: %w", err)
+		}
 
-	_, err = d.adapter.Gaming().CreateRpsParticipants(ctx, []*models.RpsParticipant{
-		{
-			PlayerID: input.InvitedPlayerID,
-			Move:     input.HostMove, // accepting player's move — submitted now
-			GameID:   newGame.ID,
-			Result:   models.RpsParticipantResultTie,
-			Status:   models.RpsParticipantStatusCompleted,
-			Type:     models.RpsParticipantTypeHost,
-		},
-		{
-			PlayerID: rematch.RequestingPlayerID,
-			Move:     models.RpsParticipantMoveRock, // placeholder; overwritten by submit-move
-			GameID:   newGame.ID,
-			Result:   models.RpsParticipantResultTie,
-			Status:   models.RpsParticipantStatusPending,
-			Type:     models.RpsParticipantTypeGuest,
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("create rematch participants: %w", err)
-	}
+		_, err = d.adapter.Gaming().CreateRpsParticipants(txCtx, []*models.RpsParticipant{
+			{
+				PlayerID: input.InvitedPlayerID,
+				Move:     input.HostMove, // accepting player's move — submitted now
+				GameID:   newGame.ID,
+				Result:   models.RpsParticipantResultTie,
+				Status:   models.RpsParticipantStatusCompleted,
+				Type:     models.RpsParticipantTypeHost,
+			},
+			{
+				PlayerID: rematch.RequestingPlayerID,
+				Move:     models.RpsParticipantMoveRock, // placeholder; overwritten by submit-move
+				GameID:   newGame.ID,
+				Result:   models.RpsParticipantResultTie,
+				Status:   models.RpsParticipantStatusPending,
+				Type:     models.RpsParticipantTypeGuest,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("create rematch participants: %w", err)
+		}
 
-	rematch.Status = models.RpsRematchStatusAccepted
-	rematch.NewGameID = &newGame.ID
-	updated, err := d.adapter.Gaming().UpdateRpsRematchRequest(ctx, rematch)
-	if err != nil {
-		return nil, fmt.Errorf("update rematch status: %w", err)
+		rematch.Status = models.RpsRematchStatusAccepted
+		rematch.NewGameID = &newGame.ID
+		updated, err = d.adapter.Gaming().UpdateRpsRematchRequest(txCtx, rematch)
+		if err != nil {
+			return fmt.Errorf("update rematch status: %w", err)
+		}
+		return nil
+	})
+	if txErr != nil {
+		return nil, txErr
 	}
 	return updated, nil
 }

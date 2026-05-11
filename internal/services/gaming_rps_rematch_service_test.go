@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -299,5 +300,57 @@ func TestDbRpsGameService_ExpireRematches_SkipsNonExpired(t *testing.T) {
 		count, err := svc.ExpireRematches(ctx)
 		require.NoError(t, err)
 		assert.Equal(t, 0, count)
+	})
+}
+
+// TestDbRpsGameService_AcceptRematch_Atomic verifies that a failure during
+// participant creation does not leave an orphaned game row. The decorator
+// intercepts CreateRpsParticipants; the transaction wrapping AcceptRematch
+// must roll back the game row together with the failed participant write.
+func TestDbRpsGameService_AcceptRematch_Atomic(t *testing.T) {
+	database.WithNewDatabase(t, func(ctx context.Context, db database.Dbx) {
+		// Use a gaming decorator so we can inject a fault.
+		gamingDec := stores.NewDbGamingStoreDecorator(db)
+		adapter := stores.NewDbAdapterDecorators(db)
+		adapter.GamingFunc = gamingDec
+
+		svc := NewDbRpsGameService(adapter, nil)
+		game := mustRematchCompletedGame(t, ctx, adapter)
+
+		rematch, err := svc.RequestRematch(ctx, &RematchRequestInput{
+			OriginalGameID:     game.RpsGame.ID,
+			RequestingPlayerID: game.RequestingParticipant.PlayerID,
+			InvitedPlayerID:    game.InvitedParticipant.PlayerID,
+		})
+		require.NoError(t, err)
+
+		before, err := adapter.Gaming().CountRpsGames(ctx, &stores.RpsGameFilter{})
+		require.NoError(t, err)
+
+		// Inject failure: participant creation fails after game is created.
+		gamingDec.CreateRpsParticipantsFunc = func(_ context.Context, _ []*models.RpsParticipant) ([]*models.RpsParticipant, error) {
+			return nil, fmt.Errorf("injected participant error")
+		}
+
+		_, err = svc.AcceptRematch(ctx, &RematchAcceptInput{
+			RematchID:       rematch.ID,
+			InvitedPlayerID: game.InvitedParticipant.PlayerID,
+			HostMove:        models.RpsParticipantMoveRock,
+		})
+		require.Error(t, err, "AcceptRematch must return error when participant creation fails")
+
+		gamingDec.CreateRpsParticipantsFunc = nil
+
+		// Game count must be unchanged — the new game row was rolled back.
+		after, err := adapter.Gaming().CountRpsGames(ctx, &stores.RpsGameFilter{})
+		require.NoError(t, err)
+		assert.Equal(t, before, after, "no orphaned game row should exist after partial failure")
+
+		// Rematch status must still be pending.
+		updated, err := adapter.Gaming().FindRpsRematchRequest(ctx, &stores.RpsRematchFilter{
+			Ids: []uuid.UUID{rematch.ID},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, models.RpsRematchStatusPending, updated.Status)
 	})
 }

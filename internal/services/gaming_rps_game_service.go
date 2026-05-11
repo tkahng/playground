@@ -330,6 +330,9 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 	return updatedGameWithParticipants, nil
 }
 
+// updateGame persists the game and both participant rows.
+// Callers must invoke this inside a RunInTxCtx block; the three separate UPDATE
+// statements are not individually atomic outside a transaction.
 func (d *DbRpsGameService) updateGame(ctx context.Context, gameWithParticipants *RpsGameWithParticipants) (*RpsGameWithParticipants, error) {
 	gameToUpdate := gameWithParticipants.RpsGame
 	requestingParticipant := gameWithParticipants.RequestingParticipant
