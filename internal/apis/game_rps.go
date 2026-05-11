@@ -256,6 +256,10 @@ func bindSubmitMoveWithTokenApi(api huma.API, app core.App) {
 			if err != nil {
 				return nil, err
 			}
+			// RespondToGameRequest manages its own transaction. The invite deletion
+			// must be atomic with the settlement: wrap both in an outer transaction
+			// so RespondToGameRequest runs as a savepoint inside it, and a deletion
+			// failure rolls back the whole thing.
 			txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
 				rpsGameWithParticipants, err = app.RpsGame().RespondToGameRequest(txCtx, &services.GameRequestResponse{
 					GameID:          rpsGameWithParticipants.RpsGame.ID,
@@ -380,19 +384,15 @@ func bindSubmitMoveToRpsGameApi(api huma.API, app core.App) {
 			if currentPlayer.ID != game.InvitedParticipant.PlayerID {
 				return nil, huma.Error401Unauthorized("not invited player")
 			}
-			var rpsGameWithParticipants *services.RpsGameWithParticipants
-			txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
-				resp := &services.GameRequestResponse{
-					GameID:          game.RpsGame.ID,
-					InvitedPlayerID: currentPlayer.ID,
-					Move:            models.RpsParticipantMove(input.Body.Move),
-					Status:          models.RpsGameStatus(input.Body.Status),
-				}
-				rpsGameWithParticipants, err = app.RpsGame().RespondToGameRequest(txCtx, resp)
-				return err
+			// RespondToGameRequest manages its own transaction.
+			rpsGameWithParticipants, err := app.RpsGame().RespondToGameRequest(ctx, &services.GameRequestResponse{
+				GameID:          game.RpsGame.ID,
+				InvitedPlayerID: currentPlayer.ID,
+				Move:            models.RpsParticipantMove(input.Body.Move),
+				Status:          models.RpsGameStatus(input.Body.Status),
 			})
-			if txErr != nil {
-				return nil, txErr
+			if err != nil {
+				return nil, err
 			}
 			emitRpsGameCompleted(ctx, app, rpsGameWithParticipants)
 			return &ApiSingleOutput[*RpsGameWithParticipants]{
@@ -581,23 +581,20 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 			if !canPlay {
 				return nil, huma.Error400BadRequest("player can't play with invited player")
 			}
-			var rpsGameWithParticipants *services.RpsGameWithParticipants
-			txErr := app.Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
-				reqInput := &services.RpsGameRequestInput{
-					RequestingPlayerID:   currentPlayer.ID,
-					InvitedPlayerID:      player.ID,
-					RequestingPlayerMove: models.RpsParticipantMove(input.Body.Move),
-					DurationSeconds:      services.GameDurationSeconds,
-				}
-				if input.Body.BetAmount != nil {
-					reqInput.BetAmount = input.Body.BetAmount
-					reqInput.HostUserID = &user.User.ID
-				}
-				rpsGameWithParticipants, err = app.RpsGame().RequestGame(txCtx, reqInput)
-				return err
-			})
-			if txErr != nil {
-				return nil, txErr
+			// RequestGame manages its own transaction.
+			reqInput := &services.RpsGameRequestInput{
+				RequestingPlayerID:   currentPlayer.ID,
+				InvitedPlayerID:      player.ID,
+				RequestingPlayerMove: models.RpsParticipantMove(input.Body.Move),
+				DurationSeconds:      services.GameDurationSeconds,
+			}
+			if input.Body.BetAmount != nil {
+				reqInput.BetAmount = input.Body.BetAmount
+				reqInput.HostUserID = &user.User.ID
+			}
+			rpsGameWithParticipants, err := app.RpsGame().RequestGame(ctx, reqInput)
+			if err != nil {
+				return nil, err
 			}
 			// Notify the invited player via SSE (best-effort).
 			challengedPayload := notification.NewNotificationPayload(

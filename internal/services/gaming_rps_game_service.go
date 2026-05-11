@@ -255,94 +255,101 @@ type GameRequestResponse struct {
 }
 
 func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *GameRequestResponse) (*RpsGameWithParticipants, error) {
-	// Lock the game row first to prevent concurrent double-settlement.
-	lockedGame, err := d.adapter.Gaming().FindRpsGameForUpdate(ctx, input.GameID)
-	if err != nil {
-		return nil, err
-	}
-	if lockedGame == nil {
-		return nil, apierrors.NotFound("game not found")
-	}
-
-	gameWithParticipants, err := d.FindRpsGameWithParticipants(ctx, input.GameID)
-	if err != nil {
-		return nil, err
-	}
-	if gameWithParticipants.RpsGame.ExpiresAt.UTC().Before(time.Now().UTC()) {
-		return nil, apierrors.Gone("game expired")
-	}
-	if gameWithParticipants.RpsGame.Status != models.RpsGameStatusPending {
-		return nil, errors.New("game is not pending")
-	}
-	if gameWithParticipants.InvitedParticipant.PlayerID != input.InvitedPlayerID {
-		return nil, errors.New("invited player does not match")
-	}
-
-	game := gameWithParticipants.RpsGame
-	hasBet := game.BetAmount != nil && *game.BetAmount > 0
-
+	// Validate the status upfront — no DB needed.
 	switch input.Status {
-	case models.RpsGameStatusCancelled:
-		game.Status = models.RpsGameStatusCancelled
-		gameWithParticipants.InvitedParticipant.Status = models.RpsParticipantStatusDeclined
-
-		// Refund the host's pending escrow if a bet was placed.
-		if hasBet && game.HostBetTransferID != nil && d.betting != nil {
-			if err := d.betting.RefundHostBet(ctx, *game.HostBetTransferID); err != nil {
-				return nil, fmt.Errorf("refund host bet on cancel: %w", err)
-			}
-		}
-
-	case models.RpsGameStatusCompleted:
-		gameWithParticipants.InvitedParticipant.Move = input.Move
-		game.Status = models.RpsGameStatusCompleted
-		gameWithParticipants.RequestingParticipant.Status = models.RpsParticipantStatusCompleted
-		gameWithParticipants.InvitedParticipant.Status = models.RpsParticipantStatusCompleted
-
-		// Determine game result.
-		hostMove := gameWithParticipants.RequestingParticipant.Move
-		guestMove := gameWithParticipants.InvitedParticipant.Move
-		gameWithParticipants.RequestingParticipant.Result, gameWithParticipants.InvitedParticipant.Result =
-			determineRpsResult(hostMove, guestMove)
-
-		// Settle the bet if one was placed.
-		if hasBet && game.HostBetTransferID != nil && d.betting != nil {
-			hostPlayer := gameWithParticipants.RequestingParticipant.Player
-			if hostPlayer == nil || hostPlayer.UserID == nil {
-				return nil, errors.New("host player must be a registered user to settle a bet")
-			}
-			guestPlayer := gameWithParticipants.InvitedParticipant.Player
-			if guestPlayer == nil || guestPlayer.UserID == nil {
-				return nil, errors.New("guest player must be a registered user to settle a bet")
-			}
-			// Server-side guest balance check before committing.
-			if err := d.betting.EnsureGuestCanAffordBet(ctx, *guestPlayer.UserID, *game.BetAmount); err != nil {
-				return nil, fmt.Errorf("guest cannot cover bet: %w", err)
-			}
-			guestTransferID, err := d.betting.PlaceGuestAndSettle(ctx, PlaceGuestAndSettleInput{
-				GameID:                input.GameID,
-				GuestUserID:           *guestPlayer.UserID,
-				HostUserID:            *hostPlayer.UserID,
-				BetAmount:             *game.BetAmount,
-				HostPendingTransferID: *game.HostBetTransferID,
-				HostResult:            gameWithParticipants.RequestingParticipant.Result,
-				GuestResult:           gameWithParticipants.InvitedParticipant.Result,
-			})
-			if err != nil {
-				return nil, fmt.Errorf("settle bet: %w", err)
-			}
-			game.GuestBetTransferID = &guestTransferID
-		}
-
+	case models.RpsGameStatusCancelled, models.RpsGameStatusCompleted:
 	default:
 		return nil, apierrors.BadRequest("invalid status")
 	}
 
-	updatedGameWithParticipants, err := d.updateGame(ctx, gameWithParticipants)
-	if err != nil {
-		return nil, err
+	// All reads, the row lock, result computation, bet settlement, and writes
+	// run inside a single transaction so that a crash between any two steps
+	// leaves the database consistent.
+	var result *RpsGameWithParticipants
+	txErr := d.adapter.RunInTxCtx(ctx, func(txCtx context.Context) error {
+		// Lock the game row to prevent concurrent double-settlement.
+		lockedGame, err := d.adapter.Gaming().FindRpsGameForUpdate(txCtx, input.GameID)
+		if err != nil {
+			return err
+		}
+		if lockedGame == nil {
+			return apierrors.NotFound("game not found")
+		}
+
+		gameWithParticipants, err := d.FindRpsGameWithParticipants(txCtx, input.GameID)
+		if err != nil {
+			return err
+		}
+		if gameWithParticipants.RpsGame.ExpiresAt.UTC().Before(time.Now().UTC()) {
+			return apierrors.Gone("game expired")
+		}
+		if gameWithParticipants.RpsGame.Status != models.RpsGameStatusPending {
+			return errors.New("game is not pending")
+		}
+		if gameWithParticipants.InvitedParticipant.PlayerID != input.InvitedPlayerID {
+			return errors.New("invited player does not match")
+		}
+
+		game := gameWithParticipants.RpsGame
+		hasBet := game.BetAmount != nil && *game.BetAmount > 0
+
+		switch input.Status {
+		case models.RpsGameStatusCancelled:
+			game.Status = models.RpsGameStatusCancelled
+			gameWithParticipants.InvitedParticipant.Status = models.RpsParticipantStatusDeclined
+
+			if hasBet && game.HostBetTransferID != nil && d.betting != nil {
+				if err := d.betting.RefundHostBet(txCtx, *game.HostBetTransferID); err != nil {
+					return fmt.Errorf("refund host bet on cancel: %w", err)
+				}
+			}
+
+		case models.RpsGameStatusCompleted:
+			gameWithParticipants.InvitedParticipant.Move = input.Move
+			game.Status = models.RpsGameStatusCompleted
+			gameWithParticipants.RequestingParticipant.Status = models.RpsParticipantStatusCompleted
+			gameWithParticipants.InvitedParticipant.Status = models.RpsParticipantStatusCompleted
+
+			hostMove := gameWithParticipants.RequestingParticipant.Move
+			guestMove := gameWithParticipants.InvitedParticipant.Move
+			gameWithParticipants.RequestingParticipant.Result, gameWithParticipants.InvitedParticipant.Result =
+				determineRpsResult(hostMove, guestMove)
+
+			if hasBet && game.HostBetTransferID != nil && d.betting != nil {
+				hostPlayer := gameWithParticipants.RequestingParticipant.Player
+				if hostPlayer == nil || hostPlayer.UserID == nil {
+					return errors.New("host player must be a registered user to settle a bet")
+				}
+				guestPlayer := gameWithParticipants.InvitedParticipant.Player
+				if guestPlayer == nil || guestPlayer.UserID == nil {
+					return errors.New("guest player must be a registered user to settle a bet")
+				}
+				if err := d.betting.EnsureGuestCanAffordBet(txCtx, *guestPlayer.UserID, *game.BetAmount); err != nil {
+					return fmt.Errorf("guest cannot cover bet: %w", err)
+				}
+				guestTransferID, err := d.betting.PlaceGuestAndSettle(txCtx, PlaceGuestAndSettleInput{
+					GameID:                input.GameID,
+					GuestUserID:           *guestPlayer.UserID,
+					HostUserID:            *hostPlayer.UserID,
+					BetAmount:             *game.BetAmount,
+					HostPendingTransferID: *game.HostBetTransferID,
+					HostResult:            gameWithParticipants.RequestingParticipant.Result,
+					GuestResult:           gameWithParticipants.InvitedParticipant.Result,
+				})
+				if err != nil {
+					return fmt.Errorf("settle bet: %w", err)
+				}
+				game.GuestBetTransferID = &guestTransferID
+			}
+		}
+
+		result, err = d.updateGame(txCtx, gameWithParticipants)
+		return err
+	})
+	if txErr != nil {
+		return nil, txErr
 	}
-	return updatedGameWithParticipants, nil
+	return result, nil
 }
 
 func (d *DbRpsGameService) CancelGame(ctx context.Context, gameID uuid.UUID, requestingPlayerID uuid.UUID) (*RpsGameWithParticipants, error) {
