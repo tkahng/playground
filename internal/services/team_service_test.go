@@ -62,6 +62,40 @@ func TestTeamService_ProcessSlug_DBError(t *testing.T) {
 	assert.Equal(t, expectedErr, err)
 }
 
+func TestTeamService_ProcessSlug_SpecialCharsOnlyFallsBackToUUID(t *testing.T) {
+	t.Parallel()
+	adapterDecorator := stores.NewAdapterDecorators()
+	service := services.NewTeamService(adapterDecorator)
+
+	ctx := context.Background()
+	adapterDecorator.TeamGroupFunc.FindTeamBySlugFunc = func(ctx context.Context, slug string) (*models.Team, error) {
+		return nil, nil
+	}
+
+	// "!!!" produces an empty slug from NewSlug; service should fall back to a UUID
+	result, err := service.ProcessSlug(ctx, "!!!")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, result)
+	_, parseErr := uuid.Parse(result)
+	assert.NoError(t, parseErr, "fallback slug should be a valid UUID")
+}
+
+func TestTeamService_ProcessSlug_ExhaustedSuffixes(t *testing.T) {
+	t.Parallel()
+	adapterDecorator := stores.NewAdapterDecorators()
+	service := services.NewTeamService(adapterDecorator)
+
+	ctx := context.Background()
+	// every candidate is taken
+	adapterDecorator.TeamGroupFunc.FindTeamBySlugFunc = func(ctx context.Context, slug string) (*models.Team, error) {
+		return &models.Team{Slug: slug}, nil
+	}
+
+	result, err := service.ProcessSlug(ctx, "My Team")
+	assert.Empty(t, result)
+	assert.EqualError(t, err, "cannot generate unique team slug")
+}
+
 func TestTeamService_CreateTeam_DBError(t *testing.T) {
 	t.Parallel()
 	adapterDecorator := stores.NewAdapterDecorators()

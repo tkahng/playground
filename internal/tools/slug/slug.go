@@ -5,18 +5,26 @@ import (
 	"strings"
 )
 
-// Remove any non-alphanumeric characters (except dashes)
-var regex *regexp.Regexp = regexp.MustCompile("[^a-zA-Z0-9-]+")
+var (
+	nonAlphanumDash = regexp.MustCompile(`[^a-zA-Z0-9-]+`)
+	consecutiveDash = regexp.MustCompile(`-{2,}`)
+)
 
-// NewSlug creates a new Slug from a title string.
+const MaxSlugLen = 50
+
+// NewSlug creates a URL-safe slug from title.
+// Consecutive dashes are collapsed, leading/trailing dashes are stripped,
+// and the result is capped at MaxSlugLen characters.
 func NewSlug(title string) string {
-	// Convert to lowercase
-	slug := strings.ToLower(title)
-
-	// Replace spaces with dashes
-	slug = strings.ReplaceAll(slug, " ", "-")
-	slug = strings.ReplaceAll(slug, "_", "-")
-	slug = regex.ReplaceAllString(slug, "")
-
-	return slug
+	s := strings.ToLower(title)
+	s = strings.ReplaceAll(s, " ", "-")
+	s = strings.ReplaceAll(s, "_", "-")
+	s = nonAlphanumDash.ReplaceAllString(s, "")
+	s = consecutiveDash.ReplaceAllString(s, "-")
+	s = strings.Trim(s, "-")
+	if len(s) > MaxSlugLen {
+		s = s[:MaxSlugLen]
+		s = strings.TrimRight(s, "-")
+	}
+	return s
 }

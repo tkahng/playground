@@ -10,6 +10,7 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
@@ -110,33 +111,41 @@ func (api *Api) CreateTeamBind(humaApi huma.API) {
 				return nil, huma.Error401Unauthorized("unauthorized")
 			}
 			user := &info.User
-			var teamInfo *models.TeamInfoModel
-			runInTxErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
-				teamInfoTx, err := api.App().Team().CreateTeamWithOwner(
-					txCtx,
-					input.Body.Name,
-					user.ID,
-				)
-				if err != nil {
-					return err
+			var (
+				teamInfo    *models.TeamInfoModel
+				runInTxErr  error
+			)
+			// Retry on slug unique-constraint races (two concurrent requests for
+			// the same team name). Each attempt starts a fresh transaction so
+			// ProcessSlug sees the latest DB state.
+			for attempt := 0; attempt < 5; attempt++ {
+				runInTxErr = api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+					teamInfoTx, err := api.App().Team().CreateTeamWithOwner(
+						txCtx,
+						input.Body.Name,
+						user.ID,
+					)
+					if err != nil {
+						return err
+					}
+					if teamInfoTx == nil {
+						return huma.Error500InternalServerError("team not found")
+					}
+					_, err = api.App().Payment().CreateTeamCustomer(
+						txCtx,
+						&teamInfoTx.Team,
+						user,
+					)
+					if err != nil {
+						return err
+					}
+					teamInfo = teamInfoTx
+					return nil
+				})
+				if runInTxErr == nil || !database.IsUniqConstraintErr(runInTxErr) {
+					break
 				}
-				if teamInfoTx == nil {
-					return huma.Error500InternalServerError("team not found")
-				}
-				team := &teamInfoTx.Team
-
-				_, err = api.App().Payment().CreateTeamCustomer(
-					txCtx,
-					team,
-					user,
-				)
-				if err != nil {
-					return err
-				}
-
-				teamInfo = teamInfoTx
-				return nil
-			})
+			}
 			if runInTxErr != nil {
 				return nil, runInTxErr
 			}
