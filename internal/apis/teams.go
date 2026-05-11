@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"regexp"
@@ -16,6 +15,10 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/mapper"
+)
+
+var (
+	IsAlphaNumericAndDash *regexp.Regexp = regexp.MustCompile("^[A-Za-z0-9-]+$")
 )
 
 type TeamInfo struct {
@@ -67,13 +70,8 @@ func fromTeamModel(team *models.Team) *Team {
 	}
 }
 
-var (
-	IsAlphaNumericAndDash *regexp.Regexp = regexp.MustCompile("^[A-Za-z0-9-]+$")
-)
-
 type CreateTeamInput struct {
 	Name string `json:"name" required:"true" minLength:"3"`
-	Slug string `json:"slug" required:"false" minLength:"3" regex:"^[A-Za-z0-9-]+$"`
 }
 
 type TeamOutput struct {
@@ -107,21 +105,6 @@ func (api *Api) CreateTeamBind(humaApi huma.API) {
 		func(ctx context.Context, input *struct {
 			Body CreateTeamInput `json:"body" required:"true"`
 		}) (*TeamWithMemberOutput, error) {
-			if input.Body.Slug != "" {
-				if !IsAlphaNumericAndDash.MatchString(input.Body.Slug) {
-					return nil, huma.Error400BadRequest("invalid slug")
-				}
-			}
-			if ok, err := api.App().Adapter().TeamGroup().CheckTeamSlug(ctx, input.Body.Slug); !ok {
-				if err != nil {
-					slog.ErrorContext(
-						ctx,
-						"error occurred while checking slug",
-					)
-					return nil, fmt.Errorf("error occurred while checking slug")
-				}
-				return nil, huma.Error400BadRequest("slug already exists")
-			}
 			info := contextstore.GetContextUserInfo(ctx)
 			if info == nil {
 				return nil, huma.Error401Unauthorized("unauthorized")
@@ -132,7 +115,6 @@ func (api *Api) CreateTeamBind(humaApi huma.API) {
 				teamInfoTx, err := api.App().Team().CreateTeamWithOwner(
 					txCtx,
 					input.Body.Name,
-					input.Body.Slug,
 					user.ID,
 				)
 				if err != nil {

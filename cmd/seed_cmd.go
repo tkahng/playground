@@ -12,7 +12,6 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/tools/slug"
 )
 
 func NewSeedCmd() *cobra.Command {
@@ -111,13 +110,13 @@ var seedTeam = &cobra.Command{
 
 func SeedTeam(ctx context.Context, app core.App, args []string) error {
 	if len(args) != 2 {
-		return errors.New("missing email and team slug arguments")
+		return errors.New("missing email and team name arguments")
 	}
 	if args[0] == "" || is.EmailFormat.Validate(args[0]) != nil {
 		return errors.New("missing or invalid email address")
 	}
 	email := args[0]
-	teamSlug := slug.NewSlug(args[1])
+	teamName := args[1]
 
 	user, err := app.Adapter().User().FindUser(ctx, &stores.UserFilter{
 		Emails: []string{email},
@@ -128,7 +127,7 @@ func SeedTeam(ctx context.Context, app core.App, args []string) error {
 	if user == nil {
 		return errors.New("user not found")
 	}
-	team, err := app.Team().CreateTeamWithOwner(ctx, teamSlug, teamSlug, user.ID)
+	team, err := app.Team().CreateTeamWithOwner(ctx, teamName, user.ID)
 	if err != nil {
 		return err
 	}
