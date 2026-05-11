@@ -624,3 +624,49 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 		},
 	)
 }
+
+func bindCancelRpsGameApi(api huma.API, app core.App) {
+	huma.Register(
+		api,
+		huma.Operation{
+			OperationID: "cancel-rps-game",
+			Method:      http.MethodPost,
+			Path:        "/games/rps/{game-id}/cancel",
+			Summary:     "cancel a pending rps game",
+			Description: "Lets the host retract their pending challenge before the guest responds. Any bet escrow is refunded.",
+			Tags:        []string{"Games", "Player"},
+			Errors:      []int{http.StatusUnauthorized, http.StatusBadRequest, http.StatusForbidden, http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireCurrentPlayerMiddelware(),
+			),
+		},
+		func(ctx context.Context, input *struct {
+			GameID string `path:"game-id" required:"true" format:"uuid"`
+		}) (*ApiSingleOutput[*RpsGameWithParticipants], error) {
+			currentPlayer := contextstore.GetContextCurrentPlayer(ctx)
+			if currentPlayer == nil {
+				return nil, huma.Error401Unauthorized("no player found")
+			}
+			gameID, err := uuid.Parse(input.GameID)
+			if err != nil {
+				return nil, huma.Error400BadRequest("invalid game id")
+			}
+			result, err := app.RpsGame().CancelGame(ctx, gameID, currentPlayer.ID)
+			if err != nil {
+				return nil, err
+			}
+			return &ApiSingleOutput[*RpsGameWithParticipants]{
+				Body: ApiSingleResponse[*RpsGameWithParticipants]{
+					Data: &RpsGameWithParticipants{
+						RpsGame:               toApiRpsGame(result.RpsGame),
+						RequestingParticipant: ToApiRpsParticipant(result.RequestingParticipant),
+						InvitedParticipant:    ToApiRpsParticipant(result.InvitedParticipant),
+					},
+				},
+			}, nil
+		},
+	)
+}

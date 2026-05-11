@@ -976,6 +976,161 @@ func Test_SubmitMove_WithActiveBet_Tie(t *testing.T) {
 	})
 }
 
+// Test_CancelGame_HostCancel verifies that the host can cancel their own pending game.
+func Test_CancelGame_HostCancel(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		host := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		guest := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		game, err := testApi.App.RpsGame().RequestGame(ctx, &services.RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      services.GameDurationSeconds,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame: %v", err)
+		}
+
+		scenario := &apis.ApiScenario{
+			Name:           "host cancels pending game",
+			Method:         http.MethodPost,
+			URL:            fmt.Sprintf("/games/rps/%s/cancel", game.RpsGame.ID),
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, host.Email)
+				scenario.Headers = []string{tokenHeader}
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
+				assert.NotNil(t, result.Data)
+				assert.Equal(t, apis.RpsGameStatusCancelled, result.Data.RpsGame.Status)
+				assert.Equal(t, apis.RpsParticipantStatusDeclined, result.Data.InvitedParticipant.Status)
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+// Test_CancelGame_GuestForbidden verifies that the guest cannot cancel the host's game.
+func Test_CancelGame_GuestForbidden(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		host := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		guest := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		game, err := testApi.App.RpsGame().RequestGame(ctx, &services.RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      services.GameDurationSeconds,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame: %v", err)
+		}
+
+		scenario := &apis.ApiScenario{
+			Name:            "guest cannot cancel host's game",
+			Method:          http.MethodPost,
+			URL:             fmt.Sprintf("/games/rps/%s/cancel", game.RpsGame.ID),
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"only the host may cancel"},
+			TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, guest.Email)
+				scenario.Headers = []string{tokenHeader}
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+// Test_CancelGame_AlreadyCompleted verifies that a completed game cannot be cancelled.
+func Test_CancelGame_AlreadyCompleted(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		host := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		guest := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		game := core.MustCreateGame(t, testApi.App, host.ID, guest.ID, models.RpsParticipantMoveRock)
+		core.MustCompleteGame(t, testApi.App, game, models.RpsParticipantMoveScissors)
+
+		scenario := &apis.ApiScenario{
+			Name:            "cannot cancel completed game",
+			Method:          http.MethodPost,
+			URL:             fmt.Sprintf("/games/rps/%s/cancel", game.RpsGame.ID),
+			ExpectedStatus:  http.StatusBadRequest,
+			ExpectedContent: []string{"only pending games"},
+			TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, host.Email)
+				scenario.Headers = []string{tokenHeader}
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+// Test_CancelGame_WithBetRefunded verifies that a bet escrow is refunded when the host cancels.
+func Test_CancelGame_WithBetRefunded(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		host := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		guest := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := services.NewDbLedgerService(adapter)
+
+		if err := services.FulfillPointsPurchase(ctx, adapter, ledger, services.PointsPurchaseFulfillInput{
+			UserID:          *host.UserID,
+			PointsAmount:    500,
+			StripeSessionID: "cs_cancel_refund",
+		}); err != nil {
+			t.Fatalf("FulfillPointsPurchase: %v", err)
+		}
+
+		betAmount := int64(100)
+		game, err := testApi.App.RpsGame().RequestGame(ctx, &services.RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      services.GameDurationSeconds,
+			BetAmount:            &betAmount,
+			HostUserID:           host.UserID,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame: %v", err)
+		}
+
+		// Verify escrow hold is active.
+		avail, _ := ledger.GetUserAvailableBalance(ctx, *host.UserID)
+		assert.Equal(t, int64(400), avail, "escrow should reduce available balance")
+
+		scenario := &apis.ApiScenario{
+			Name:           "bet escrow refunded on host cancel",
+			Method:         http.MethodPost,
+			URL:            fmt.Sprintf("/games/rps/%s/cancel", game.RpsGame.ID),
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, host.Email)
+				scenario.Headers = []string{tokenHeader}
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.ApiSingleResponse[*apis.RpsGameWithParticipants]](t, res.Body.Bytes())
+				assert.Equal(t, apis.RpsGameStatusCancelled, result.Data.RpsGame.Status)
+
+				// Escrow must be released.
+				availAfter, _ := ledger.GetUserAvailableBalance(ctx, *host.UserID)
+				assert.Equal(t, int64(500), availAfter, "escrow should be refunded after cancel")
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
 // Test_AcceptRematch_WithMove verifies that the accept rematch endpoint requires
 // a move, creates the new host participant as completed, and leaves the guest pending.
 func Test_AcceptRematch_WithMove(t *testing.T) {

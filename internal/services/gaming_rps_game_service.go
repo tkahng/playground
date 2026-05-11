@@ -51,6 +51,9 @@ type RpsGameService interface {
 	FindRpsGameWithParticipants(ctx context.Context, gameID uuid.UUID) (*RpsGameWithParticipants, error)
 	RequestGame(ctx context.Context, input *RpsGameRequestInput) (*RpsGameWithParticipants, error)
 	RespondToGameRequest(ctx context.Context, input *GameRequestResponse) (*RpsGameWithParticipants, error)
+	// CancelGame lets the host retract a pending challenge before the guest responds.
+	// If a bet escrow was placed it is refunded. Only the host may call this.
+	CancelGame(ctx context.Context, gameID uuid.UUID, requestingPlayerID uuid.UUID) (*RpsGameWithParticipants, error)
 	// ChallengeHouse creates and immediately resolves a game against the house bot.
 	// The house picks a random move; the result is returned synchronously.
 	ChallengeHouse(ctx context.Context, input *ChallengeHouseInput) (*ChallengeHouseResult, error)
@@ -329,6 +332,47 @@ func (d *DbRpsGameService) RespondToGameRequest(ctx context.Context, input *Game
 		return nil, err
 	}
 	return updatedGameWithParticipants, nil
+}
+
+func (d *DbRpsGameService) CancelGame(ctx context.Context, gameID uuid.UUID, requestingPlayerID uuid.UUID) (*RpsGameWithParticipants, error) {
+	var result *RpsGameWithParticipants
+	txErr := d.adapter.RunInTxCtx(ctx, func(txCtx context.Context) error {
+		locked, err := d.adapter.Gaming().FindRpsGameForUpdate(txCtx, gameID)
+		if err != nil {
+			return err
+		}
+		if locked == nil {
+			return apierrors.NotFound("game not found")
+		}
+		if locked.Status != models.RpsGameStatusPending {
+			return apierrors.BadRequest("only pending games can be cancelled")
+		}
+
+		gwp, err := d.FindRpsGameWithParticipants(txCtx, gameID)
+		if err != nil {
+			return err
+		}
+		if gwp.RequestingParticipant == nil || gwp.RequestingParticipant.PlayerID != requestingPlayerID {
+			return apierrors.Forbidden("only the host may cancel their own challenge")
+		}
+
+		gwp.RpsGame.Status = models.RpsGameStatusCancelled
+		gwp.InvitedParticipant.Status = models.RpsParticipantStatusDeclined
+
+		hasBet := gwp.RpsGame.BetAmount != nil && *gwp.RpsGame.BetAmount > 0
+		if hasBet && gwp.RpsGame.HostBetTransferID != nil && d.betting != nil {
+			if err := d.betting.RefundHostBet(txCtx, *gwp.RpsGame.HostBetTransferID); err != nil {
+				return fmt.Errorf("refund host bet on cancel: %w", err)
+			}
+		}
+
+		result, err = d.updateGame(txCtx, gwp)
+		return err
+	})
+	if txErr != nil {
+		return nil, txErr
+	}
+	return result, nil
 }
 
 // updateGame persists the game and both participant rows.
