@@ -11,6 +11,7 @@ import (
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database/queries"
+	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
@@ -78,31 +79,53 @@ func bindFindCurrentPlayersRpsGamesApi(api huma.API, app core.App) {
 				return nil, err
 			}
 			pop := populator.New(app.Adapter())
-			gamesWithParticipants := []*services.RpsGameWithParticipants{}
-			for _, game := range games {
-				var gameWithPartipants *services.RpsGameWithParticipants = &services.RpsGameWithParticipants{
-					RpsGame: game,
-				}
-				participants, err := app.Adapter().Gaming().FindRpsParticipants(ctx, &stores.RpsParticipantFilter{
-					RpsGameIds: []uuid.UUID{game.ID},
-				})
+
+			// Batch-load all participants for this page in a single query instead
+			// of one query per game, then group by game ID.
+			gameIDs := make([]uuid.UUID, 0, len(games))
+			for _, g := range games {
+				gameIDs = append(gameIDs, g.ID)
+			}
+			allParticipants, err := app.Adapter().Gaming().FindRpsParticipants(ctx, &stores.RpsParticipantFilter{
+				RpsGameIds:     gameIDs,
+				PaginatedInput: repository.PaginatedInput{Page: 0, PerPage: int64(len(gameIDs) * 2)},
+			})
+			if err != nil {
+				return nil, err
+			}
+			// Pre-fetch all players referenced by participants (populator deduplicates).
+			for _, p := range allParticipants {
+				player, err := pop.GetPlayerByID(ctx, p.PlayerID)
 				if err != nil {
 					return nil, err
 				}
-				for _, p := range participants {
-					player, err := pop.GetPlayerByID(ctx, p.PlayerID)
-					if err != nil {
-						return nil, err
-					}
-					p.Player = player
-					if p.Type == models.RpsParticipantTypeHost {
-						gameWithPartipants.RequestingParticipant = p
-					}
-					if p.Type == models.RpsParticipantTypeGuest {
-						gameWithPartipants.InvitedParticipant = p
-					}
+				p.Player = player
+			}
+			// Index participants by game ID.
+			type gamePair struct{ host, guest *models.RpsParticipant }
+			participantsByGame := make(map[uuid.UUID]*gamePair, len(games))
+			for _, p := range allParticipants {
+				pair := participantsByGame[p.GameID]
+				if pair == nil {
+					pair = &gamePair{}
+					participantsByGame[p.GameID] = pair
 				}
-				gamesWithParticipants = append(gamesWithParticipants, gameWithPartipants)
+				if p.Type == models.RpsParticipantTypeHost {
+					pair.host = p
+				} else if p.Type == models.RpsParticipantTypeGuest {
+					pair.guest = p
+				}
+			}
+
+			gamesWithParticipants := make([]*services.RpsGameWithParticipants, 0, len(games))
+			for _, game := range games {
+				pair := participantsByGame[game.ID]
+				gwp := &services.RpsGameWithParticipants{RpsGame: game}
+				if pair != nil {
+					gwp.RequestingParticipant = pair.host
+					gwp.InvitedParticipant = pair.guest
+				}
+				gamesWithParticipants = append(gamesWithParticipants, gwp)
 			}
 			count, err := app.Adapter().Gaming().CountRpsGames(ctx, filter)
 			if err != nil {
