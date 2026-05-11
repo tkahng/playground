@@ -207,6 +207,8 @@ type SubmitMoveWithTokenInput struct {
 }
 
 func bindSubmitMoveWithTokenApi(api huma.API, app core.App) {
+	// 20 req/min per IP — unauthenticated endpoint, token is the only auth factor.
+	rl := newAuthRateLimiter(20, time.Minute)
 	huma.Register(
 		api,
 		huma.Operation{
@@ -216,8 +218,8 @@ func bindSubmitMoveWithTokenApi(api huma.API, app core.App) {
 			Summary:     "submit move to rps game with token",
 			Description: "submit move to rps game with token",
 			Tags:        []string{"Games", "Player"},
-			Errors:      []int{http.StatusUnauthorized},
-			Middlewares: humamiddleware.HumaChiMiddlewares(),
+			Errors:      []int{http.StatusUnauthorized, http.StatusTooManyRequests},
+			Middlewares: huma.Middlewares{rl},
 		},
 		func(ctx context.Context, input *struct {
 			Body SubmitMoveWithTokenInput
@@ -268,6 +270,7 @@ type VerifyRpsGameInviteInput struct {
 }
 
 func bindVerifyRpsGameInviteApi(api huma.API, app core.App) {
+	rl := newAuthRateLimiter(20, time.Minute)
 	huma.Register(
 		api,
 		huma.Operation{
@@ -277,9 +280,9 @@ func bindVerifyRpsGameInviteApi(api huma.API, app core.App) {
 			Summary:     "verify rps game invite",
 			Description: "verify rps game invite",
 			Tags:        []string{"Games", "Player"},
-			Errors:      []int{http.StatusUnauthorized},
+			Errors:      []int{http.StatusUnauthorized, http.StatusTooManyRequests},
 			Security:    []map[string][]string{{}},
-			Middlewares: humamiddleware.HumaChiMiddlewares(),
+			Middlewares: huma.Middlewares{rl},
 		},
 		func(ctx context.Context, input *struct {
 			Body VerifyRpsGameInviteInput

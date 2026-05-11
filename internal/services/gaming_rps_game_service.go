@@ -2,10 +2,11 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"log/slog"
-	"math/rand"
+	"math/big"
 	"time"
 
 	"github.com/google/uuid"
@@ -425,7 +426,12 @@ var houseMoves = []models.RpsParticipantMove{
 }
 
 func randomHouseMove() models.RpsParticipantMove {
-	return houseMoves[rand.Intn(len(houseMoves))]
+	n, err := rand.Int(rand.Reader, big.NewInt(int64(len(houseMoves))))
+	if err != nil {
+		// crypto/rand failure is extremely unlikely; fall back deterministically.
+		return houseMoves[0]
+	}
+	return houseMoves[n.Int64()]
 }
 
 // determineRpsResult returns (hostResult, houseResult).
