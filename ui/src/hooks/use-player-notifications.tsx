@@ -77,6 +77,7 @@ export function usePlayerNotifications() {
     activeSource,
     [
       "rps_game_challenged",
+      "rps_game_cancelled",
       "rps_rematch_requested",
       "rps_rematch_accepted",
       "rps_rematch_declined",

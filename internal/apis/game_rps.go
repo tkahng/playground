@@ -658,6 +658,20 @@ func bindCancelRpsGameApi(api huma.API, app core.App) {
 			if err != nil {
 				return nil, err
 			}
+			// Notify the guest so their pending-game view updates without a reload.
+			if result.InvitedParticipant != nil {
+				payload := notification.NewNotificationPayload(
+					"Game cancelled",
+					"The challenge was retracted",
+					notification.RpsGameCancelledData{
+						GameID:             result.RpsGame.ID,
+						CancellingPlayerID: currentPlayer.ID,
+					},
+				)
+				if err := app.SseManager().Send(sse.PlayerChannel(result.InvitedParticipant.PlayerID.String()), payload); err != nil {
+					slog.WarnContext(ctx, "rps cancel SSE notify failed", "error", err)
+				}
+			}
 			return &ApiSingleOutput[*RpsGameWithParticipants]{
 				Body: ApiSingleResponse[*RpsGameWithParticipants]{
 					Data: &RpsGameWithParticipants{
