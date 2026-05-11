@@ -117,8 +117,18 @@ func (api *Api) PlayerSseEventsBind(humapi huma.API) {
 		},
 		func(ctx context.Context, cf context.CancelFunc, c sse.Client) {
 			api.app.SseManager().RegisterClient(ctx, cf, c)
+			if playerID, ok := sse.PlayerIDFromChannel(c.Channel()); ok {
+				if err := api.app.Adapter().Gaming().UpdatePlayerLastSeen(context.Background(), playerID); err != nil {
+					slog.Warn("SSE connect: update last_seen_at failed", "player_id", playerID, "error", err)
+				}
+			}
 		},
 		func(c sse.Client) {
+			if playerID, ok := sse.PlayerIDFromChannel(c.Channel()); ok {
+				if err := api.app.Adapter().Gaming().UpdatePlayerLastSeen(context.Background(), playerID); err != nil {
+					slog.Warn("SSE disconnect: update last_seen_at failed", "player_id", playerID, "error", err)
+				}
+			}
 			api.app.SseManager().UnregisterClient(c)
 		},
 		30*time.Second,
