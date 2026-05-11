@@ -227,6 +227,10 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 				previousDueDate = task.EndAt
 				previousAssignee = task.AssigneeID
 
+				if err := api.App().Task().ValidateTaskReferences(ctx, task.TeamID, task.ProjectID, &task.ID, input.Body.AssigneeID, input.Body.ReporterID, input.Body.ParentID); err != nil {
+					return err
+				}
+
 				task.Name = input.Body.Name
 				task.Description = input.Body.Description
 				task.Status = models.TaskStatus(input.Body.Status)

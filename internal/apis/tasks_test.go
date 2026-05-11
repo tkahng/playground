@@ -131,6 +131,70 @@ func TestApi_TeamTaskUpdate(t *testing.T) {
 				assert.Equal(t, input.ReporterID, result.ReporterID)
 			},
 		},
+		{
+			Name:            "fail: update task rejects assignee from another team",
+			Method:          http.MethodPut,
+			URL:             "/tasks/{task-id}",
+			ExpectedStatus:  http.StatusBadRequest,
+			ExpectedContent: []string{"assignee must be an active member of the task team"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				otherOwner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				team2 := core.CreateTeamAndMemberWithOptions(t, app, &otherOwner.User)
+				project := core.CreateProjectAndTasks(t, app, &team1.Member)
+				task := repository.MustCreateOneCtx(t, t.Context(), repository.Task, app.Db(), &models.Task{
+					TeamID:            team1.Team.ID,
+					ProjectID:         project.ID,
+					Status:            models.TaskStatusTodo,
+					Rank:              0,
+					CreatedByMemberID: &team1.Member.ID,
+				})
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/tasks/%s", task.ID.String())
+				scenario.Body = apis.JsonToReader(t, stores.UpdateTaskDto{
+					Name:       "updated",
+					Status:     models.TaskStatusInProgress,
+					AssigneeID: &team2.Member.ID,
+				})
+			},
+		},
+		{
+			Name:            "fail: update task rejects parent from another project",
+			Method:          http.MethodPut,
+			URL:             "/tasks/{task-id}",
+			ExpectedStatus:  http.StatusBadRequest,
+			ExpectedContent: []string{"parent task must belong to the same task project"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				project := core.CreateProjectAndTasks(t, app, &team1.Member)
+				otherProject := core.CreateProjectAndTasks(t, app, &team1.Member)
+				parent := repository.MustCreateOneCtx(t, t.Context(), repository.Task, app.Db(), &models.Task{
+					TeamID:            team1.Team.ID,
+					ProjectID:         otherProject.ID,
+					Status:            models.TaskStatusTodo,
+					Rank:              0,
+					CreatedByMemberID: &team1.Member.ID,
+				})
+				task := repository.MustCreateOneCtx(t, t.Context(), repository.Task, app.Db(), &models.Task{
+					TeamID:            team1.Team.ID,
+					ProjectID:         project.ID,
+					Status:            models.TaskStatusTodo,
+					Rank:              0,
+					CreatedByMemberID: &team1.Member.ID,
+				})
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/tasks/%s", task.ID.String())
+				scenario.Body = apis.JsonToReader(t, stores.UpdateTaskDto{
+					Name:     "updated",
+					Status:   models.TaskStatusInProgress,
+					ParentID: &parent.ID,
+				})
+			},
+		},
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {

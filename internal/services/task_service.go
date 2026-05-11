@@ -7,8 +7,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/apierrors"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 type TaskFields struct {
@@ -32,6 +34,7 @@ type TaskService interface {
 	// CreateTaskWithChildren(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error)
 	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
 	CalculateNewPosition(ctx context.Context, groupID uuid.UUID, status models.TaskStatus, targetIndex int64, excludeID uuid.UUID) (float64, error)
+	ValidateTaskReferences(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, currentTaskID *uuid.UUID, assigneeID *uuid.UUID, reporterID *uuid.UUID, parentID *uuid.UUID) error
 }
 type taskService struct {
 	// store   TaskStore
@@ -42,6 +45,10 @@ type taskService struct {
 
 // CreateTask implements TaskService.
 func (s *taskService) CreateTask(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, createdByMemberID uuid.UUID, input *TaskFields) (*models.Task, error) {
+	if err := s.ValidateTaskReferences(ctx, teamID, projectID, nil, input.AssigneeID, input.ReporterID, input.ParentID); err != nil {
+		return nil, err
+	}
+
 	setter := models.Task{
 		ProjectID:         projectID,
 		CreatedByMemberID: &createdByMemberID,
@@ -61,6 +68,56 @@ func (s *taskService) CreateTask(ctx context.Context, teamID uuid.UUID, projectI
 		return nil, err
 	}
 	return task, nil
+}
+
+func (s *taskService) ValidateTaskReferences(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, currentTaskID *uuid.UUID, assigneeID *uuid.UUID, reporterID *uuid.UUID, parentID *uuid.UUID) error {
+	if err := s.validateTaskMember(ctx, teamID, assigneeID, "assignee"); err != nil {
+		return err
+	}
+	if err := s.validateTaskMember(ctx, teamID, reporterID, "reporter"); err != nil {
+		return err
+	}
+	return s.validateParentTask(ctx, teamID, projectID, currentTaskID, parentID)
+}
+
+func (s *taskService) validateTaskMember(ctx context.Context, teamID uuid.UUID, memberID *uuid.UUID, field string) error {
+	if memberID == nil {
+		return nil
+	}
+	member, err := s.adapter.TeamMember().FindTeamMember(ctx, &stores.TeamMemberFilter{
+		Ids: []uuid.UUID{*memberID},
+		Active: types.OptionalParam[bool]{
+			Value: true,
+			IsSet: true,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if member == nil || member.TeamID != teamID {
+		return apierrors.BadRequest(fmt.Sprintf("%s must be an active member of the task team", field))
+	}
+	return nil
+}
+
+func (s *taskService) validateParentTask(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, currentTaskID *uuid.UUID, parentID *uuid.UUID) error {
+	if parentID == nil {
+		return nil
+	}
+	if currentTaskID != nil && *parentID == *currentTaskID {
+		return apierrors.BadRequest("parent task cannot be the task itself")
+	}
+	parent, err := s.adapter.Task().FindTaskByID(ctx, *parentID)
+	if err != nil {
+		return err
+	}
+	if parent == nil {
+		return apierrors.BadRequest("parent task not found")
+	}
+	if parent.TeamID != teamID || parent.ProjectID != projectID {
+		return apierrors.BadRequest("parent task must belong to the same task project")
+	}
+	return nil
 }
 
 func NewTaskService(adapter stores.StorageAdapterInterface, jobService JobService) TaskService {

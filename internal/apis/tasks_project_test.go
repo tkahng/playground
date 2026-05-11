@@ -14,6 +14,7 @@ import (
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/types"
 )
@@ -126,6 +127,43 @@ func TestApi_TeamTaskProjectCreate(t *testing.T) {
 				assert.Equal(t, input.CreateTaskProjectWithoutTeamDTO.Name, result.Name)
 				assert.Equal(t, input.CreateTaskProjectWithoutTeamDTO.Description, result.Description)
 				assert.Equal(t, input.CreateTaskProjectWithoutTeamDTO.Status, result.Status)
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
+				return testApi
+			}
+			tt.Test(t)
+		})
+	}
+}
+
+func TestApi_TeamTaskProjectTasksCreateReferences(t *testing.T) {
+	tests := []apis.ApiScenario{
+		{
+			Name:            "fail: create task rejects assignee from another team",
+			Method:          http.MethodPost,
+			URL:             "/task-projects/{task-project-id}",
+			ExpectedStatus:  http.StatusBadRequest,
+			ExpectedContent: []string{"assignee must be an active member of the task team"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				otherOwner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				team2 := core.CreateTeamAndMemberWithOptions(t, app, &otherOwner.User)
+				project := core.CreateProjectAndTasks(t, app, &team1.Member)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/task-projects/%s", project.ID.String())
+				scenario.Body = apis.JsonToReader(t, services.TaskFields{
+					Name:       "Task with invalid assignee",
+					Status:     models.TaskStatusTodo,
+					AssigneeID: &team2.Member.ID,
+				})
 			},
 		},
 	}
