@@ -25,6 +25,7 @@ func bindGameApi(api *Api) {
 	bindFindCurrentPlayersRpsGamesApi(protectedGameGroup, api.App())
 	bindChallengeHouseApi(protectedGameGroup, api.App())
 	bindCancelRpsGameApi(protectedGameGroup, api.App())
+	bindGetCurrentPlayerRpsStatsApi(protectedGameGroup, api.App())
 	bindRpsRematchApi(protectedGameGroup, api.App())
 	bindFriendApi(protectedGameGroup, api.App())
 	bindGetPlayerOnlineStatusApi(protectedGameGroup, api.App())
