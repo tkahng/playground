@@ -12,6 +12,86 @@ import (
 	"github.com/tkahng/playground/internal/stores"
 )
 
+// TestRpsGame_ConcurrentRequestGame_OnlyOneSucceeds verifies that when two goroutines
+// simultaneously call RequestGame with the same requester, exactly one succeeds and
+// one gets a conflict error. The active-game check and participant insert now both
+// run inside the same transaction, and the partial unique index on pending participants
+// provides a database-level backstop.
+func TestRpsGame_ConcurrentRequestGame_OnlyOneSucceeds(t *testing.T) {
+	database.WithNewDatabase(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		rpsService := NewDbRpsGameService(adapter, nil)
+
+		var requesterID, guest1ID, guest2ID uuid.UUID
+
+		if err := adapter.RunInTxCtx(ctx, func(txCtx context.Context) error {
+			p := stores.MustCreatePlayer(t, txCtx, adapter.Gaming(), stores.WithPlayerEmail("req_concurrent@example.com"))
+			g1 := stores.MustCreatePlayer(t, txCtx, adapter.Gaming(), stores.WithPlayerEmail("g1_concurrent@example.com"))
+			g2 := stores.MustCreatePlayer(t, txCtx, adapter.Gaming(), stores.WithPlayerEmail("g2_concurrent@example.com"))
+			requesterID = p.ID
+			guest1ID = g1.ID
+			guest2ID = g2.ID
+			return nil
+		}); err != nil {
+			t.Fatalf("setup: %v", err)
+		}
+
+		const numGoroutines = 2
+		type result struct {
+			err error
+		}
+		results := make(chan result, numGoroutines)
+		var wg sync.WaitGroup
+
+		guests := []uuid.UUID{guest1ID, guest2ID}
+		for i := 0; i < numGoroutines; i++ {
+			wg.Add(1)
+			guestID := guests[i]
+			go func() {
+				defer wg.Done()
+				_, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+					RequestingPlayerID:   requesterID,
+					InvitedPlayerID:      guestID,
+					RequestingPlayerMove: models.RpsParticipantMoveRock,
+					DurationSeconds:      3600,
+				})
+				results <- result{err: err}
+			}()
+		}
+
+		wg.Wait()
+		close(results)
+
+		var successes, failures int
+		for r := range results {
+			if r.err == nil {
+				successes++
+			} else {
+				failures++
+			}
+		}
+
+		if successes != 1 {
+			t.Errorf("successes = %d, want exactly 1", successes)
+		}
+		if failures != 1 {
+			t.Errorf("failures = %d, want exactly 1", failures)
+		}
+
+		// Exactly one pending game must exist for the requester.
+		count, err := adapter.Gaming().CountRpsGames(ctx, &stores.RpsGameFilter{
+			ParticipantIds: []uuid.UUID{requesterID},
+			Statuses:       []models.RpsGameStatus{models.RpsGameStatusPending},
+		})
+		if err != nil {
+			t.Fatalf("CountRpsGames: %v", err)
+		}
+		if count != 1 {
+			t.Errorf("pending game count = %d, want 1", count)
+		}
+	})
+}
+
 // TestRpsGame_ConcurrentGuestResponses_OnlyOneSucceeds verifies that when two goroutines
 // simultaneously call RespondToGameRequest for the same game, exactly one succeeds and
 // one fails. This relies on the FindRpsGameForUpdate row-level lock.
