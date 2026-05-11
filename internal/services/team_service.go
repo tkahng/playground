@@ -3,28 +3,23 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
-	"regexp"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
-	"github.com/tkahng/playground/internal/tools/security"
 	"github.com/tkahng/playground/internal/tools/slug"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
-var (
-	IsAlphaNumericAndDash *regexp.Regexp = regexp.MustCompile("^[A-Za-z0-9-]+$")
-)
-
 type TeamService interface {
-	ProcessSlug(ctx context.Context, teamSlug string, teamName string) (string, error)
+	ProcessSlug(ctx context.Context, teamName string) (string, error)
 	FindTeamMemberWithUserAndTeam(ctx context.Context, teamMemberID uuid.UUID) (*models.TeamMember, error)
 	FindTeamInfo(ctx context.Context, teamId, userId uuid.UUID) (*models.TeamInfoModel, error)
 	FindTeamInfoBySlug(ctx context.Context, slug string, userId uuid.UUID) (*models.TeamInfoModel, error)
-	CreateTeamWithOwner(ctx context.Context, name string, slug string, userId uuid.UUID) (*models.TeamInfoModel, error)
+	CreateTeamWithOwner(ctx context.Context, name string, userId uuid.UUID) (*models.TeamInfoModel, error)
 	UpdateTeam(ctx context.Context, teamId uuid.UUID, name string) (*models.Team, error)
 	DeleteTeam(ctx context.Context, teamId uuid.UUID, userId uuid.UUID) error
 	FindTeamMembersByUserID(ctx context.Context, userId uuid.UUID, paginate *stores.TeamMemberListInput) ([]*models.TeamMember, error)
@@ -35,59 +30,34 @@ type TeamServiceImpl struct {
 }
 
 // ProcessSlug implements [TeamService].
-func (t *TeamServiceImpl) ProcessSlug(ctx context.Context, teamSlug string, teamName string) (string, error) {
-	// if teamSlug is not empty
-	if teamSlug != "" {
-		// and if teamSlug is valid
-		if IsAlphaNumericAndDash.MatchString(teamSlug) {
-			existingTeam, err := t.adapter.TeamGroup().FindTeamBySlug(ctx, teamSlug)
-			if err != nil {
-				return "", err
-			}
-			// and if teamSlug is not taken return teamSlug
-			if existingTeam == nil {
-				return teamSlug, nil
-			}
-			return "", errors.New("team slug already exists")
+// Generates a URL-safe slug from teamName. On conflict, appends a numeric
+// suffix (e.g. "my-team-1", "my-team-2") following industry convention.
+func (t *TeamServiceImpl) ProcessSlug(ctx context.Context, teamName string) (string, error) {
+	base := slug.NewSlug(teamName)
+	if base == "" {
+		base = uuid.NewString()
+	}
+
+	existing, err := t.adapter.TeamGroup().FindTeamBySlug(ctx, base)
+	if err != nil {
+		return "", err
+	}
+	if existing == nil {
+		return base, nil
+	}
+
+	for i := 1; i <= 99; i++ {
+		candidate := fmt.Sprintf("%s-%d", base, i)
+		existing, err := t.adapter.TeamGroup().FindTeamBySlug(ctx, candidate)
+		if err != nil {
+			return "", err
+		}
+		if existing == nil {
+			return candidate, nil
 		}
 	}
 
-	// create new valid slug from teamName
-	var newSlug string
-	if IsAlphaNumericAndDash.MatchString(teamName) {
-		newSlug = teamName
-	} else {
-		newSlug = slug.NewSlug(teamName)
-	}
-	// check if newSlug is taken
-	existingTeam, err := t.adapter.TeamGroup().FindTeamBySlug(ctx, newSlug)
-	if err != nil {
-		return "", err
-	}
-	// if not taken return it
-	if existingTeam == nil {
-		return newSlug, nil
-	}
-	// if taken generate a random string and use that slug
-	randomSlug := security.RandomString(16)
-	randomSlugTeam, err := t.adapter.TeamGroup().FindTeamBySlug(ctx, randomSlug)
-	if err != nil {
-		return "", err
-	}
-	// if not taken return it
-	if randomSlugTeam == nil {
-		return randomSlug, nil
-	}
-	uuidSlug := uuid.NewString()
-	uuidSlugTeam, err := t.adapter.TeamGroup().FindTeamBySlug(ctx, uuidSlug)
-	if err != nil {
-		return "", err
-	}
-	if uuidSlugTeam == nil {
-		return uuidSlug, nil
-	}
-	// could not process slug
-	return "", errors.New("cannot process team slug")
+	return "", errors.New("cannot generate unique team slug")
 }
 
 // FindTeamMemberWithUserAndTeam implements TeamService.
@@ -192,12 +162,12 @@ func (t *TeamServiceImpl) UpdateTeam(ctx context.Context, teamId uuid.UUID, name
 }
 
 // CreateTeamWithOwner implements TeamService.
-func (t *TeamServiceImpl) CreateTeamWithOwner(ctx context.Context, name string, slug string, userId uuid.UUID) (*models.TeamInfoModel, error) {
+func (t *TeamServiceImpl) CreateTeamWithOwner(ctx context.Context, name string, userId uuid.UUID) (*models.TeamInfoModel, error) {
 	user, err := t.adapter.User().FindUserByID(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
-	newSlug, err := t.ProcessSlug(ctx, slug, name)
+	newSlug, err := t.ProcessSlug(ctx, name)
 	if err != nil {
 		return nil, err
 	}

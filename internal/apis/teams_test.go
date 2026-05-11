@@ -192,7 +192,6 @@ func TestCreateTeam_Failed(t *testing.T) {
 
 			resp := appApi.TestApi.Post("/teams", VerifiedHeader, &apis.CreateTeamInput{
 				Name: "test team",
-				Slug: "test-team",
 			})
 			assert.Equal(t, 500, resp.Code, "expected 500 status code")
 			assert.Contains(t, resp.Body.String(), "unknown error")
@@ -217,7 +216,6 @@ func TestCreateTeam_Failed(t *testing.T) {
 
 			resp := appApi.TestApi.Post("/teams", VerifiedHeader, &apis.CreateTeamInput{
 				Name: "test team",
-				Slug: "test-team",
 			})
 			assert.Equal(t, 401, resp.Code, "expected 401 status code")
 			assert.Contains(t, resp.Body.String(), "email not verified", "expected error message containing 'email not verified'")
@@ -267,12 +265,12 @@ func TestCreateTeam_Success_OptionalSlug_TeamNameIsUrlSafeAndUnique(t *testing.T
 	})
 }
 
-func TestCreateTeam_Success_OptionalSlug_TeamNameIsTaken_Randome16Alphabetic(t *testing.T) {
+func TestCreateTeam_Success_SlugConflict_NumericSuffix(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		appApi := apis.SetupApi(t, ctx, db)
 		for i := range 10 {
 			scenario := apis.ApiScenario{
-				Name:           fmt.Sprintf("test create team success optional slug %d team name slug exists", i),
+				Name:           fmt.Sprintf("test create team slug conflict uses numeric suffix %d", i),
 				Method:         http.MethodPost,
 				URL:            "/teams",
 				ExpectedStatus: http.StatusOK,
@@ -280,7 +278,6 @@ func TestCreateTeam_Success_OptionalSlug_TeamNameIsTaken_Randome16Alphabetic(t *
 					return appApi
 				},
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
-					// create user
 					userEmail := fmt.Sprintf("%d@gmail.com", i)
 					otherUserEmail := fmt.Sprintf("%d+other@gmail.com", i)
 					teamName := fmt.Sprintf("team%d", i)
@@ -300,9 +297,13 @@ func TestCreateTeam_Success_OptionalSlug_TeamNameIsTaken_Randome16Alphabetic(t *
 					if err != nil {
 						t.Errorf("Error decoding response: %v", err)
 					}
-					slug := fmt.Sprintf("team%d", i)
-					if body.Team.Slug == slug {
-						t.Errorf("Expected slug %s, got %s", slug, body.Team.Slug)
+					baseSlug := fmt.Sprintf("team%d", i)
+					expectedSlug := fmt.Sprintf("team%d-1", i)
+					if body.Team.Slug == baseSlug {
+						t.Errorf("slug should not equal taken base slug %s", baseSlug)
+					}
+					if body.Team.Slug != expectedSlug {
+						t.Errorf("expected numeric suffix slug %s, got %s", expectedSlug, body.Team.Slug)
 					}
 				},
 			}
@@ -310,69 +311,8 @@ func TestCreateTeam_Success_OptionalSlug_TeamNameIsTaken_Randome16Alphabetic(t *
 		}
 	})
 }
-func TestCreateTeam_Fail_Slug_HasUnderscore(t *testing.T) {
-	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		appApi := apis.SetupApi(t, ctx, db)
-		for i := range 1 {
-			scenario := apis.ApiScenario{
-				Name:           fmt.Sprintf("test create team fail slug has underscore %d", i),
-				Method:         http.MethodPost,
-				URL:            "/teams",
-				ExpectedStatus: http.StatusBadRequest,
-				TestAppFactory: func(t testing.TB) *apis.TestApi {
-					return appApi
-				},
-				ExpectedContent: []string{
-					"invalid slug",
-				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
-					// create user
-					userEmail := fmt.Sprintf("%d@gmail.com", i)
-					teamName := fmt.Sprintf("team%d", i)
-					teamSlug := fmt.Sprintf("team_%d", i)
-					user := core.CreateUserWithOptions(t, app, core.UserWithEmail(userEmail), core.UserWithVerifiedNow())
-					token, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user.User.Email)
-					scenario.Headers = []string{token}
-					scenario.Body = strings.NewReader(`{"name":` + fmt.Sprintf(`"%s"`, teamName) + `, "slug":` + fmt.Sprintf(`"%s"`, teamSlug) + `}`)
-				},
-			}
-			scenario.Test(t)
-		}
-	})
-}
-func TestCreateTeam_Fail_Slug_HasExclamationpoint(t *testing.T) {
-	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		appApi := apis.SetupApi(t, ctx, db)
-		for i := range 1 {
-			scenario := apis.ApiScenario{
-				Name:           fmt.Sprintf("test create team fail slug has exclamationpoint %d", i),
-				Method:         http.MethodPost,
-				URL:            "/teams",
-				ExpectedStatus: http.StatusBadRequest,
-				TestAppFactory: func(t testing.TB) *apis.TestApi {
-					return appApi
-				},
-				ExpectedContent: []string{
-					"invalid slug",
-				},
-				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
-					// create user
-					userEmail := fmt.Sprintf("%d@gmail.com", i)
-					teamName := fmt.Sprintf("team%d", i)
-					teamSlug := fmt.Sprintf("team!%d", i)
-					user := core.CreateUserWithOptions(t, app, core.UserWithEmail(userEmail), core.UserWithVerifiedNow())
-					token, _ := core.CreateAccessHeaderAndRefreshToken(t, app, user.User.Email)
-					scenario.Headers = []string{token}
-					scenario.Body = strings.NewReader(`{"name":` + fmt.Sprintf(`"%s"`, teamName) + `, "slug":` + fmt.Sprintf(`"%s"`, teamSlug) + `}`)
-				},
-			}
-			scenario.Test(t)
-		}
-	})
-}
-
 func TestCreateTeam_Success(t *testing.T) {
-	t.Run("success: create team", func(t *testing.T) {
+	t.Run("success: create team slug generated from name", func(t *testing.T) {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			appApi := apis.SetupApi(t, ctx, db)
 			user := core.CreateUserWithOptions(t, appApi.App, core.UserWithVerified(time.Now()))
@@ -384,14 +324,14 @@ func TestCreateTeam_Success(t *testing.T) {
 			VerifiedHeader := fmt.Sprintf("Authorization: Bearer %s", tokensVerifiedTokens.Tokens.AccessToken)
 
 			resp := appApi.TestApi.Post("/teams", VerifiedHeader, &apis.CreateTeamInput{
-				Name: "test team",
-				Slug: "test-team",
+				Name: "My Test Team",
 			})
 			if resp.Code != 200 {
-				t.Errorf("Api.GetStripeSubscriptions() = %v, want %v", resp.Code, 200)
+				t.Errorf("unexpected status: %v body: %s", resp.Code, resp.Body.String())
 			}
 			teamRes, err := utils.UnmarshalJSON[apis.Team](resp.Body.Bytes())
 			assert.NoError(t, err)
+			assert.Equal(t, "my-test-team", teamRes.Slug)
 
 			team := repository.MustFindOneCtx(t, ctx, repository.Team, db, nil)
 			assert.NotNil(t, team)
@@ -476,7 +416,6 @@ func TestUpdateTeam_successOwner(t *testing.T) {
 		member1, err := app.Team().CreateTeamWithOwner(
 			ctx,
 			"test team",
-			"test-team",
 			user1.ID,
 		)
 		if err != nil {
@@ -525,7 +464,6 @@ func TestDeleteTeam_successOwner(t *testing.T) {
 		member1, err := app.Team().CreateTeamWithOwner(
 			ctx,
 			"test team",
-			"test-team",
 			user1.ID,
 		)
 		if err != nil {
@@ -569,7 +507,6 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 		member1, err := app.Team().CreateTeamWithOwner(
 			ctx,
 			"test team",
-			"test-team",
 			user1.ID,
 		)
 		if err != nil {

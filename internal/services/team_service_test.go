@@ -12,43 +12,97 @@ import (
 	"github.com/tkahng/playground/internal/stores"
 )
 
-func TestTeamService_CreateTeam_SlugExists(t *testing.T) {
+func TestTeamService_ProcessSlug_FirstAvailable(t *testing.T) {
 	t.Parallel()
 	adapterDecorator := stores.NewAdapterDecorators()
 	service := services.NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
-	name := "Test Team"
-	slug := "existing-slug"
-	userID := uuid.New()
-	adapterDecorator.RunInTxCtxFunc = func(ctx context.Context, fn func(ctx context.Context) error) error {
-		return fn(ctx)
+	adapterDecorator.TeamGroupFunc.FindTeamBySlugFunc = func(ctx context.Context, slug string) (*models.Team, error) {
+		return nil, nil
 	}
-	adapterDecorator.UserFunc.FindUserByIDFunc = func(ctx context.Context, userID uuid.UUID) (*models.User, error) {
-		return &models.User{ID: userID}, nil
+
+	result, err := service.ProcessSlug(ctx, "My Team")
+	assert.NoError(t, err)
+	assert.Equal(t, "my-team", result)
+}
+
+func TestTeamService_ProcessSlug_NumericSuffixOnConflict(t *testing.T) {
+	t.Parallel()
+	adapterDecorator := stores.NewAdapterDecorators()
+	service := services.NewTeamService(adapterDecorator)
+
+	ctx := context.Background()
+	adapterDecorator.TeamGroupFunc.FindTeamBySlugFunc = func(ctx context.Context, slug string) (*models.Team, error) {
+		// base slug is taken; my-team-1 is also taken; my-team-2 is free
+		if slug == "my-team" || slug == "my-team-1" {
+			return &models.Team{Slug: slug}, nil
+		}
+		return nil, nil
 	}
+
+	result, err := service.ProcessSlug(ctx, "My Team")
+	assert.NoError(t, err)
+	assert.Equal(t, "my-team-2", result)
+}
+
+func TestTeamService_ProcessSlug_DBError(t *testing.T) {
+	t.Parallel()
+	adapterDecorator := stores.NewAdapterDecorators()
+	service := services.NewTeamService(adapterDecorator)
+
+	ctx := context.Background()
+	expectedErr := errors.New("db error")
+	adapterDecorator.TeamGroupFunc.FindTeamBySlugFunc = func(ctx context.Context, slug string) (*models.Team, error) {
+		return nil, expectedErr
+	}
+
+	result, err := service.ProcessSlug(ctx, "My Team")
+	assert.Empty(t, result)
+	assert.Equal(t, expectedErr, err)
+}
+
+func TestTeamService_ProcessSlug_SpecialCharsOnlyFallsBackToUUID(t *testing.T) {
+	t.Parallel()
+	adapterDecorator := stores.NewAdapterDecorators()
+	service := services.NewTeamService(adapterDecorator)
+
+	ctx := context.Background()
+	adapterDecorator.TeamGroupFunc.FindTeamBySlugFunc = func(ctx context.Context, slug string) (*models.Team, error) {
+		return nil, nil
+	}
+
+	// "!!!" produces an empty slug from NewSlug; service should fall back to a UUID
+	result, err := service.ProcessSlug(ctx, "!!!")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, result)
+	_, parseErr := uuid.Parse(result)
+	assert.NoError(t, parseErr, "fallback slug should be a valid UUID")
+}
+
+func TestTeamService_ProcessSlug_ExhaustedSuffixes(t *testing.T) {
+	t.Parallel()
+	adapterDecorator := stores.NewAdapterDecorators()
+	service := services.NewTeamService(adapterDecorator)
+
+	ctx := context.Background()
+	// every candidate is taken
 	adapterDecorator.TeamGroupFunc.FindTeamBySlugFunc = func(ctx context.Context, slug string) (*models.Team, error) {
 		return &models.Team{Slug: slug}, nil
 	}
-	// Team slug already exists
-	adapterDecorator.TeamGroupFunc.CheckTeamSlugFunc = func(ctx context.Context, slug string) (bool, error) {
-		return false, nil
-	}
-	// mockStore.On("CheckTeamSlug", ctx, slug).Return(false, nil)
 
-	teamInfo, err := service.CreateTeamWithOwner(ctx, name, slug, userID)
-	assert.Nil(t, teamInfo)
-	assert.EqualError(t, err, "team slug already exists")
+	result, err := service.ProcessSlug(ctx, "My Team")
+	assert.Empty(t, result)
+	assert.EqualError(t, err, "cannot generate unique team slug")
 }
 
-func TestTeamService_CreateTeam_CheckTeamSlugError(t *testing.T) {
+func TestTeamService_CreateTeam_DBError(t *testing.T) {
 	t.Parallel()
 	adapterDecorator := stores.NewAdapterDecorators()
 	service := services.NewTeamService(adapterDecorator)
 
 	ctx := context.Background()
 	name := "Test Team"
-	slug := "test-team"
 	userID := uuid.New()
 
 	expectedErr := errors.New("db error")
@@ -58,9 +112,8 @@ func TestTeamService_CreateTeam_CheckTeamSlugError(t *testing.T) {
 	adapterDecorator.TeamGroupFunc.FindTeamBySlugFunc = func(ctx context.Context, slug string) (*models.Team, error) {
 		return nil, expectedErr
 	}
-	// mockStore.On("CheckTeamSlug", ctx, slug).Return(false, expectedErr)
 
-	teamInfo, err := service.CreateTeamWithOwner(ctx, name, slug, userID)
+	teamInfo, err := service.CreateTeamWithOwner(ctx, name, userID)
 	assert.Nil(t, teamInfo)
 	assert.Equal(t, expectedErr, err)
 }
@@ -72,10 +125,8 @@ func TestTeamService_CreateTeam_CreateTeamWithOwnerMemberError(t *testing.T) {
 
 	ctx := context.Background()
 	name := "Test Team"
-	slug := "test-team"
 	userID := uuid.New()
 
-	// mockStore.On("CheckTeamSlug", ctx, slug).Return(true, nil)
 	expectedErr := errors.New("create team error")
 
 	adapterDecorator.UserFunc.FindUserByIDFunc = func(ctx context.Context, userID uuid.UUID) (*models.User, error) {
@@ -88,12 +139,9 @@ func TestTeamService_CreateTeam_CreateTeamWithOwnerMemberError(t *testing.T) {
 		return nil, expectedErr
 	}
 
-	// mockStore.On("CreateTeamWithOwnerMember", ctx, name, slug, userID).Return(nil, expectedErr)
-
-	teamInfo, err := service.CreateTeamWithOwner(ctx, name, slug, userID)
+	teamInfo, err := service.CreateTeamWithOwner(ctx, name, userID)
 	assert.Nil(t, teamInfo)
 	assert.Equal(t, expectedErr, err)
-	// mockStore.AssertExpectations(t)
 }
 
 func TestTeamService_UpdateTeam_Success(t *testing.T) {

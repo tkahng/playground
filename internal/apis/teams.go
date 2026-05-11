@@ -2,7 +2,6 @@ package apis
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"regexp"
@@ -11,11 +10,16 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/mapper"
+)
+
+var (
+	IsAlphaNumericAndDash *regexp.Regexp = regexp.MustCompile("^[A-Za-z0-9-]+$")
 )
 
 type TeamInfo struct {
@@ -67,13 +71,8 @@ func fromTeamModel(team *models.Team) *Team {
 	}
 }
 
-var (
-	IsAlphaNumericAndDash *regexp.Regexp = regexp.MustCompile("^[A-Za-z0-9-]+$")
-)
-
 type CreateTeamInput struct {
 	Name string `json:"name" required:"true" minLength:"3"`
-	Slug string `json:"slug" required:"false" minLength:"3" regex:"^[A-Za-z0-9-]+$"`
 }
 
 type TeamOutput struct {
@@ -107,54 +106,46 @@ func (api *Api) CreateTeamBind(humaApi huma.API) {
 		func(ctx context.Context, input *struct {
 			Body CreateTeamInput `json:"body" required:"true"`
 		}) (*TeamWithMemberOutput, error) {
-			if input.Body.Slug != "" {
-				if !IsAlphaNumericAndDash.MatchString(input.Body.Slug) {
-					return nil, huma.Error400BadRequest("invalid slug")
-				}
-			}
-			if ok, err := api.App().Adapter().TeamGroup().CheckTeamSlug(ctx, input.Body.Slug); !ok {
-				if err != nil {
-					slog.ErrorContext(
-						ctx,
-						"error occurred while checking slug",
-					)
-					return nil, fmt.Errorf("error occurred while checking slug")
-				}
-				return nil, huma.Error400BadRequest("slug already exists")
-			}
 			info := contextstore.GetContextUserInfo(ctx)
 			if info == nil {
 				return nil, huma.Error401Unauthorized("unauthorized")
 			}
 			user := &info.User
-			var teamInfo *models.TeamInfoModel
-			runInTxErr := api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
-				teamInfoTx, err := api.App().Team().CreateTeamWithOwner(
-					txCtx,
-					input.Body.Name,
-					input.Body.Slug,
-					user.ID,
-				)
-				if err != nil {
-					return err
+			var (
+				teamInfo    *models.TeamInfoModel
+				runInTxErr  error
+			)
+			// Retry on slug unique-constraint races (two concurrent requests for
+			// the same team name). Each attempt starts a fresh transaction so
+			// ProcessSlug sees the latest DB state.
+			for attempt := 0; attempt < 5; attempt++ {
+				runInTxErr = api.App().Adapter().RunInTxCtx(ctx, func(txCtx context.Context) error {
+					teamInfoTx, err := api.App().Team().CreateTeamWithOwner(
+						txCtx,
+						input.Body.Name,
+						user.ID,
+					)
+					if err != nil {
+						return err
+					}
+					if teamInfoTx == nil {
+						return huma.Error500InternalServerError("team not found")
+					}
+					_, err = api.App().Payment().CreateTeamCustomer(
+						txCtx,
+						&teamInfoTx.Team,
+						user,
+					)
+					if err != nil {
+						return err
+					}
+					teamInfo = teamInfoTx
+					return nil
+				})
+				if runInTxErr == nil || !database.IsUniqConstraintErr(runInTxErr) {
+					break
 				}
-				if teamInfoTx == nil {
-					return huma.Error500InternalServerError("team not found")
-				}
-				team := &teamInfoTx.Team
-
-				_, err = api.App().Payment().CreateTeamCustomer(
-					txCtx,
-					team,
-					user,
-				)
-				if err != nil {
-					return err
-				}
-
-				teamInfo = teamInfoTx
-				return nil
-			})
+			}
 			if runInTxErr != nil {
 				return nil, runInTxErr
 			}
