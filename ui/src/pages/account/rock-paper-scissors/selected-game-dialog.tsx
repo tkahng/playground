@@ -180,6 +180,15 @@ export const NoPlayerView = ({
   );
 };
 
+function useExpiryWarning(expiresAt: string): string | null {
+  const ms = new Date(expiresAt).getTime() - Date.now();
+  if (ms <= 0) return null;
+  const hours = ms / (1000 * 60 * 60);
+  if (hours > 24) return null;
+  if (hours < 1) return `less than 1 hour`;
+  return `${Math.floor(hours)} hour${Math.floor(hours) === 1 ? "" : "s"}`;
+}
+
 export const PendingGameView = ({
   onOpenChange,
   game,
@@ -190,6 +199,7 @@ export const PendingGameView = ({
   const opponentName =
     game.opponent.player?.display_name || game.opponent.player?.email || "your opponent";
   const betAmount = game.rpsGame.bet_amount;
+  const expiryWarning = useExpiryWarning(game.rpsGame.expires_at);
 
   return (
     <div className="flex flex-col items-center gap-4 py-4 text-center">
@@ -202,6 +212,11 @@ export const PendingGameView = ({
           Your move is locked in. The result will appear once they respond.
         </p>
       </div>
+      {expiryWarning && (
+        <div className="rounded-lg border border-orange-300 bg-orange-50 px-4 py-2 text-sm text-orange-800">
+          ⚠️ This game expires in {expiryWarning}
+        </div>
+      )}
       {betAmount != null && betAmount > 0 && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm text-amber-800">
           🪙 {betAmount} pts on the line

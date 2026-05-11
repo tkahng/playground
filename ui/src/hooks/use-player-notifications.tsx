@@ -93,4 +93,11 @@ export function usePlayerNotifications() {
     onRpsGameCompleted,
     [onRpsGameCompleted]
   );
+
+  useEventSourceListener(
+    activeSource,
+    ["rps_game_expiring_soon"],
+    onRpsGameEvent,
+    [onRpsGameEvent]
+  );
 }
