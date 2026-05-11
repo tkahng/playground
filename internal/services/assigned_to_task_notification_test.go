@@ -28,6 +28,7 @@ type noopSSE struct{}
 
 func (noopSSE) Send(_ string, _ any) error                          { return nil }
 func (noopSSE) SendAll(_ any) error                                 { return nil }
+func (noopSSE) IsChannelConnected(_ string) bool                    { return false }
 func (noopSSE) Clients() []sse.Client                               { return nil }
 func (noopSSE) RegisterClient(_ context.Context, _ context.CancelFunc, _ sse.Client) {}
 func (noopSSE) UnregisterClient(_ sse.Client)                       {}

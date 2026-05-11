@@ -15,6 +15,9 @@ type Manager interface {
 
 	Send(clientId string, data any) error
 	SendAll(data any) error
+	// IsChannelConnected reports whether at least one client is currently
+	// subscribed to the given channel. Used for real-time presence checks.
+	IsChannelConnected(channel string) bool
 }
 
 type manager struct {
@@ -46,6 +49,18 @@ func (m *manager) Send(channel string, data any) error {
 		return errors.Join(errs...)
 	}
 	return nil
+}
+
+// IsChannelConnected implements Manager.
+func (m *manager) IsChannelConnected(channel string) bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	for c := range m.clients {
+		if c != nil && c.Channel() == channel {
+			return true
+		}
+	}
+	return false
 }
 
 // SendAll implements Manager.
