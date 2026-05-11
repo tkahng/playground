@@ -593,6 +593,74 @@ func TestDbRpsGameService_ExpireGamesAndRefundBets_ContinuesOnPerGameError(t *te
 	})
 }
 
+func TestDbRpsGameService_Betting_HostWins_BalancesSettledCorrectly(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		ledger := NewDbLedgerService(adapter)
+		betting := NewDbBettingService(adapter, ledger)
+		rpsService := NewDbRpsGameService(adapter, betting)
+
+		host := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("hostwins_host@example.com"),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "hostwins_host@example.com").ID),
+		)
+		guest := stores.MustCreatePlayer(t, ctx, adapter.Gaming(),
+			stores.WithPlayerEmail("hostwins_guest@example.com"),
+			stores.WithUserID(mustCreateUser(t, ctx, adapter, "hostwins_guest@example.com").ID),
+		)
+
+		mustFundPlayerWallet(t, ctx, adapter, ledger, host.UserID, 500)
+		mustFundPlayerWallet(t, ctx, adapter, ledger, guest.UserID, 500)
+
+		betAmount := int64(100)
+		// Host plays paper.
+		game, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMovePaper,
+			DurationSeconds:      GameDurationSeconds,
+			BetAmount:            &betAmount,
+			HostUserID:           host.UserID,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame() error = %v", err)
+		}
+
+		// Guest plays rock — loses.
+		responded, err := rpsService.RespondToGameRequest(ctx, &GameRequestResponse{
+			InvitedPlayerID: guest.ID,
+			GameID:          game.RpsGame.ID,
+			Status:          models.RpsGameStatusCompleted,
+			Move:            models.RpsParticipantMoveRock,
+		})
+		if err != nil {
+			t.Fatalf("RespondToGameRequest() error = %v", err)
+		}
+		if responded.RequestingParticipant.Result != models.RpsParticipantResultWin {
+			t.Errorf("host result = %v, want win", responded.RequestingParticipant.Result)
+		}
+		if responded.InvitedParticipant.Result != models.RpsParticipantResultLose {
+			t.Errorf("guest result = %v, want lose", responded.InvitedParticipant.Result)
+		}
+
+		// Host gains 100 → 600; guest loses 100 → 400.
+		hostBal, err := ledger.GetUserBalance(ctx, *host.UserID)
+		if err != nil {
+			t.Fatalf("GetUserBalance(host): %v", err)
+		}
+		if hostBal != 600 {
+			t.Errorf("host balance = %d, want 600", hostBal)
+		}
+		guestBal, err := ledger.GetUserBalance(ctx, *guest.UserID)
+		if err != nil {
+			t.Fatalf("GetUserBalance(guest): %v", err)
+		}
+		if guestBal != 400 {
+			t.Errorf("guest balance = %d, want 400", guestBal)
+		}
+	})
+}
+
 func TestDbRpsGameService_CreatePlayerByParams_Success(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
