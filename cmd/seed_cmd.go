@@ -61,7 +61,10 @@ var seedRolesCmd = &cobra.Command{
 
 func SeedRoles(ctx context.Context, db database.Dbx) error {
 	rbacStore := stores.NewDbRBACStore(db)
-	return rbacStore.CreateRolesAndPermissions(ctx, shared.KnownRoleNamesPermissionsMap)
+	if err := rbacStore.CreateRolesAndPermissions(ctx, shared.KnownRoleNamesPermissionsMap); err != nil {
+		return err
+	}
+	return rbacStore.CreateTeamRolePermissions(ctx, shared.KnownTeamRolePermissionsMap)
 }
 
 var seedUserCmd = &cobra.Command{

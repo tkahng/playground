@@ -6,7 +6,6 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
-	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 )
 
@@ -64,7 +63,7 @@ func bindTeamsApi(appApi *Api) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
-				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+				middleware.RequireTeamPermission(app, shared.TeamPermissionMembersInvite),
 			),
 		},
 		appApi.CreateInvitation,
@@ -86,7 +85,7 @@ func bindTeamsApi(appApi *Api) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
-				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+				middleware.RequireTeamPermission(app, shared.TeamPermissionMembersInvite),
 			),
 		},
 		appApi.CencelInvitation,

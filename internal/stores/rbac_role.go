@@ -44,6 +44,7 @@ type DbRbacStoreInterface interface { // size=16 (0x10)
 	FindRoleByName(ctx context.Context, name string) (*models.Role, error)
 	FindRolesByIds(ctx context.Context, params []uuid.UUID) ([]*models.Role, error)
 	GetUserRoles(ctx context.Context, userIds ...uuid.UUID) ([][]*models.Role, error)
+	HasTeamRolePermission(ctx context.Context, role models.TeamMemberRole, permissionName string) (bool, error)
 	ListPermissions(ctx context.Context, input *PermissionFilter) ([]*models.Permission, error)
 	ListRoles(ctx context.Context, input *RoleListFilter) ([]*models.Role, error)
 	ListUserNotPermissionsSource(ctx context.Context, userId uuid.UUID, limit int64, offset int64) ([]*models.PermissionSource, error)
@@ -53,6 +54,7 @@ type DbRbacStoreInterface interface { // size=16 (0x10)
 	UpdatePermission(ctx context.Context, id uuid.UUID, roledto *UpdatePermissionDto) error
 	UpdateRole(ctx context.Context, id uuid.UUID, roledto *UpdateRoleDto) error
 	CreateRolesAndPermissions(ctx context.Context, rolePermissionsMap map[string][]string) error
+	CreateTeamRolePermissions(ctx context.Context, rolePermissionsMap map[string][]string) error
 }
 
 var _ DbRbacStoreInterface = (*DbRbacStore)(nil)
@@ -83,6 +85,18 @@ func (p *DbRbacStore) WithTx(tx database.Dbx) *DbRbacStore {
 	return &DbRbacStore{
 		db: tx,
 	}
+}
+
+func (p *DbRbacStore) HasTeamRolePermission(ctx context.Context, role models.TeamMemberRole, permissionName string) (bool, error) {
+	query := `
+		select exists (
+			select 1
+			from org.team_role_permissions trp
+			where trp.role = $1
+			  and trp.permission_name = $2
+		)
+	`
+	return database.QueryOneSingleColumn[bool](ctx, p.db, query, role, permissionName)
 }
 
 func (s *DbRbacStore) FindRolesByIds(ctx context.Context, params []uuid.UUID) ([]*models.Role, error) {
@@ -332,6 +346,28 @@ func (p *DbRbacStore) CreateRolesAndPermissions(ctx context.Context, rolePermiss
 				return err
 			}
 			err = p.CreateRolePermissions(ctx, role.ID, permission.ID)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (p *DbRbacStore) CreateTeamRolePermissions(ctx context.Context, rolePermissionsMap map[string][]string) error {
+	for role, permissionNames := range rolePermissionsMap {
+		for _, permissionName := range permissionNames {
+			_, err := database.Exec(
+				ctx,
+				p.db,
+				`
+					insert into org.team_role_permissions (role, permission_name)
+					values ($1::org.team_member_role, $2)
+					on conflict do nothing
+				`,
+				role,
+				permissionName,
+			)
 			if err != nil {
 				return err
 			}
