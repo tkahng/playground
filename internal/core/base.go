@@ -373,6 +373,9 @@ func (app *BaseApp) RunBackgroundProcesses(ctx context.Context) {
 	if err := workers.SeedRpsRematchExpiryJob(ctx, app.JobManager()); err != nil {
 		app.Logger().ErrorContext(ctx, "failed to seed rps rematch expiry job", slog.Any("error", err))
 	}
+	if err := workers.SeedRpsExpiryWarningJob(ctx, app.JobManager()); err != nil {
+		app.Logger().ErrorContext(ctx, "failed to seed rps expiry warning job", slog.Any("error", err))
+	}
 
 	run("task notification scheduler", func() {
 		app.Logger().Info("Starting task notification scheduler")

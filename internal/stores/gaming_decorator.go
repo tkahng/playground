@@ -3,6 +3,7 @@ package stores
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
@@ -442,6 +443,22 @@ func (s *DbGamingStoreDecorator) FindExpiredPendingBetGames(ctx context.Context)
 		return nil, fmt.Errorf("Gaming store decorator FindExpiredPendingBetGames %w", ErrDelegateNil)
 	}
 	return s.Delegate.FindExpiredPendingBetGames(ctx)
+}
+
+// FindPendingGamesExpiringWithin implements [GamingStore].
+func (s *DbGamingStoreDecorator) FindPendingGamesExpiringWithin(ctx context.Context, within time.Duration) ([]*models.RpsGame, error) {
+	if s.Delegate == nil {
+		return nil, fmt.Errorf("Gaming store decorator FindPendingGamesExpiringWithin %w", ErrDelegateNil)
+	}
+	return s.Delegate.FindPendingGamesExpiringWithin(ctx, within)
+}
+
+// MarkRpsGameExpirySent implements [GamingStore].
+func (s *DbGamingStoreDecorator) MarkRpsGameExpirySent(ctx context.Context, game *models.RpsGame) error {
+	if s.Delegate == nil {
+		return fmt.Errorf("Gaming store decorator MarkRpsGameExpirySent %w", ErrDelegateNil)
+	}
+	return s.Delegate.MarkRpsGameExpirySent(ctx, game)
 }
 
 func (s *DbGamingStoreDecorator) CreateRpsRematchRequest(ctx context.Context, req *models.RpsRematchRequest) (*models.RpsRematchRequest, error) {

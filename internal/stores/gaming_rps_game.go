@@ -24,6 +24,8 @@ type RpsGameStore interface {
 	FindRpsGame(ctx context.Context, filter *RpsGameFilter) (*models.RpsGame, error)
 	FindRpsGameForUpdate(ctx context.Context, gameID uuid.UUID) (*models.RpsGame, error)
 	FindExpiredPendingBetGames(ctx context.Context) ([]*models.RpsGame, error)
+	FindPendingGamesExpiringWithin(ctx context.Context, within time.Duration) ([]*models.RpsGame, error)
+	MarkRpsGameExpirySent(ctx context.Context, game *models.RpsGame) error
 	CreateRpsGame(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
 	UpdateRpsGame(ctx context.Context, game *models.RpsGame) (*models.RpsGame, error)
 }
@@ -167,6 +169,32 @@ func (s *DBGamingStore) FindRpsGameForUpdate(ctx context.Context, gameID uuid.UU
 		return nil, nil
 	}
 	return data[0], nil
+}
+
+// FindPendingGamesExpiringWithin returns pending games whose expiry falls
+// within the window [now, now+within) that have not yet had a warning sent
+// (metadata->>'expiry_warning_sent' is absent or false).
+func (s *DBGamingStore) FindPendingGamesExpiringWithin(ctx context.Context, within time.Duration) ([]*models.RpsGame, error) {
+	cols := strings.Join(repository.RpsGameBuilder.ColumnNames(), ", ")
+	query := fmt.Sprintf(
+		`SELECT %s FROM gaming.rps_games
+		 WHERE status = $1
+		   AND expires_at > clock_timestamp()
+		   AND expires_at <= clock_timestamp() + $2::interval
+		   AND COALESCE((metadata->>'expiry_warning_sent')::boolean, false) = false`,
+		cols,
+	)
+	return database.QueryAll[*models.RpsGame](ctx, s.db, query,
+		string(models.RpsGameStatusPending),
+		within.String(),
+	)
+}
+
+// MarkRpsGameExpirySent sets metadata->expiry_warning_sent = true on a game.
+func (s *DBGamingStore) MarkRpsGameExpirySent(ctx context.Context, game *models.RpsGame) error {
+	const query = `UPDATE gaming.rps_games SET metadata = metadata || '{"expiry_warning_sent":true}' WHERE id = $1`
+	_, err := s.db.Exec(ctx, query, game.ID)
+	return err
 }
 
 // FindExpiredPendingBetGames returns pending games with a host bet escrow whose

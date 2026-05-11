@@ -7,6 +7,7 @@ import (
 
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/jobs"
+	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/internal/workers"
 )
@@ -25,7 +26,7 @@ type JobService interface {
 	EnqueueTaskOverdueJob(ctx context.Context, job *workers.TaskOverdueJobArgs) error
 	EnqueueTaskStatusChangedJob(ctx context.Context, job *workers.TaskStatusChangedJobArgs) error
 	EnqueueProjectStatusChangedJob(ctx context.Context, job *workers.ProjectStatusChangedJobArgs) error
-	RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier, rpsGame workers.RpsGameExpiryServiceInterface)
+	RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier, rpsGame workers.RpsGameExpiryServiceInterface, adapter stores.StorageAdapterInterface, sseSender workers.RpsExpiryWarningSender)
 }
 
 type DbJobService struct {
@@ -140,7 +141,7 @@ func (d *DbJobService) EnqueueProjectStatusChangedJob(ctx context.Context, job *
 }
 
 // RegisterWorkers implements JobService.
-func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier, rpsGame workers.RpsGameExpiryServiceInterface) {
+func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier, rpsGame workers.RpsGameExpiryServiceInterface, adapter stores.StorageAdapterInterface, sseSender workers.RpsExpiryWarningSender) {
 	jobs.RegisterWorker(d.manager, workers.NewOtpEmailWorker(mail))
 	jobs.RegisterWorker(d.manager, workers.NewTeamInvitationWorker(mail))
 	jobs.RegisterWorker(d.manager, workers.NewRpsGameInvitationWorker(mail))
@@ -154,6 +155,7 @@ func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService Payme
 	jobs.RegisterWorker(d.manager, NewProjectStatusChangedWorker(notification))
 	jobs.RegisterWorker(d.manager, workers.NewRpsGameExpiryWorker(rpsGame, d.manager))
 	jobs.RegisterWorker(d.manager, workers.NewRpsRematchExpiryWorker(rpsGame, d.manager))
+	jobs.RegisterWorker(d.manager, workers.NewRpsExpiryWarningWorker(adapter, sseSender, d.manager))
 }
 
 // EnqueueOtpMailJob implements JobService.
@@ -175,7 +177,7 @@ type JobServiceDecorator struct {
 	Delegate                                  JobService
 	EnqueueOtpMailJobFunc                     func(ctx context.Context, job *workers.OtpEmailJobArgs) error
 	EnqueueTeamInvitationFunc                 func(ctx context.Context, job *workers.TeamInvitationJobArgs) error
-	RegisterWorkersFunc                       func(mail OtpMailService, paymentService PaymentService, notification Notifier, rpsGame workers.RpsGameExpiryServiceInterface)
+	RegisterWorkersFunc                       func(mail OtpMailService, paymentService PaymentService, notification Notifier, rpsGame workers.RpsGameExpiryServiceInterface, adapter stores.StorageAdapterInterface, sseSender workers.RpsExpiryWarningSender)
 	EnqueueTeamMemberAddedJobFunc             func(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error
 	WithTxFunc                                func(db database.Dbx) JobService
 	EnqueueRefreshSubscriptionQuantityJobFunc func(ctx context.Context, job *workers.RefreshSubscriptionQuantityJobArgs) error
@@ -268,11 +270,11 @@ func (j *JobServiceDecorator) EnqueueTeamInvitationJob(ctx context.Context, args
 }
 
 // RegisterWorkers implements JobService.
-func (j *JobServiceDecorator) RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier, rpsGame workers.RpsGameExpiryServiceInterface) {
+func (j *JobServiceDecorator) RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier, rpsGame workers.RpsGameExpiryServiceInterface, adapter stores.StorageAdapterInterface, sseSender workers.RpsExpiryWarningSender) {
 	if j.RegisterWorkersFunc != nil {
-		j.RegisterWorkersFunc(mail, paymentService, notification, rpsGame)
+		j.RegisterWorkersFunc(mail, paymentService, notification, rpsGame, adapter, sseSender)
 	}
-	j.Delegate.RegisterWorkers(mail, paymentService, notification, rpsGame)
+	j.Delegate.RegisterWorkers(mail, paymentService, notification, rpsGame, adapter, sseSender)
 }
 
 // EnqueueOtpMailJob implements JobService.
