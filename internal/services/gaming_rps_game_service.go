@@ -155,13 +155,21 @@ func (d *DbRpsGameService) RequestGame(ctx context.Context, input *RpsGameReques
 		}
 	}
 
-	// Run all DB checks and writes inside a single transaction so the
-	// active-game check is atomic with the participant insert. The partial
-	// unique index on (player_id) WHERE status='pending' provides a
-	// database-level backstop for the guest slot; wrapping in a transaction
-	// closes the TOCTOU window for the host slot too.
+	// All DB checks and writes run inside a single transaction.
+	// Lock both player rows first with FOR UPDATE so two concurrent RequestGame
+	// calls for the same players are serialized — the second call blocks until
+	// the first commits, then sees the new pending game and returns Conflict.
+	// The partial unique index on (player_id) WHERE status='pending' is a
+	// DB-level backstop for the guest slot that survives any future refactors.
 	var gameWithParticipants *RpsGameWithParticipants
 	txErr := d.adapter.RunInTxCtx(ctx, func(txCtx context.Context) error {
+		if _, err := d.adapter.Gaming().FindPlayerForUpdate(txCtx, input.RequestingPlayerID); err != nil {
+			return fmt.Errorf("lock requesting player: %w", err)
+		}
+		if _, err := d.adapter.Gaming().FindPlayerForUpdate(txCtx, input.InvitedPlayerID); err != nil {
+			return fmt.Errorf("lock invited player: %w", err)
+		}
+
 		if active, err := d.playerHasActiveGame(txCtx, input.RequestingPlayerID); err != nil {
 			return err
 		} else if active {

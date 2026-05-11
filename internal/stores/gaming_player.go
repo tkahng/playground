@@ -39,6 +39,10 @@ type PlayerGameAggregates struct {
 type GamingPlayerStore interface {
 	FindPlayers(ctx context.Context, filter *PlayersFilter) ([]*models.Player, error)
 	FindPlayer(ctx context.Context, filter *PlayersFilter) (*models.Player, error)
+	// FindPlayerForUpdate fetches a player row with a FOR UPDATE lock for the
+	// duration of the surrounding transaction. Use this to serialize concurrent
+	// operations on the same player (e.g. RequestGame active-game checks).
+	FindPlayerForUpdate(ctx context.Context, playerID uuid.UUID) (*models.Player, error)
 	FindHousePlayer(ctx context.Context) (*models.Player, error)
 	// GetHouseGameAggregates returns win/loss/tie counts and bet totals for the
 	// house player in a single SQL query rather than fetching rows into Go memory.
@@ -211,6 +215,19 @@ func (s *DBGamingStore) FindPlayer(ctx context.Context, filter *PlayersFilter) (
 		return nil, nil
 	}
 	return res[0], nil
+}
+
+func (s *DBGamingStore) FindPlayerForUpdate(ctx context.Context, playerID uuid.UUID) (*models.Player, error) {
+	cols := strings.Join(repository.PlayerBuilder.ColumnNames(), ", ")
+	query := fmt.Sprintf("SELECT %s FROM gaming.players WHERE id = $1 FOR UPDATE", cols)
+	data, err := database.QueryAll[*models.Player](ctx, s.db, query, playerID)
+	if err != nil {
+		return nil, err
+	}
+	if len(data) == 0 {
+		return nil, nil
+	}
+	return data[0], nil
 }
 
 func (s *DBGamingStore) FindHousePlayer(ctx context.Context) (*models.Player, error) {
