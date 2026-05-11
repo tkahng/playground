@@ -533,7 +533,7 @@ func TestApi_UpdateTeamMember(t *testing.T) {
 			URL:            "/team-members/{team-member-id}",
 			ExpectedStatus: http.StatusForbidden,
 			ExpectedContent: []string{
-				"You do not have the required team member roles: [owner]",
+				"You do not have the required team permission: team.members.manage",
 			},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				team1 := CreateTeamAndOwner(t, app)
@@ -736,8 +736,7 @@ func TestApi_DeactivateTeamMember(t *testing.T) {
 				scenario.Headers = append(scenario.Headers, header)
 			},
 			ExpectedContent: []string{
-				"You do not have the required team member roles:",
-				"[owner]",
+				"You do not have the required team permission: team.members.manage",
 			},
 		},
 	}

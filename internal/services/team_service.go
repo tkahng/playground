@@ -135,9 +135,6 @@ func (t *TeamServiceImpl) DeleteTeam(ctx context.Context, teamId uuid.UUID, user
 		slog.ErrorContext(ctx, "team member not found")
 		return errors.New("team member not found")
 	}
-	if teamInfo.Member.Role != models.TeamMemberRoleOwner {
-		return errors.New("only owner can delete team")
-	}
 	err = t.adapter.TeamGroup().DeleteTeam(ctx, teamId)
 	// err = t.teamStore.DeleteTeam(ctx, teamId)
 	if err != nil {

@@ -112,8 +112,8 @@ func (api *Api) CreateTeamBind(humaApi huma.API) {
 			}
 			user := &info.User
 			var (
-				teamInfo    *models.TeamInfoModel
-				runInTxErr  error
+				teamInfo   *models.TeamInfoModel
+				runInTxErr error
 			)
 			// Retry on slug unique-constraint races (two concurrent requests for
 			// the same team name). Each attempt starts a fresh transaction so
@@ -272,7 +272,7 @@ func (api *Api) UpdateTeamBind(humaApi huma.API) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
-				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionSettingsManage),
 			),
 		},
 		api.UpdateTeam,
@@ -328,7 +328,7 @@ func (api *Api) DeleteTeamBind(humaApi huma.API) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
-				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionDelete),
 				middleware.TeamCanDelete(api.App()),
 			),
 		},
