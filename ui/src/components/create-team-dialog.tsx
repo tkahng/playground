@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -31,13 +30,6 @@ import { z } from "zod";
 
 const formSchema = z.object({
   name: z.string().min(3, "Team name is required"),
-  slug: z
-    .string()
-    .regex(/^[A-Za-z0-9-]+$/, {
-      message: "Only alphanumeric characters and dashes are allowed",
-    })
-    .or(z.literal(""))
-    .optional(),
 });
 
 export function CreateTeamDialog({
@@ -59,7 +51,6 @@ export function CreateTeamDialog({
       }
       return await createTeam(user.tokens.access_token, {
         name: values.name,
-        slug: values.slug == "" ? undefined : values.slug,
       });
     },
     onSuccess: async (data) => {
@@ -82,7 +73,6 @@ export function CreateTeamDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      slug: undefined,
     },
   });
 
@@ -131,32 +121,8 @@ export function CreateTeamDialog({
                     </Field>
                   )}
                 />
-                <Controller
-                  control={form.control}
-                  name="slug"
-                  render={({ field, fieldState }) => (
-                    <Field>
-                      <FieldLabel htmlFor="form-create-team-dialog-slug">
-                        Slug(optional)
-                      </FieldLabel>
-                      <FieldDescription>
-                        Must be alphanumeric without any special characters. If
-                        none is provided, a random one will be generated
-                      </FieldDescription>
-                      <Input
-                        {...field}
-                        id="form-create-team-dialog-slug"
-                        aria-invalid={fieldState.invalid}
-                        placeholder="Slug"
-                      />
-                      {fieldState.invalid && (
-                        <FieldError errors={[fieldState.error]} />
-                      )}
-                    </Field>
-                  )}
-                />
 
-                <DialogFooter>
+<DialogFooter>
                   <Button type="submit" form="form-create-team-dialog">
                     Create Team
                   </Button>

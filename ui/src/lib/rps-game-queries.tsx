@@ -234,6 +234,108 @@ export class RpsGameQueries {
     return data;
   }
 
+  async cancelGame({
+    token,
+    gameId,
+  }: {
+    token: string;
+    gameId: string;
+  }) {
+    const { data, error } = await client.POST(
+      `/api/games/rps/{game-id}/cancel`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { path: { "game-id": gameId } },
+      },
+    );
+    if (error) throw ApiError.fromErrorModel(error);
+    return data;
+  }
+
+  async getPlayerRpsStats({ token }: { token: string }) {
+    const { data, error } = await client.GET(
+      `/api/players/current-player/rps-stats`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    if (error) throw ApiError.fromErrorModel(error);
+    return data;
+  }
+
+  async requestRematch({
+    token,
+    gameId,
+  }: {
+    token: string;
+    gameId: string;
+  }) {
+    const { data, error } = await client.POST(
+      `/api/games/rps/{game-id}/rematch`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { path: { "game-id": gameId } },
+      },
+    );
+    if (error) throw ApiError.fromErrorModel(error);
+    return data;
+  }
+
+  async getRematch({
+    token,
+    gameId,
+  }: {
+    token: string;
+    gameId: string;
+  }) {
+    const { data, error } = await client.GET(
+      `/api/games/rps/{game-id}/rematch`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { path: { "game-id": gameId } },
+      },
+    );
+    if (error) throw ApiError.fromErrorModel(error);
+    return data;
+  }
+
+  async acceptRematch({
+    token,
+    rematchId,
+    move,
+  }: {
+    token: string;
+    rematchId: string;
+    move: "rock" | "paper" | "scissors";
+  }) {
+    const { data, error } = await client.POST(
+      `/api/games/rps/rematches/{rematch-id}/accept`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { path: { "rematch-id": rematchId } },
+        body: { move },
+      },
+    );
+    if (error) throw ApiError.fromErrorModel(error);
+    return data;
+  }
+
+  async declineRematch({
+    token,
+    rematchId,
+  }: {
+    token: string;
+    rematchId: string;
+  }) {
+    const { data, error } = await client.POST(
+      `/api/games/rps/rematches/{rematch-id}/decline`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { path: { "rematch-id": rematchId } },
+      },
+    );
+    if (error) throw ApiError.fromErrorModel(error);
+    return data;
+  }
+
   async challengeHouse({
     token,
     move,
