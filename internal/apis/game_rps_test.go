@@ -976,6 +976,45 @@ func Test_SubmitMove_WithActiveBet_Tie(t *testing.T) {
 	})
 }
 
+// Test_SubmitMove_PendingStatusRejected verifies that submitting status="pending" is
+// rejected by the API schema (422 Unprocessable Entity) rather than reaching the service.
+func Test_SubmitMove_PendingStatusRejected(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		host := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		guest := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		game, err := testApi.App.RpsGame().RequestGame(ctx, &services.RpsGameRequestInput{
+			RequestingPlayerID:   host.ID,
+			InvitedPlayerID:      guest.ID,
+			RequestingPlayerMove: models.RpsParticipantMoveRock,
+			DurationSeconds:      services.GameDurationSeconds,
+		})
+		if err != nil {
+			t.Fatalf("RequestGame: %v", err)
+		}
+
+		scenario := &apis.ApiScenario{
+			Name:            "status=pending rejected by schema validation",
+			Method:          http.MethodPost,
+			URL:             fmt.Sprintf("/games/rps/%s/submit-move", game.RpsGame.ID),
+			ExpectedStatus:  http.StatusUnprocessableEntity,
+			ExpectedContent: []string{"body.status"},
+			TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, guest.Email)
+				scenario.Headers = []string{tokenHeader}
+				body, _ := json.Marshal(map[string]string{
+					"move":   "rock",
+					"status": "pending",
+				})
+				scenario.Body = strings.NewReader(string(body))
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
 // Test_CancelGame_HostCancel verifies that the host can cancel their own pending game.
 func Test_CancelGame_HostCancel(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {

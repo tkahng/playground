@@ -226,7 +226,7 @@ func getRpsGameInviteFromTokenQuery(app core.App, ctx context.Context, token str
 type SubmitMoveWithTokenInput struct {
 	Token  string             `json:"token" required:"true" minlength:"2"`
 	Move   RpsParticipantMove `json:"move" required:"true" enum:"rock,paper,scissors"`
-	Status RpsGameStatus      `json:"status" required:"true" enum:"pending,completed,cancelled"`
+	Status RpsGameStatus      `json:"status" required:"true" enum:"completed,cancelled"`
 }
 
 func bindSubmitMoveWithTokenApi(api huma.API, app core.App) {
@@ -340,7 +340,7 @@ func bindVerifyRpsGameInviteApi(api huma.API, app core.App) {
 
 type SubmitMoveToGameInput struct {
 	Move   RpsParticipantMove `json:"move" required:"true" enum:"rock,paper,scissors"`
-	Status RpsGameStatus      `json:"status" required:"true" enum:"pending,completed,cancelled"`
+	Status RpsGameStatus      `json:"status" required:"true" enum:"completed,cancelled"`
 }
 
 func bindSubmitMoveToRpsGameApi(api huma.API, app core.App) {
