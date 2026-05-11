@@ -128,6 +128,8 @@ func TestApi_TeamTaskProjectCreate(t *testing.T) {
 				assert.Equal(t, input.CreateTaskProjectWithoutTeamDTO.Name, result.Name)
 				assert.Equal(t, input.CreateTaskProjectWithoutTeamDTO.Description, result.Description)
 				assert.Equal(t, input.CreateTaskProjectWithoutTeamDTO.Status, result.Status)
+				assert.NotNil(t, result.WorkflowID)
+				assert.NotNil(t, result.WorkflowStatusID)
 			},
 		},
 		{
@@ -221,6 +223,29 @@ func TestApi_TeamTaskProjectPermissions(t *testing.T) {
 
 func TestApi_TeamTaskProjectTasksCreateReferences(t *testing.T) {
 	tests := []apis.ApiScenario{
+		{
+			Name:           "success: create task returns workflow status",
+			Method:         http.MethodPost,
+			URL:            "/task-projects/{task-project-id}",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				project := core.CreateProjectAndTasks(t, app, &team1.Member)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/task-projects/%s", project.ID.String())
+				scenario.Body = apis.JsonToReader(t, services.TaskFields{
+					Name:   "Task with workflow status",
+					Status: models.TaskStatusTodo,
+				})
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.Task](t, res.Body.Bytes())
+				assert.NotNil(t, result.WorkflowStatusID)
+			},
+		},
 		{
 			Name:            "fail: guest cannot create task",
 			Method:          http.MethodPost,

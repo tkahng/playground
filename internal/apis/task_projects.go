@@ -26,6 +26,8 @@ type TaskProject struct {
 	ID                uuid.UUID                `db:"id" json:"id"`
 	CreatedByMemberID *uuid.UUID               `db:"created_by_member_id" json:"created_by_member_id" nullable:"true"`
 	TeamID            uuid.UUID                `db:"team_id" json:"team_id"`
+	WorkflowID        *uuid.UUID               `db:"workflow_id" json:"workflow_id" nullable:"true"`
+	WorkflowStatusID  *uuid.UUID               `db:"workflow_status_id" json:"workflow_status_id" nullable:"true"`
 	Name              string                   `db:"name" json:"name"`
 	Description       *string                  `db:"description" json:"description"`
 	Status            models.TaskProjectStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
@@ -49,6 +51,8 @@ func FromModelProject(task *models.TaskProject) *TaskProject {
 		ID:                task.ID,
 		CreatedByMemberID: task.CreatedByMemberID,
 		TeamID:            task.TeamID,
+		WorkflowID:        task.WorkflowID,
+		WorkflowStatusID:  task.WorkflowStatusID,
 		Name:              task.Name,
 		Description:       task.Description,
 		Status:            task.Status,

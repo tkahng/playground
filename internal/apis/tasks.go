@@ -25,6 +25,7 @@ type Task struct {
 	CreatedByMemberID *uuid.UUID        `db:"created_by_member_id" json:"created_by_member_id" nullable:"true"`
 	TeamID            uuid.UUID         `db:"team_id" json:"team_id"`
 	ProjectID         uuid.UUID         `db:"project_id" json:"project_id"`
+	WorkflowStatusID  *uuid.UUID        `db:"workflow_status_id" json:"workflow_status_id" nullable:"true"`
 	Name              string            `db:"name" json:"name"`
 	Description       *string           `db:"description" json:"description"`
 	Status            models.TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
@@ -54,6 +55,7 @@ func fromModelTask(task *models.Task) *Task {
 		CreatedByMemberID: task.CreatedByMemberID,
 		TeamID:            task.TeamID,
 		ProjectID:         task.ProjectID,
+		WorkflowStatusID:  task.WorkflowStatusID,
 		Name:              task.Name,
 		Description:       task.Description,
 		Status:            task.Status,
