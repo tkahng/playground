@@ -6,53 +6,63 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/tools/sse"
 )
 
-// --- IsPlayerOnline unit tests (no DB required) ---
-
-func Test_IsPlayerOnline_NilLastSeen(t *testing.T) {
-	assert.False(t, apis.IsPlayerOnline(nil))
+// presenceBody is the subset of the response body we care about in these tests.
+type presenceBody struct {
+	PlayerID    string  `json:"player_id"`
+	IsConnected bool    `json:"is_connected"`
+	LastSeenAt  *string `json:"last_seen_at"`
 }
 
-func Test_IsPlayerOnline_JustUnderThreshold(t *testing.T) {
-	recent := time.Now().Add(-1*time.Minute - 59*time.Second)
-	assert.True(t, apis.IsPlayerOnline(&recent))
+// startTestSseManager starts the SSE manager's Run loop for the duration of
+// the test. Call once per test that needs SSE registration.
+func startTestSseManager(t testing.TB, app *core.BaseApp) {
+	t.Helper()
+	ctx, cancel := context.WithCancel(context.Background())
+	go app.SseManager().Run(ctx)
+	t.Cleanup(cancel)
 }
 
-func Test_IsPlayerOnline_OneSecondBeforeThreshold(t *testing.T) {
-	// 1 second inside the 2-minute window — must be online.
-	at := time.Now().Add(-2*time.Minute + time.Second)
-	assert.True(t, apis.IsPlayerOnline(&at))
+// registerTestSseClient adds a fake SSE client for playerID to the app's SSE
+// manager and returns a cleanup func that deregisters it.
+// startTestSseManager must be called before this.
+func registerTestSseClient(t testing.TB, app *core.BaseApp, playerID string) func() {
+	t.Helper()
+	ctx, cancel := context.WithCancel(context.Background())
+	// noopSend discards every message — we only care about the registration.
+	noopSend := func(_ any) error { return nil }
+	client := sse.NewClient(sse.PlayerChannel(playerID), noopSend, nil, nil)
+	app.SseManager().RegisterClient(ctx, cancel, client)
+	return func() {
+		cancel()
+		app.SseManager().UnregisterClient(client)
+	}
 }
 
-func Test_IsPlayerOnline_JustOverThreshold(t *testing.T) {
-	stale := time.Now().Add(-2*time.Minute - time.Second)
-	assert.False(t, apis.IsPlayerOnline(&stale))
-}
+// --- GET /players/{player-id}/online-status ---
 
-func Test_IsPlayerOnline_FutureTimestamp(t *testing.T) {
-	// Edge case: last_seen in the future (clock skew) — should still be online.
-	future := time.Now().Add(time.Minute)
-	assert.True(t, apis.IsPlayerOnline(&future))
-}
-
-// --- GET /players/{player-id}/online-status endpoint tests ---
-
-func Test_GetPlayerOnlineStatus_ReturnsOfflineWhenNeverSeen(t *testing.T) {
+func Test_GetPlayerPresence_IsConnected_WhenSseClientRegistered(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := apis.SetupApi(t, ctx, db)
+		startTestSseManager(t, testApi.App)
 		requester := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		target := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
+		// Register a live SSE client for the target player.
+		cleanup := registerTestSseClient(t, testApi.App, target.ID.String())
+		defer cleanup()
+
 		scenario := &apis.ApiScenario{
-			Name:           "never seen — offline",
+			Name:           "connected",
 			Method:         http.MethodGet,
 			URL:            fmt.Sprintf("/players/%s/online-status", target.ID),
 			ExpectedStatus: http.StatusOK,
@@ -62,29 +72,22 @@ func Test_GetPlayerOnlineStatus_ReturnsOfflineWhenNeverSeen(t *testing.T) {
 				scenario.Headers = []string{header}
 			},
 			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
-				type onlineResp struct {
-					IsOnline bool `json:"is_online"`
-				}
-				result := test.MustUnMarshal[onlineResp](t, res.Body.Bytes())
-				assert.False(t, result.IsOnline)
+				result := test.MustUnMarshal[presenceBody](t, res.Body.Bytes())
+				assert.True(t, result.IsConnected)
 			},
 		}
 		scenario.Test(t)
 	})
 }
 
-func Test_GetPlayerOnlineStatus_ReturnsOnlineAfterLastSeen(t *testing.T) {
+func Test_GetPlayerPresence_NotConnected_WhenNoSseClient(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := apis.SetupApi(t, ctx, db)
 		requester := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 		target := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
-		// Simulate target being seen recently.
-		err := testApi.App.Adapter().Gaming().UpdatePlayerLastSeen(ctx, target.ID)
-		assert.NoError(t, err)
-
 		scenario := &apis.ApiScenario{
-			Name:           "recently seen — online",
+			Name:           "not connected",
 			Method:         http.MethodGet,
 			URL:            fmt.Sprintf("/players/%s/online-status", target.ID),
 			ExpectedStatus: http.StatusOK,
@@ -94,24 +97,102 @@ func Test_GetPlayerOnlineStatus_ReturnsOnlineAfterLastSeen(t *testing.T) {
 				scenario.Headers = []string{header}
 			},
 			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
-				type onlineResp struct {
-					IsOnline bool `json:"is_online"`
-				}
-				result := test.MustUnMarshal[onlineResp](t, res.Body.Bytes())
-				assert.True(t, result.IsOnline)
+				result := test.MustUnMarshal[presenceBody](t, res.Body.Bytes())
+				assert.False(t, result.IsConnected)
 			},
 		}
 		scenario.Test(t)
 	})
 }
 
-func Test_GetPlayerOnlineStatus_Returns404ForUnknownPlayer(t *testing.T) {
+func Test_GetPlayerPresence_NotConnected_AfterClientDeregistered(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		startTestSseManager(t, testApi.App)
+		requester := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		target := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		cleanup := registerTestSseClient(t, testApi.App, target.ID.String())
+		cleanup() // deregister immediately before the request
+
+		scenario := &apis.ApiScenario{
+			Name:           "deregistered",
+			Method:         http.MethodGet,
+			URL:            fmt.Sprintf("/players/%s/online-status", target.ID),
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				header, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, requester.Email)
+				scenario.Headers = []string{header}
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[presenceBody](t, res.Body.Bytes())
+				assert.False(t, result.IsConnected)
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+func Test_GetPlayerPresence_LastSeenAt_NilWhenNeverSeen(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		requester := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		target := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		scenario := &apis.ApiScenario{
+			Name:           "never seen",
+			Method:         http.MethodGet,
+			URL:            fmt.Sprintf("/players/%s/online-status", target.ID),
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				header, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, requester.Email)
+				scenario.Headers = []string{header}
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[presenceBody](t, res.Body.Bytes())
+				assert.Nil(t, result.LastSeenAt)
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+func Test_GetPlayerPresence_LastSeenAt_SetAfterActivity(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		requester := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+		target := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
+
+		require.NoError(t, testApi.App.Adapter().Gaming().UpdatePlayerLastSeen(ctx, target.ID))
+
+		scenario := &apis.ApiScenario{
+			Name:           "has last_seen_at",
+			Method:         http.MethodGet,
+			URL:            fmt.Sprintf("/players/%s/online-status", target.ID),
+			ExpectedStatus: http.StatusOK,
+			TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				header, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, requester.Email)
+				scenario.Headers = []string{header}
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[presenceBody](t, res.Body.Bytes())
+				assert.NotNil(t, result.LastSeenAt)
+			},
+		}
+		scenario.Test(t)
+	})
+}
+
+func Test_GetPlayerPresence_Returns404ForUnknownPlayer(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := apis.SetupApi(t, ctx, db)
 		requester := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))
 
 		scenario := &apis.ApiScenario{
-			Name:            "player not found",
+			Name:            "not found",
 			Method:          http.MethodGet,
 			URL:             "/players/00000000-0000-0000-0000-000000000001/online-status",
 			ExpectedStatus:  http.StatusNotFound,
@@ -126,7 +207,7 @@ func Test_GetPlayerOnlineStatus_Returns404ForUnknownPlayer(t *testing.T) {
 	})
 }
 
-func Test_GetPlayerOnlineStatus_Requires401WithoutAuth(t *testing.T) {
+func Test_GetPlayerPresence_Requires401WithoutAuth(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := apis.SetupApi(t, ctx, db)
 		target := core.MustCreatePlayerWithOptions(t, testApi.App, core.WithPlayerRegistered(true))

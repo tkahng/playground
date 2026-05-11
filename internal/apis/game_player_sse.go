@@ -10,6 +10,7 @@ import (
 	humasse "github.com/danielgtaylor/huma/v2/sse"
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
+	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/notification"
@@ -48,6 +49,7 @@ func (api *Api) IssuePlayerSSETicketBind(humapi huma.API) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.SetCurrentPlayerMiddleware(api.App()),
 				middleware.RequireCurrentPlayerMiddelware(),
 			),
 			Errors: []int{http.StatusUnauthorized},
@@ -107,6 +109,19 @@ func playerSSETicketMiddleware(api *Api) func(http.Handler) http.Handler {
 	}
 }
 
+// stampLastSeenFromChannel extracts the player ID from an SSE channel string
+// and updates that player's last_seen_at. Errors are logged but not returned
+// because presence stamping is best-effort and must never block the SSE flow.
+func stampLastSeenFromChannel(app core.App, channel string) {
+	playerID, ok := sse.PlayerIDFromChannel(channel)
+	if !ok {
+		return
+	}
+	if err := app.Adapter().Gaming().UpdatePlayerLastSeen(context.Background(), playerID); err != nil {
+		slog.Warn("SSE presence: update last_seen_at failed", "player_id", playerID, "error", err)
+	}
+}
+
 func (api *Api) PlayerSseEventsBind(humapi huma.API) {
 	handler := sse.ServeSSE(
 		func(ctx context.Context, f func(any) error, input *PlayerSseInput) sse.Client {
@@ -117,8 +132,10 @@ func (api *Api) PlayerSseEventsBind(humapi huma.API) {
 		},
 		func(ctx context.Context, cf context.CancelFunc, c sse.Client) {
 			api.app.SseManager().RegisterClient(ctx, cf, c)
+			stampLastSeenFromChannel(api.app, c.Channel())
 		},
 		func(c sse.Client) {
+			stampLastSeenFromChannel(api.app, c.Channel())
 			api.app.SseManager().UnregisterClient(c)
 		},
 		30*time.Second,
