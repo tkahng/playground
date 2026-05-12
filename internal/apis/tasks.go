@@ -78,10 +78,11 @@ func fromModelTask(task *models.Task) *Task {
 }
 
 type CreateTaskProjectTaskDTO struct {
-	Name        string            `json:"name" required:"true"`
-	Description *string           `json:"description,omitempty" required:"false"`
-	Status      models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Rank        float64           `json:"rank,omitempty" required:"false"`
+	Name             string            `json:"name" required:"true"`
+	Description      *string           `json:"description,omitempty" required:"false"`
+	Status           models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	WorkflowStatusID *uuid.UUID        `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
+	Rank             float64           `json:"rank,omitempty" required:"false"`
 }
 
 type UpdateTaskInput struct {
@@ -215,6 +216,7 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 				previousStatus   models.TaskStatus
 				previousDueDate  *time.Time
 				previousAssignee *uuid.UUID
+				newStatus        models.TaskStatus
 			)
 
 			txErr := api.App().Adapter().RunInTx(ctx, func(tx stores.StorageAdapterInterface) error {
@@ -237,19 +239,22 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 				task.Name = input.Body.Name
 				task.Description = input.Body.Description
 				task.Status = models.TaskStatus(input.Body.Status)
+				task.WorkflowStatusID = input.Body.WorkflowStatusID
 				task.StartAt = input.Body.StartAt
 				task.EndAt = input.Body.EndAt
 				task.AssigneeID = input.Body.AssigneeID
 				task.ReporterID = input.Body.ReporterID
 				task.ParentID = input.Body.ParentID
 
-				return tx.Task().UpdateTask(ctx, task)
+				if err := tx.Task().UpdateTask(ctx, task); err != nil {
+					return err
+				}
+				newStatus = task.Status
+				return nil
 			})
 			if txErr != nil {
 				return nil, txErr
 			}
-
-			newStatus := models.TaskStatus(input.Body.Status)
 
 			newAssignee := previousAssignee == nil && input.Body.AssigneeID != nil
 			differentAssignee := previousAssignee != nil && input.Body.AssigneeID != nil && *previousAssignee != *input.Body.AssigneeID

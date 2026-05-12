@@ -70,19 +70,21 @@ func FromModelProject(task *models.TaskProject) *TaskProject {
 }
 
 type CreateTaskProjectDTO struct {
-	TeamID      uuid.UUID                `json:"team_id" required:"true" format:"uuid"`
-	MemberID    uuid.UUID                `json:"member_id" required:"true" format:"uuid"`
-	Name        string                   `json:"name" required:"true"`
-	Description *string                  `json:"description,omitempty" required:"false"`
-	Status      models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Rank        float64                  `json:"rank,omitempty" required:"false"`
+	TeamID           uuid.UUID                `json:"team_id" required:"true" format:"uuid"`
+	MemberID         uuid.UUID                `json:"member_id" required:"true" format:"uuid"`
+	Name             string                   `json:"name" required:"true"`
+	Description      *string                  `json:"description,omitempty" required:"false"`
+	Status           models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	WorkflowStatusID *uuid.UUID               `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
+	Rank             float64                  `json:"rank,omitempty" required:"false"`
 }
 
 type CreateTaskProjectWithoutTeamDTO struct {
-	Name        string                   `json:"name" required:"true"`
-	Description *string                  `json:"description,omitempty" required:"false"`
-	Status      models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Rank        float64                  `json:"rank,omitempty" required:"false"`
+	Name             string                   `json:"name" required:"true"`
+	Description      *string                  `json:"description,omitempty" required:"false"`
+	Status           models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	WorkflowStatusID *uuid.UUID               `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
+	Rank             float64                  `json:"rank,omitempty" required:"false"`
 }
 
 type CreateTaskProjectWithoutTeamWithTasks struct {
@@ -215,19 +217,21 @@ func (api *Api) TeamTaskProjectCreateBind(humaApi huma.API) {
 
 			taskProject, err := api.App().Adapter().Task().CreateTaskProjectWithTasks(ctx, &stores.CreateTaskProjectWithTasksDTO{
 				CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
-					TeamID:      parsedTeamID,
-					MemberID:    teamInfo.Member.ID,
-					Name:        input.Body.Name,
-					Description: input.Body.Description,
-					Status:      input.Body.Status,
-					Rank:        input.Body.Rank,
+					TeamID:           parsedTeamID,
+					MemberID:         teamInfo.Member.ID,
+					Name:             input.Body.Name,
+					Description:      input.Body.Description,
+					Status:           input.Body.Status,
+					WorkflowStatusID: input.Body.WorkflowStatusID,
+					Rank:             input.Body.Rank,
 				},
 				Tasks: mapper.Map(input.Body.Tasks, func(task CreateTaskProjectTaskDTO) stores.CreateTaskProjectTaskDTO {
 					return stores.CreateTaskProjectTaskDTO{
-						Name:        task.Name,
-						Description: task.Description,
-						Status:      models.TaskStatus(task.Status),
-						Rank:        task.Rank,
+						Name:             task.Name,
+						Description:      task.Description,
+						Status:           models.TaskStatus(task.Status),
+						WorkflowStatusID: task.WorkflowStatusID,
+						Rank:             task.Rank,
 					}
 				}),
 			})

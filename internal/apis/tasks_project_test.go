@@ -133,6 +133,36 @@ func TestApi_TeamTaskProjectCreate(t *testing.T) {
 			},
 		},
 		{
+			Name:           "success: create project with workflow status",
+			Method:         http.MethodPost,
+			URL:            "/teams/{team-id}/task-projects",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				core.CreateProjectAndTasks(t, app, &team1.Member)
+				doneStatusID := findWorkflowStatusID(t, app, team1.Team.ID, "project", "done")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/task-projects", team1.Team.ID.String())
+				scenario.Store.Set("workflow_status_id", doneStatusID)
+				scenario.Body = apis.JsonToReader(t, apis.CreateTaskProjectWithoutTeamWithTasks{
+					CreateTaskProjectWithoutTeamDTO: apis.CreateTaskProjectWithoutTeamDTO{
+						Name:             "New Project",
+						Status:           models.TaskProjectStatusTodo,
+						WorkflowStatusID: &doneStatusID,
+					},
+				})
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.TaskProject](t, res.Body.Bytes())
+				doneStatusID := scenario.Store.Get("workflow_status_id").(uuid.UUID)
+				assert.Equal(t, models.TaskProjectStatusDone, result.Status)
+				assert.Equal(t, doneStatusID, *result.WorkflowStatusID)
+			},
+		},
+		{
 			Name:            "fail: guest cannot create project",
 			Method:          http.MethodPost,
 			URL:             "/teams/{team-id}/task-projects",
@@ -169,6 +199,37 @@ func TestApi_TeamTaskProjectCreate(t *testing.T) {
 
 func TestApi_TeamTaskProjectPermissions(t *testing.T) {
 	tests := []apis.ApiScenario{
+		{
+			Name:           "success: owner can update project with workflow status",
+			Method:         http.MethodPut,
+			URL:            "/task-projects/{task-project-id}",
+			ExpectedStatus: http.StatusNoContent,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				project := core.CreateProjectAndTasks(t, app, &team1.Member)
+				doneStatusID := findWorkflowStatusID(t, app, team1.Team.ID, "project", "done")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/task-projects/%s", project.ID.String())
+				scenario.Store.Set("project_id", project.ID)
+				scenario.Store.Set("workflow_status_id", doneStatusID)
+				scenario.Body = apis.JsonToReader(t, stores.UpdateTaskProjectBaseDTO{
+					Name:             "Updated Project",
+					Status:           models.TaskProjectStatusTodo,
+					WorkflowStatusID: &doneStatusID,
+				})
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				projectID := scenario.Store.Get("project_id").(uuid.UUID)
+				doneStatusID := scenario.Store.Get("workflow_status_id").(uuid.UUID)
+				project, err := app.Adapter().Task().FindTaskProjectByID(t.Context(), projectID)
+				assert.NoError(t, err)
+				assert.Equal(t, models.TaskProjectStatusDone, project.Status)
+				assert.Equal(t, doneStatusID, *project.WorkflowStatusID)
+			},
+		},
 		{
 			Name:            "fail: member cannot update project",
 			Method:          http.MethodPut,
@@ -247,6 +308,34 @@ func TestApi_TeamTaskProjectTasksCreateReferences(t *testing.T) {
 			},
 		},
 		{
+			Name:           "success: create task with workflow status",
+			Method:         http.MethodPost,
+			URL:            "/task-projects/{task-project-id}",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				project := core.CreateProjectAndTasks(t, app, &team1.Member)
+				doneStatusID := findWorkflowStatusID(t, app, team1.Team.ID, "task", "done")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/task-projects/%s", project.ID.String())
+				scenario.Store.Set("workflow_status_id", doneStatusID)
+				scenario.Body = apis.JsonToReader(t, services.TaskFields{
+					Name:             "Task with done workflow status",
+					Status:           models.TaskStatusTodo,
+					WorkflowStatusID: &doneStatusID,
+				})
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.Task](t, res.Body.Bytes())
+				doneStatusID := scenario.Store.Get("workflow_status_id").(uuid.UUID)
+				assert.Equal(t, models.TaskStatusDone, result.Status)
+				assert.Equal(t, doneStatusID, *result.WorkflowStatusID)
+			},
+		},
+		{
 			Name:            "fail: guest cannot create task",
 			Method:          http.MethodPost,
 			URL:             "/task-projects/{task-project-id}",
@@ -301,4 +390,32 @@ func TestApi_TeamTaskProjectTasksCreateReferences(t *testing.T) {
 			tt.Test(t)
 		})
 	}
+}
+
+func findWorkflowStatusID(t testing.TB, app *core.BaseApp, teamID uuid.UUID, appliesTo string, slug string) uuid.UUID {
+	t.Helper()
+	workflows, err := app.Adapter().Task().ListWorkflows(t.Context(), &stores.WorkflowFilter{
+		TeamIds:   []uuid.UUID{teamID},
+		AppliesTo: []string{appliesTo},
+	})
+	if err != nil {
+		t.Fatalf("list workflows: %v", err)
+	}
+	workflowIds := make([]uuid.UUID, len(workflows))
+	for idx, workflow := range workflows {
+		workflowIds[idx] = workflow.ID
+	}
+	statuses, err := app.Adapter().Task().LoadWorkflowStatuses(t.Context(), workflowIds...)
+	if err != nil {
+		t.Fatalf("load workflow statuses: %v", err)
+	}
+	for _, group := range statuses {
+		for _, status := range group {
+			if status.Slug == slug {
+				return status.ID
+			}
+		}
+	}
+	t.Fatalf("workflow status %s/%s not found", appliesTo, slug)
+	return uuid.Nil
 }

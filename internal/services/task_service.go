@@ -20,6 +20,7 @@ type TaskFields struct {
 	Name              string            `json:"name" required:"true"`
 	Description       *string           `json:"description,omitempty" required:"false"`
 	Status            models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	WorkflowStatusID  *uuid.UUID        `db:"workflow_status_id" json:"workflow_status_id" nullable:"true" format:"uuid"`
 	StartAt           *time.Time        `db:"start_at" json:"start_at"  nullable:"true"`
 	EndAt             *time.Time        `db:"end_at" json:"end_at" nullable:"true"`
 	AssigneeID        *uuid.UUID        `db:"assignee_id" json:"assignee_id" nullable:"true"`
@@ -56,6 +57,7 @@ func (s *taskService) CreateTask(ctx context.Context, teamID uuid.UUID, projectI
 		Name:              input.Name,
 		Description:       input.Description,
 		Status:            models.TaskStatus(input.Status),
+		WorkflowStatusID:  input.WorkflowStatusID,
 		Rank:              input.Rank,
 		AssigneeID:        input.AssigneeID,
 		ReporterID:        input.ReporterID,

@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/core"
@@ -129,6 +130,40 @@ func TestApi_TeamTaskUpdate(t *testing.T) {
 				)
 				assert.Equal(t, input.AssigneeID, result.AssigneeID)
 				assert.Equal(t, input.ReporterID, result.ReporterID)
+			},
+		},
+		{
+			Name:           "success: update task with workflow status",
+			Method:         http.MethodPut,
+			URL:            "/tasks/{task-id}",
+			ExpectedStatus: http.StatusNoContent,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				project := core.CreateProjectAndTasks(t, app, &team1.Member)
+				task := repository.MustCreateOneCtx(t, t.Context(), repository.Task, app.Db(), &models.Task{
+					TeamID:    team1.Team.ID,
+					ProjectID: project.ID,
+					Status:    models.TaskStatusTodo,
+					Rank:      0,
+				})
+				doneStatusID := findWorkflowStatusID(t, app, team1.Team.ID, "task", "done")
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/tasks/%s", task.ID.String())
+				input := stores.UpdateTaskDto{
+					Name:             "updated with workflow status",
+					Status:           models.TaskStatusTodo,
+					WorkflowStatusID: &doneStatusID,
+				}
+				scenario.Store.Set("workflow_status_id", doneStatusID)
+				scenario.Body = apis.JsonToReader(t, input)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := repository.MustFindOneCtx(t, t.Context(), repository.Task, app.Db(), nil)
+				doneStatusID := scenario.Store.Get("workflow_status_id").(uuid.UUID)
+				assert.Equal(t, models.TaskStatusDone, result.Status)
+				assert.Equal(t, doneStatusID, *result.WorkflowStatusID)
 			},
 		},
 		{

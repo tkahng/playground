@@ -131,13 +131,12 @@ func (s *DbTaskStore) LoadWorkflowStatuses(ctx context.Context, workflowIds ...u
 }
 
 func (s *DbTaskStore) CreateTask(ctx context.Context, task *models.Task) (*models.Task, error) {
-	if task.WorkflowStatusID == nil && task.ProjectID != uuid.Nil {
-		workflowStatusID, err := s.findTaskWorkflowStatusID(ctx, task.ProjectID, task.Status)
-		if err != nil {
-			return nil, err
-		}
-		task.WorkflowStatusID = workflowStatusID
+	status, workflowStatusID, err := s.resolveTaskWorkflowStatus(ctx, task.ProjectID, task.WorkflowStatusID, task.Status)
+	if err != nil {
+		return nil, err
 	}
+	task.Status = status
+	task.WorkflowStatusID = workflowStatusID
 	return repository.Task.PostOne(ctx, s.db, task)
 }
 
@@ -227,14 +226,15 @@ func (*DbTaskStore) taskWhere(task *TaskFilter) *map[string]any {
 }
 
 type UpdateTaskDto struct {
-	Name        string            `db:"name" json:"name"`
-	Description *string           `db:"description" json:"description"`
-	Status      models.TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
-	StartAt     *time.Time        `db:"start_at" json:"start_at" nullable:"true"`
-	EndAt       *time.Time        `db:"end_at" json:"end_at" nullable:"true"`
-	AssigneeID  *uuid.UUID        `db:"assignee_id" json:"assignee_id" nullable:"true"`
-	ReporterID  *uuid.UUID        `db:"reporter_id" json:"reporter_id" nullable:"true"`
-	ParentID    *uuid.UUID        `db:"parent_id" json:"parent_id" nullable:"true"`
+	Name             string            `db:"name" json:"name"`
+	Description      *string           `db:"description" json:"description"`
+	Status           models.TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
+	WorkflowStatusID *uuid.UUID        `db:"workflow_status_id" json:"workflow_status_id" nullable:"true"`
+	StartAt          *time.Time        `db:"start_at" json:"start_at" nullable:"true"`
+	EndAt            *time.Time        `db:"end_at" json:"end_at" nullable:"true"`
+	AssigneeID       *uuid.UUID        `db:"assignee_id" json:"assignee_id" nullable:"true"`
+	ReporterID       *uuid.UUID        `db:"reporter_id" json:"reporter_id" nullable:"true"`
+	ParentID         *uuid.UUID        `db:"parent_id" json:"parent_id" nullable:"true"`
 }
 
 func (s *DbTaskStore) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *UpdateTaskDto) error {
@@ -249,6 +249,7 @@ func (s *DbTaskStore) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, i
 	task.Name = input.Name
 	task.Description = input.Description
 	task.Status = models.TaskStatus(input.Status)
+	task.WorkflowStatusID = input.WorkflowStatusID
 	task.StartAt = input.StartAt
 	task.EndAt = input.EndAt
 	task.AssigneeID = input.AssigneeID
@@ -262,10 +263,11 @@ func (s *DbTaskStore) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, i
 }
 
 func (s *DbTaskStore) UpdateTask(ctx context.Context, task *models.Task) error {
-	workflowStatusID, err := s.findTaskWorkflowStatusID(ctx, task.ProjectID, task.Status)
+	status, workflowStatusID, err := s.resolveTaskWorkflowStatus(ctx, task.ProjectID, task.WorkflowStatusID, task.Status)
 	if err != nil {
 		return err
 	}
+	task.Status = status
 	task.WorkflowStatusID = workflowStatusID
 	_, err = repository.Task.PutOne(ctx, s.db, task)
 	return err
@@ -715,12 +717,55 @@ func (s *DbTaskStore) findWorkflowStatusID(ctx context.Context, workflowID uuid.
 	return &id, nil
 }
 
+func (s *DbTaskStore) findWorkflowStatusByID(ctx context.Context, id uuid.UUID) (*models.WorkflowStatus, error) {
+	status, err := repository.WorkflowStatus.GetOne(
+		ctx,
+		s.db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": id,
+			},
+		},
+	)
+	return database.OptionalRow(status, err)
+}
+
+func (s *DbTaskStore) validateWorkflowStatus(ctx context.Context, id uuid.UUID, workflowID uuid.UUID) (*models.WorkflowStatus, error) {
+	status, err := s.findWorkflowStatusByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if status == nil {
+		return nil, apierrors.BadRequest("workflow status not found")
+	}
+	if status.WorkflowID != workflowID {
+		return nil, apierrors.BadRequest("workflow status must belong to the workflow")
+	}
+	return status, nil
+}
+
 func (s *DbTaskStore) findProjectWorkflowStatusID(ctx context.Context, teamID uuid.UUID, memberID *uuid.UUID, status models.TaskProjectStatus) (*uuid.UUID, error) {
 	workflow, err := s.ensureDefaultWorkflow(ctx, teamID, memberID, workflowAppliesToProject)
 	if err != nil {
 		return nil, err
 	}
 	return s.findWorkflowStatusID(ctx, workflow.ID, string(status))
+}
+
+func (s *DbTaskStore) resolveProjectWorkflowStatus(ctx context.Context, teamID uuid.UUID, memberID *uuid.UUID, workflowStatusID *uuid.UUID, status models.TaskProjectStatus) (models.TaskProjectStatus, *uuid.UUID, error) {
+	workflow, err := s.ensureDefaultWorkflow(ctx, teamID, memberID, workflowAppliesToProject)
+	if err != nil {
+		return status, nil, err
+	}
+	if workflowStatusID == nil {
+		id, err := s.findWorkflowStatusID(ctx, workflow.ID, string(status))
+		return status, id, err
+	}
+	workflowStatus, err := s.validateWorkflowStatus(ctx, *workflowStatusID, workflow.ID)
+	if err != nil {
+		return status, nil, err
+	}
+	return models.TaskProjectStatus(workflowStatus.Category), workflowStatusID, nil
 }
 
 func (s *DbTaskStore) findTaskWorkflowStatusID(ctx context.Context, projectID uuid.UUID, status models.TaskStatus) (*uuid.UUID, error) {
@@ -746,12 +791,43 @@ func (s *DbTaskStore) findTaskWorkflowStatusID(ctx context.Context, projectID uu
 	return s.findWorkflowStatusID(ctx, *workflowID, string(status))
 }
 
+func (s *DbTaskStore) resolveTaskWorkflowStatus(ctx context.Context, projectID uuid.UUID, workflowStatusID *uuid.UUID, status models.TaskStatus) (models.TaskStatus, *uuid.UUID, error) {
+	project, err := s.FindTaskProjectByID(ctx, projectID)
+	if err != nil {
+		return status, nil, err
+	}
+	if project == nil {
+		return status, nil, apierrors.NotFound("task project not found")
+	}
+	workflowID := project.WorkflowID
+	if workflowID == nil {
+		workflow, err := s.ensureDefaultWorkflow(ctx, project.TeamID, project.CreatedByMemberID, workflowAppliesToTask)
+		if err != nil {
+			return status, nil, err
+		}
+		workflowID = &workflow.ID
+		project.WorkflowID = workflowID
+		if _, err := repository.TaskProject.PutOne(ctx, s.db, project); err != nil {
+			return status, nil, err
+		}
+	}
+	if workflowStatusID == nil {
+		id, err := s.findWorkflowStatusID(ctx, *workflowID, string(status))
+		return status, id, err
+	}
+	workflowStatus, err := s.validateWorkflowStatus(ctx, *workflowStatusID, *workflowID)
+	if err != nil {
+		return status, nil, err
+	}
+	return models.TaskStatus(workflowStatus.Category), workflowStatusID, nil
+}
+
 func (s *DbTaskStore) CreateTaskProject(ctx context.Context, input *CreateTaskProjectDTO) (*models.TaskProject, error) {
 	taskWorkflow, err := s.ensureDefaultWorkflow(ctx, input.TeamID, &input.MemberID, workflowAppliesToTask)
 	if err != nil {
 		return nil, err
 	}
-	projectWorkflowStatusID, err := s.findProjectWorkflowStatusID(ctx, input.TeamID, &input.MemberID, input.Status)
+	projectStatus, projectWorkflowStatusID, err := s.resolveProjectWorkflowStatus(ctx, input.TeamID, &input.MemberID, input.WorkflowStatusID, input.Status)
 	if err != nil {
 		return nil, err
 	}
@@ -762,7 +838,7 @@ func (s *DbTaskStore) CreateTaskProject(ctx context.Context, input *CreateTaskPr
 		WorkflowStatusID:  projectWorkflowStatusID,
 		Name:              input.Name,
 		Description:       input.Description,
-		Status:            models.TaskProjectStatus(input.Status),
+		Status:            projectStatus,
 		Rank:              input.Rank,
 	}
 	projects, err := repository.TaskProject.PostOne(ctx, s.db, &taskProject)
@@ -773,18 +849,20 @@ func (s *DbTaskStore) CreateTaskProject(ctx context.Context, input *CreateTaskPr
 }
 
 type CreateTaskProjectDTO struct {
-	TeamID      uuid.UUID                `json:"team_id" required:"true" format:"uuid"`
-	MemberID    uuid.UUID                `json:"member_id" required:"true" format:"uuid"`
-	Name        string                   `json:"name" required:"true"`
-	Description *string                  `json:"description,omitempty" required:"false"`
-	Status      models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Rank        float64                  `json:"rank,omitempty" required:"false"`
+	TeamID           uuid.UUID                `json:"team_id" required:"true" format:"uuid"`
+	MemberID         uuid.UUID                `json:"member_id" required:"true" format:"uuid"`
+	Name             string                   `json:"name" required:"true"`
+	Description      *string                  `json:"description,omitempty" required:"false"`
+	Status           models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	WorkflowStatusID *uuid.UUID               `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
+	Rank             float64                  `json:"rank,omitempty" required:"false"`
 }
 type CreateTaskProjectTaskDTO struct {
-	Name        string            `json:"name" required:"true"`
-	Description *string           `json:"description,omitempty" required:"false"`
-	Status      models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Rank        float64           `json:"rank,omitempty" required:"false"`
+	Name             string            `json:"name" required:"true"`
+	Description      *string           `json:"description,omitempty" required:"false"`
+	Status           models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	WorkflowStatusID *uuid.UUID        `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
+	Rank             float64           `json:"rank,omitempty" required:"false"`
 }
 type CreateTaskProjectWithTasksDTO struct {
 	CreateTaskProjectDTO
@@ -825,6 +903,7 @@ func (s *DbTaskStore) CreateTaskFromInput(ctx context.Context, teamID uuid.UUID,
 		Name:              input.Name,
 		Description:       input.Description,
 		Status:            models.TaskStatus(input.Status),
+		WorkflowStatusID:  input.WorkflowStatusID,
 		Rank:              input.Rank,
 	}
 	task, err := s.CreateTask(ctx, &setter)
@@ -955,11 +1034,12 @@ func (s *DbTaskStore) UpdateTaskProjectUpdateDate(ctx context.Context, taskProje
 }
 
 type UpdateTaskProjectBaseDTO struct {
-	Name        string                   `json:"name" required:"true"`
-	Description *string                  `json:"description,omitempty" required:"false"`
-	Status      models.TaskProjectStatus `json:"status" enum:"todo,in_progress,done"`
-	Rank        float64                  `json:"rank"`
-	Position    *int64                   `json:"position,omitempty" required:"false"`
+	Name             string                   `json:"name" required:"true"`
+	Description      *string                  `json:"description,omitempty" required:"false"`
+	Status           models.TaskProjectStatus `json:"status" enum:"todo,in_progress,done"`
+	WorkflowStatusID *uuid.UUID               `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
+	Rank             float64                  `json:"rank"`
+	Position         *int64                   `json:"position,omitempty" required:"false"`
 }
 
 func (s *DbTaskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.UUID, input *UpdateTaskProjectBaseDTO) error {
@@ -973,10 +1053,12 @@ func (s *DbTaskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.
 	taskProject.Name = input.Name
 	taskProject.Description = input.Description
 	taskProject.Status = models.TaskProjectStatus(input.Status)
-	workflowStatusID, err := s.findProjectWorkflowStatusID(ctx, taskProject.TeamID, taskProject.CreatedByMemberID, taskProject.Status)
+	status, workflowStatusID, err := s.resolveProjectWorkflowStatus(ctx, taskProject.TeamID, taskProject.CreatedByMemberID, input.WorkflowStatusID, taskProject.Status)
 	if err != nil {
 		return err
 	}
+	taskProject.Status = status
+	input.Status = status
 	taskProject.WorkflowStatusID = workflowStatusID
 	taskProject.Rank = input.Rank
 	_, err = repository.TaskProject.PutOne(ctx, s.db, taskProject)
