@@ -24,6 +24,8 @@ type TaskDecorator struct {
 	FindTaskFunc                    func(ctx context.Context, task *TaskFilter) (*models.Task, error)
 	FindTaskByIDFunc                func(ctx context.Context, id uuid.UUID) (*models.Task, error)
 	FindTaskProjectByIDFunc         func(ctx context.Context, id uuid.UUID) (*models.TaskProject, error)
+	FindWorkflowByIDFunc            func(ctx context.Context, id uuid.UUID) (*models.Workflow, error)
+	FindWorkflowStatusByIDFunc      func(ctx context.Context, id uuid.UUID) (*models.WorkflowStatus, error)
 	GetTaskFirstPositionFunc        func(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskLastPositionFunc         func(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskPositionsFunc            func(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID, offset int64) ([]float64, error)
@@ -31,6 +33,8 @@ type TaskDecorator struct {
 	ListTaskProjectsFunc            func(ctx context.Context, input *TaskProjectsFilter) ([]*models.TaskProject, error)
 	ListTasksFunc                   func(ctx context.Context, input *TaskFilter) ([]*models.Task, error)
 	LoadWorkflowStatusesFunc        func(ctx context.Context, workflowIds ...uuid.UUID) ([][]*models.WorkflowStatus, error)
+	CreateWorkflowStatusFunc        func(ctx context.Context, workflowID uuid.UUID, input *CreateWorkflowStatusDTO) (*models.WorkflowStatus, error)
+	UpdateWorkflowStatusFunc        func(ctx context.Context, workflowStatusID uuid.UUID, input *UpdateWorkflowStatusDTO) (*models.WorkflowStatus, error)
 	LoadTaskProjectsTasksFunc       func(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error)
 	TaskWhereFunc                   func(task *TaskFilter) *map[string]any
 	UpdateTaskFunc                  func(ctx context.Context, task *models.Task) error
@@ -162,6 +166,26 @@ func (t *TaskDecorator) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (
 	return t.Delegate.FindTaskProjectByID(ctx, id)
 }
 
+func (t *TaskDecorator) FindWorkflowByID(ctx context.Context, id uuid.UUID) (*models.Workflow, error) {
+	if t.FindWorkflowByIDFunc != nil {
+		return t.FindWorkflowByIDFunc(ctx, id)
+	}
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.FindWorkflowByID(ctx, id)
+}
+
+func (t *TaskDecorator) FindWorkflowStatusByID(ctx context.Context, id uuid.UUID) (*models.WorkflowStatus, error) {
+	if t.FindWorkflowStatusByIDFunc != nil {
+		return t.FindWorkflowStatusByIDFunc(ctx, id)
+	}
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.FindWorkflowStatusByID(ctx, id)
+}
+
 // GetTaskFirstPosition implements DbTaskStoreInterface.
 func (t *TaskDecorator) GetTaskFirstPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error) {
 	if t.GetTaskFirstPositionFunc != nil {
@@ -235,6 +259,26 @@ func (t *TaskDecorator) LoadWorkflowStatuses(ctx context.Context, workflowIds ..
 		return nil, ErrDelegateNil
 	}
 	return t.Delegate.LoadWorkflowStatuses(ctx, workflowIds...)
+}
+
+func (t *TaskDecorator) CreateWorkflowStatus(ctx context.Context, workflowID uuid.UUID, input *CreateWorkflowStatusDTO) (*models.WorkflowStatus, error) {
+	if t.CreateWorkflowStatusFunc != nil {
+		return t.CreateWorkflowStatusFunc(ctx, workflowID, input)
+	}
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.CreateWorkflowStatus(ctx, workflowID, input)
+}
+
+func (t *TaskDecorator) UpdateWorkflowStatus(ctx context.Context, workflowStatusID uuid.UUID, input *UpdateWorkflowStatusDTO) (*models.WorkflowStatus, error) {
+	if t.UpdateWorkflowStatusFunc != nil {
+		return t.UpdateWorkflowStatusFunc(ctx, workflowStatusID, input)
+	}
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.UpdateWorkflowStatus(ctx, workflowStatusID, input)
 }
 
 // LoadTaskProjectsTasks implements DbTaskStoreInterface.

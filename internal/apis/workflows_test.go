@@ -7,12 +7,15 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
+	"github.com/tkahng/playground/internal/tools/types"
 )
 
 func TestApi_TeamWorkflowList(t *testing.T) {
@@ -102,4 +105,177 @@ func assertWorkflowStatuses(t testing.TB, workflows []*apis.Workflow, appliesTo 
 		assert.Equal(t, models.TaskStatusInProgress, models.TaskStatus(workflow.Statuses[1].Slug))
 		assert.Equal(t, models.TaskStatusDone, models.TaskStatus(workflow.Statuses[2].Slug))
 	}
+}
+
+func TestApi_TeamWorkflowStatusCreate(t *testing.T) {
+	tests := []apis.ApiScenario{
+		{
+			Name:           "success: owner can create workflow status",
+			Method:         http.MethodPost,
+			URL:            "/teams/{team-id}/workflows/{workflow-id}/statuses",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				workflowID := findWorkflowID(t, app, team.Team.ID, "task")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses", team.Team.ID, workflowID)
+				scenario.Body = apis.JsonToReader(t, stores.CreateWorkflowStatusDTO{
+					Name:        "Code review",
+					Description: types.Pointer("Ready for peer review."),
+					Category:    string(models.TaskStatusInProgress),
+					Color:       types.Pointer("#7c3aed"),
+				})
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.WorkflowStatus](t, res.Body.Bytes())
+				assert.Equal(t, "Code review", result.Name)
+				assert.Equal(t, "code-review", result.Slug)
+				assert.Equal(t, string(models.TaskStatusInProgress), result.Category)
+				assert.Equal(t, float64(4000), result.Rank)
+				assert.False(t, result.IsCompleted)
+			},
+		},
+		{
+			Name:            "fail: member cannot create workflow status",
+			Method:          http.MethodPost,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses",
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				memberUser := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				core.CreateTeamMemberWithOptions(t, app, team.Team.ID, memberUser.User.ID, core.TeamWithRole(models.TeamMemberRoleMember))
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				workflowID := findWorkflowID(t, app, team.Team.ID, "task")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, memberUser.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses", team.Team.ID, workflowID)
+				scenario.Body = apis.JsonToReader(t, stores.CreateWorkflowStatusDTO{
+					Name:     "Blocked",
+					Category: string(models.TaskStatusInProgress),
+				})
+			},
+		},
+		{
+			Name:            "fail: cannot create workflow status for another team workflow",
+			Method:          http.MethodPost,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses",
+			ExpectedStatus:  http.StatusNotFound,
+			ExpectedContent: []string{"workflow not found"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				otherOwner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				otherTeam := core.CreateTeamAndMemberWithOptions(t, app, &otherOwner.User)
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				core.CreateProjectAndTasks(t, app, &otherTeam.Member)
+				otherWorkflowID := findWorkflowID(t, app, otherTeam.Team.ID, "task")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses", team.Team.ID, otherWorkflowID)
+				scenario.Body = apis.JsonToReader(t, stores.CreateWorkflowStatusDTO{
+					Name:     "Blocked",
+					Category: string(models.TaskStatusInProgress),
+				})
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
+				return testApi
+			}
+			tt.Test(t)
+		})
+	}
+}
+
+func TestApi_TeamWorkflowStatusUpdate(t *testing.T) {
+	tests := []apis.ApiScenario{
+		{
+			Name:           "success: owner can update workflow status",
+			Method:         http.MethodPut,
+			URL:            "/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				workflowID := findWorkflowID(t, app, team.Team.ID, "task")
+				statusID := findWorkflowStatusID(t, app, team.Team.ID, "task", "in_progress")
+				rank := 1500.0
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses/%s", team.Team.ID, workflowID, statusID)
+				scenario.Body = apis.JsonToReader(t, stores.UpdateWorkflowStatusDTO{
+					Name:     types.Pointer("Doing"),
+					Slug:     types.Pointer("doing"),
+					Category: types.Pointer(string(models.TaskStatusInProgress)),
+					Rank:     &rank,
+				})
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.WorkflowStatus](t, res.Body.Bytes())
+				assert.Equal(t, "Doing", result.Name)
+				assert.Equal(t, "doing", result.Slug)
+				assert.Equal(t, float64(1500), result.Rank)
+			},
+		},
+		{
+			Name:            "fail: member cannot update workflow status",
+			Method:          http.MethodPut,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				memberUser := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				core.CreateTeamMemberWithOptions(t, app, team.Team.ID, memberUser.User.ID, core.TeamWithRole(models.TeamMemberRoleMember))
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				workflowID := findWorkflowID(t, app, team.Team.ID, "task")
+				statusID := findWorkflowStatusID(t, app, team.Team.ID, "task", "in_progress")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, memberUser.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses/%s", team.Team.ID, workflowID, statusID)
+				scenario.Body = apis.JsonToReader(t, stores.UpdateWorkflowStatusDTO{
+					Name: types.Pointer("Doing"),
+				})
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
+				return testApi
+			}
+			tt.Test(t)
+		})
+	}
+}
+
+func findWorkflowID(t testing.TB, app *core.BaseApp, teamID uuid.UUID, appliesTo string) uuid.UUID {
+	t.Helper()
+	workflows, err := app.Adapter().Task().ListWorkflows(t.Context(), &stores.WorkflowFilter{
+		TeamIds:   []uuid.UUID{teamID},
+		AppliesTo: []string{appliesTo},
+	})
+	if err != nil {
+		t.Fatalf("list workflows: %v", err)
+	}
+	if len(workflows) == 0 {
+		t.Fatalf("workflow not found: %s", appliesTo)
+	}
+	return workflows[0].ID
 }

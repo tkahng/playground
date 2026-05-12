@@ -16,6 +16,7 @@ import (
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/tools/mapper"
+	"github.com/tkahng/playground/internal/tools/slug"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
@@ -35,6 +36,8 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error)
 	FindTaskByIDForUpdate(ctx context.Context, id uuid.UUID) (*models.Task, error)
 	FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error)
+	FindWorkflowByID(ctx context.Context, id uuid.UUID) (*models.Workflow, error)
+	FindWorkflowStatusByID(ctx context.Context, id uuid.UUID) (*models.WorkflowStatus, error)
 	GetTaskFirstPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskLastPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskPositions(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID, offset int64) ([]float64, error)
@@ -42,6 +45,8 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	ListTaskProjects(ctx context.Context, input *TaskProjectsFilter) ([]*models.TaskProject, error)
 	ListTasks(ctx context.Context, input *TaskFilter) ([]*models.Task, error)
 	LoadWorkflowStatuses(ctx context.Context, workflowIds ...uuid.UUID) ([][]*models.WorkflowStatus, error)
+	CreateWorkflowStatus(ctx context.Context, workflowID uuid.UUID, input *CreateWorkflowStatusDTO) (*models.WorkflowStatus, error)
+	UpdateWorkflowStatus(ctx context.Context, workflowStatusID uuid.UUID, input *UpdateWorkflowStatusDTO) (*models.WorkflowStatus, error)
 	LoadTaskProjectsTasks(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error)
 	taskWhere(task *TaskFilter) *map[string]any
 	UpdateTask(ctx context.Context, task *models.Task) error
@@ -128,6 +133,136 @@ func (s *DbTaskStore) LoadWorkflowStatuses(ctx context.Context, workflowIds ...u
 	return mapper.MapToManyPointer(statuses, workflowIds, func(status *models.WorkflowStatus) uuid.UUID {
 		return status.WorkflowID
 	}), nil
+}
+
+type CreateWorkflowStatusDTO struct {
+	Name        string   `json:"name" required:"true" minLength:"1"`
+	Slug        *string  `json:"slug,omitempty" required:"false"`
+	Description *string  `json:"description,omitempty" required:"false"`
+	Category    string   `json:"category" required:"true" enum:"todo,in_progress,done"`
+	Color       *string  `json:"color,omitempty" required:"false"`
+	Rank        *float64 `json:"rank,omitempty" required:"false"`
+	IsCompleted *bool    `json:"is_completed,omitempty" required:"false"`
+}
+
+type UpdateWorkflowStatusDTO struct {
+	Name        *string  `json:"name,omitempty" required:"false" minLength:"1"`
+	Slug        *string  `json:"slug,omitempty" required:"false"`
+	Description *string  `json:"description,omitempty" required:"false"`
+	Category    *string  `json:"category,omitempty" required:"false" enum:"todo,in_progress,done"`
+	Color       *string  `json:"color,omitempty" required:"false"`
+	Rank        *float64 `json:"rank,omitempty" required:"false"`
+	IsCompleted *bool    `json:"is_completed,omitempty" required:"false"`
+}
+
+func (s *DbTaskStore) FindWorkflowByID(ctx context.Context, id uuid.UUID) (*models.Workflow, error) {
+	workflow, err := repository.Workflow.GetOne(
+		ctx,
+		s.db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": id,
+			},
+		},
+	)
+	return database.OptionalRow(workflow, err)
+}
+
+func (s *DbTaskStore) FindWorkflowStatusByID(ctx context.Context, id uuid.UUID) (*models.WorkflowStatus, error) {
+	return s.findWorkflowStatusByID(ctx, id)
+}
+
+func (s *DbTaskStore) CreateWorkflowStatus(ctx context.Context, workflowID uuid.UUID, input *CreateWorkflowStatusDTO) (*models.WorkflowStatus, error) {
+	if input == nil {
+		return nil, apierrors.BadRequest("workflow status input is required")
+	}
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, apierrors.BadRequest("workflow status name is required")
+	}
+	category, err := normalizeWorkflowStatusCategory(input.Category)
+	if err != nil {
+		return nil, err
+	}
+	statusSlug := slug.NewSlug(name)
+	if input.Slug != nil {
+		statusSlug = slug.NewSlug(*input.Slug)
+	}
+	if statusSlug == "" {
+		return nil, apierrors.BadRequest("workflow status slug is required")
+	}
+	rank := input.Rank
+	if rank == nil {
+		nextRank, err := s.nextWorkflowStatusRank(ctx, workflowID)
+		if err != nil {
+			return nil, err
+		}
+		rank = &nextRank
+	}
+	isCompleted := category == string(models.TaskStatusDone)
+	if input.IsCompleted != nil {
+		isCompleted = *input.IsCompleted
+	}
+	return repository.WorkflowStatus.PostOne(ctx, s.db, &models.WorkflowStatus{
+		WorkflowID:  workflowID,
+		Name:        name,
+		Slug:        statusSlug,
+		Description: input.Description,
+		Category:    category,
+		Color:       input.Color,
+		Rank:        *rank,
+		IsCompleted: isCompleted,
+	})
+}
+
+func (s *DbTaskStore) UpdateWorkflowStatus(ctx context.Context, workflowStatusID uuid.UUID, input *UpdateWorkflowStatusDTO) (*models.WorkflowStatus, error) {
+	if input == nil {
+		return nil, apierrors.BadRequest("workflow status input is required")
+	}
+	status, err := s.findWorkflowStatusByID(ctx, workflowStatusID)
+	if err != nil {
+		return nil, err
+	}
+	if status == nil {
+		return nil, apierrors.NotFound("workflow status not found")
+	}
+	if input.Name != nil {
+		name := strings.TrimSpace(*input.Name)
+		if name == "" {
+			return nil, apierrors.BadRequest("workflow status name is required")
+		}
+		status.Name = name
+	}
+	if input.Slug != nil {
+		statusSlug := slug.NewSlug(*input.Slug)
+		if statusSlug == "" {
+			return nil, apierrors.BadRequest("workflow status slug is required")
+		}
+		status.Slug = statusSlug
+	}
+	if input.Description != nil {
+		status.Description = input.Description
+	}
+	if input.Category != nil {
+		category, err := normalizeWorkflowStatusCategory(*input.Category)
+		if err != nil {
+			return nil, err
+		}
+		status.Category = category
+		if input.IsCompleted == nil {
+			status.IsCompleted = category == string(models.TaskStatusDone)
+		}
+	}
+	if input.Color != nil {
+		status.Color = input.Color
+	}
+	if input.Rank != nil {
+		status.Rank = *input.Rank
+	}
+	if input.IsCompleted != nil {
+		status.IsCompleted = *input.IsCompleted
+	}
+	return repository.WorkflowStatus.PutOne(ctx, s.db, status)
 }
 
 func (s *DbTaskStore) CreateTask(ctx context.Context, task *models.Task) (*models.Task, error) {
@@ -715,6 +850,29 @@ func (s *DbTaskStore) findWorkflowStatusID(ctx context.Context, workflowID uuid.
 		return nil, pgx.ErrNoRows
 	}
 	return &id, nil
+}
+
+func normalizeWorkflowStatusCategory(category string) (string, error) {
+	category = strings.TrimSpace(category)
+	if slices.Contains([]string{
+		string(models.TaskStatusTodo),
+		string(models.TaskStatusInProgress),
+		string(models.TaskStatusDone),
+	}, category) {
+		return category, nil
+	}
+	return "", apierrors.BadRequest("workflow status category must be todo, in_progress, or done")
+}
+
+func (s *DbTaskStore) nextWorkflowStatusRank(ctx context.Context, workflowID uuid.UUID) (float64, error) {
+	q := squirrel.Select("coalesce(max(rank), 0) + 1000").
+		From(repository.WorkflowStatusBuilder.TableName()).
+		Where(squirrel.Eq{
+			"workflow_id": workflowID,
+		}).
+		PlaceholderFormat(squirrel.Dollar)
+
+	return database.PgxQuerySingleScalar[float64](ctx, s.db, q)
 }
 
 func (s *DbTaskStore) findWorkflowStatusByID(ctx context.Context, id uuid.UUID) (*models.WorkflowStatus, error) {
