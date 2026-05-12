@@ -58,6 +58,8 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *UpdateTaskDto) error
 	FindTasksDueToday(ctx context.Context) ([]*models.Task, error)
 	FindTasksOverdue(ctx context.Context) ([]*models.Task, error)
+	CreateWorkflow(ctx context.Context, input *CreateWorkflowDTO) (*models.Workflow, error)
+	UpdateWorkflow(ctx context.Context, workflowID uuid.UUID, input *UpdateWorkflowDTO) (*models.Workflow, error)
 }
 
 type DbTaskStore struct {
@@ -77,6 +79,19 @@ type WorkflowFilter struct {
 	TeamIds   []uuid.UUID `query:"team_ids,omitempty" json:"team_ids,omitempty" format:"uuid" required:"false"`
 	AppliesTo []string    `query:"applies_to,omitempty" json:"applies_to,omitempty" required:"false"`
 	IsDefault *bool       `query:"is_default,omitempty" json:"is_default,omitempty" required:"false"`
+}
+
+type CreateWorkflowDTO struct {
+	TeamID            uuid.UUID  `json:"team_id" required:"true" format:"uuid"`
+	CreatedByMemberID *uuid.UUID `json:"created_by_member_id,omitempty" required:"false" format:"uuid"`
+	AppliesTo         string     `json:"applies_to" required:"true" enum:"project,task"`
+	Name              string     `json:"name" required:"true" minLength:"1"`
+	Description       *string    `json:"description,omitempty" required:"false"`
+}
+
+type UpdateWorkflowDTO struct {
+	Name        *string `json:"name,omitempty" required:"false" minLength:"1"`
+	Description *string `json:"description,omitempty" required:"false"`
 }
 
 func (s *DbTaskStore) ListWorkflows(ctx context.Context, filter *WorkflowFilter) ([]*models.Workflow, error) {
@@ -133,6 +148,60 @@ func (s *DbTaskStore) LoadWorkflowStatuses(ctx context.Context, workflowIds ...u
 	return mapper.MapToManyPointer(statuses, workflowIds, func(status *models.WorkflowStatus) uuid.UUID {
 		return status.WorkflowID
 	}), nil
+}
+
+func (s *DbTaskStore) CreateWorkflow(ctx context.Context, input *CreateWorkflowDTO) (*models.Workflow, error) {
+	if input == nil {
+		return nil, apierrors.BadRequest("workflow input is required")
+	}
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, apierrors.BadRequest("workflow name is required")
+	}
+	appliesTo, err := normalizeWorkflowAppliesTo(input.AppliesTo)
+	if err != nil {
+		return nil, err
+	}
+	workflow, err := repository.Workflow.PostOne(ctx, s.db, &models.Workflow{
+		TeamID:            input.TeamID,
+		CreatedByMemberID: input.CreatedByMemberID,
+		AppliesTo:         appliesTo,
+		Name:              name,
+		Description:       input.Description,
+		IsDefault:         false,
+	})
+	if database.IsUniqConstraintErr(err) {
+		return nil, apierrors.Conflict("workflow already exists")
+	}
+	return workflow, err
+}
+
+func (s *DbTaskStore) UpdateWorkflow(ctx context.Context, workflowID uuid.UUID, input *UpdateWorkflowDTO) (*models.Workflow, error) {
+	if input == nil {
+		return nil, apierrors.BadRequest("workflow input is required")
+	}
+	workflow, err := s.FindWorkflowByID(ctx, workflowID)
+	if err != nil {
+		return nil, err
+	}
+	if workflow == nil {
+		return nil, apierrors.NotFound("workflow not found")
+	}
+	if input.Name != nil {
+		name := strings.TrimSpace(*input.Name)
+		if name == "" {
+			return nil, apierrors.BadRequest("workflow name is required")
+		}
+		workflow.Name = name
+	}
+	if input.Description != nil {
+		workflow.Description = input.Description
+	}
+	updated, err := repository.Workflow.PutOne(ctx, s.db, workflow)
+	if database.IsUniqConstraintErr(err) {
+		return nil, apierrors.Conflict("workflow already exists")
+	}
+	return updated, err
 }
 
 type CreateWorkflowStatusDTO struct {
@@ -202,7 +271,7 @@ func (s *DbTaskStore) CreateWorkflowStatus(ctx context.Context, workflowID uuid.
 	if input.IsCompleted != nil {
 		isCompleted = *input.IsCompleted
 	}
-	return repository.WorkflowStatus.PostOne(ctx, s.db, &models.WorkflowStatus{
+	status, err := repository.WorkflowStatus.PostOne(ctx, s.db, &models.WorkflowStatus{
 		WorkflowID:  workflowID,
 		Name:        name,
 		Slug:        statusSlug,
@@ -212,6 +281,10 @@ func (s *DbTaskStore) CreateWorkflowStatus(ctx context.Context, workflowID uuid.
 		Rank:        *rank,
 		IsCompleted: isCompleted,
 	})
+	if database.IsUniqConstraintErr(err) {
+		return nil, apierrors.Conflict("workflow status already exists")
+	}
+	return status, err
 }
 
 func (s *DbTaskStore) UpdateWorkflowStatus(ctx context.Context, workflowStatusID uuid.UUID, input *UpdateWorkflowStatusDTO) (*models.WorkflowStatus, error) {
@@ -261,7 +334,11 @@ func (s *DbTaskStore) UpdateWorkflowStatus(ctx context.Context, workflowStatusID
 	if input.IsCompleted != nil {
 		status.IsCompleted = *input.IsCompleted
 	}
-	return repository.WorkflowStatus.PutOne(ctx, s.db, status)
+	updated, err := repository.WorkflowStatus.PutOne(ctx, s.db, status)
+	if database.IsUniqConstraintErr(err) {
+		return nil, apierrors.Conflict("workflow status already exists")
+	}
+	return updated, err
 }
 
 func (s *DbTaskStore) CreateTask(ctx context.Context, task *models.Task) (*models.Task, error) {
@@ -858,6 +935,14 @@ func normalizeWorkflowStatusCategory(category string) (string, error) {
 		return category, nil
 	}
 	return "", apierrors.BadRequest("workflow status category must be todo, in_progress, or done")
+}
+
+func normalizeWorkflowAppliesTo(appliesTo string) (string, error) {
+	appliesTo = strings.TrimSpace(appliesTo)
+	if slices.Contains([]string{workflowAppliesToProject, workflowAppliesToTask}, appliesTo) {
+		return appliesTo, nil
+	}
+	return "", apierrors.BadRequest("workflow applies_to must be project or task")
 }
 
 func (s *DbTaskStore) nextWorkflowStatusRank(ctx context.Context, workflowID uuid.UUID) (float64, error) {

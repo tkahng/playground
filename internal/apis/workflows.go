@@ -92,6 +92,27 @@ type WorkflowListResponse struct {
 	Body []*Workflow
 }
 
+type WorkflowCreateParams struct {
+	TeamID string                   `path:"team-id" required:"true" format:"uuid"`
+	Body   WorkflowCreateRequestDTO `required:"true"`
+}
+
+type WorkflowUpdateParams struct {
+	TeamID     string                   `path:"team-id" required:"true" format:"uuid"`
+	WorkflowID string                   `path:"workflow-id" required:"true" format:"uuid"`
+	Body       stores.UpdateWorkflowDTO `required:"true"`
+}
+
+type WorkflowCreateRequestDTO struct {
+	AppliesTo   string  `json:"applies_to" required:"true" enum:"project,task"`
+	Name        string  `json:"name" required:"true" minLength:"1"`
+	Description *string `json:"description,omitempty" required:"false"`
+}
+
+type WorkflowResponse struct {
+	Body *Workflow
+}
+
 type WorkflowStatusCreateParams struct {
 	TeamID     string                         `path:"team-id" required:"true" format:"uuid"`
 	WorkflowID string                         `path:"workflow-id" required:"true" format:"uuid"`
@@ -156,6 +177,89 @@ func (api *Api) TeamWorkflowListBind(humaApi huma.API) {
 			return &WorkflowListResponse{
 				Body: mapper.Map(workflows, fromModelWorkflow),
 			}, nil
+		},
+	)
+}
+
+func (api *Api) TeamWorkflowCreateBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "workflow-create",
+			Method:      http.MethodPost,
+			Path:        "/teams/{team-id}/workflows",
+			Summary:     "Workflow create",
+			Description: "Create a team workflow",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusBadRequest, http.StatusForbidden, http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionWorkflowManage),
+			),
+		},
+		func(ctx context.Context, input *WorkflowCreateParams) (*WorkflowResponse, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("Unauthorized")
+			}
+			workflow, err := api.App().Adapter().Task().CreateWorkflow(ctx, &stores.CreateWorkflowDTO{
+				TeamID:            teamInfo.Team.ID,
+				CreatedByMemberID: &teamInfo.Member.ID,
+				AppliesTo:         input.Body.AppliesTo,
+				Name:              input.Body.Name,
+				Description:       input.Body.Description,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return &WorkflowResponse{Body: fromModelWorkflow(workflow)}, nil
+		},
+	)
+}
+
+func (api *Api) TeamWorkflowUpdateBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "workflow-update",
+			Method:      http.MethodPut,
+			Path:        "/teams/{team-id}/workflows/{workflow-id}",
+			Summary:     "Workflow update",
+			Description: "Update a team workflow",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusBadRequest, http.StatusForbidden, http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionWorkflowManage),
+			),
+		},
+		func(ctx context.Context, input *WorkflowUpdateParams) (*WorkflowResponse, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("Unauthorized")
+			}
+			workflowID, err := uuid.Parse(input.WorkflowID)
+			if err != nil {
+				return nil, huma.Error400BadRequest("Invalid workflow id", err)
+			}
+			workflow, err := api.App().Adapter().Task().FindWorkflowByID(ctx, workflowID)
+			if err != nil {
+				return nil, err
+			}
+			if workflow == nil || workflow.TeamID != teamInfo.Team.ID {
+				return nil, apierrors.NotFound("workflow not found")
+			}
+			workflow, err = api.App().Adapter().Task().UpdateWorkflow(ctx, workflowID, &input.Body)
+			if err != nil {
+				return nil, err
+			}
+			return &WorkflowResponse{Body: fromModelWorkflow(workflow)}, nil
 		},
 	)
 }

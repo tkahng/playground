@@ -46,6 +46,8 @@ type TaskDecorator struct {
 	FindAndUpdateTaskFunc           func(ctx context.Context, taskID uuid.UUID, input *UpdateTaskDto) error
 	FindTasksDueTodayFunc           func(ctx context.Context) ([]*models.Task, error)
 	FindTasksOverdueFunc            func(ctx context.Context) ([]*models.Task, error)
+	CreateWorkflowFunc              func(ctx context.Context, input *CreateWorkflowDTO) (*models.Workflow, error)
+	UpdateWorkflowFunc              func(ctx context.Context, workflowID uuid.UUID, input *UpdateWorkflowDTO) (*models.Workflow, error)
 }
 
 // FindAndUpdateTask implements DbTaskStoreInterface.
@@ -227,6 +229,26 @@ func (t *TaskDecorator) ListWorkflows(ctx context.Context, filter *WorkflowFilte
 		return nil, ErrDelegateNil
 	}
 	return t.Delegate.ListWorkflows(ctx, filter)
+}
+
+func (t *TaskDecorator) CreateWorkflow(ctx context.Context, input *CreateWorkflowDTO) (*models.Workflow, error) {
+	if t.CreateWorkflowFunc != nil {
+		return t.CreateWorkflowFunc(ctx, input)
+	}
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.CreateWorkflow(ctx, input)
+}
+
+func (t *TaskDecorator) UpdateWorkflow(ctx context.Context, workflowID uuid.UUID, input *UpdateWorkflowDTO) (*models.Workflow, error) {
+	if t.UpdateWorkflowFunc != nil {
+		return t.UpdateWorkflowFunc(ctx, workflowID, input)
+	}
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.UpdateWorkflow(ctx, workflowID, input)
 }
 
 // ListTaskProjects implements DbTaskStoreInterface.
