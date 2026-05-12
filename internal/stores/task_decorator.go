@@ -27,8 +27,10 @@ type TaskDecorator struct {
 	GetTaskFirstPositionFunc        func(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskLastPositionFunc         func(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskPositionsFunc            func(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID, offset int64) ([]float64, error)
+	ListWorkflowsFunc               func(ctx context.Context, filter *WorkflowFilter) ([]*models.Workflow, error)
 	ListTaskProjectsFunc            func(ctx context.Context, input *TaskProjectsFilter) ([]*models.TaskProject, error)
 	ListTasksFunc                   func(ctx context.Context, input *TaskFilter) ([]*models.Task, error)
+	LoadWorkflowStatusesFunc        func(ctx context.Context, workflowIds ...uuid.UUID) ([][]*models.WorkflowStatus, error)
 	LoadTaskProjectsTasksFunc       func(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error)
 	TaskWhereFunc                   func(task *TaskFilter) *map[string]any
 	UpdateTaskFunc                  func(ctx context.Context, task *models.Task) error
@@ -193,6 +195,16 @@ func (t *TaskDecorator) GetTaskPositions(ctx context.Context, projectID uuid.UUI
 	return t.Delegate.GetTaskPositions(ctx, projectID, status, excludeID, offset)
 }
 
+func (t *TaskDecorator) ListWorkflows(ctx context.Context, filter *WorkflowFilter) ([]*models.Workflow, error) {
+	if t.ListWorkflowsFunc != nil {
+		return t.ListWorkflowsFunc(ctx, filter)
+	}
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.ListWorkflows(ctx, filter)
+}
+
 // ListTaskProjects implements DbTaskStoreInterface.
 func (t *TaskDecorator) ListTaskProjects(ctx context.Context, input *TaskProjectsFilter) ([]*models.TaskProject, error) {
 	if t.ListTaskProjectsFunc != nil {
@@ -213,6 +225,16 @@ func (t *TaskDecorator) ListTasks(ctx context.Context, input *TaskFilter) ([]*mo
 		return nil, ErrDelegateNil
 	}
 	return t.Delegate.ListTasks(ctx, input)
+}
+
+func (t *TaskDecorator) LoadWorkflowStatuses(ctx context.Context, workflowIds ...uuid.UUID) ([][]*models.WorkflowStatus, error) {
+	if t.LoadWorkflowStatusesFunc != nil {
+		return t.LoadWorkflowStatusesFunc(ctx, workflowIds...)
+	}
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.LoadWorkflowStatuses(ctx, workflowIds...)
 }
 
 // LoadTaskProjectsTasks implements DbTaskStoreInterface.

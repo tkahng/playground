@@ -93,6 +93,7 @@ func bindTaskApi(appApi *Api) {
 
 	// task project routes -------------------------------------------------------------------------------------------------
 
+	appApi.TeamWorkflowListBind(taskGroup)
 	// task project list
 	appApi.TeamTaskProjectListBind(taskGroup)
 	// task project create

@@ -38,8 +38,10 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	GetTaskFirstPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskLastPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskPositions(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID, offset int64) ([]float64, error)
+	ListWorkflows(ctx context.Context, filter *WorkflowFilter) ([]*models.Workflow, error)
 	ListTaskProjects(ctx context.Context, input *TaskProjectsFilter) ([]*models.TaskProject, error)
 	ListTasks(ctx context.Context, input *TaskFilter) ([]*models.Task, error)
+	LoadWorkflowStatuses(ctx context.Context, workflowIds ...uuid.UUID) ([][]*models.WorkflowStatus, error)
 	LoadTaskProjectsTasks(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error)
 	taskWhere(task *TaskFilter) *map[string]any
 	UpdateTask(ctx context.Context, task *models.Task) error
@@ -63,6 +65,69 @@ func (s *DbTaskStore) WithTx(dbx database.Dbx) *DbTaskStore {
 	return &DbTaskStore{
 		db: dbx,
 	}
+}
+
+type WorkflowFilter struct {
+	Ids       []uuid.UUID `query:"ids,omitempty" json:"ids,omitempty" format:"uuid" required:"false"`
+	TeamIds   []uuid.UUID `query:"team_ids,omitempty" json:"team_ids,omitempty" format:"uuid" required:"false"`
+	AppliesTo []string    `query:"applies_to,omitempty" json:"applies_to,omitempty" required:"false"`
+	IsDefault *bool       `query:"is_default,omitempty" json:"is_default,omitempty" required:"false"`
+}
+
+func (s *DbTaskStore) ListWorkflows(ctx context.Context, filter *WorkflowFilter) ([]*models.Workflow, error) {
+	where := map[string]any{}
+	if filter != nil {
+		if len(filter.Ids) > 0 {
+			where["id"] = map[string]any{"_in": filter.Ids}
+		}
+		if len(filter.TeamIds) > 0 {
+			where["team_id"] = map[string]any{"_in": filter.TeamIds}
+		}
+		if len(filter.AppliesTo) > 0 {
+			where["applies_to"] = map[string]any{"_in": filter.AppliesTo}
+		}
+		if filter.IsDefault != nil {
+			where["is_default"] = map[string]any{"_eq": *filter.IsDefault}
+		}
+	}
+	var wherePtr *map[string]any
+	if len(where) > 0 {
+		wherePtr = &where
+	}
+	return repository.Workflow.Get(
+		ctx,
+		s.db,
+		wherePtr,
+		&map[string]string{"applies_to": "ASC", "created_at": "ASC"},
+		nil,
+		nil,
+	)
+}
+
+func (s *DbTaskStore) LoadWorkflowStatuses(ctx context.Context, workflowIds ...uuid.UUID) ([][]*models.WorkflowStatus, error) {
+	if len(workflowIds) == 0 {
+		return [][]*models.WorkflowStatus{}, nil
+	}
+	statuses, err := repository.WorkflowStatus.Get(
+		ctx,
+		s.db,
+		&map[string]any{
+			"workflow_id": map[string]any{
+				"_in": workflowIds,
+			},
+		},
+		&map[string]string{
+			"rank": "ASC",
+		},
+		nil,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.MapToManyPointer(statuses, workflowIds, func(status *models.WorkflowStatus) uuid.UUID {
+		return status.WorkflowID
+	}), nil
 }
 
 func (s *DbTaskStore) CreateTask(ctx context.Context, task *models.Task) (*models.Task, error) {
