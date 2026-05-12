@@ -97,7 +97,7 @@ func (s *DbTeamGroupStore) LoadTeamsByIds(ctx context.Context, teamIds ...uuid.U
 }
 
 func (s *DbTeamGroupStore) FindTeamByStripeCustomerId(ctx context.Context, stripeCustomerId string) (*models.Team, error) {
-	data, err := repository.Team.GetOne(
+	return repository.Team.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -108,7 +108,6 @@ func (s *DbTeamGroupStore) FindTeamByStripeCustomerId(ctx context.Context, strip
 			},
 		},
 	)
-	return database.OptionalRow(data, err)
 }
 
 // DeleteTeam implements TeamQueryer.

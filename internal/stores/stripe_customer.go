@@ -264,10 +264,9 @@ func (s *DbCustomerStore) FindCustomer(ctx context.Context, filter *StripeCustom
 		}
 	}
 	where := s.filter(filter)
-	data, err := repository.StripeCustomer.GetOne(
+	return repository.StripeCustomer.GetOne(
 		ctx,
 		s.db,
 		where,
 	)
-	return database.OptionalRow(data, err)
 }

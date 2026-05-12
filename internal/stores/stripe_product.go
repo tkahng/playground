@@ -81,7 +81,7 @@ func (s *DbProductStore) CountProducts(ctx context.Context, filter *StripeProduc
 }
 
 func (s *DbProductStore) FindProductById(ctx context.Context, productId string) (*models.StripeProduct, error) {
-	data, err := repository.StripeProduct.GetOne(
+	return repository.StripeProduct.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -90,7 +90,6 @@ func (s *DbProductStore) FindProductById(ctx context.Context, productId string) 
 			},
 		},
 	)
-	return database.OptionalRow(data, err)
 }
 func (s *DbProductStore) UpsertProduct(ctx context.Context, product *models.StripeProduct) error {
 	dbx := s.db
@@ -191,10 +190,10 @@ func SelectStripeProductColumns(qs squirrel.SelectBuilder, prefix string) squirr
 type StripeProductFilter struct {
 	PaginatedInput
 	SortParams
-	Q            string                                   `query:"q,omitempty" required:"false"`
-	Ids          []string                                 `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
-	Active       types.OptionalParam[bool]                `query:"active,omitempty" required:"false"`
-	Expand       []string                                 `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true" enum:"prices,permissions"`
+	Q            string                                        `query:"q,omitempty" required:"false"`
+	Ids          []string                                      `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true"`
+	Active       types.OptionalParam[bool]                     `query:"active,omitempty" required:"false"`
+	Expand       []string                                      `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" uniqueItems:"true" enum:"prices,permissions"`
 	MetadataType types.OptionalParam[models.StripeProductType] `query:"metadata_type,omitempty" required:"false" enum:"subscription,points"`
 }
 

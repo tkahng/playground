@@ -60,7 +60,7 @@ func (s *DbMediaStore) CreateMedia(ctx context.Context, media *models.Medium) (*
 }
 
 func (s *DbMediaStore) FindMediaByID(ctx context.Context, mediaId uuid.UUID) (*models.Medium, error) {
-	data, err := repository.Media.GetOne(
+	return repository.Media.GetOne(
 		ctx,
 		s.dbx,
 		&map[string]any{
@@ -69,7 +69,6 @@ func (s *DbMediaStore) FindMediaByID(ctx context.Context, mediaId uuid.UUID) (*m
 			},
 		},
 	)
-	return database.OptionalRow(data, err)
 }
 
 type MediaListFilter struct {

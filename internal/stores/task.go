@@ -156,7 +156,7 @@ type UpdateWorkflowStatusDTO struct {
 }
 
 func (s *DbTaskStore) FindWorkflowByID(ctx context.Context, id uuid.UUID) (*models.Workflow, error) {
-	workflow, err := repository.Workflow.GetOne(
+	return repository.Workflow.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -165,7 +165,6 @@ func (s *DbTaskStore) FindWorkflowByID(ctx context.Context, id uuid.UUID) (*mode
 			},
 		},
 	)
-	return database.OptionalRow(workflow, err)
 }
 
 func (s *DbTaskStore) FindWorkflowStatusByID(ctx context.Context, id uuid.UUID) (*models.WorkflowStatus, error) {
@@ -523,7 +522,7 @@ func (s *DbTaskStore) LoadTaskProjectsTasks(ctx context.Context, projectIds ...u
 }
 
 func (s *DbTaskStore) FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error) {
-	task, err := repository.Task.GetOne(
+	return repository.Task.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -532,13 +531,12 @@ func (s *DbTaskStore) FindTaskByID(ctx context.Context, id uuid.UUID) (*models.T
 			},
 		},
 	)
-	return database.OptionalRow(task, err)
 }
 
 // FindTaskByIDForUpdate fetches the task and acquires a row-level lock (SELECT … FOR UPDATE).
 // Must be called inside a transaction.
 func (s *DbTaskStore) FindTaskByIDForUpdate(ctx context.Context, id uuid.UUID) (*models.Task, error) {
-	task, err := repository.Task.GetOneForUpdate(
+	return repository.Task.GetOneForUpdate(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -547,7 +545,6 @@ func (s *DbTaskStore) FindTaskByIDForUpdate(ctx context.Context, id uuid.UUID) (
 			},
 		},
 	)
-	return database.OptionalRow(task, err)
 }
 
 func (s *DbTaskStore) FindLastTaskRank(ctx context.Context, taskProjectID uuid.UUID) (float64, error) {
@@ -598,7 +595,7 @@ type TaskProjectsFilter struct {
 }
 
 func (s *DbTaskStore) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error) {
-	task, err := repository.TaskProject.GetOne(
+	return repository.TaskProject.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -607,7 +604,6 @@ func (s *DbTaskStore) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*m
 			},
 		},
 	)
-	return database.OptionalRow(task, err)
 }
 func (s *DbTaskStore) DeleteTaskProject(ctx context.Context, taskProjectID uuid.UUID) error {
 	_, err := repository.TaskProject.Delete(
@@ -876,7 +872,7 @@ func (s *DbTaskStore) nextWorkflowStatusRank(ctx context.Context, workflowID uui
 }
 
 func (s *DbTaskStore) findWorkflowStatusByID(ctx context.Context, id uuid.UUID) (*models.WorkflowStatus, error) {
-	status, err := repository.WorkflowStatus.GetOne(
+	return repository.WorkflowStatus.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -885,7 +881,6 @@ func (s *DbTaskStore) findWorkflowStatusByID(ctx context.Context, id uuid.UUID) 
 			},
 		},
 	)
-	return database.OptionalRow(status, err)
 }
 
 func (s *DbTaskStore) validateWorkflowStatus(ctx context.Context, id uuid.UUID, workflowID uuid.UUID) (*models.WorkflowStatus, error) {
