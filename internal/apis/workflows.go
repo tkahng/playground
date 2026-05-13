@@ -103,6 +103,11 @@ type WorkflowUpdateParams struct {
 	Body       stores.UpdateWorkflowDTO `required:"true"`
 }
 
+type WorkflowDeleteParams struct {
+	TeamID     string `path:"team-id" required:"true" format:"uuid"`
+	WorkflowID string `path:"workflow-id" required:"true" format:"uuid"`
+}
+
 type WorkflowCreateRequestDTO struct {
 	AppliesTo   string  `json:"applies_to" required:"true" enum:"project,task"`
 	Name        string  `json:"name" required:"true" minLength:"1"`
@@ -266,6 +271,49 @@ func (api *Api) TeamWorkflowUpdateBind(humaApi huma.API) {
 				return nil, err
 			}
 			return &WorkflowResponse{Body: fromModelWorkflow(workflow)}, nil
+		},
+	)
+}
+
+func (api *Api) TeamWorkflowDeleteBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "workflow-delete",
+			Method:      http.MethodDelete,
+			Path:        "/teams/{team-id}/workflows/{workflow-id}",
+			Summary:     "Workflow delete",
+			Description: "Delete an unused team workflow",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusBadRequest, http.StatusConflict, http.StatusForbidden, http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionWorkflowManage),
+			),
+		},
+		func(ctx context.Context, input *WorkflowDeleteParams) (*struct{}, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("Unauthorized")
+			}
+			workflowID, err := uuid.Parse(input.WorkflowID)
+			if err != nil {
+				return nil, huma.Error400BadRequest("Invalid workflow id", err)
+			}
+			workflow, err := api.App().Adapter().Task().FindWorkflowByID(ctx, workflowID)
+			if err != nil {
+				return nil, err
+			}
+			if workflow == nil || workflow.TeamID != teamInfo.Team.ID {
+				return nil, apierrors.NotFound("workflow not found")
+			}
+			if err := api.App().Adapter().Task().DeleteWorkflow(ctx, workflowID); err != nil {
+				return nil, err
+			}
+			return nil, nil
 		},
 	)
 }

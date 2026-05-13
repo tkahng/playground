@@ -61,6 +61,7 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	FindTasksOverdue(ctx context.Context) ([]*models.Task, error)
 	CreateWorkflow(ctx context.Context, input *CreateWorkflowDTO) (*models.Workflow, error)
 	UpdateWorkflow(ctx context.Context, workflowID uuid.UUID, input *UpdateWorkflowDTO) (*models.Workflow, error)
+	DeleteWorkflow(ctx context.Context, workflowID uuid.UUID) error
 }
 
 type DbTaskStore struct {
@@ -203,6 +204,47 @@ func (s *DbTaskStore) UpdateWorkflow(ctx context.Context, workflowID uuid.UUID, 
 		return nil, apierrors.Conflict("workflow already exists")
 	}
 	return updated, err
+}
+
+func (s *DbTaskStore) DeleteWorkflow(ctx context.Context, workflowID uuid.UUID) error {
+	workflow, err := s.FindWorkflowByID(ctx, workflowID)
+	if err != nil {
+		return err
+	}
+	if workflow == nil {
+		return apierrors.NotFound("workflow not found")
+	}
+	if workflow.IsDefault {
+		return apierrors.Conflict("default workflow cannot be deleted")
+	}
+	projectCount, err := repository.TaskProject.Count(ctx, s.db, &map[string]any{
+		"workflow_id": map[string]any{
+			"_eq": workflowID,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if projectCount > 0 {
+		return apierrors.Conflict("workflow is in use")
+	}
+	statuses, err := s.LoadWorkflowStatuses(ctx, workflowID)
+	if err != nil {
+		return err
+	}
+	if len(statuses) > 0 {
+		for _, status := range statuses[0] {
+			if err := s.ensureWorkflowStatusUnused(ctx, status.ID); err != nil {
+				return err
+			}
+		}
+	}
+	_, err = repository.Workflow.Delete(ctx, s.db, &map[string]any{
+		"id": map[string]any{
+			"_eq": workflowID,
+		},
+	})
+	return err
 }
 
 type CreateWorkflowStatusDTO struct {
@@ -350,6 +392,18 @@ func (s *DbTaskStore) DeleteWorkflowStatus(ctx context.Context, workflowStatusID
 	if status == nil {
 		return apierrors.NotFound("workflow status not found")
 	}
+	if err := s.ensureWorkflowStatusUnused(ctx, workflowStatusID); err != nil {
+		return err
+	}
+	_, err = repository.WorkflowStatus.Delete(ctx, s.db, &map[string]any{
+		"id": map[string]any{
+			"_eq": workflowStatusID,
+		},
+	})
+	return err
+}
+
+func (s *DbTaskStore) ensureWorkflowStatusUnused(ctx context.Context, workflowStatusID uuid.UUID) error {
 	taskCount, err := repository.Task.Count(ctx, s.db, &map[string]any{
 		"workflow_status_id": map[string]any{
 			"_eq": workflowStatusID,
@@ -369,12 +423,7 @@ func (s *DbTaskStore) DeleteWorkflowStatus(ctx context.Context, workflowStatusID
 	if taskCount > 0 || projectCount > 0 {
 		return apierrors.Conflict("workflow status is in use")
 	}
-	_, err = repository.WorkflowStatus.Delete(ctx, s.db, &map[string]any{
-		"id": map[string]any{
-			"_eq": workflowStatusID,
-		},
-	})
-	return err
+	return nil
 }
 
 func (s *DbTaskStore) CreateTask(ctx context.Context, task *models.Task) (*models.Task, error) {

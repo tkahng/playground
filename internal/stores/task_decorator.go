@@ -49,6 +49,7 @@ type TaskDecorator struct {
 	FindTasksOverdueFunc            func(ctx context.Context) ([]*models.Task, error)
 	CreateWorkflowFunc              func(ctx context.Context, input *CreateWorkflowDTO) (*models.Workflow, error)
 	UpdateWorkflowFunc              func(ctx context.Context, workflowID uuid.UUID, input *UpdateWorkflowDTO) (*models.Workflow, error)
+	DeleteWorkflowFunc              func(ctx context.Context, workflowID uuid.UUID) error
 }
 
 // FindAndUpdateTask implements DbTaskStoreInterface.
@@ -250,6 +251,16 @@ func (t *TaskDecorator) UpdateWorkflow(ctx context.Context, workflowID uuid.UUID
 		return nil, ErrDelegateNil
 	}
 	return t.Delegate.UpdateWorkflow(ctx, workflowID, input)
+}
+
+func (t *TaskDecorator) DeleteWorkflow(ctx context.Context, workflowID uuid.UUID) error {
+	if t.DeleteWorkflowFunc != nil {
+		return t.DeleteWorkflowFunc(ctx, workflowID)
+	}
+	if t.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return t.Delegate.DeleteWorkflow(ctx, workflowID)
 }
 
 // ListTaskProjects implements DbTaskStoreInterface.

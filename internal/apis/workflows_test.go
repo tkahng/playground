@@ -230,6 +230,113 @@ func TestApi_TeamWorkflowUpdate(t *testing.T) {
 	}
 }
 
+func TestApi_TeamWorkflowDelete(t *testing.T) {
+	tests := []apis.ApiScenario{
+		{
+			Name:           "success: owner can delete unused workflow",
+			Method:         http.MethodDelete,
+			URL:            "/teams/{team-id}/workflows/{workflow-id}",
+			ExpectedStatus: http.StatusNoContent,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				workflow, err := app.Adapter().Task().CreateWorkflow(t.Context(), &stores.CreateWorkflowDTO{
+					TeamID:            team.Team.ID,
+					CreatedByMemberID: &team.Member.ID,
+					AppliesTo:         "task",
+					Name:              "Unused workflow",
+				})
+				assert.NoError(t, err)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s", team.Team.ID, workflow.ID)
+				scenario.Store.Set("workflow_id", workflow.ID)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				workflowID := scenario.Store.Get("workflow_id").(uuid.UUID)
+				workflow, err := app.Adapter().Task().FindWorkflowByID(t.Context(), workflowID)
+				assert.NoError(t, err)
+				assert.Nil(t, workflow)
+			},
+		},
+		{
+			Name:            "fail: cannot delete default workflow",
+			Method:          http.MethodDelete,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}",
+			ExpectedStatus:  http.StatusConflict,
+			ExpectedContent: []string{"default workflow cannot be deleted"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				workflowID := findWorkflowID(t, app, team.Team.ID, "task")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s", team.Team.ID, workflowID)
+			},
+		},
+		{
+			Name:            "fail: cannot delete workflow in use",
+			Method:          http.MethodDelete,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}",
+			ExpectedStatus:  http.StatusConflict,
+			ExpectedContent: []string{"workflow is in use"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				workflowID, _ := createAssignableTaskWorkflow(t, app, team.Team.ID, team.Member.ID)
+				_, err := app.Adapter().Task().CreateTaskProject(t.Context(), &stores.CreateTaskProjectDTO{
+					TeamID:     team.Team.ID,
+					MemberID:   team.Member.ID,
+					Name:       "Assigned workflow project",
+					Status:     models.TaskProjectStatusTodo,
+					WorkflowID: &workflowID,
+				})
+				assert.NoError(t, err)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s", team.Team.ID, workflowID)
+			},
+		},
+		{
+			Name:            "fail: member cannot delete workflow",
+			Method:          http.MethodDelete,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}",
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				memberUser := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				core.CreateTeamMemberWithOptions(t, app, team.Team.ID, memberUser.User.ID, core.TeamWithRole(models.TeamMemberRoleMember))
+				workflow, err := app.Adapter().Task().CreateWorkflow(t.Context(), &stores.CreateWorkflowDTO{
+					TeamID:            team.Team.ID,
+					CreatedByMemberID: &team.Member.ID,
+					AppliesTo:         "task",
+					Name:              "Member delete target",
+				})
+				assert.NoError(t, err)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, memberUser.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s", team.Team.ID, workflow.ID)
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
+				return testApi
+			}
+			tt.Test(t)
+		})
+	}
+}
+
 func TestApi_TeamWorkflowStatusCreate(t *testing.T) {
 	tests := []apis.ApiScenario{
 		{
