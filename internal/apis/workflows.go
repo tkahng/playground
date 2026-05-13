@@ -108,6 +108,11 @@ type WorkflowDeleteParams struct {
 	WorkflowID string `path:"workflow-id" required:"true" format:"uuid"`
 }
 
+type WorkflowDefaultParams struct {
+	TeamID     string `path:"team-id" required:"true" format:"uuid"`
+	WorkflowID string `path:"workflow-id" required:"true" format:"uuid"`
+}
+
 type WorkflowCreateRequestDTO struct {
 	AppliesTo   string  `json:"applies_to" required:"true" enum:"project,task"`
 	Name        string  `json:"name" required:"true" minLength:"1"`
@@ -314,6 +319,50 @@ func (api *Api) TeamWorkflowDeleteBind(humaApi huma.API) {
 				return nil, err
 			}
 			return nil, nil
+		},
+	)
+}
+
+func (api *Api) TeamWorkflowDefaultBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "workflow-set-default",
+			Method:      http.MethodPut,
+			Path:        "/teams/{team-id}/workflows/{workflow-id}/default",
+			Summary:     "Workflow set default",
+			Description: "Set the default workflow for its target",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusBadRequest, http.StatusConflict, http.StatusForbidden, http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionWorkflowManage),
+			),
+		},
+		func(ctx context.Context, input *WorkflowDefaultParams) (*WorkflowResponse, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("Unauthorized")
+			}
+			workflowID, err := uuid.Parse(input.WorkflowID)
+			if err != nil {
+				return nil, huma.Error400BadRequest("Invalid workflow id", err)
+			}
+			workflow, err := api.App().Adapter().Task().FindWorkflowByID(ctx, workflowID)
+			if err != nil {
+				return nil, err
+			}
+			if workflow == nil || workflow.TeamID != teamInfo.Team.ID {
+				return nil, apierrors.NotFound("workflow not found")
+			}
+			workflow, err = api.App().Adapter().Task().SetDefaultWorkflow(ctx, workflowID)
+			if err != nil {
+				return nil, err
+			}
+			return &WorkflowResponse{Body: fromModelWorkflow(workflow)}, nil
 		},
 	)
 }

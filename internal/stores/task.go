@@ -62,6 +62,7 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	CreateWorkflow(ctx context.Context, input *CreateWorkflowDTO) (*models.Workflow, error)
 	UpdateWorkflow(ctx context.Context, workflowID uuid.UUID, input *UpdateWorkflowDTO) (*models.Workflow, error)
 	DeleteWorkflow(ctx context.Context, workflowID uuid.UUID) error
+	SetDefaultWorkflow(ctx context.Context, workflowID uuid.UUID) (*models.Workflow, error)
 }
 
 type DbTaskStore struct {
@@ -245,6 +246,79 @@ func (s *DbTaskStore) DeleteWorkflow(ctx context.Context, workflowID uuid.UUID) 
 		},
 	})
 	return err
+}
+
+func (s *DbTaskStore) SetDefaultWorkflow(ctx context.Context, workflowID uuid.UUID) (*models.Workflow, error) {
+	workflow, err := s.FindWorkflowByID(ctx, workflowID)
+	if err != nil {
+		return nil, err
+	}
+	if workflow == nil {
+		return nil, apierrors.NotFound("workflow not found")
+	}
+	if err := s.validateWorkflowAssignable(ctx, workflowID); err != nil {
+		return nil, err
+	}
+
+	var updated *models.Workflow
+	err = s.db.RunInTx(ctx, func(tx database.Dbx) error {
+		clearDefault := squirrel.Update(repository.WorkflowBuilder.TableName()).
+			Set("is_default", false).
+			Where(squirrel.Eq{
+				"team_id":    workflow.TeamID,
+				"applies_to": workflow.AppliesTo,
+				"is_default": true,
+			}).
+			PlaceholderFormat(squirrel.Dollar)
+		if _, err := database.ExecWithBuilder(ctx, tx, clearDefault); err != nil {
+			return err
+		}
+
+		setDefault := squirrel.Update(repository.WorkflowBuilder.TableName()).
+			Set("is_default", true).
+			Where(squirrel.Eq{
+				"id": workflowID,
+			}).
+			Suffix("returning " + repository.WorkflowBuilder.ColumnNamesJoined()).
+			PlaceholderFormat(squirrel.Dollar)
+		workflows, err := database.QueryWithBuilder[models.Workflow](ctx, tx, setDefault)
+		if err != nil {
+			return err
+		}
+		if len(workflows) == 0 {
+			return apierrors.NotFound("workflow not found")
+		}
+		updated = &workflows[0]
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return updated, nil
+}
+
+func (s *DbTaskStore) validateWorkflowAssignable(ctx context.Context, workflowID uuid.UUID) error {
+	statuses, err := s.LoadWorkflowStatuses(ctx, workflowID)
+	if err != nil {
+		return err
+	}
+	if len(statuses) == 0 {
+		return apierrors.BadRequest("workflow must have statuses before assignment")
+	}
+	categories := map[string]bool{}
+	for _, status := range statuses[0] {
+		categories[status.Category] = true
+	}
+	for _, category := range []string{
+		string(models.TaskStatusTodo),
+		string(models.TaskStatusInProgress),
+		string(models.TaskStatusDone),
+	} {
+		if !categories[category] {
+			return apierrors.BadRequest("workflow must have statuses for todo, in_progress, and done before assignment")
+		}
+	}
+	return nil
 }
 
 type CreateWorkflowStatusDTO struct {
@@ -1082,30 +1156,6 @@ func (s *DbTaskStore) validateWorkflowForTeam(ctx context.Context, workflowID uu
 	return workflow, nil
 }
 
-func (s *DbTaskStore) validateTaskWorkflowAssignable(ctx context.Context, workflowID uuid.UUID) error {
-	statuses, err := s.LoadWorkflowStatuses(ctx, workflowID)
-	if err != nil {
-		return err
-	}
-	if len(statuses) == 0 {
-		return apierrors.BadRequest("workflow must have statuses before assignment")
-	}
-	categories := map[string]bool{}
-	for _, status := range statuses[0] {
-		categories[status.Category] = true
-	}
-	for _, category := range []string{
-		string(models.TaskStatusTodo),
-		string(models.TaskStatusInProgress),
-		string(models.TaskStatusDone),
-	} {
-		if !categories[category] {
-			return apierrors.BadRequest("workflow must have statuses for todo, in_progress, and done before assignment")
-		}
-	}
-	return nil
-}
-
 func (s *DbTaskStore) findProjectWorkflowStatusID(ctx context.Context, teamID uuid.UUID, memberID *uuid.UUID, status models.TaskProjectStatus) (*uuid.UUID, error) {
 	workflow, err := s.ensureDefaultWorkflow(ctx, teamID, memberID, workflowAppliesToProject)
 	if err != nil {
@@ -1192,7 +1242,7 @@ func (s *DbTaskStore) CreateTaskProject(ctx context.Context, input *CreateTaskPr
 		if err != nil {
 			return nil, err
 		}
-		if err := s.validateTaskWorkflowAssignable(ctx, taskWorkflow.ID); err != nil {
+		if err := s.validateWorkflowAssignable(ctx, taskWorkflow.ID); err != nil {
 			return nil, err
 		}
 	} else {
@@ -1435,7 +1485,7 @@ func (s *DbTaskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.
 		if err != nil {
 			return err
 		}
-		if err := s.validateTaskWorkflowAssignable(ctx, workflow.ID); err != nil {
+		if err := s.validateWorkflowAssignable(ctx, workflow.ID); err != nil {
 			return err
 		}
 		taskProject.WorkflowID = &workflow.ID

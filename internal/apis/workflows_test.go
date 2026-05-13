@@ -337,6 +337,91 @@ func TestApi_TeamWorkflowDelete(t *testing.T) {
 	}
 }
 
+func TestApi_TeamWorkflowDefault(t *testing.T) {
+	tests := []apis.ApiScenario{
+		{
+			Name:           "success: owner can set default workflow",
+			Method:         http.MethodPut,
+			URL:            "/teams/{team-id}/workflows/{workflow-id}/default",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				oldDefaultID := findWorkflowID(t, app, team.Team.ID, "task")
+				workflowID, _ := createAssignableTaskWorkflow(t, app, team.Team.ID, team.Member.ID)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/default", team.Team.ID, workflowID)
+				scenario.Store.Set("workflow_id", workflowID)
+				scenario.Store.Set("old_default_id", oldDefaultID)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.Workflow](t, res.Body.Bytes())
+				workflowID := scenario.Store.Get("workflow_id").(uuid.UUID)
+				oldDefaultID := scenario.Store.Get("old_default_id").(uuid.UUID)
+
+				assert.Equal(t, workflowID, result.ID)
+				assert.True(t, result.IsDefault)
+
+				oldDefault, err := app.Adapter().Task().FindWorkflowByID(t.Context(), oldDefaultID)
+				assert.NoError(t, err)
+				assert.False(t, oldDefault.IsDefault)
+			},
+		},
+		{
+			Name:            "fail: cannot set incomplete workflow as default",
+			Method:          http.MethodPut,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/default",
+			ExpectedStatus:  http.StatusBadRequest,
+			ExpectedContent: []string{"workflow must have statuses before assignment"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				workflow, err := app.Adapter().Task().CreateWorkflow(t.Context(), &stores.CreateWorkflowDTO{
+					TeamID:            team.Team.ID,
+					CreatedByMemberID: &team.Member.ID,
+					AppliesTo:         "task",
+					Name:              "Incomplete workflow",
+				})
+				assert.NoError(t, err)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/default", team.Team.ID, workflow.ID)
+			},
+		},
+		{
+			Name:            "fail: member cannot set default workflow",
+			Method:          http.MethodPut,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/default",
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				memberUser := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				core.CreateTeamMemberWithOptions(t, app, team.Team.ID, memberUser.User.ID, core.TeamWithRole(models.TeamMemberRoleMember))
+				workflowID, _ := createAssignableTaskWorkflow(t, app, team.Team.ID, team.Member.ID)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, memberUser.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/default", team.Team.ID, workflowID)
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
+				return testApi
+			}
+			tt.Test(t)
+		})
+	}
+}
+
 func TestApi_TeamWorkflowStatusCreate(t *testing.T) {
 	tests := []apis.ApiScenario{
 		{
