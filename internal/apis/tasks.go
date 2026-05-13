@@ -109,6 +109,7 @@ type TeamTaskListParams struct {
 	PaginatedInput
 	Q                 string              `query:"q,omitempty" required:"false"`
 	Status            []models.TaskStatus `query:"status,omitempty" required:"false" enum:"todo,in_progress,done"`
+	WorkflowStatusIds []string            `query:"workflow_status_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	CreatedByMemberID string              `query:"created_by,omitempty" required:"false" format:"uuid"`
 	Ids               []string            `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	ParentID          string              `query:"parent_id,omitempty" required:"false" format:"uuid"`
@@ -147,6 +148,7 @@ func (api *Api) TeamTaskListBind(humaApi huma.API) {
 			newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
 			newInput.Q = input.Q
 			newInput.Statuses = input.Status
+			newInput.WorkflowStatusIds = utils.ParseValidUUIDs(input.WorkflowStatusIds...)
 			newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
 			newInput.ProjectIds = utils.ParseValidUUIDs(input.ProjectID)
 			if input.ParentID != "" {

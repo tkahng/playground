@@ -110,9 +110,11 @@ type TaskProjectListResponse struct {
 type TeamTaskProjectsListParams struct {
 	TeamID string `path:"team-id" required:"true" format:"uuid"`
 	PaginatedInput
-	Q      string                     `query:"q,omitempty" required:"false"`
-	Status []models.TaskProjectStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
-	Ids    []string                   `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Q                 string                     `query:"q,omitempty" required:"false"`
+	Status            []models.TaskProjectStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
+	WorkflowIds       []string                   `query:"workflow_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	WorkflowStatusIds []string                   `query:"workflow_status_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Ids               []string                   `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	SortParams
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"tasks,subtasks"`
 }
@@ -148,6 +150,8 @@ func (api *Api) TeamTaskProjectListBind(humaApi huma.API) {
 			newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
 			newInput.Q = input.Q
 			newInput.Status = input.Status
+			newInput.WorkflowIds = utils.ParseValidUUIDs(input.WorkflowIds...)
+			newInput.WorkflowStatusIds = utils.ParseValidUUIDs(input.WorkflowStatusIds...)
 			newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
 			taskProject, err := api.App().Adapter().Task().ListTaskProjects(ctx, newInput)
 			if err != nil {

@@ -72,6 +72,35 @@ func TestApi_TeamTaskList(t *testing.T) {
 					assert.Equal(t, int64(3), result.Meta.Total)
 				},
 			},
+			{
+				Name:           "success: tasks with workflow status filter",
+				Method:         http.MethodGet,
+				URL:            "/task-projects/{task-project-id}/tasks?workflow_status_ids={workflow-status-id}",
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *apis.TestApi {
+					return testApi
+				},
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+					doneStatusID := findWorkflowStatusID(t, app, team1.Team.ID, "task", "done")
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+					scenario.Headers = []string{tokenHeader}
+					scenario.URL = fmt.Sprintf(
+						"/task-projects/%s/tasks?workflow_status_ids=%s",
+						project1.ID.String(),
+						doneStatusID.String(),
+					)
+					scenario.Store.Set("workflow_status_id", doneStatusID)
+				},
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+					result := test.MustUnMarshal[apis.ApiPaginatedResponse[*apis.Task]](t, res.Body.Bytes())
+					doneStatusID := scenario.Store.Get("workflow_status_id").(uuid.UUID)
+					assert.Equal(t, int64(3), result.Meta.Total)
+					for _, task := range result.Data {
+						require.NotNil(t, task.WorkflowStatusID)
+						assert.Equal(t, doneStatusID, *task.WorkflowStatusID)
+					}
+				},
+			},
 		}
 		for _, tt := range tests {
 			tt.Test(t)

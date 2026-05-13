@@ -590,6 +590,7 @@ type TaskFilter struct {
 	ProjectIds         []uuid.UUID         `query:"project_ids,omitempty" json:"project_ids,omitempty" format:"uuid" required:"false"`
 	Names              []string            `query:"names,omitempty" json:"names,omitempty" required:"false"`
 	Statuses           []models.TaskStatus `query:"statuses,omitempty" json:"statuses,omitempty" required:"false"`
+	WorkflowStatusIds  []uuid.UUID         `query:"workflow_status_ids,omitempty" json:"workflow_status_ids,omitempty" format:"uuid" required:"false"`
 	TeamIds            []uuid.UUID         `query:"team_ids,omitempty" json:"team_ids,omitempty" format:"uuid" required:"false"`
 	CreatedByMemberIds []uuid.UUID         `query:"created_by_member_ids,omitempty" json:"created_by_member_ids,omitempty" format:"uuid" required:"false"`
 	ParentIds          []uuid.UUID         `query:"parent_ids,omitempty" json:"parent_ids,omitempty" format:"uuid" required:"false"`
@@ -650,6 +651,11 @@ func (*DbTaskStore) taskWhere(task *TaskFilter) *map[string]any {
 	if len(task.Statuses) > 0 {
 		where["status"] = map[string]any{
 			"_in": task.Statuses,
+		}
+	}
+	if len(task.WorkflowStatusIds) > 0 {
+		where["workflow_status_id"] = map[string]any{
+			"_in": task.WorkflowStatusIds,
 		}
 	}
 
@@ -890,10 +896,12 @@ func (s *DbTaskStore) DeleteTask(ctx context.Context, taskID uuid.UUID) error {
 type TaskProjectsFilter struct {
 	PaginatedInput
 	SortParams
-	Q       string                     `query:"q,omitempty" json:"q,omitempty" required:"false"`
-	Ids     []uuid.UUID                `query:"ids,omitempty" json:"ids,omitempty" format:"uuid" required:"false"`
-	TeamIds []uuid.UUID                `query:"team_ids,omitempty" json:"team_ids,omitempty" format:"uuid" required:"false"`
-	Status  []models.TaskProjectStatus `query:"status,omitempty" json:"statuses,omitempty" required:"false"`
+	Q                 string                     `query:"q,omitempty" json:"q,omitempty" required:"false"`
+	Ids               []uuid.UUID                `query:"ids,omitempty" json:"ids,omitempty" format:"uuid" required:"false"`
+	TeamIds           []uuid.UUID                `query:"team_ids,omitempty" json:"team_ids,omitempty" format:"uuid" required:"false"`
+	WorkflowIds       []uuid.UUID                `query:"workflow_ids,omitempty" json:"workflow_ids,omitempty" format:"uuid" required:"false"`
+	WorkflowStatusIds []uuid.UUID                `query:"workflow_status_ids,omitempty" json:"workflow_status_ids,omitempty" format:"uuid" required:"false"`
+	Status            []models.TaskProjectStatus `query:"status,omitempty" json:"statuses,omitempty" required:"false"`
 }
 
 func (s *DbTaskStore) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error) {
@@ -999,6 +1007,16 @@ func (*DbTaskStore) TaskProjectWhere(task *TaskProjectsFilter) *map[string]any {
 	if len(task.Status) > 0 {
 		where["status"] = map[string]any{
 			"_in": task.Status,
+		}
+	}
+	if len(task.WorkflowIds) > 0 {
+		where["workflow_id"] = map[string]any{
+			"_in": task.WorkflowIds,
+		}
+	}
+	if len(task.WorkflowStatusIds) > 0 {
+		where["workflow_status_id"] = map[string]any{
+			"_in": task.WorkflowStatusIds,
 		}
 	}
 
