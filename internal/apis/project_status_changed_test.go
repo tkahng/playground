@@ -97,7 +97,6 @@ func TestApi_ProjectUpdate_UsesWorkflowStatusInStatusChangedJob(t *testing.T) {
 				scenario.Headers = []string{header}
 				scenario.Body = apis.JsonToReader(t, stores.UpdateTaskProjectBaseDTO{
 					Name:             project.Name,
-					Status:           models.TaskProjectStatusTodo,
 					WorkflowStatusID: &status.ID,
 				})
 			},

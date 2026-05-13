@@ -171,7 +171,6 @@ func TestApi_TaskUpdate_UsesWorkflowStatusCompletion(t *testing.T) {
 					scenario.Headers = []string{header}
 					scenario.Body = apis.JsonToReader(t, stores.UpdateTaskDto{
 						Name:             "updated workflow completion task",
-						Status:           models.TaskStatusTodo,
 						WorkflowStatusID: &status.ID,
 					})
 				},

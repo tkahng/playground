@@ -738,7 +738,7 @@ func (*DbTaskStore) taskWhere(task *TaskFilter) *map[string]any {
 type UpdateTaskDto struct {
 	Name             string            `db:"name" json:"name"`
 	Description      *string           `db:"description" json:"description"`
-	Status           models.TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
+	Status           models.TaskStatus `db:"status" json:"status,omitempty" required:"false" enum:"todo,in_progress,done"`
 	WorkflowStatusID *uuid.UUID        `db:"workflow_status_id" json:"workflow_status_id" nullable:"true"`
 	StartAt          *time.Time        `db:"start_at" json:"start_at" nullable:"true"`
 	EndAt            *time.Time        `db:"end_at" json:"end_at" nullable:"true"`
@@ -1613,7 +1613,7 @@ func (s *DbTaskStore) UpdateTaskProjectUpdateDate(ctx context.Context, taskProje
 type UpdateTaskProjectBaseDTO struct {
 	Name             string                   `json:"name" required:"true"`
 	Description      *string                  `json:"description,omitempty" required:"false"`
-	Status           models.TaskProjectStatus `json:"status" enum:"todo,in_progress,done"`
+	Status           models.TaskProjectStatus `json:"status,omitempty" required:"false" enum:"todo,in_progress,done"`
 	WorkflowStatusID *uuid.UUID               `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
 	WorkflowID       *uuid.UUID               `json:"workflow_id,omitempty" required:"false" format:"uuid"`
 	Rank             float64                  `json:"rank"`
