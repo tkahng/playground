@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -33,7 +32,7 @@ type TaskService interface {
 	CreateTask(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, createdByMemberID uuid.UUID, input *TaskFields) (*models.Task, error)
 
 	// CreateTaskWithChildren(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, memberID uuid.UUID, input *shared.CreateTaskWithChildrenDTO) (*models.Task, error)
-	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
+	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus, workflowStatusID *uuid.UUID) error
 	CalculateNewPosition(ctx context.Context, groupID uuid.UUID, status models.TaskStatus, targetIndex int64, excludeID uuid.UUID) (float64, error)
 	ValidateTaskReferences(ctx context.Context, teamID uuid.UUID, projectID uuid.UUID, currentTaskID *uuid.UUID, assigneeID *uuid.UUID, reporterID *uuid.UUID, parentID *uuid.UUID) error
 }
@@ -143,29 +142,8 @@ type UpdateTaskDto struct {
 	ParentID    *uuid.UUID        `db:"parent_id" json:"parent_id" nullable:"true"`
 }
 
-func (s *taskService) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error {
-	task, err := s.adapter.Task().FindTaskByID(ctx, taskID)
-	if err != nil {
-		return err
-	}
-	if task == nil {
-		return errors.New("task not found")
-	}
-	rank, err := s.CalculateNewPosition(ctx, task.ProjectID, status, position, task.ID)
-	if err != nil {
-		return err
-	}
-	task.Rank = rank
-	task.Status = status
-	err = s.adapter.Task().UpdateTask(ctx, task)
-	if err != nil {
-		return err
-	}
-	err = s.adapter.Task().UpdateTaskProjectUpdateDate(ctx, task.ProjectID)
-	if err != nil {
-		return fmt.Errorf("failed to update task project update date: %w", err)
-	}
-	return nil
+func (s *taskService) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus, workflowStatusID *uuid.UUID) error {
+	return s.adapter.Task().UpdateTaskRankStatus(ctx, taskID, position, status, workflowStatusID)
 }
 
 func (s *taskService) CalculateNewPosition(ctx context.Context, groupID uuid.UUID, status models.TaskStatus, targetIndex int64, excludeID uuid.UUID) (float64, error) {

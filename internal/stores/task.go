@@ -53,7 +53,7 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	UpdateTask(ctx context.Context, task *models.Task) error
 	UpdateTaskProject(ctx context.Context, taskProjectID uuid.UUID, input *UpdateTaskProjectBaseDTO) error
 	UpdateTaskProjectUpdateDate(ctx context.Context, taskProjectID uuid.UUID) error
-	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
+	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus, workflowStatusID *uuid.UUID) error
 	WithTx(dbx database.Dbx) *DbTaskStore
 	GetTeamTaskStats(ctx context.Context, teamId uuid.UUID) (*models.TaskStats, error)
 	FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *UpdateTaskDto) error
@@ -1590,7 +1590,7 @@ func (s *DbTaskStore) remapTaskWorkflowStatuses(ctx context.Context, taskProject
 	return err
 }
 
-func (s *DbTaskStore) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error {
+func (s *DbTaskStore) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus, workflowStatusID *uuid.UUID) error {
 	task, err := s.FindTaskByID(ctx, taskID)
 	if err != nil {
 		return err
@@ -1598,17 +1598,20 @@ func (s *DbTaskStore) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID
 	if task == nil {
 		return apierrors.NotFound("task not found")
 	}
+	if workflowStatusID == nil && status == "" {
+		return apierrors.BadRequest("task status or workflow status is required")
+	}
+	status, resolvedWorkflowStatusID, err := s.resolveTaskWorkflowStatus(ctx, task.ProjectID, workflowStatusID, status)
+	if err != nil {
+		return err
+	}
 	rank, err := s.CalculateTaskRankStatus(ctx, task.ID, task.ProjectID, status, task.Rank, position)
 	if err != nil {
 		return err
 	}
 	task.Rank = rank
 	task.Status = status
-	workflowStatusID, err := s.findTaskWorkflowStatusID(ctx, task.ProjectID, status)
-	if err != nil {
-		return err
-	}
-	task.WorkflowStatusID = workflowStatusID
+	task.WorkflowStatusID = resolvedWorkflowStatusID
 	_, err = repository.Task.PutOne(ctx, s.db, task)
 	if err != nil {
 		return err

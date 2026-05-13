@@ -1681,7 +1681,7 @@ func TestUpdateTaskPositionStatus(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				err := taskStore.UpdateTaskRankStatus(tt.args.ctx, tt.args.taskID, tt.args.position, tt.args.status)
+				err := taskStore.UpdateTaskRankStatus(tt.args.ctx, tt.args.taskID, tt.args.position, tt.args.status, nil)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("UpdateTaskPositionStatus() error = %v, wantErr %v", err, tt.wantErr)
 					return

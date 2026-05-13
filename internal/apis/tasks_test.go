@@ -242,6 +242,71 @@ func TestApi_TeamTaskUpdate(t *testing.T) {
 	}
 }
 
+func TestApi_TeamTaskPositionStatus(t *testing.T) {
+	tests := []apis.ApiScenario{
+		{
+			Name:           "success: move task with workflow status",
+			Method:         http.MethodPut,
+			URL:            "/tasks/{task-id}/position-status",
+			ExpectedStatus: http.StatusNoContent,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				workflowID, statusesByCategory := createAssignableTaskWorkflow(t, app, team.Team.ID, team.Member.ID)
+				project, err := app.Adapter().Task().CreateTaskProject(t.Context(), &stores.CreateTaskProjectDTO{
+					TeamID:     team.Team.ID,
+					MemberID:   team.Member.ID,
+					Name:       "Custom workflow project",
+					Status:     models.TaskProjectStatusTodo,
+					WorkflowID: &workflowID,
+				})
+				assert.NoError(t, err)
+				task, err := app.Adapter().Task().CreateTask(t.Context(), &models.Task{
+					TeamID:            team.Team.ID,
+					ProjectID:         project.ID,
+					CreatedByMemberID: &team.Member.ID,
+					Name:              "Move me",
+					Status:            models.TaskStatusTodo,
+					Rank:              1000,
+				})
+				assert.NoError(t, err)
+				reviewStatusID := statusesByCategory[string(models.TaskStatusInProgress)]
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/tasks/%s/position-status", task.ID)
+				scenario.Store.Set("task_id", task.ID)
+				scenario.Store.Set("workflow_status_id", reviewStatusID)
+				scenario.Body = apis.JsonToReader(t, apis.TaskPositionStatusDTO{
+					Position:         0,
+					WorkflowStatusID: &reviewStatusID,
+				})
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				taskID := scenario.Store.Get("task_id").(uuid.UUID)
+				workflowStatusID := scenario.Store.Get("workflow_status_id").(uuid.UUID)
+				task, err := app.Adapter().Task().FindTaskByID(t.Context(), taskID)
+				assert.NoError(t, err)
+				if assert.NotNil(t, task) {
+					assert.Equal(t, models.TaskStatusInProgress, task.Status)
+					if assert.NotNil(t, task.WorkflowStatusID) {
+						assert.Equal(t, workflowStatusID, *task.WorkflowStatusID)
+					}
+				}
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
+				return testApi
+			}
+			tt.Test(t)
+		})
+	}
+}
+
 func TestApi_TeamTaskGet(t *testing.T) {
 	tests := []apis.ApiScenario{
 		{

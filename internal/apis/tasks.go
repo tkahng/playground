@@ -91,8 +91,9 @@ type UpdateTaskInput struct {
 }
 
 type TaskPositionStatusDTO struct {
-	Position int64             `json:"position" required:"true"`
-	Status   models.TaskStatus `json:"status" required:"true" enum:"todo,in_progress,done"`
+	Position         int64             `json:"position" required:"true"`
+	Status           models.TaskStatus `json:"status,omitempty" required:"false" enum:"todo,in_progress,done"`
+	WorkflowStatusID *uuid.UUID        `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
 }
 
 type TaskPositionStatusInput struct {
@@ -346,12 +347,19 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 	if task == nil {
 		return nil, huma.Error404NotFound("Task not found")
 	}
-	err = api.App().Task().UpdateTaskRankStatus(ctx, id, input.Body.Position, models.TaskStatus(input.Body.Status))
+	err = api.App().Task().UpdateTaskRankStatus(ctx, id, input.Body.Position, models.TaskStatus(input.Body.Status), input.Body.WorkflowStatusID)
 	if err != nil {
 		return nil, err
 	}
 
-	newStatus := models.TaskStatus(input.Body.Status)
+	updatedTask, err := api.App().Adapter().Task().FindTaskByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if updatedTask == nil {
+		return nil, huma.Error404NotFound("Task not found")
+	}
+	newStatus := updatedTask.Status
 	if newStatus == models.TaskStatusDone {
 		if task.Status != models.TaskStatusDone {
 			err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{

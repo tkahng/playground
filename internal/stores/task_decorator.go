@@ -41,7 +41,7 @@ type TaskDecorator struct {
 	UpdateTaskFunc                  func(ctx context.Context, task *models.Task) error
 	UpdateTaskProjectFunc           func(ctx context.Context, taskProjectID uuid.UUID, input *UpdateTaskProjectBaseDTO) error
 	UpdateTaskProjectUpdateDateFunc func(ctx context.Context, taskProjectID uuid.UUID) error
-	UpdateTaskRankStatusFunc        func(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
+	UpdateTaskRankStatusFunc        func(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus, workflowStatusID *uuid.UUID) error
 	WithTxFunc                      func(dbx database.Dbx) *DbTaskStore
 	GetTeamTaskStatsFunc            func(ctx context.Context, teamId uuid.UUID) (*models.TaskStats, error)
 	FindAndUpdateTaskFunc           func(ctx context.Context, taskID uuid.UUID, input *UpdateTaskDto) error
@@ -392,14 +392,14 @@ func (t *TaskDecorator) UpdateTaskProjectUpdateDate(ctx context.Context, taskPro
 }
 
 // UpdateTaskRankStatus implements DbTaskStoreInterface.
-func (t *TaskDecorator) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error {
+func (t *TaskDecorator) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus, workflowStatusID *uuid.UUID) error {
 	if t.UpdateTaskRankStatusFunc != nil {
-		return t.UpdateTaskRankStatusFunc(ctx, taskID, position, status)
+		return t.UpdateTaskRankStatusFunc(ctx, taskID, position, status, workflowStatusID)
 	}
 	if t.Delegate == nil {
 		return ErrDelegateNil
 	}
-	return t.Delegate.UpdateTaskRankStatus(ctx, taskID, position, status)
+	return t.Delegate.UpdateTaskRankStatus(ctx, taskID, position, status, workflowStatusID)
 }
 
 // WithTx implements DbTaskStoreInterface.
