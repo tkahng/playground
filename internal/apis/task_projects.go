@@ -362,7 +362,10 @@ func (api *Api) TeamTaskProjectUpdate(ctx context.Context, input *UpdateTaskProj
 	if existing == nil {
 		return nil, huma.Error404NotFound("Task project not found")
 	}
-	oldStatus := string(existing.Status)
+	oldState, err := getWorkflowTransitionState(ctx, api.App().Adapter().Task(), string(existing.Status), existing.WorkflowStatusID, existing.Status == models.TaskProjectStatusDone)
+	if err != nil {
+		return nil, err
+	}
 
 	payload := input.Body
 	err = api.App().Adapter().Task().UpdateTaskProject(ctx, id, &payload)
@@ -370,13 +373,25 @@ func (api *Api) TeamTaskProjectUpdate(ctx context.Context, input *UpdateTaskProj
 		return nil, err
 	}
 
-	if oldStatus != string(payload.Status) {
+	updated, err := api.App().Adapter().Task().FindTaskProjectByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if updated == nil {
+		return nil, huma.Error404NotFound("Task project not found")
+	}
+	newState, err := getWorkflowTransitionState(ctx, api.App().Adapter().Task(), string(updated.Status), updated.WorkflowStatusID, updated.Status == models.TaskProjectStatusDone)
+	if err != nil {
+		return nil, err
+	}
+
+	if oldState.Status != newState.Status {
 		teamInfo := contextstore.GetContextTeamInfo(ctx)
 		if teamInfo != nil {
 			_ = api.App().JobService().EnqueueProjectStatusChangedJob(ctx, &workers.ProjectStatusChangedJobArgs{
 				ProjectID:         id,
-				OldStatus:         oldStatus,
-				NewStatus:         string(payload.Status),
+				OldStatus:         oldState.Status,
+				NewStatus:         newState.Status,
 				ChangedByMemberID: teamInfo.Member.ID,
 			})
 		}

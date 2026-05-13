@@ -218,10 +218,10 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 			// ensuring the notification decisions below reflect the actual DB state at
 			// the time of the update (not a stale snapshot from a concurrent request).
 			var (
-				previousStatus   models.TaskStatus
 				previousDueDate  *time.Time
 				previousAssignee *uuid.UUID
-				newStatus        models.TaskStatus
+				previousState    workflowTransitionState
+				newState         workflowTransitionState
 			)
 
 			txErr := api.App().Adapter().RunInTx(ctx, func(tx stores.StorageAdapterInterface) error {
@@ -233,7 +233,10 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 					return huma.Error404NotFound("Task not found")
 				}
 
-				previousStatus = task.Status
+				previousState, err = getWorkflowTransitionState(ctx, tx.Task(), string(task.Status), task.WorkflowStatusID, task.Status == models.TaskStatusDone)
+				if err != nil {
+					return err
+				}
 				previousDueDate = task.EndAt
 				previousAssignee = task.AssigneeID
 
@@ -254,7 +257,10 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 				if err := tx.Task().UpdateTask(ctx, task); err != nil {
 					return err
 				}
-				newStatus = task.Status
+				newState, err = getWorkflowTransitionState(ctx, tx.Task(), string(task.Status), task.WorkflowStatusID, task.Status == models.TaskStatusDone)
+				if err != nil {
+					return err
+				}
 				return nil
 			})
 			if txErr != nil {
@@ -297,8 +303,7 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 				}
 			}
 
-			newDoneStatus := previousStatus != newStatus && newStatus == models.TaskStatusDone
-			if newDoneStatus {
+			if !previousState.Completed && newState.Completed {
 				err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
 					TaskID:              id,
 					CompletedByMemberID: teamInfo.Member.ID,
@@ -309,12 +314,11 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 				}
 			}
 
-			statusChanged := previousStatus != newStatus && newStatus != models.TaskStatusDone
-			if statusChanged {
+			if previousState.Status != newState.Status && !newState.Completed {
 				err = api.App().JobService().EnqueueTaskStatusChangedJob(ctx, &workers.TaskStatusChangedJobArgs{
 					TaskID:            id,
-					OldStatus:         string(previousStatus),
-					NewStatus:         string(newStatus),
+					OldStatus:         previousState.Status,
+					NewStatus:         newState.Status,
 					ChangedByMemberID: teamInfo.Member.ID,
 				})
 				if err != nil {
@@ -351,6 +355,10 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 	if task == nil {
 		return nil, huma.Error404NotFound("Task not found")
 	}
+	previousState, err := getWorkflowTransitionState(ctx, api.App().Adapter().Task(), string(task.Status), task.WorkflowStatusID, task.Status == models.TaskStatusDone)
+	if err != nil {
+		return nil, err
+	}
 	err = api.App().Task().UpdateTaskRankStatus(ctx, id, input.Body.Position, models.TaskStatus(input.Body.Status), input.Body.WorkflowStatusID)
 	if err != nil {
 		return nil, err
@@ -363,23 +371,24 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 	if updatedTask == nil {
 		return nil, huma.Error404NotFound("Task not found")
 	}
-	newStatus := updatedTask.Status
-	if newStatus == models.TaskStatusDone {
-		if task.Status != models.TaskStatusDone {
-			err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
-				TaskID:              id,
-				CompletedByMemberID: teamInfo.Member.ID,
-				CompletedAt:         time.Now(),
-			})
-			if err != nil {
-				return nil, err
-			}
+	newState, err := getWorkflowTransitionState(ctx, api.App().Adapter().Task(), string(updatedTask.Status), updatedTask.WorkflowStatusID, updatedTask.Status == models.TaskStatusDone)
+	if err != nil {
+		return nil, err
+	}
+	if !previousState.Completed && newState.Completed {
+		err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
+			TaskID:              id,
+			CompletedByMemberID: teamInfo.Member.ID,
+			CompletedAt:         time.Now(),
+		})
+		if err != nil {
+			return nil, err
 		}
-	} else if task.Status != newStatus {
+	} else if previousState.Status != newState.Status {
 		err = api.App().JobService().EnqueueTaskStatusChangedJob(ctx, &workers.TaskStatusChangedJobArgs{
 			TaskID:            id,
-			OldStatus:         string(task.Status),
-			NewStatus:         string(newStatus),
+			OldStatus:         previousState.Status,
+			NewStatus:         newState.Status,
 			ChangedByMemberID: teamInfo.Member.ID,
 		})
 		if err != nil {
@@ -387,6 +396,31 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 		}
 	}
 	return nil, nil
+}
+
+type workflowTransitionState struct {
+	Status    string
+	Completed bool
+}
+
+func getWorkflowTransitionState(ctx context.Context, taskStore stores.DbTaskStoreInterface, fallbackStatus string, workflowStatusID *uuid.UUID, fallbackCompleted bool) (workflowTransitionState, error) {
+	if workflowStatusID == nil {
+		return workflowTransitionState{
+			Status:    fallbackStatus,
+			Completed: fallbackCompleted,
+		}, nil
+	}
+	status, err := taskStore.FindWorkflowStatusByID(ctx, *workflowStatusID)
+	if err != nil {
+		return workflowTransitionState{}, err
+	}
+	if status == nil {
+		return workflowTransitionState{}, huma.Error404NotFound("Workflow status not found")
+	}
+	return workflowTransitionState{
+		Status:    status.Slug,
+		Completed: status.IsCompleted,
+	}, nil
 }
 
 func (api *Api) TaskDelete(ctx context.Context, input *struct {
