@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
@@ -128,8 +129,8 @@ func TestApi_TeamTaskProjectCreate(t *testing.T) {
 				assert.Equal(t, input.CreateTaskProjectWithoutTeamDTO.Name, result.Name)
 				assert.Equal(t, input.CreateTaskProjectWithoutTeamDTO.Description, result.Description)
 				assert.Equal(t, input.CreateTaskProjectWithoutTeamDTO.Status, result.Status)
-				assert.NotNil(t, result.WorkflowID)
-				assert.NotNil(t, result.WorkflowStatusID)
+				require.NotNil(t, result.WorkflowID)
+				require.NotNil(t, result.WorkflowStatusID)
 			},
 		},
 		{
@@ -267,9 +268,8 @@ func TestApi_TeamTaskProjectPermissions(t *testing.T) {
 				assert.NoError(t, err)
 				if assert.Len(t, tasks, 1) {
 					for _, task := range tasks[0] {
-						if assert.NotNil(t, task.WorkflowStatusID) {
-							assert.Equal(t, statusesByCategory[string(task.Status)], *task.WorkflowStatusID)
-						}
+						require.NotNil(t, task.WorkflowStatusID)
+						assert.Equal(t, statusesByCategory[string(task.Status)], *task.WorkflowStatusID)
 					}
 				}
 			},
@@ -348,7 +348,7 @@ func TestApi_TeamTaskProjectTasksCreateReferences(t *testing.T) {
 			},
 			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 				result := test.MustUnMarshal[apis.Task](t, res.Body.Bytes())
-				assert.NotNil(t, result.WorkflowStatusID)
+				require.NotNil(t, result.WorkflowStatusID)
 			},
 		},
 		{

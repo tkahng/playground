@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
@@ -287,12 +288,10 @@ func TestApi_TeamTaskPositionStatus(t *testing.T) {
 				workflowStatusID := scenario.Store.Get("workflow_status_id").(uuid.UUID)
 				task, err := app.Adapter().Task().FindTaskByID(t.Context(), taskID)
 				assert.NoError(t, err)
-				if assert.NotNil(t, task) {
-					assert.Equal(t, models.TaskStatusInProgress, task.Status)
-					if assert.NotNil(t, task.WorkflowStatusID) {
-						assert.Equal(t, workflowStatusID, *task.WorkflowStatusID)
-					}
-				}
+				require.NotNil(t, task)
+				assert.Equal(t, models.TaskStatusInProgress, task.Status)
+				require.NotNil(t, task.WorkflowStatusID)
+				assert.Equal(t, workflowStatusID, *task.WorkflowStatusID)
 			},
 		},
 	}
