@@ -136,6 +136,12 @@ type WorkflowStatusUpdateParams struct {
 	Body             stores.UpdateWorkflowStatusDTO `required:"true"`
 }
 
+type WorkflowStatusReorderParams struct {
+	TeamID     string                            `path:"team-id" required:"true" format:"uuid"`
+	WorkflowID string                            `path:"workflow-id" required:"true" format:"uuid"`
+	Body       stores.ReorderWorkflowStatusesDTO `required:"true"`
+}
+
 type WorkflowStatusDeleteParams struct {
 	TeamID           string `path:"team-id" required:"true" format:"uuid"`
 	WorkflowID       string `path:"workflow-id" required:"true" format:"uuid"`
@@ -144,6 +150,10 @@ type WorkflowStatusDeleteParams struct {
 
 type WorkflowStatusResponse struct {
 	Body *WorkflowStatus
+}
+
+type WorkflowStatusesResponse struct {
+	Body []*WorkflowStatus
 }
 
 func (api *Api) TeamWorkflowListBind(humaApi huma.API) {
@@ -465,6 +475,50 @@ func (api *Api) TeamWorkflowStatusUpdateBind(humaApi huma.API) {
 				return nil, err
 			}
 			return &WorkflowStatusResponse{Body: fromModelWorkflowStatus(status)}, nil
+		},
+	)
+}
+
+func (api *Api) TeamWorkflowStatusReorderBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "workflow-status-reorder",
+			Method:      http.MethodPut,
+			Path:        "/teams/{team-id}/workflows/{workflow-id}/statuses/reorder",
+			Summary:     "Workflow status reorder",
+			Description: "Reorder workflow statuses",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusBadRequest, http.StatusForbidden, http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionWorkflowManage),
+			),
+		},
+		func(ctx context.Context, input *WorkflowStatusReorderParams) (*WorkflowStatusesResponse, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("Unauthorized")
+			}
+			workflowID, err := uuid.Parse(input.WorkflowID)
+			if err != nil {
+				return nil, huma.Error400BadRequest("Invalid workflow id", err)
+			}
+			workflow, err := api.App().Adapter().Task().FindWorkflowByID(ctx, workflowID)
+			if err != nil {
+				return nil, err
+			}
+			if workflow == nil || workflow.TeamID != teamInfo.Team.ID {
+				return nil, apierrors.NotFound("workflow not found")
+			}
+			statuses, err := api.App().Adapter().Task().ReorderWorkflowStatuses(ctx, workflowID, input.Body.StatusIds)
+			if err != nil {
+				return nil, err
+			}
+			return &WorkflowStatusesResponse{Body: mapper.Map(statuses, fromModelWorkflowStatus)}, nil
 		},
 	)
 }

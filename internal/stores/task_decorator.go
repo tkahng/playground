@@ -35,6 +35,7 @@ type TaskDecorator struct {
 	LoadWorkflowStatusesFunc        func(ctx context.Context, workflowIds ...uuid.UUID) ([][]*models.WorkflowStatus, error)
 	CreateWorkflowStatusFunc        func(ctx context.Context, workflowID uuid.UUID, input *CreateWorkflowStatusDTO) (*models.WorkflowStatus, error)
 	UpdateWorkflowStatusFunc        func(ctx context.Context, workflowStatusID uuid.UUID, input *UpdateWorkflowStatusDTO) (*models.WorkflowStatus, error)
+	ReorderWorkflowStatusesFunc     func(ctx context.Context, workflowID uuid.UUID, statusIDs []uuid.UUID) ([]*models.WorkflowStatus, error)
 	DeleteWorkflowStatusFunc        func(ctx context.Context, workflowStatusID uuid.UUID) error
 	LoadTaskProjectsTasksFunc       func(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error)
 	TaskWhereFunc                   func(task *TaskFilter) *map[string]any
@@ -324,6 +325,16 @@ func (t *TaskDecorator) UpdateWorkflowStatus(ctx context.Context, workflowStatus
 		return nil, ErrDelegateNil
 	}
 	return t.Delegate.UpdateWorkflowStatus(ctx, workflowStatusID, input)
+}
+
+func (t *TaskDecorator) ReorderWorkflowStatuses(ctx context.Context, workflowID uuid.UUID, statusIDs []uuid.UUID) ([]*models.WorkflowStatus, error) {
+	if t.ReorderWorkflowStatusesFunc != nil {
+		return t.ReorderWorkflowStatusesFunc(ctx, workflowID, statusIDs)
+	}
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.ReorderWorkflowStatuses(ctx, workflowID, statusIDs)
 }
 
 func (t *TaskDecorator) DeleteWorkflowStatus(ctx context.Context, workflowStatusID uuid.UUID) error {

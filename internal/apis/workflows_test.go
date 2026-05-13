@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tkahng/playground/internal/apis"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
@@ -591,6 +592,125 @@ func TestApi_TeamWorkflowStatusUpdate(t *testing.T) {
 				)
 				scenario.Body = apis.JsonToReader(t, stores.UpdateWorkflowStatusDTO{
 					Category: types.Pointer(string(models.TaskStatusInProgress)),
+				})
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
+				return testApi
+			}
+			tt.Test(t)
+		})
+	}
+}
+
+func TestApi_TeamWorkflowStatusReorder(t *testing.T) {
+	tests := []apis.ApiScenario{
+		{
+			Name:           "success: owner can reorder workflow statuses",
+			Method:         http.MethodPut,
+			URL:            "/teams/{team-id}/workflows/{workflow-id}/statuses/reorder",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				workflowID := findWorkflowID(t, app, team.Team.ID, "task")
+				statuses, err := app.Adapter().Task().LoadWorkflowStatuses(t.Context(), workflowID)
+				require.NoError(t, err)
+				require.Len(t, statuses, 1)
+				require.Len(t, statuses[0], 3)
+
+				statusIDs := []uuid.UUID{
+					statuses[0][2].ID,
+					statuses[0][1].ID,
+					statuses[0][0].ID,
+				}
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses/reorder", team.Team.ID, workflowID)
+				scenario.Body = apis.JsonToReader(t, stores.ReorderWorkflowStatusesDTO{
+					StatusIds: statusIDs,
+				})
+				scenario.Store.Set("status_ids", statusIDs)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[[]*apis.WorkflowStatus](t, res.Body.Bytes())
+				statusIDs := scenario.Store.Get("status_ids").([]uuid.UUID)
+				assert.Len(t, result, 3)
+				for idx, status := range result {
+					assert.Equal(t, statusIDs[idx], status.ID)
+					assert.Equal(t, float64((idx+1)*1000), status.Rank)
+				}
+			},
+		},
+		{
+			Name:            "fail: cannot reorder with partial workflow status list",
+			Method:          http.MethodPut,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses/reorder",
+			ExpectedStatus:  http.StatusBadRequest,
+			ExpectedContent: []string{"workflow status ids must include each workflow status exactly once"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				workflowID := findWorkflowID(t, app, team.Team.ID, "task")
+				statusID := findWorkflowStatusID(t, app, team.Team.ID, "task", "todo")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses/reorder", team.Team.ID, workflowID)
+				scenario.Body = apis.JsonToReader(t, stores.ReorderWorkflowStatusesDTO{
+					StatusIds: []uuid.UUID{statusID},
+				})
+			},
+		},
+		{
+			Name:            "fail: cannot reorder another team workflow",
+			Method:          http.MethodPut,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses/reorder",
+			ExpectedStatus:  http.StatusNotFound,
+			ExpectedContent: []string{"workflow not found"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				otherOwner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				otherTeam := core.CreateTeamAndMemberWithOptions(t, app, &otherOwner.User)
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				core.CreateProjectAndTasks(t, app, &otherTeam.Member)
+				otherWorkflowID := findWorkflowID(t, app, otherTeam.Team.ID, "task")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses/reorder", team.Team.ID, otherWorkflowID)
+				scenario.Body = apis.JsonToReader(t, stores.ReorderWorkflowStatusesDTO{
+					StatusIds: []uuid.UUID{uuid.New()},
+				})
+			},
+		},
+		{
+			Name:            "fail: member cannot reorder workflow statuses",
+			Method:          http.MethodPut,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses/reorder",
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				memberUser := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				core.CreateTeamMemberWithOptions(t, app, team.Team.ID, memberUser.User.ID, core.TeamWithRole(models.TeamMemberRoleMember))
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				workflowID := findWorkflowID(t, app, team.Team.ID, "task")
+				statusID := findWorkflowStatusID(t, app, team.Team.ID, "task", "todo")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, memberUser.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses/reorder", team.Team.ID, workflowID)
+				scenario.Body = apis.JsonToReader(t, stores.ReorderWorkflowStatusesDTO{
+					StatusIds: []uuid.UUID{statusID},
 				})
 			},
 		},

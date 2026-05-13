@@ -47,6 +47,7 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	LoadWorkflowStatuses(ctx context.Context, workflowIds ...uuid.UUID) ([][]*models.WorkflowStatus, error)
 	CreateWorkflowStatus(ctx context.Context, workflowID uuid.UUID, input *CreateWorkflowStatusDTO) (*models.WorkflowStatus, error)
 	UpdateWorkflowStatus(ctx context.Context, workflowStatusID uuid.UUID, input *UpdateWorkflowStatusDTO) (*models.WorkflowStatus, error)
+	ReorderWorkflowStatuses(ctx context.Context, workflowID uuid.UUID, statusIDs []uuid.UUID) ([]*models.WorkflowStatus, error)
 	DeleteWorkflowStatus(ctx context.Context, workflowStatusID uuid.UUID) error
 	LoadTaskProjectsTasks(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error)
 	taskWhere(task *TaskFilter) *map[string]any
@@ -379,6 +380,10 @@ type UpdateWorkflowStatusDTO struct {
 	IsCompleted *bool    `json:"is_completed,omitempty" required:"false"`
 }
 
+type ReorderWorkflowStatusesDTO struct {
+	StatusIds []uuid.UUID `json:"status_ids" required:"true" minimum:"1" maximum:"100" format:"uuid"`
+}
+
 func (s *DbTaskStore) FindWorkflowByID(ctx context.Context, id uuid.UUID) (*models.Workflow, error) {
 	return repository.Workflow.GetOne(
 		ctx,
@@ -509,6 +514,69 @@ func (s *DbTaskStore) UpdateWorkflowStatus(ctx context.Context, workflowStatusID
 		return nil, apierrors.Conflict("workflow status already exists")
 	}
 	return updated, err
+}
+
+func (s *DbTaskStore) ReorderWorkflowStatuses(ctx context.Context, workflowID uuid.UUID, statusIDs []uuid.UUID) ([]*models.WorkflowStatus, error) {
+	statuses, err := s.LoadWorkflowStatuses(ctx, workflowID)
+	if err != nil {
+		return nil, err
+	}
+	if len(statuses) == 0 {
+		return nil, apierrors.NotFound("workflow not found")
+	}
+	if !workflowStatusIDsMatch(statuses[0], statusIDs) {
+		return nil, apierrors.BadRequest("workflow status ids must include each workflow status exactly once")
+	}
+
+	err = s.db.RunInTx(ctx, func(tx database.Dbx) error {
+		for idx, statusID := range statusIDs {
+			q := squirrel.Update(repository.WorkflowStatusBuilder.TableName()).
+				Set("rank", float64((idx+1)*1000)).
+				Where(squirrel.Eq{
+					"id":          statusID,
+					"workflow_id": workflowID,
+				}).
+				PlaceholderFormat(squirrel.Dollar)
+			affected, err := database.ExecWithBuilder(ctx, tx, q)
+			if err != nil {
+				return err
+			}
+			if affected != 1 {
+				return apierrors.BadRequest("workflow status ids must include each workflow status exactly once")
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	updated, err := s.LoadWorkflowStatuses(ctx, workflowID)
+	if err != nil {
+		return nil, err
+	}
+	if len(updated) == 0 {
+		return []*models.WorkflowStatus{}, nil
+	}
+	return updated[0], nil
+}
+
+func workflowStatusIDsMatch(statuses []*models.WorkflowStatus, statusIDs []uuid.UUID) bool {
+	if len(statuses) == 0 || len(statusIDs) != len(statuses) {
+		return false
+	}
+	existing := make(map[uuid.UUID]bool, len(statuses))
+	for _, status := range statuses {
+		existing[status.ID] = true
+	}
+	seen := make(map[uuid.UUID]bool, len(statusIDs))
+	for _, statusID := range statusIDs {
+		if statusID == uuid.Nil || !existing[statusID] || seen[statusID] {
+			return false
+		}
+		seen[statusID] = true
+	}
+	return true
 }
 
 func (s *DbTaskStore) DeleteWorkflowStatus(ctx context.Context, workflowStatusID uuid.UUID) error {
