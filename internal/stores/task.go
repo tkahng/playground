@@ -218,11 +218,7 @@ func (s *DbTaskStore) DeleteWorkflow(ctx context.Context, workflowID uuid.UUID) 
 	if workflow.IsDefault {
 		return apierrors.Conflict("default workflow cannot be deleted")
 	}
-	projectCount, err := repository.TaskProject.Count(ctx, s.db, &map[string]any{
-		"workflow_id": map[string]any{
-			"_eq": workflowID,
-		},
-	})
+	projectCount, err := s.countProjectsUsingWorkflow(ctx, workflowID)
 	if err != nil {
 		return err
 	}
@@ -302,21 +298,63 @@ func (s *DbTaskStore) validateWorkflowAssignable(ctx context.Context, workflowID
 	if err != nil {
 		return err
 	}
-	if len(statuses) == 0 {
+	if len(statuses) == 0 || len(statuses[0]) == 0 {
 		return apierrors.BadRequest("workflow must have statuses before assignment")
 	}
-	categories := map[string]bool{}
-	for _, status := range statuses[0] {
-		categories[status.Category] = true
+	if !workflowStatusesIncludeRequiredCategories(statuses[0]) {
+		return apierrors.BadRequest("workflow must have statuses for todo, in_progress, and done before assignment")
 	}
-	for _, category := range []string{
+	return nil
+}
+
+func requiredWorkflowStatusCategories() []string {
+	return []string{
 		string(models.TaskStatusTodo),
 		string(models.TaskStatusInProgress),
 		string(models.TaskStatusDone),
-	} {
+	}
+}
+
+func workflowStatusesIncludeRequiredCategories(statuses []*models.WorkflowStatus) bool {
+	categories := map[string]bool{}
+	for _, status := range statuses {
+		categories[status.Category] = true
+	}
+	for _, category := range requiredWorkflowStatusCategories() {
 		if !categories[category] {
-			return apierrors.BadRequest("workflow must have statuses for todo, in_progress, and done before assignment")
+			return false
 		}
+	}
+	return true
+}
+
+func (s *DbTaskStore) countProjectsUsingWorkflow(ctx context.Context, workflowID uuid.UUID) (int64, error) {
+	return repository.TaskProject.Count(ctx, s.db, &map[string]any{
+		"workflow_id": map[string]any{
+			"_eq": workflowID,
+		},
+	})
+}
+
+func (s *DbTaskStore) ensureActiveWorkflowKeepsAssignableStatuses(ctx context.Context, workflowID uuid.UUID, statuses []*models.WorkflowStatus) error {
+	workflow, err := s.FindWorkflowByID(ctx, workflowID)
+	if err != nil {
+		return err
+	}
+	if workflow == nil {
+		return apierrors.NotFound("workflow not found")
+	}
+	if !workflow.IsDefault {
+		projectCount, err := s.countProjectsUsingWorkflow(ctx, workflowID)
+		if err != nil {
+			return err
+		}
+		if projectCount == 0 {
+			return nil
+		}
+	}
+	if !workflowStatusesIncludeRequiredCategories(statuses) {
+		return apierrors.Conflict("workflow must keep statuses for todo, in_progress, and done while in use")
 	}
 	return nil
 }
@@ -415,6 +453,7 @@ func (s *DbTaskStore) UpdateWorkflowStatus(ctx context.Context, workflowStatusID
 	if status == nil {
 		return nil, apierrors.NotFound("workflow status not found")
 	}
+	originalCategory := status.Category
 	if input.Name != nil {
 		name := strings.TrimSpace(*input.Name)
 		if name == "" {
@@ -451,6 +490,20 @@ func (s *DbTaskStore) UpdateWorkflowStatus(ctx context.Context, workflowStatusID
 	if input.IsCompleted != nil {
 		status.IsCompleted = *input.IsCompleted
 	}
+	if status.Category != originalCategory {
+		statuses, err := s.LoadWorkflowStatuses(ctx, status.WorkflowID)
+		if err != nil {
+			return nil, err
+		}
+		for _, workflowStatus := range statuses[0] {
+			if workflowStatus.ID == status.ID {
+				workflowStatus.Category = status.Category
+			}
+		}
+		if err := s.ensureActiveWorkflowKeepsAssignableStatuses(ctx, status.WorkflowID, statuses[0]); err != nil {
+			return nil, err
+		}
+	}
 	updated, err := repository.WorkflowStatus.PutOne(ctx, s.db, status)
 	if database.IsUniqConstraintErr(err) {
 		return nil, apierrors.Conflict("workflow status already exists")
@@ -467,6 +520,19 @@ func (s *DbTaskStore) DeleteWorkflowStatus(ctx context.Context, workflowStatusID
 		return apierrors.NotFound("workflow status not found")
 	}
 	if err := s.ensureWorkflowStatusUnused(ctx, workflowStatusID); err != nil {
+		return err
+	}
+	statuses, err := s.LoadWorkflowStatuses(ctx, status.WorkflowID)
+	if err != nil {
+		return err
+	}
+	remainingStatuses := make([]*models.WorkflowStatus, 0, len(statuses[0]))
+	for _, workflowStatus := range statuses[0] {
+		if workflowStatus.ID != workflowStatusID {
+			remainingStatuses = append(remainingStatuses, workflowStatus)
+		}
+	}
+	if err := s.ensureActiveWorkflowKeepsAssignableStatuses(ctx, status.WorkflowID, remainingStatuses); err != nil {
 		return err
 	}
 	_, err = repository.WorkflowStatus.Delete(ctx, s.db, &map[string]any{

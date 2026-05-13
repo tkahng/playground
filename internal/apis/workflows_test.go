@@ -568,6 +568,32 @@ func TestApi_TeamWorkflowStatusUpdate(t *testing.T) {
 				})
 			},
 		},
+		{
+			Name:            "fail: cannot remove required category from default workflow",
+			Method:          http.MethodPut,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
+			ExpectedStatus:  http.StatusConflict,
+			ExpectedContent: []string{"workflow must keep statuses for todo, in_progress, and done while in use"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				workflowID, statusesByCategory := createAssignableTaskWorkflow(t, app, team.Team.ID, team.Member.ID)
+				_, err := app.Adapter().Task().SetDefaultWorkflow(t.Context(), workflowID)
+				assert.NoError(t, err)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf(
+					"/teams/%s/workflows/%s/statuses/%s",
+					team.Team.ID,
+					workflowID,
+					statusesByCategory[string(models.TaskStatusTodo)],
+				)
+				scenario.Body = apis.JsonToReader(t, stores.UpdateWorkflowStatusDTO{
+					Category: types.Pointer(string(models.TaskStatusInProgress)),
+				})
+			},
+		},
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
@@ -619,13 +645,36 @@ func TestApi_TeamWorkflowStatusDelete(t *testing.T) {
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
-				core.CreateProjectAndTasks(t, app, &team.Member)
+				core.CreateProjectAndTasks(t, app, &team.Member, core.WithTaskByCountAndStatus(1, models.TaskStatusTodo))
 				workflowID := findWorkflowID(t, app, team.Team.ID, "task")
 				statusID := findWorkflowStatusID(t, app, team.Team.ID, "task", "todo")
 
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
 				scenario.Headers = []string{tokenHeader}
 				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses/%s", team.Team.ID, workflowID, statusID)
+			},
+		},
+		{
+			Name:            "fail: cannot remove required category from default workflow",
+			Method:          http.MethodDelete,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
+			ExpectedStatus:  http.StatusConflict,
+			ExpectedContent: []string{"workflow must keep statuses for todo, in_progress, and done while in use"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				workflowID, statusesByCategory := createAssignableTaskWorkflow(t, app, team.Team.ID, team.Member.ID)
+				_, err := app.Adapter().Task().SetDefaultWorkflow(t.Context(), workflowID)
+				assert.NoError(t, err)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf(
+					"/teams/%s/workflows/%s/statuses/%s",
+					team.Team.ID,
+					workflowID,
+					statusesByCategory[string(models.TaskStatusDone)],
+				)
 			},
 		},
 		{
