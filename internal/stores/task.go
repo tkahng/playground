@@ -47,6 +47,7 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	LoadWorkflowStatuses(ctx context.Context, workflowIds ...uuid.UUID) ([][]*models.WorkflowStatus, error)
 	CreateWorkflowStatus(ctx context.Context, workflowID uuid.UUID, input *CreateWorkflowStatusDTO) (*models.WorkflowStatus, error)
 	UpdateWorkflowStatus(ctx context.Context, workflowStatusID uuid.UUID, input *UpdateWorkflowStatusDTO) (*models.WorkflowStatus, error)
+	DeleteWorkflowStatus(ctx context.Context, workflowStatusID uuid.UUID) error
 	LoadTaskProjectsTasks(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error)
 	taskWhere(task *TaskFilter) *map[string]any
 	UpdateTask(ctx context.Context, task *models.Task) error
@@ -339,6 +340,41 @@ func (s *DbTaskStore) UpdateWorkflowStatus(ctx context.Context, workflowStatusID
 		return nil, apierrors.Conflict("workflow status already exists")
 	}
 	return updated, err
+}
+
+func (s *DbTaskStore) DeleteWorkflowStatus(ctx context.Context, workflowStatusID uuid.UUID) error {
+	status, err := s.findWorkflowStatusByID(ctx, workflowStatusID)
+	if err != nil {
+		return err
+	}
+	if status == nil {
+		return apierrors.NotFound("workflow status not found")
+	}
+	taskCount, err := repository.Task.Count(ctx, s.db, &map[string]any{
+		"workflow_status_id": map[string]any{
+			"_eq": workflowStatusID,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	projectCount, err := repository.TaskProject.Count(ctx, s.db, &map[string]any{
+		"workflow_status_id": map[string]any{
+			"_eq": workflowStatusID,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if taskCount > 0 || projectCount > 0 {
+		return apierrors.Conflict("workflow status is in use")
+	}
+	_, err = repository.WorkflowStatus.Delete(ctx, s.db, &map[string]any{
+		"id": map[string]any{
+			"_eq": workflowStatusID,
+		},
+	})
+	return err
 }
 
 func (s *DbTaskStore) CreateTask(ctx context.Context, task *models.Task) (*models.Task, error) {

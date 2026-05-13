@@ -126,6 +126,12 @@ type WorkflowStatusUpdateParams struct {
 	Body             stores.UpdateWorkflowStatusDTO `required:"true"`
 }
 
+type WorkflowStatusDeleteParams struct {
+	TeamID           string `path:"team-id" required:"true" format:"uuid"`
+	WorkflowID       string `path:"workflow-id" required:"true" format:"uuid"`
+	WorkflowStatusID string `path:"workflow-status-id" required:"true" format:"uuid"`
+}
+
 type WorkflowStatusResponse struct {
 	Body *WorkflowStatus
 }
@@ -362,6 +368,60 @@ func (api *Api) TeamWorkflowStatusUpdateBind(humaApi huma.API) {
 				return nil, err
 			}
 			return &WorkflowStatusResponse{Body: fromModelWorkflowStatus(status)}, nil
+		},
+	)
+}
+
+func (api *Api) TeamWorkflowStatusDeleteBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "workflow-status-delete",
+			Method:      http.MethodDelete,
+			Path:        "/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
+			Summary:     "Workflow status delete",
+			Description: "Delete an unused workflow status",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusBadRequest, http.StatusConflict, http.StatusForbidden, http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionWorkflowManage),
+			),
+		},
+		func(ctx context.Context, input *WorkflowStatusDeleteParams) (*struct{}, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("Unauthorized")
+			}
+			workflowID, err := uuid.Parse(input.WorkflowID)
+			if err != nil {
+				return nil, huma.Error400BadRequest("Invalid workflow id", err)
+			}
+			workflowStatusID, err := uuid.Parse(input.WorkflowStatusID)
+			if err != nil {
+				return nil, huma.Error400BadRequest("Invalid workflow status id", err)
+			}
+			workflow, err := api.App().Adapter().Task().FindWorkflowByID(ctx, workflowID)
+			if err != nil {
+				return nil, err
+			}
+			if workflow == nil || workflow.TeamID != teamInfo.Team.ID {
+				return nil, apierrors.NotFound("workflow not found")
+			}
+			status, err := api.App().Adapter().Task().FindWorkflowStatusByID(ctx, workflowStatusID)
+			if err != nil {
+				return nil, err
+			}
+			if status == nil || status.WorkflowID != workflow.ID {
+				return nil, apierrors.NotFound("workflow status not found")
+			}
+			if err := api.App().Adapter().Task().DeleteWorkflowStatus(ctx, workflowStatusID); err != nil {
+				return nil, err
+			}
+			return nil, nil
 		},
 	)
 }

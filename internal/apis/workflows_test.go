@@ -388,6 +388,86 @@ func TestApi_TeamWorkflowStatusUpdate(t *testing.T) {
 	}
 }
 
+func TestApi_TeamWorkflowStatusDelete(t *testing.T) {
+	tests := []apis.ApiScenario{
+		{
+			Name:           "success: owner can delete unused workflow status",
+			Method:         http.MethodDelete,
+			URL:            "/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
+			ExpectedStatus: http.StatusNoContent,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				workflowID := findWorkflowID(t, app, team.Team.ID, "task")
+				status, err := app.Adapter().Task().CreateWorkflowStatus(t.Context(), workflowID, &stores.CreateWorkflowStatusDTO{
+					Name:     "Blocked",
+					Category: string(models.TaskStatusInProgress),
+				})
+				assert.NoError(t, err)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses/%s", team.Team.ID, workflowID, status.ID)
+				scenario.Store.Set("workflow_status_id", status.ID)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				statusID := scenario.Store.Get("workflow_status_id").(uuid.UUID)
+				status, err := app.Adapter().Task().FindWorkflowStatusByID(t.Context(), statusID)
+				assert.NoError(t, err)
+				assert.Nil(t, status)
+			},
+		},
+		{
+			Name:            "fail: cannot delete workflow status in use",
+			Method:          http.MethodDelete,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
+			ExpectedStatus:  http.StatusConflict,
+			ExpectedContent: []string{"workflow status is in use"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				workflowID := findWorkflowID(t, app, team.Team.ID, "task")
+				statusID := findWorkflowStatusID(t, app, team.Team.ID, "task", "todo")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses/%s", team.Team.ID, workflowID, statusID)
+			},
+		},
+		{
+			Name:            "fail: member cannot delete workflow status",
+			Method:          http.MethodDelete,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				memberUser := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				core.CreateTeamMemberWithOptions(t, app, team.Team.ID, memberUser.User.ID, core.TeamWithRole(models.TeamMemberRoleMember))
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				workflowID := findWorkflowID(t, app, team.Team.ID, "task")
+				statusID := findWorkflowStatusID(t, app, team.Team.ID, "task", "todo")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, memberUser.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses/%s", team.Team.ID, workflowID, statusID)
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
+				return testApi
+			}
+			tt.Test(t)
+		})
+	}
+}
+
 func findWorkflowID(t testing.TB, app *core.BaseApp, teamID uuid.UUID, appliesTo string) uuid.UUID {
 	t.Helper()
 	workflows, err := app.Adapter().Task().ListWorkflows(t.Context(), &stores.WorkflowFilter{
