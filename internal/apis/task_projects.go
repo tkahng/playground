@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/populator"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
@@ -40,6 +41,7 @@ type TaskProject struct {
 	UpdatedAt         time.Time                `db:"updated_at" json:"updated_at"`
 	CreatedByMember   *TeamMember              `db:"created_by_member" src:"created_by_member_id" dest:"id" table:"team_members" json:"created_by_member,omitempty"`
 	Team              *Team                    `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
+	WorkflowStatus    *WorkflowStatus          `db:"workflow_status" src:"workflow_status_id" dest:"id" table:"task.workflow_statuses" json:"workflow_status,omitempty"`
 	Tasks             []*Task                  `db:"tasks" src:"id" dest:"project_id" table:"tasks" json:"tasks,omitempty"`
 }
 
@@ -65,6 +67,7 @@ func FromModelProject(task *models.TaskProject) *TaskProject {
 		UpdatedAt:         task.UpdatedAt,
 		CreatedByMember:   fromTeamMemberModel(task.CreatedByMember),
 		Team:              fromTeamModel(task.Team),
+		WorkflowStatus:    fromModelWorkflowStatus(task.WorkflowStatus),
 		Tasks:             mapper.Map(task.Tasks, fromModelTask),
 	}
 }
@@ -156,6 +159,12 @@ func (api *Api) TeamTaskProjectListBind(humaApi huma.API) {
 			taskProject, err := api.App().Adapter().Task().ListTaskProjects(ctx, newInput)
 			if err != nil {
 				return nil, err
+			}
+			pop := populator.New(api.App().Adapter())
+			for _, taskProject := range taskProject {
+				if err := populator.PopulateTaskProject(ctx, pop, taskProject); err != nil {
+					return nil, err
+				}
 			}
 			total, err := api.App().Adapter().Task().CountTaskProjects(ctx, newInput)
 			if err != nil {
@@ -410,6 +419,10 @@ func (api *Api) TeamTaskProjectGet(ctx context.Context, input *struct {
 	}
 	taskProject, err := api.App().Adapter().Task().FindTaskProjectByID(ctx, id)
 	if err != nil {
+		return nil, err
+	}
+	pop := populator.New(api.App().Adapter())
+	if err := populator.PopulateTaskProject(ctx, pop, taskProject); err != nil {
 		return nil, err
 	}
 	if input.Expand != nil && slices.Contains(input.Expand, "tasks") {

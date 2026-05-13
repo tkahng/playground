@@ -98,6 +98,9 @@ func TestApi_TeamTaskList(t *testing.T) {
 					for _, task := range result.Data {
 						require.NotNil(t, task.WorkflowStatusID)
 						assert.Equal(t, doneStatusID, *task.WorkflowStatusID)
+						require.NotNil(t, task.WorkflowStatus)
+						assert.Equal(t, doneStatusID, task.WorkflowStatus.ID)
+						assert.Equal(t, string(models.TaskStatusDone), task.WorkflowStatus.Category)
 					}
 				},
 			},

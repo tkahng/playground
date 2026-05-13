@@ -43,6 +43,7 @@ type Task struct {
 	Reporter          *TeamMember       `db:"reporter" src:"reporter_id" dest:"id" table:"team_members" json:"reporter,omitempty"`
 	Team              *Team             `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
 	Project           *TaskProject      `db:"project" src:"project_id" dest:"id" table:"task_projects" json:"project,omitempty"`
+	WorkflowStatus    *WorkflowStatus   `db:"workflow_status" src:"workflow_status_id" dest:"id" table:"task.workflow_statuses" json:"workflow_status,omitempty"`
 	Parent            *Task             `db:"parent" src:"parent_id" dest:"id" table:"tasks" json:"parent,omitempty"`
 }
 
@@ -71,6 +72,7 @@ func fromModelTask(task *models.Task) *Task {
 		CreatedByMember:   fromTeamMemberModel(task.CreatedByMember),
 		Team:              fromTeamModel(task.Team),
 		Project:           FromModelProject(task.Project),
+		WorkflowStatus:    fromModelWorkflowStatus(task.WorkflowStatus),
 		Assignee:          fromTeamMemberModel(task.Assignee),
 		Reporter:          fromTeamMemberModel(task.Reporter),
 		Parent:            fromModelTask(task.Parent),

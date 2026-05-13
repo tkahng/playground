@@ -115,6 +115,9 @@ func TestApi_TeamTaskProjectList(t *testing.T) {
 					assert.Equal(t, int64(1), result.Meta.Total)
 					require.NotNil(t, result.Data[0].WorkflowStatusID)
 					assert.Equal(t, doneStatusID, *result.Data[0].WorkflowStatusID)
+					require.NotNil(t, result.Data[0].WorkflowStatus)
+					assert.Equal(t, doneStatusID, result.Data[0].WorkflowStatus.ID)
+					assert.Equal(t, string(models.TaskStatusDone), result.Data[0].WorkflowStatus.Category)
 				},
 			},
 		}

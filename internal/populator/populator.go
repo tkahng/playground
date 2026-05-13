@@ -18,6 +18,7 @@ type Populator interface {
 
 	GetTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error)
 	GetProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error)
+	GetWorkflowStatusByID(ctx context.Context, id uuid.UUID) (*models.WorkflowStatus, error)
 }
 
 type DbPopulator struct {
@@ -26,6 +27,7 @@ type DbPopulator struct {
 	team    *memo.MemoizedStore[*models.Team, uuid.UUID]
 	task    *memo.MemoizedStore[*models.Task, uuid.UUID]
 	project *memo.MemoizedStore[*models.TaskProject, uuid.UUID]
+	status  *memo.MemoizedStore[*models.WorkflowStatus, uuid.UUID]
 	player  *memo.MemoizedStore[*models.Player, uuid.UUID]
 }
 
@@ -54,6 +56,10 @@ func (s *DbPopulator) GetTaskByID(ctx context.Context, id uuid.UUID) (*models.Ta
 
 func (s *DbPopulator) GetProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error) {
 	return s.project.Get(ctx, id)
+}
+
+func (s *DbPopulator) GetWorkflowStatusByID(ctx context.Context, id uuid.UUID) (*models.WorkflowStatus, error) {
+	return s.status.Get(ctx, id)
 }
 
 func New(adapter stores.StorageAdapterInterface) Populator {
@@ -164,6 +170,27 @@ func New(adapter stores.StorageAdapterInterface) Populator {
 				return p.ID
 			},
 		),
+		status: memo.New(
+			func(ctx context.Context, key uuid.UUID) (*models.WorkflowStatus, error) {
+				return adapter.Task().FindWorkflowStatusByID(ctx, key)
+			},
+			func(ctx context.Context, keys ...uuid.UUID) ([]*models.WorkflowStatus, error) {
+				statuses := make([]*models.WorkflowStatus, 0, len(keys))
+				for _, key := range keys {
+					status, err := adapter.Task().FindWorkflowStatusByID(ctx, key)
+					if err != nil {
+						return nil, err
+					}
+					if status != nil {
+						statuses = append(statuses, status)
+					}
+				}
+				return statuses, nil
+			},
+			func(status *models.WorkflowStatus) uuid.UUID {
+				return status.ID
+			},
+		),
 	}
 }
 
@@ -232,7 +259,26 @@ func PopulateTask(ctx context.Context, populator Populator, task *models.Task) e
 		return err
 	}
 	task.Project = project
+	if task.WorkflowStatusID != nil {
+		status, err := populator.GetWorkflowStatusByID(ctx, *task.WorkflowStatusID)
+		if err != nil {
+			return err
+		}
+		task.WorkflowStatus = status
+	}
 
+	return nil
+}
+
+func PopulateTaskProject(ctx context.Context, populator Populator, taskProject *models.TaskProject) error {
+	if taskProject.WorkflowStatusID == nil {
+		return nil
+	}
+	status, err := populator.GetWorkflowStatusByID(ctx, *taskProject.WorkflowStatusID)
+	if err != nil {
+		return err
+	}
+	taskProject.WorkflowStatus = status
 	return nil
 }
 
