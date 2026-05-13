@@ -231,6 +231,50 @@ func TestApi_TeamTaskProjectPermissions(t *testing.T) {
 			},
 		},
 		{
+			Name:           "success: owner can update project task workflow",
+			Method:         http.MethodPut,
+			URL:            "/task-projects/{task-project-id}",
+			ExpectedStatus: http.StatusNoContent,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				project := core.CreateProjectAndTasks(t, app, &team1.Member)
+				workflowID, statusesByCategory := createAssignableTaskWorkflow(t, app, team1.Team.ID, team1.Member.ID)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/task-projects/%s", project.ID.String())
+				scenario.Store.Set("project_id", project.ID)
+				scenario.Store.Set("workflow_id", workflowID)
+				scenario.Store.Set("statuses_by_category", statusesByCategory)
+				scenario.Body = apis.JsonToReader(t, stores.UpdateTaskProjectBaseDTO{
+					Name:       "Updated Project",
+					Status:     project.Status,
+					WorkflowID: &workflowID,
+					Rank:       project.Rank,
+				})
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				projectID := scenario.Store.Get("project_id").(uuid.UUID)
+				workflowID := scenario.Store.Get("workflow_id").(uuid.UUID)
+				statusesByCategory := scenario.Store.Get("statuses_by_category").(map[string]uuid.UUID)
+
+				project, err := app.Adapter().Task().FindTaskProjectByID(t.Context(), projectID)
+				assert.NoError(t, err)
+				assert.Equal(t, workflowID, *project.WorkflowID)
+
+				tasks, err := app.Adapter().Task().LoadTaskProjectsTasks(t.Context(), projectID)
+				assert.NoError(t, err)
+				if assert.Len(t, tasks, 1) {
+					for _, task := range tasks[0] {
+						if assert.NotNil(t, task.WorkflowStatusID) {
+							assert.Equal(t, statusesByCategory[string(task.Status)], *task.WorkflowStatusID)
+						}
+					}
+				}
+			},
+		},
+		{
 			Name:            "fail: member cannot update project",
 			Method:          http.MethodPut,
 			URL:             "/task-projects/{task-project-id}",
@@ -418,4 +462,32 @@ func findWorkflowStatusID(t testing.TB, app *core.BaseApp, teamID uuid.UUID, app
 	}
 	t.Fatalf("workflow status %s/%s not found", appliesTo, slug)
 	return uuid.Nil
+}
+
+func createAssignableTaskWorkflow(t testing.TB, app *core.BaseApp, teamID uuid.UUID, memberID uuid.UUID) (uuid.UUID, map[string]uuid.UUID) {
+	t.Helper()
+	workflow, err := app.Adapter().Task().CreateWorkflow(t.Context(), &stores.CreateWorkflowDTO{
+		TeamID:            teamID,
+		CreatedByMemberID: &memberID,
+		AppliesTo:         "task",
+		Name:              "Custom task workflow " + uuid.NewString(),
+	})
+	if err != nil {
+		t.Fatalf("create workflow: %v", err)
+	}
+
+	statusInputs := []stores.CreateWorkflowStatusDTO{
+		{Name: "Backlog", Slug: types.Pointer("backlog"), Category: string(models.TaskStatusTodo), Rank: types.Pointer(1000.0)},
+		{Name: "Review", Slug: types.Pointer("review"), Category: string(models.TaskStatusInProgress), Rank: types.Pointer(2000.0)},
+		{Name: "Shipped", Slug: types.Pointer("shipped"), Category: string(models.TaskStatusDone), Rank: types.Pointer(3000.0), IsCompleted: types.Pointer(true)},
+	}
+	statusesByCategory := map[string]uuid.UUID{}
+	for _, input := range statusInputs {
+		status, err := app.Adapter().Task().CreateWorkflowStatus(t.Context(), workflow.ID, &input)
+		if err != nil {
+			t.Fatalf("create workflow status: %v", err)
+		}
+		statusesByCategory[status.Category] = status.ID
+	}
+	return workflow.ID, statusesByCategory
 }

@@ -76,6 +76,7 @@ type CreateTaskProjectDTO struct {
 	Description      *string                  `json:"description,omitempty" required:"false"`
 	Status           models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
 	WorkflowStatusID *uuid.UUID               `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
+	WorkflowID       *uuid.UUID               `json:"workflow_id,omitempty" required:"false" format:"uuid"`
 	Rank             float64                  `json:"rank,omitempty" required:"false"`
 }
 
@@ -84,6 +85,7 @@ type CreateTaskProjectWithoutTeamDTO struct {
 	Description      *string                  `json:"description,omitempty" required:"false"`
 	Status           models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
 	WorkflowStatusID *uuid.UUID               `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
+	WorkflowID       *uuid.UUID               `json:"workflow_id,omitempty" required:"false" format:"uuid"`
 	Rank             float64                  `json:"rank,omitempty" required:"false"`
 }
 
@@ -223,6 +225,7 @@ func (api *Api) TeamTaskProjectCreateBind(humaApi huma.API) {
 					Description:      input.Body.Description,
 					Status:           input.Body.Status,
 					WorkflowStatusID: input.Body.WorkflowStatusID,
+					WorkflowID:       input.Body.WorkflowID,
 					Rank:             input.Body.Rank,
 				},
 				Tasks: mapper.Map(input.Body.Tasks, func(task CreateTaskProjectTaskDTO) stores.CreateTaskProjectTaskDTO {

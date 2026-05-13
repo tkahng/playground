@@ -905,13 +905,14 @@ func (s *DbTaskStore) ensureDefaultWorkflowStatuses(ctx context.Context, workflo
 	return nil
 }
 
-func (s *DbTaskStore) findWorkflowStatusID(ctx context.Context, workflowID uuid.UUID, statusSlug string) (*uuid.UUID, error) {
+func (s *DbTaskStore) findWorkflowStatusIDByCategory(ctx context.Context, workflowID uuid.UUID, category string) (*uuid.UUID, error) {
 	q := squirrel.Select("id").
 		From(repository.WorkflowStatusBuilder.TableName()).
 		Where(squirrel.Eq{
 			"workflow_id": workflowID,
-			"slug":        statusSlug,
+			"category":    category,
 		}).
+		OrderBy("rank ASC").
 		Limit(1).
 		PlaceholderFormat(squirrel.Dollar)
 
@@ -982,12 +983,50 @@ func (s *DbTaskStore) validateWorkflowStatus(ctx context.Context, id uuid.UUID, 
 	return status, nil
 }
 
+func (s *DbTaskStore) validateWorkflowForTeam(ctx context.Context, workflowID uuid.UUID, teamID uuid.UUID, appliesTo string) (*models.Workflow, error) {
+	workflow, err := s.FindWorkflowByID(ctx, workflowID)
+	if err != nil {
+		return nil, err
+	}
+	if workflow == nil || workflow.TeamID != teamID {
+		return nil, apierrors.BadRequest("workflow not found")
+	}
+	if workflow.AppliesTo != appliesTo {
+		return nil, apierrors.BadRequest("workflow applies_to does not match")
+	}
+	return workflow, nil
+}
+
+func (s *DbTaskStore) validateTaskWorkflowAssignable(ctx context.Context, workflowID uuid.UUID) error {
+	statuses, err := s.LoadWorkflowStatuses(ctx, workflowID)
+	if err != nil {
+		return err
+	}
+	if len(statuses) == 0 {
+		return apierrors.BadRequest("workflow must have statuses before assignment")
+	}
+	categories := map[string]bool{}
+	for _, status := range statuses[0] {
+		categories[status.Category] = true
+	}
+	for _, category := range []string{
+		string(models.TaskStatusTodo),
+		string(models.TaskStatusInProgress),
+		string(models.TaskStatusDone),
+	} {
+		if !categories[category] {
+			return apierrors.BadRequest("workflow must have statuses for todo, in_progress, and done before assignment")
+		}
+	}
+	return nil
+}
+
 func (s *DbTaskStore) findProjectWorkflowStatusID(ctx context.Context, teamID uuid.UUID, memberID *uuid.UUID, status models.TaskProjectStatus) (*uuid.UUID, error) {
 	workflow, err := s.ensureDefaultWorkflow(ctx, teamID, memberID, workflowAppliesToProject)
 	if err != nil {
 		return nil, err
 	}
-	return s.findWorkflowStatusID(ctx, workflow.ID, string(status))
+	return s.findWorkflowStatusIDByCategory(ctx, workflow.ID, string(status))
 }
 
 func (s *DbTaskStore) resolveProjectWorkflowStatus(ctx context.Context, teamID uuid.UUID, memberID *uuid.UUID, workflowStatusID *uuid.UUID, status models.TaskProjectStatus) (models.TaskProjectStatus, *uuid.UUID, error) {
@@ -996,7 +1035,7 @@ func (s *DbTaskStore) resolveProjectWorkflowStatus(ctx context.Context, teamID u
 		return status, nil, err
 	}
 	if workflowStatusID == nil {
-		id, err := s.findWorkflowStatusID(ctx, workflow.ID, string(status))
+		id, err := s.findWorkflowStatusIDByCategory(ctx, workflow.ID, string(status))
 		return status, id, err
 	}
 	workflowStatus, err := s.validateWorkflowStatus(ctx, *workflowStatusID, workflow.ID)
@@ -1026,7 +1065,7 @@ func (s *DbTaskStore) findTaskWorkflowStatusID(ctx context.Context, projectID uu
 			return nil, err
 		}
 	}
-	return s.findWorkflowStatusID(ctx, *workflowID, string(status))
+	return s.findWorkflowStatusIDByCategory(ctx, *workflowID, string(status))
 }
 
 func (s *DbTaskStore) resolveTaskWorkflowStatus(ctx context.Context, projectID uuid.UUID, workflowStatusID *uuid.UUID, status models.TaskStatus) (models.TaskStatus, *uuid.UUID, error) {
@@ -1050,7 +1089,7 @@ func (s *DbTaskStore) resolveTaskWorkflowStatus(ctx context.Context, projectID u
 		}
 	}
 	if workflowStatusID == nil {
-		id, err := s.findWorkflowStatusID(ctx, *workflowID, string(status))
+		id, err := s.findWorkflowStatusIDByCategory(ctx, *workflowID, string(status))
 		return status, id, err
 	}
 	workflowStatus, err := s.validateWorkflowStatus(ctx, *workflowStatusID, *workflowID)
@@ -1061,9 +1100,21 @@ func (s *DbTaskStore) resolveTaskWorkflowStatus(ctx context.Context, projectID u
 }
 
 func (s *DbTaskStore) CreateTaskProject(ctx context.Context, input *CreateTaskProjectDTO) (*models.TaskProject, error) {
-	taskWorkflow, err := s.ensureDefaultWorkflow(ctx, input.TeamID, &input.MemberID, workflowAppliesToTask)
-	if err != nil {
-		return nil, err
+	var taskWorkflow *models.Workflow
+	var err error
+	if input.WorkflowID != nil {
+		taskWorkflow, err = s.validateWorkflowForTeam(ctx, *input.WorkflowID, input.TeamID, workflowAppliesToTask)
+		if err != nil {
+			return nil, err
+		}
+		if err := s.validateTaskWorkflowAssignable(ctx, taskWorkflow.ID); err != nil {
+			return nil, err
+		}
+	} else {
+		taskWorkflow, err = s.ensureDefaultWorkflow(ctx, input.TeamID, &input.MemberID, workflowAppliesToTask)
+		if err != nil {
+			return nil, err
+		}
 	}
 	projectStatus, projectWorkflowStatusID, err := s.resolveProjectWorkflowStatus(ctx, input.TeamID, &input.MemberID, input.WorkflowStatusID, input.Status)
 	if err != nil {
@@ -1093,6 +1144,7 @@ type CreateTaskProjectDTO struct {
 	Description      *string                  `json:"description,omitempty" required:"false"`
 	Status           models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
 	WorkflowStatusID *uuid.UUID               `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
+	WorkflowID       *uuid.UUID               `json:"workflow_id,omitempty" required:"false" format:"uuid"`
 	Rank             float64                  `json:"rank,omitempty" required:"false"`
 }
 type CreateTaskProjectTaskDTO struct {
@@ -1276,6 +1328,7 @@ type UpdateTaskProjectBaseDTO struct {
 	Description      *string                  `json:"description,omitempty" required:"false"`
 	Status           models.TaskProjectStatus `json:"status" enum:"todo,in_progress,done"`
 	WorkflowStatusID *uuid.UUID               `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
+	WorkflowID       *uuid.UUID               `json:"workflow_id,omitempty" required:"false" format:"uuid"`
 	Rank             float64                  `json:"rank"`
 	Position         *int64                   `json:"position,omitempty" required:"false"`
 }
@@ -1291,6 +1344,18 @@ func (s *DbTaskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.
 	taskProject.Name = input.Name
 	taskProject.Description = input.Description
 	taskProject.Status = models.TaskProjectStatus(input.Status)
+	workflowChanged := false
+	if input.WorkflowID != nil && (taskProject.WorkflowID == nil || *taskProject.WorkflowID != *input.WorkflowID) {
+		workflow, err := s.validateWorkflowForTeam(ctx, *input.WorkflowID, taskProject.TeamID, workflowAppliesToTask)
+		if err != nil {
+			return err
+		}
+		if err := s.validateTaskWorkflowAssignable(ctx, workflow.ID); err != nil {
+			return err
+		}
+		taskProject.WorkflowID = &workflow.ID
+		workflowChanged = true
+	}
 	status, workflowStatusID, err := s.resolveProjectWorkflowStatus(ctx, taskProject.TeamID, taskProject.CreatedByMemberID, input.WorkflowStatusID, taskProject.Status)
 	if err != nil {
 		return err
@@ -1303,7 +1368,25 @@ func (s *DbTaskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.
 	if err != nil {
 		return err
 	}
+	if workflowChanged {
+		if err := s.remapTaskWorkflowStatuses(ctx, taskProject.ID, *taskProject.WorkflowID); err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func (s *DbTaskStore) remapTaskWorkflowStatuses(ctx context.Context, taskProjectID uuid.UUID, workflowID uuid.UUID) error {
+	q := squirrel.Update(repository.TaskBuilder.TableName()).
+		Set("workflow_status_id", squirrel.Expr(
+			"(select id from task.workflow_statuses where workflow_id = ? and category = task.tasks.status::text order by rank asc limit 1)",
+			workflowID,
+		)).
+		Where(squirrel.Eq{"project_id": taskProjectID}).
+		PlaceholderFormat(squirrel.Dollar)
+
+	_, err := database.ExecWithBuilder(ctx, s.db, q)
+	return err
 }
 
 func (s *DbTaskStore) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error {
