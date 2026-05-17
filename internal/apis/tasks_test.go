@@ -302,6 +302,39 @@ func TestApi_TeamTaskUpdate(t *testing.T) {
 				})
 			},
 		},
+		{
+			Name:            "fail: update task rejects workflow status from another team",
+			Method:          http.MethodPut,
+			URL:             "/tasks/{task-id}",
+			ExpectedStatus:  http.StatusBadRequest,
+			ExpectedContent: []string{"workflow status"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				otherOwner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				team2 := core.CreateTeamAndMemberWithOptions(t, app, &otherOwner.User)
+				// create a project for team2 to trigger default workflow creation
+				core.CreateProjectAndTasks(t, app, &team2.Member)
+				project := core.CreateProjectAndTasks(t, app, &team1.Member)
+				task := repository.MustCreateOneCtx(t, t.Context(), repository.Task, app.Db(), &models.Task{
+					TeamID:            team1.Team.ID,
+					ProjectID:         project.ID,
+					Status:            models.TaskStatusTodo,
+					Rank:              0,
+					CreatedByMemberID: &team1.Member.ID,
+				})
+				// get a workflow status from team2's workflow
+				otherTeamStatusID := findWorkflowStatusID(t, app, team2.Team.ID, "task", "done")
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/tasks/%s", task.ID.String())
+				scenario.Body = apis.JsonToReader(t, stores.UpdateTaskDto{
+					Name:             "updated",
+					Status:           models.TaskStatusDone,
+					WorkflowStatusID: &otherTeamStatusID,
+				})
+			},
+		},
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {

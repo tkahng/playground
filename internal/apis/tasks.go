@@ -344,6 +344,9 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 	if input == nil {
 		return nil, huma.Error400BadRequest("Invalid input")
 	}
+	if input.Body.Status == "" && input.Body.WorkflowStatusID == nil {
+		return nil, huma.Error422UnprocessableEntity("status or workflow_status_id is required")
+	}
 
 	id, err := uuid.Parse(input.TaskID)
 	if err != nil {
