@@ -1,4 +1,5 @@
 import { KanbanBoard } from "@/components/board/kanban-board";
+import { WorkflowSettingsPanel } from "@/components/board/workflow-settings-panel";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { Input } from "@/components/ui/input";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
@@ -26,8 +27,10 @@ export default function ProjectEdit() {
   const { data: project, isLoading: isProjectLoading, error } = useProject();
   const [input, setInput] = useState("");
 
+  const workflowQueryKey = { key: "workflow-statuses", workflow_id: project?.workflow_id };
+
   const { data: workflowStatuses, isLoading: isWorkflowLoading } = useQuery({
-    queryKey: [{ key: "workflow-statuses", workflow_id: project?.workflow_id }],
+    queryKey: [workflowQueryKey],
     queryFn: async (): Promise<WorkflowStatus[]> => {
       if (!project?.workflow_id) return [];
       const workflows = await workflowList(
@@ -86,15 +89,25 @@ export default function ProjectEdit() {
       </Link>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{project.name}</h1>
-        <ProjectEditDialog
-          project={{
-            description: project.description || "",
-            id: project.id,
-            name: project.name,
-            rank: project.rank,
-            status: project.status,
-          }}
-        />
+        <div className="flex items-center gap-2">
+          {project.workflow_id && (
+            <WorkflowSettingsPanel
+              teamId={project.team_id}
+              workflowId={project.workflow_id}
+              statuses={workflowStatuses ?? []}
+              queryKey={workflowQueryKey}
+            />
+          )}
+          <ProjectEditDialog
+            project={{
+              description: project.description || "",
+              id: project.id,
+              name: project.name,
+              rank: project.rank,
+              status: project.status,
+            }}
+          />
+        </div>
       </div>
       <div>{project.description}</div>
       <div>

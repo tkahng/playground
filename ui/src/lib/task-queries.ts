@@ -289,6 +289,89 @@ export const updateTaskPositionStatus = async (
   return data;
 };
 
+export const workflowStatusCreate = async (
+  token: string,
+  teamId: string,
+  workflowId: string,
+  body: operations["workflow-status-create"]["requestBody"]["content"]["application/json"],
+) => {
+  const { data, error } = await client.POST(
+    "/api/teams/{team-id}/workflows/{workflow-id}/statuses",
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { path: { "team-id": teamId, "workflow-id": workflowId } },
+      body,
+    },
+  );
+  if (error) throw ApiError.fromErrorModel(error);
+  return data;
+};
+
+export const workflowStatusUpdate = async (
+  token: string,
+  teamId: string,
+  workflowId: string,
+  statusId: string,
+  body: operations["workflow-status-update"]["requestBody"]["content"]["application/json"],
+) => {
+  const { data, error } = await client.PUT(
+    "/api/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      params: {
+        path: {
+          "team-id": teamId,
+          "workflow-id": workflowId,
+          "workflow-status-id": statusId,
+        },
+      },
+      body,
+    },
+  );
+  if (error) throw ApiError.fromErrorModel(error);
+  return data;
+};
+
+export const workflowStatusDelete = async (
+  token: string,
+  teamId: string,
+  workflowId: string,
+  statusId: string,
+) => {
+  const { error } = await client.DELETE(
+    "/api/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      params: {
+        path: {
+          "team-id": teamId,
+          "workflow-id": workflowId,
+          "workflow-status-id": statusId,
+        },
+      },
+    },
+  );
+  if (error) throw ApiError.fromErrorModel(error);
+};
+
+export const workflowStatusReorder = async (
+  token: string,
+  teamId: string,
+  workflowId: string,
+  statusIds: string[],
+) => {
+  const { data, error } = await client.PUT(
+    "/api/teams/{team-id}/workflows/{workflow-id}/statuses/reorder",
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { path: { "team-id": teamId, "workflow-id": workflowId } },
+      body: { status_ids: statusIds },
+    },
+  );
+  if (error) throw ApiError.fromErrorModel(error);
+  return data;
+};
+
 export const taskProjectUpdate = async (
   token: string,
   taskProjectId: string,
