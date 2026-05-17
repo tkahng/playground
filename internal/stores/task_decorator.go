@@ -192,6 +192,13 @@ func (t *TaskDecorator) FindWorkflowStatusByID(ctx context.Context, id uuid.UUID
 	return t.Delegate.FindWorkflowStatusByID(ctx, id)
 }
 
+func (t *TaskDecorator) FindWorkflowStatusesByIDs(ctx context.Context, ids ...uuid.UUID) ([]*models.WorkflowStatus, error) {
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.FindWorkflowStatusesByIDs(ctx, ids...)
+}
+
 // GetTaskFirstPosition implements DbTaskStoreInterface.
 func (t *TaskDecorator) GetTaskFirstPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error) {
 	if t.GetTaskFirstPositionFunc != nil {

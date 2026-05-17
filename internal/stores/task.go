@@ -38,6 +38,7 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error)
 	FindWorkflowByID(ctx context.Context, id uuid.UUID) (*models.Workflow, error)
 	FindWorkflowStatusByID(ctx context.Context, id uuid.UUID) (*models.WorkflowStatus, error)
+	FindWorkflowStatusesByIDs(ctx context.Context, ids ...uuid.UUID) ([]*models.WorkflowStatus, error)
 	GetTaskFirstPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskLastPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskPositions(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID, offset int64) ([]float64, error)
@@ -400,6 +401,24 @@ func (s *DbTaskStore) FindWorkflowStatusByID(ctx context.Context, id uuid.UUID) 
 	return s.findWorkflowStatusByID(ctx, id)
 }
 
+func (s *DbTaskStore) FindWorkflowStatusesByIDs(ctx context.Context, ids ...uuid.UUID) ([]*models.WorkflowStatus, error) {
+	if len(ids) == 0 {
+		return []*models.WorkflowStatus{}, nil
+	}
+	return repository.WorkflowStatus.Get(
+		ctx,
+		s.db,
+		&map[string]any{
+			"id": map[string]any{
+				"_in": ids,
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
+}
+
 func (s *DbTaskStore) CreateWorkflowStatus(ctx context.Context, workflowID uuid.UUID, input *CreateWorkflowStatusDTO) (*models.WorkflowStatus, error) {
 	if input == nil {
 		return nil, apierrors.BadRequest("workflow status input is required")
@@ -500,6 +519,9 @@ func (s *DbTaskStore) UpdateWorkflowStatus(ctx context.Context, workflowStatusID
 		if err != nil {
 			return nil, err
 		}
+		if len(statuses) == 0 {
+			return nil, apierrors.NotFound("workflow not found")
+		}
 		for _, workflowStatus := range statuses[0] {
 			if workflowStatus.ID == status.ID {
 				workflowStatus.Category = status.Category
@@ -593,6 +615,9 @@ func (s *DbTaskStore) DeleteWorkflowStatus(ctx context.Context, workflowStatusID
 	statuses, err := s.LoadWorkflowStatuses(ctx, status.WorkflowID)
 	if err != nil {
 		return err
+	}
+	if len(statuses) == 0 {
+		return apierrors.NotFound("workflow not found")
 	}
 	remainingStatuses := make([]*models.WorkflowStatus, 0, len(statuses[0]))
 	for _, workflowStatus := range statuses[0] {
