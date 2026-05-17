@@ -398,6 +398,29 @@ func TestApi_TeamTaskPositionStatus(t *testing.T) {
 				assert.Equal(t, workflowStatusID, *task.WorkflowStatusID)
 			},
 		},
+		{
+			Name:            "fail: position-status with no status or workflow_status_id returns 422",
+			Method:          http.MethodPut,
+			URL:             "/tasks/{task-id}/position-status",
+			ExpectedStatus:  http.StatusUnprocessableEntity,
+			ExpectedContent: []string{"status or workflow_status_id is required"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				project := core.CreateProjectAndTasks(t, app, &team.Member)
+				task, err := app.Adapter().Task().CreateTask(t.Context(), &models.Task{
+					TeamID:    team.Team.ID,
+					ProjectID: project.ID,
+					Status:    models.TaskStatusTodo,
+					Rank:      1000,
+				})
+				require.NoError(t, err)
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/tasks/%s/position-status", task.ID)
+				scenario.Body = apis.JsonToReader(t, apis.TaskPositionStatusDTO{Position: 0})
+			},
+		},
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
