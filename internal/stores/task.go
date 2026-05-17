@@ -1191,23 +1191,41 @@ func (s *DbTaskStore) ensureDefaultWorkflow(ctx context.Context, teamID uuid.UUI
 		description = "Default workflow for project lifecycle status."
 	}
 
-	q := squirrel.Insert(repository.WorkflowBuilder.TableName()).
-		Columns("team_id", "created_by_member_id", "applies_to", "name", "description", "is_default").
-		Values(teamID, memberID, appliesTo, name, description, true).
-		Suffix("on conflict (team_id, applies_to, name) do update set is_default = true returning " + repository.WorkflowBuilder.ColumnNamesJoined()).
-		PlaceholderFormat(squirrel.Dollar)
-
-	created, err := database.QueryWithBuilder[models.Workflow](ctx, s.db, q)
+	var created *models.Workflow
+	err = s.db.RunInTx(ctx, func(tx database.Dbx) error {
+		clearDefault := squirrel.Update(repository.WorkflowBuilder.TableName()).
+			Set("is_default", false).
+			Where(squirrel.Eq{
+				"team_id":    teamID,
+				"applies_to": appliesTo,
+				"is_default": true,
+			}).
+			PlaceholderFormat(squirrel.Dollar)
+		if _, err := database.ExecWithBuilder(ctx, tx, clearDefault); err != nil {
+			return err
+		}
+		q := squirrel.Insert(repository.WorkflowBuilder.TableName()).
+			Columns("team_id", "created_by_member_id", "applies_to", "name", "description", "is_default").
+			Values(teamID, memberID, appliesTo, name, description, true).
+			Suffix("on conflict (team_id, applies_to, name) do update set is_default = true returning " + repository.WorkflowBuilder.ColumnNamesJoined()).
+			PlaceholderFormat(squirrel.Dollar)
+		rows, err := database.QueryWithBuilder[models.Workflow](ctx, tx, q)
+		if err != nil {
+			return err
+		}
+		if len(rows) == 0 {
+			return pgx.ErrNoRows
+		}
+		created = &rows[0]
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-	if len(created) == 0 {
-		return nil, pgx.ErrNoRows
-	}
-	if err := s.ensureDefaultWorkflowStatuses(ctx, created[0].ID); err != nil {
+	if err := s.ensureDefaultWorkflowStatuses(ctx, created.ID); err != nil {
 		return nil, err
 	}
-	return &created[0], nil
+	return created, nil
 }
 
 func (s *DbTaskStore) findDefaultWorkflow(ctx context.Context, teamID uuid.UUID, appliesTo string) (*models.Workflow, error) {
@@ -1742,70 +1760,31 @@ func (s *DbTaskStore) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID
 	return nil
 }
 
-func (s *DbTaskStore) GetTeamTaskStats(ctx context.Context, teamId uuid.UUID) (*models.TaskStats, error) {
-	projectCounts, err := database.QueryWithBuilder[database.CountOutput](
-		ctx,
-		s.db,
-		squirrel.Select("count(*) as count").
-			From(repository.TaskProjectBuilder.TableName()).
-			Where(squirrel.Eq{"team_id": teamId}).
-			PlaceholderFormat(squirrel.Dollar),
-	)
-	if err != nil {
-		return nil, err
-	}
-	completedProjectCounts, err := database.QueryWithBuilder[database.CountOutput](
-		ctx,
-		s.db,
-		squirrel.Select("count(*) as count").
-			From(repository.TaskProjectBuilder.TableName()).
-			Where(squirrel.Eq{
-				"team_id": teamId,
-				"status":  models.TaskProjectStatusDone,
-			}).
-			PlaceholderFormat(squirrel.Dollar),
-	)
-	if err != nil {
-		return nil, err
-	}
-	taskCounts, err := database.QueryWithBuilder[database.CountOutput](
-		ctx,
-		s.db,
-		squirrel.Select("count(*) as count").
-			From(repository.TaskBuilder.TableName()).
-			Where(squirrel.Eq{"team_id": teamId}).
-			PlaceholderFormat(squirrel.Dollar),
-	)
-	if err != nil {
-		return nil, err
-	}
-	completedTaskCounts, err := database.QueryWithBuilder[database.CountOutput](
-		ctx,
-		s.db,
-		squirrel.Select("count(*) as count").
-			From(repository.TaskBuilder.TableName()).
-			Where(squirrel.Eq{
-				"team_id": teamId,
-				"status":  models.TaskStatusDone,
-			}).
-			PlaceholderFormat(squirrel.Dollar),
-	)
-	if err != nil {
-		return nil, err
-	}
-	return &models.TaskStats{
-		TotalProjects:     countOutputValue(projectCounts),
-		CompletedProjects: countOutputValue(completedProjectCounts),
-		TotalTasks:        countOutputValue(taskCounts),
-		CompletedTasks:    countOutputValue(completedTaskCounts),
-	}, nil
-}
+const teamTaskStatsQuery = `
+WITH project_stats AS (
+    SELECT COUNT(*) AS total_projects,
+        COUNT(*) FILTER (WHERE tp.status = 'done') AS completed_projects
+    FROM task.task_projects tp
+    WHERE tp.team_id = $1
+),
+task_stats AS (
+    SELECT COUNT(*) AS total_tasks,
+        COUNT(*) FILTER (WHERE t.status = 'done') AS completed_tasks
+    FROM task.tasks t
+    WHERE t.team_id = $1
+)
+SELECT ps.total_projects, ps.completed_projects, ts.total_tasks, ts.completed_tasks
+FROM project_stats ps CROSS JOIN task_stats ts`
 
-func countOutputValue(counts []database.CountOutput) int64 {
-	if len(counts) == 0 {
-		return 0
+func (s *DbTaskStore) GetTeamTaskStats(ctx context.Context, teamId uuid.UUID) (*models.TaskStats, error) {
+	res, err := database.QueryAll[models.TaskStats](ctx, s.db, teamTaskStatsQuery, teamId)
+	if err != nil {
+		return nil, err
 	}
-	return counts[0].Count
+	if len(res) == 0 {
+		return nil, nil
+	}
+	return &res[0], nil
 }
 
 // FindTasksDueToday returns non-done tasks whose end_at falls within today (UTC).
