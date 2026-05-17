@@ -2,6 +2,19 @@ import { client } from "@/lib/client";
 import { ApiError } from "@/lib/error";
 import { components, operations } from "@/schema";
 
+export const workflowList = async (
+  token: string,
+  teamId: string,
+  args?: operations["workflow-list"]["parameters"]["query"],
+) => {
+  const { data, error } = await client.GET("/api/teams/{team-id}/workflows", {
+    headers: { Authorization: `Bearer ${token}` },
+    params: { path: { "team-id": teamId }, query: args },
+  });
+  if (error) throw ApiError.fromErrorModel(error);
+  return data ?? [];
+};
+
 export const taskProjectList = async (
   token: string,
   teamId: string,

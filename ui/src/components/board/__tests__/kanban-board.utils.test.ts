@@ -3,15 +3,9 @@ import type { Task } from "../task-card";
 import {
   applyCardOverCard,
   applyCardOverColumn,
-  flattenColumns,
-  type NestedColumn,
 } from "../kanban-board.utils";
 
-function makeTask(
-  id: string,
-  columnId: "todo" | "in_progress" | "done",
-  rank = 0,
-): Task {
+function makeTask(id: string, columnId: string, rank = 0): Task {
   return {
     id,
     name: `Task ${id}`,
@@ -157,63 +151,5 @@ describe("applyCardOverColumn", () => {
     const result = applyCardOverColumn(cards, "a", "done");
 
     expect(result.map((c) => c.id)).toEqual(["x", "a", "y"]);
-  });
-});
-
-describe("flattenColumns", () => {
-  it("returns flat columns unchanged", () => {
-    const cols: NestedColumn[] = [
-      { id: "a", title: "A" },
-      { id: "b", title: "B" },
-    ];
-    expect(flattenColumns(cols).map((c) => c.id)).toEqual(["a", "b"]);
-  });
-
-  it("flattens one level of children", () => {
-    const cols: NestedColumn[] = [
-      {
-        id: "parent",
-        title: "Parent",
-        children: [
-          { id: "child1", title: "Child 1" },
-          { id: "child2", title: "Child 2" },
-        ],
-      },
-    ];
-    expect(flattenColumns(cols).map((c) => c.id)).toEqual([
-      "parent",
-      "child1",
-      "child2",
-    ]);
-  });
-
-  it("flattens multiple levels recursively", () => {
-    const cols: NestedColumn[] = [
-      {
-        id: "a",
-        title: "A",
-        children: [
-          {
-            id: "b",
-            title: "B",
-            children: [{ id: "c", title: "C" }],
-          },
-        ],
-      },
-    ];
-    expect(flattenColumns(cols).map((c) => c.id)).toEqual(["a", "b", "c"]);
-  });
-
-  it("strips children from the flattened parent entry", () => {
-    const cols: NestedColumn[] = [
-      { id: "p", title: "P", children: [{ id: "ch", title: "Ch" }] },
-    ];
-    const result = flattenColumns(cols);
-    const parent = result.find((c) => c.id === "p")!;
-    expect(parent.children).toBeUndefined();
-  });
-
-  it("returns empty array for empty input", () => {
-    expect(flattenColumns([])).toEqual([]);
   });
 });

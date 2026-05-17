@@ -57,6 +57,7 @@ type CardType = {
   team_id: string;
   /** Format: date-time */
   updated_at: string;
+  workflow_status_id: string | null;
 };
 
 type Column = {
@@ -184,7 +185,7 @@ export function MyKanbanBoard({
     mutation.mutate({
       projectId,
       taskId: card.id,
-      status: columnId as TaskStatus,
+      workflowStatusId: columnId,
       position: index,
     });
   }

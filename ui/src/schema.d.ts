@@ -2514,6 +2514,138 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/teams/{team-id}/workflows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Workflow list
+         * @description List team workflows
+         */
+        get: operations["workflow-list"];
+        put?: never;
+        /**
+         * Workflow create
+         * @description Create a team workflow
+         */
+        post: operations["workflow-create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team-id}/workflows/{workflow-id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Workflow update
+         * @description Update a team workflow
+         */
+        put: operations["workflow-update"];
+        post?: never;
+        /**
+         * Workflow delete
+         * @description Delete an unused team workflow
+         */
+        delete: operations["workflow-delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team-id}/workflows/{workflow-id}/default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Workflow set default
+         * @description Set the default workflow for its target
+         */
+        put: operations["workflow-set-default"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team-id}/workflows/{workflow-id}/statuses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Workflow status create
+         * @description Create a workflow status
+         */
+        post: operations["workflow-status-create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team-id}/workflows/{workflow-id}/statuses/reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Workflow status reorder
+         * @description Reorder workflow statuses
+         */
+        put: operations["workflow-status-reorder"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Workflow status update
+         * @description Update a workflow status
+         */
+        put: operations["workflow-status-update"];
+        post?: never;
+        /**
+         * Workflow status delete
+         * @description Delete an unused workflow status
+         */
+        delete: operations["workflow-status-delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/user-reactions": {
         parameters: {
             query?: never;
@@ -3040,6 +3172,8 @@ export interface components {
              * @enum {string}
              */
             status: "todo" | "in_progress" | "done";
+            /** Format: uuid */
+            workflow_status_id?: string;
         };
         CreateTaskProjectWithoutTeamWithTasks: {
             /**
@@ -3058,6 +3192,10 @@ export interface components {
              */
             status: "todo" | "in_progress" | "done";
             tasks?: components["schemas"]["CreateTaskProjectTaskDTO"][] | null;
+            /** Format: uuid */
+            workflow_id?: string;
+            /** Format: uuid */
+            workflow_status_id?: string;
         };
         CreateTeamInput: {
             /**
@@ -3067,6 +3205,23 @@ export interface components {
              */
             readonly $schema?: string;
             name: string;
+        };
+        CreateWorkflowStatusDTO: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/CreateWorkflowStatusDTO.json
+             */
+            readonly $schema?: string;
+            /** @enum {string} */
+            category: "todo" | "in_progress" | "done";
+            color?: string;
+            description?: string;
+            is_completed?: boolean;
+            name: string;
+            /** Format: double */
+            rank?: number;
+            slug?: string;
         };
         EmailVerificationPostInput: {
             /**
@@ -3642,6 +3797,15 @@ export interface components {
             readonly $schema?: string;
             refresh_token: string;
         };
+        ReorderWorkflowStatusesDTO: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/ReorderWorkflowStatusesDTO.json
+             */
+            readonly $schema?: string;
+            status_ids: string[] | null;
+        };
         RequestPasswordResetInput: {
             /**
              * Format: uri
@@ -4047,6 +4211,8 @@ export interface components {
             team_id: string;
             /** Format: date-time */
             updated_at: string;
+            workflow_status?: components["schemas"]["WorkflowStatus"];
+            workflow_status_id: string | null;
         };
         TaskCompletedNotificationData: {
             /** Format: date-time */
@@ -4087,6 +4253,8 @@ export interface components {
              */
             status: "todo" | "in_progress" | "done";
             team_id: string;
+            /** Format: uuid */
+            workflow_status_id: string | null;
         };
         TaskOverdueNotificationData: {
             /** Format: date-time */
@@ -4103,7 +4271,9 @@ export interface components {
             /** Format: int64 */
             position: number;
             /** @enum {string} */
-            status: "todo" | "in_progress" | "done";
+            status?: "todo" | "in_progress" | "done";
+            /** Format: uuid */
+            workflow_status_id?: string;
         };
         TaskProject: {
             /**
@@ -4134,6 +4304,9 @@ export interface components {
             team_id: string;
             /** Format: date-time */
             updated_at: string;
+            workflow_id: string | null;
+            workflow_status?: components["schemas"]["WorkflowStatus"];
+            workflow_status_id: string | null;
         };
         TaskProjectCreateWithAiDto: {
             /**
@@ -4317,7 +4490,8 @@ export interface components {
             /** Format: date-time */
             start_at: string | null;
             /** @enum {string} */
-            status: "todo" | "in_progress" | "done";
+            status?: "todo" | "in_progress" | "done";
+            workflow_status_id: string | null;
         };
         UpdateTaskProjectBaseDTO: {
             /**
@@ -4333,7 +4507,11 @@ export interface components {
             /** Format: double */
             rank: number;
             /** @enum {string} */
-            status: "todo" | "in_progress" | "done";
+            status?: "todo" | "in_progress" | "done";
+            /** Format: uuid */
+            workflow_id?: string;
+            /** Format: uuid */
+            workflow_status_id?: string;
         };
         UpdateTeamDto: {
             /**
@@ -4363,6 +4541,33 @@ export interface components {
              */
             readonly $schema?: string;
             password: string;
+        };
+        UpdateWorkflowDTO: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/UpdateWorkflowDTO.json
+             */
+            readonly $schema?: string;
+            description?: string;
+            name?: string;
+        };
+        UpdateWorkflowStatusDTO: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/UpdateWorkflowStatusDTO.json
+             */
+            readonly $schema?: string;
+            /** @enum {string} */
+            category?: "todo" | "in_progress" | "done";
+            color?: string;
+            description?: string;
+            is_completed?: boolean;
+            name?: string;
+            /** Format: double */
+            rank?: number;
+            slug?: string;
         };
         UserAccountOutput: {
             /** Format: date-time */
@@ -4479,6 +4684,60 @@ export interface components {
              */
             readonly $schema?: string;
             token: string;
+        };
+        Workflow: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/Workflow.json
+             */
+            readonly $schema?: string;
+            applies_to: string;
+            /** Format: date-time */
+            created_at: string;
+            created_by_member_id?: string | null;
+            description?: string | null;
+            id: string;
+            is_default: boolean;
+            name: string;
+            statuses?: components["schemas"]["WorkflowStatus"][] | null;
+            team_id: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        WorkflowCreateRequestDTO: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/WorkflowCreateRequestDTO.json
+             */
+            readonly $schema?: string;
+            /** @enum {string} */
+            applies_to: "project" | "task";
+            description?: string;
+            name: string;
+        };
+        WorkflowStatus: {
+            /**
+             * Format: uri
+             * @description A URL to the JSON Schema for this object.
+             * @example http://localhost:8080/schemas/WorkflowStatus.json
+             */
+            readonly $schema?: string;
+            category: string;
+            color?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            description?: string | null;
+            id: string;
+            is_completed: boolean;
+            name: string;
+            /** Format: double */
+            rank: number;
+            slug: string;
+            /** Format: date-time */
+            updated_at: string;
+            workflow_id: string;
         };
     };
     responses: never;
@@ -10345,6 +10604,7 @@ export interface operations {
                 per_page?: number;
                 q?: string;
                 status?: ("todo" | "in_progress" | "done")[] | null;
+                workflow_status_ids?: string[] | null;
                 created_by?: string;
                 ids?: string[] | null;
                 parent_id?: string;
@@ -10367,6 +10627,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiPaginatedResponseTask"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
                 };
             };
             /** @description Not Found */
@@ -12303,6 +12572,8 @@ export interface operations {
                 per_page?: number;
                 q?: string;
                 status?: ("todo" | "in_progress" | "done")[] | null;
+                workflow_ids?: string[] | null;
+                workflow_status_ids?: string[] | null;
                 ids?: string[] | null;
                 sort_by?: string;
                 sort_order?: "asc" | "desc";
@@ -12323,6 +12594,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiPaginatedResponseTaskProject"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
                 };
             };
             /** @description Not Found */
@@ -12483,6 +12763,655 @@ export interface operations {
             };
             /** @description Bad Request */
             400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "workflow-list": {
+        parameters: {
+            query?: {
+                applies_to?: ("project" | "task")[] | null;
+                ids?: string[] | null;
+            };
+            header?: never;
+            path: {
+                "team-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workflow"][] | null;
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "workflow-create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["WorkflowCreateRequestDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workflow"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "workflow-update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+                "workflow-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWorkflowDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workflow"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "workflow-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+                "workflow-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "workflow-set-default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+                "workflow-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Workflow"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "workflow-status-create": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+                "workflow-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateWorkflowStatusDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowStatus"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "workflow-status-reorder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+                "workflow-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReorderWorkflowStatusesDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowStatus"][] | null;
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "workflow-status-update": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+                "workflow-id": string;
+                "workflow-status-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateWorkflowStatusDTO"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowStatus"];
+                };
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Unprocessable Entity */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Internal Server Error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+        };
+    };
+    "workflow-status-delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                "team-id": string;
+                "workflow-id": string;
+                "workflow-status-id": string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No Content */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Bad Request */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["ErrorModel"];
+                };
+            };
+            /** @description Conflict */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -12,6 +12,7 @@ import { Badge } from "../ui/badge";
 export interface Column {
   id: UniqueIdentifier;
   title: string;
+  color?: string | null;
 }
 
 export type ColumnType = "Column";
@@ -76,7 +77,15 @@ export const BoardColumn = ({
       })}
     >
       <CardHeader className="p-4 font-semibold border-b-2 flex flex-row items-center justify-between">
-        <h1>{column.title}</h1>
+        <div className="flex items-center gap-2">
+          {column.color && (
+            <span
+              className="inline-block w-3 h-3 rounded-full flex-shrink-0"
+              style={{ backgroundColor: column.color }}
+            />
+          )}
+          <h1>{column.title}</h1>
+        </div>
         <Badge variant="outline">{cards.length}</Badge>
       </CardHeader>
       <ScrollArea>
@@ -92,7 +101,7 @@ export const BoardColumn = ({
           </SortableContext>
           <CreateProjectTaskDialog
             projectId={projectId}
-            status={column.id as "todo" | "done" | "in_progress"}
+            workflowStatusId={column.id.toString()}
           />
         </CardContent>
       </ScrollArea>

@@ -1,23 +1,7 @@
 import type { UniqueIdentifier } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
 
-export type NestedColumn = { id: UniqueIdentifier; title: string; children?: NestedColumn[] };
-
-export function flattenColumns(cols: NestedColumn[]): NestedColumn[] {
-  return cols.flatMap((col) =>
-    col.children
-      ? [{ id: col.id, title: col.title }, ...flattenColumns(col.children)]
-      : [col],
-  );
-}
-
-export const defaultCols = [
-  { id: "todo" as const, title: "Todo" },
-  { id: "in_progress" as const, title: "In progress" },
-  { id: "done" as const, title: "Done" },
-] satisfies { id: string; title: string }[];
-
-export type ColumnId = (typeof defaultCols)[number]["id"];
+export type ColumnId = string;
 
 type CardLike = { id: UniqueIdentifier; columnId: ColumnId };
 

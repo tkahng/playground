@@ -12,17 +12,17 @@ export function useUpdateTaskPosition() {
   return useMutation({
     mutationFn: async ({
       taskId,
-      status,
+      workflowStatusId,
       position,
     }: {
       projectId: string;
       taskId: string;
-      status: "todo" | "in_progress" | "done";
+      workflowStatusId: string;
       position: number;
     }) => {
       if (!user?.tokens.access_token) return;
       await updateTaskPositionStatus(user?.tokens.access_token, taskId, {
-        status: status,
+        workflow_status_id: workflowStatusId,
         position: position,
       });
       return;

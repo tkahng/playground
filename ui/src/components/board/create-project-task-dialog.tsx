@@ -64,23 +64,22 @@ const formSchema = z.object({
 
 export function CreateProjectTaskDialog({
   projectId,
-  status,
+  workflowStatusId,
 }: {
   projectId: string;
-  status: "todo" | "in_progress" | "done";
+  workflowStatusId?: string;
 }) {
   const { user } = useAuthProvider();
   const { teamMember, team } = useTeam();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
-  // const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       description: "",
-      status,
+      status: "todo",
       assignee_id: null,
       created_by_member_id: teamMember?.id,
       end_at: null,
@@ -97,7 +96,10 @@ export function CreateProjectTaskDialog({
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
       }
-      await createTask(user.tokens.access_token, projectId, values);
+      await createTask(user.tokens.access_token, projectId, {
+        ...values,
+        workflow_status_id: workflowStatusId ?? null,
+      });
     },
     onSuccess: async () => {
       setDialogOpen(false);

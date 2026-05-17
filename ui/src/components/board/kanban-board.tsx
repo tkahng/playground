@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { useAuthProvider } from "@/hooks/use-auth-provider";
-import { updateTaskPositionStatus } from "@/lib/task-queries";
+import { WorkflowStatus } from "@/schema.types";
 import {
   Active,
   DataRef,
@@ -18,7 +18,7 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { SortableContext, arrayMove } from "@dnd-kit/sortable";
+import { SortableContext } from "@dnd-kit/sortable";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -31,17 +31,26 @@ import {
   applyCardOverCard,
   applyCardOverColumn,
   type ColumnId,
-  defaultCols,
-  flattenColumns,
-  type NestedColumn,
 } from "./kanban-board.utils";
 import { coordinateGetter } from "./keyboard-preset";
 import { CardDragData, Task, TaskCard } from "./task-card";
 
 export type { ColumnId } from "./kanban-board.utils";
 
-export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
-  const [columns, setColumns] = useState<Column[]>(defaultCols);
+export function KanbanBoard(props: {
+  cards: Task[];
+  projectId: string;
+  workflowStatuses: WorkflowStatus[];
+}) {
+  const columns = useMemo<Column[]>(
+    () =>
+      props.workflowStatuses.map((s) => ({
+        id: s.id,
+        title: s.name,
+        color: s.color,
+      })),
+    [props.workflowStatuses],
+  );
   const [cards, setCards] = useState<Task[]>(props.cards);
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   const [activeCard, setActiveCard] = useState<Task | null>(null);
@@ -56,16 +65,17 @@ export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
   const mutation = useMutation({
     mutationFn: async ({
       taskId,
-      status,
+      workflowStatusId,
       position,
     }: {
       taskId: string;
-      status: "todo" | "in_progress" | "done";
+      workflowStatusId: string;
       position: number;
     }) => {
       if (!user?.tokens.access_token) return;
+      const { updateTaskPositionStatus } = await import("@/lib/task-queries");
       await updateTaskPositionStatus(user?.tokens.access_token, taskId, {
-        status: status,
+        workflow_status_id: workflowStatusId,
         position: position,
       });
       return;
@@ -108,44 +118,7 @@ export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
     return false;
   };
 
-  const flatColumns = useMemo(() => flattenColumns(columns), [columns]);
-  const columnsId = useMemo(
-    () => flatColumns.map((col) => col.id),
-    [flatColumns],
-  );
-
-  // recursively render nested columns
-  const renderNestedColumns = (cols: NestedColumn[]) => {
-    return cols.map((col) => {
-      const cardsInColumn = cards.filter((card) => card.columnId === col.id);
-
-      if (col.children && col.children.length > 0) {
-        return (
-          <div key={col.id} className="flex flex-col">
-            {cardsInColumn.length > 0 && (
-              <BoardColumn
-                column={col}
-                cards={cardsInColumn}
-                projectId={props.projectId}
-              />
-            )}
-            <div className={cardsInColumn.length > 0 ? "ml-4 mt-2" : ""}>
-              {renderNestedColumns(col.children)}
-            </div>
-          </div>
-        );
-      } else {
-        return (
-          <BoardColumn
-            key={col.id}
-            column={col}
-            cards={cardsInColumn}
-            projectId={props.projectId}
-          />
-        );
-      }
-    });
-  };
+  const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
 
   const onDragStart = (event: DragStartEvent) => {
     if (!hasDraggableData(event.active)) return;
@@ -179,13 +152,7 @@ export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
 
     const isActiveAColumn = activeData?.type === "Column";
     if (isActiveAColumn) {
-      setColumns((columns) => {
-        const activeColumnIndex = columns.findIndex(
-          (col) => col.id === activeId,
-        );
-        const overColumnIndex = columns.findIndex((col) => col.id === overId);
-        return arrayMove(columns, activeColumnIndex, overColumnIndex);
-      });
+      // Column reordering is managed server-side via workflow-status-reorder.
       return;
     }
 
@@ -212,7 +179,7 @@ export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
 
       mutation.mutate({
         taskId: activeId.toString(),
-        status: newColumnId,
+        workflowStatusId: newColumnId,
         position,
       });
     }
@@ -253,7 +220,14 @@ export function KanbanBoard(props: { cards: Task[]; projectId: string }) {
     >
       <BoardContainer>
         <SortableContext items={columnsId}>
-          {renderNestedColumns(columns)}
+          {columns.map((col) => (
+            <BoardColumn
+              key={col.id}
+              column={col}
+              cards={cards.filter((card) => card.columnId === col.id)}
+              projectId={props.projectId}
+            />
+          ))}
         </SortableContext>
       </BoardContainer>
 

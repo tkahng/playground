@@ -131,6 +131,7 @@ export function EditProjectTaskDialog({
         parent_id: values.parent_id || null,
         reporter_id: values.reporter_id || null,
         start_at: values.start_at || null,
+        workflow_status_id: null,
       });
     },
     onSuccess: async () => {
