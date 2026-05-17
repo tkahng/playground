@@ -129,12 +129,13 @@ func (api *Api) TeamTaskListBind(humaApi huma.API) {
 			Summary:     "Task list",
 			Description: "List of tasks",
 			Tags:        []string{"Task"},
-			Errors:      []int{http.StatusNotFound},
+			Errors:      []int{http.StatusForbidden, http.StatusNotFound},
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionTasksCreate),
 			),
 		},
 		func(ctx context.Context, input *TeamTaskListParams) (*TaskListResponse, error) {

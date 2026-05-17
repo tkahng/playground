@@ -166,12 +166,13 @@ func (api *Api) TeamWorkflowListBind(humaApi huma.API) {
 			Summary:     "Workflow list",
 			Description: "List team workflows",
 			Tags:        []string{"Task"},
-			Errors:      []int{http.StatusNotFound},
+			Errors:      []int{http.StatusForbidden, http.StatusNotFound},
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionWorkflowManage),
 			),
 		},
 		func(ctx context.Context, input *WorkflowListParams) (*WorkflowListResponse, error) {
