@@ -185,27 +185,37 @@ func (s *DbTaskStore) UpdateWorkflow(ctx context.Context, workflowID uuid.UUID, 
 	if input == nil {
 		return nil, apierrors.BadRequest("workflow input is required")
 	}
-	workflow, err := s.FindWorkflowByID(ctx, workflowID)
-	if err != nil {
-		return nil, err
-	}
-	if workflow == nil {
-		return nil, apierrors.NotFound("workflow not found")
-	}
-	if input.Name != nil {
-		name := strings.TrimSpace(*input.Name)
-		if name == "" {
-			return nil, apierrors.BadRequest("workflow name is required")
+	var updated *models.Workflow
+	err := s.db.RunInTx(ctx, func(tx database.Dbx) error {
+		workflow, err := repository.Workflow.GetOneForUpdate(ctx, tx, &map[string]any{
+			"id": map[string]any{"_eq": workflowID},
+		})
+		if err != nil {
+			return err
 		}
-		workflow.Name = name
-	}
-	if input.Description != nil {
-		workflow.Description = input.Description
-	}
-	updated, err := repository.Workflow.PutOne(ctx, s.db, workflow)
-	if database.IsUniqConstraintErr(err) {
-		return nil, apierrors.Conflict("workflow already exists")
-	}
+		if workflow == nil {
+			return apierrors.NotFound("workflow not found")
+		}
+		if input.Name != nil {
+			name := strings.TrimSpace(*input.Name)
+			if name == "" {
+				return apierrors.BadRequest("workflow name is required")
+			}
+			workflow.Name = name
+		}
+		if input.Description != nil {
+			workflow.Description = input.Description
+		}
+		result, err := repository.Workflow.PutOne(ctx, tx, workflow)
+		if database.IsUniqConstraintErr(err) {
+			return apierrors.Conflict("workflow already exists")
+		}
+		if err != nil {
+			return err
+		}
+		updated = result
+		return nil
+	})
 	return updated, err
 }
 
@@ -551,23 +561,21 @@ func (s *DbTaskStore) ReorderWorkflowStatuses(ctx context.Context, workflowID uu
 	}
 
 	err = s.db.RunInTx(ctx, func(tx database.Dbx) error {
+		args := make([]any, 0, len(statusIDs)*2+1)
+		valueParts := make([]string, 0, len(statusIDs))
 		for idx, statusID := range statusIDs {
-			q := squirrel.Update(repository.WorkflowStatusBuilder.TableName()).
-				Set("rank", float64((idx+1)*1000)).
-				Where(squirrel.Eq{
-					"id":          statusID,
-					"workflow_id": workflowID,
-				}).
-				PlaceholderFormat(squirrel.Dollar)
-			affected, err := database.ExecWithBuilder(ctx, tx, q)
-			if err != nil {
-				return err
-			}
-			if affected != 1 {
-				return apierrors.BadRequest("workflow status ids must include each workflow status exactly once")
-			}
+			n := len(args) + 1
+			args = append(args, statusID, float64((idx+1)*1000))
+			valueParts = append(valueParts, fmt.Sprintf("($%d::uuid, $%d::double precision)", n, n+1))
 		}
-		return nil
+		args = append(args, workflowID)
+		table := repository.WorkflowStatusBuilder.TableName()
+		query := fmt.Sprintf(
+			"UPDATE %s SET rank = v.rank FROM (VALUES %s) AS v(id, rank) WHERE %s.id = v.id AND %s.workflow_id = $%d",
+			table, strings.Join(valueParts, ", "), table, table, len(args),
+		)
+		_, err := database.Exec(ctx, tx, query, args...)
+		return err
 	})
 	if err != nil {
 		return nil, err
@@ -1353,14 +1361,6 @@ func (s *DbTaskStore) validateWorkflowForTeam(ctx context.Context, workflowID uu
 		return nil, apierrors.BadRequest("workflow applies_to does not match")
 	}
 	return workflow, nil
-}
-
-func (s *DbTaskStore) findProjectWorkflowStatusID(ctx context.Context, teamID uuid.UUID, memberID *uuid.UUID, status models.TaskProjectStatus) (*uuid.UUID, error) {
-	workflow, err := s.ensureDefaultWorkflow(ctx, teamID, memberID, workflowAppliesToProject)
-	if err != nil {
-		return nil, err
-	}
-	return s.findWorkflowStatusIDByCategory(ctx, workflow.ID, string(status))
 }
 
 func (s *DbTaskStore) resolveProjectWorkflowStatus(ctx context.Context, teamID uuid.UUID, memberID *uuid.UUID, workflowStatusID *uuid.UUID, status models.TaskProjectStatus) (models.TaskProjectStatus, *uuid.UUID, error) {
