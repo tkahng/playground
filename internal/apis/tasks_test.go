@@ -200,6 +200,45 @@ func TestApi_TeamTaskUpdate(t *testing.T) {
 			},
 		},
 		{
+			Name:           "success: update task without status preserves workflow status",
+			Method:         http.MethodPut,
+			URL:            "/tasks/{task-id}",
+			ExpectedStatus: http.StatusNoContent,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				project := core.CreateProjectAndTasks(t, app, &team1.Member)
+				task, err := app.Adapter().Task().CreateTask(t.Context(), &models.Task{
+					TeamID:    team1.Team.ID,
+					ProjectID: project.ID,
+					Status:    models.TaskStatusInProgress,
+					Rank:      1000,
+				})
+				require.NoError(t, err)
+				require.NotNil(t, task.WorkflowStatusID)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/tasks/%s", task.ID.String())
+				scenario.Store.Set("task_id", task.ID)
+				scenario.Store.Set("workflow_status_id", *task.WorkflowStatusID)
+				scenario.Body = apis.JsonToReader(t, stores.UpdateTaskDto{
+					Name: "renamed without status",
+				})
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				taskID := scenario.Store.Get("task_id").(uuid.UUID)
+				workflowStatusID := scenario.Store.Get("workflow_status_id").(uuid.UUID)
+				result, err := app.Adapter().Task().FindTaskByID(t.Context(), taskID)
+				require.NoError(t, err)
+				require.NotNil(t, result)
+				assert.Equal(t, "renamed without status", result.Name)
+				assert.Equal(t, models.TaskStatusInProgress, result.Status)
+				require.NotNil(t, result.WorkflowStatusID)
+				assert.Equal(t, workflowStatusID, *result.WorkflowStatusID)
+			},
+		},
+		{
 			Name:            "fail: update task rejects assignee from another team",
 			Method:          http.MethodPut,
 			URL:             "/tasks/{task-id}",

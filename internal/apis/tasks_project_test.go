@@ -262,6 +262,39 @@ func TestApi_TeamTaskProjectPermissions(t *testing.T) {
 			},
 		},
 		{
+			Name:           "success: owner can update project without status",
+			Method:         http.MethodPut,
+			URL:            "/task-projects/{task-project-id}",
+			ExpectedStatus: http.StatusNoContent,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				project := core.CreateProjectAndTasks(t, app, &team1.Member, core.WithProjectStatus(models.TaskProjectStatusInProgress))
+				require.NotNil(t, project.WorkflowStatusID)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/task-projects/%s", project.ID.String())
+				scenario.Store.Set("project_id", project.ID)
+				scenario.Store.Set("workflow_status_id", *project.WorkflowStatusID)
+				scenario.Body = apis.JsonToReader(t, stores.UpdateTaskProjectBaseDTO{
+					Name: "Updated Project",
+					Rank: project.Rank,
+				})
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				projectID := scenario.Store.Get("project_id").(uuid.UUID)
+				workflowStatusID := scenario.Store.Get("workflow_status_id").(uuid.UUID)
+				project, err := app.Adapter().Task().FindTaskProjectByID(t.Context(), projectID)
+				require.NoError(t, err)
+				require.NotNil(t, project)
+				assert.Equal(t, "Updated Project", project.Name)
+				assert.Equal(t, models.TaskProjectStatusInProgress, project.Status)
+				require.NotNil(t, project.WorkflowStatusID)
+				assert.Equal(t, workflowStatusID, *project.WorkflowStatusID)
+			},
+		},
+		{
 			Name:           "success: owner can update project task workflow",
 			Method:         http.MethodPut,
 			URL:            "/task-projects/{task-project-id}",

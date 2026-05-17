@@ -246,8 +246,12 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 
 				task.Name = input.Body.Name
 				task.Description = input.Body.Description
-				task.Status = models.TaskStatus(input.Body.Status)
-				task.WorkflowStatusID = input.Body.WorkflowStatusID
+				if input.Body.Status != "" {
+					task.Status = models.TaskStatus(input.Body.Status)
+				}
+				if input.Body.Status != "" || input.Body.WorkflowStatusID != nil {
+					task.WorkflowStatusID = input.Body.WorkflowStatusID
+				}
 				task.StartAt = input.Body.StartAt
 				task.EndAt = input.Body.EndAt
 				task.AssigneeID = input.Body.AssigneeID

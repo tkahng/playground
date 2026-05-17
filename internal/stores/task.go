@@ -758,8 +758,12 @@ func (s *DbTaskStore) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, i
 
 	task.Name = input.Name
 	task.Description = input.Description
-	task.Status = models.TaskStatus(input.Status)
-	task.WorkflowStatusID = input.WorkflowStatusID
+	if input.Status != "" {
+		task.Status = models.TaskStatus(input.Status)
+	}
+	if input.Status != "" || input.WorkflowStatusID != nil {
+		task.WorkflowStatusID = input.WorkflowStatusID
+	}
 	task.StartAt = input.StartAt
 	task.EndAt = input.EndAt
 	task.AssigneeID = input.AssigneeID
@@ -1630,7 +1634,9 @@ func (s *DbTaskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.
 	}
 	taskProject.Name = input.Name
 	taskProject.Description = input.Description
-	taskProject.Status = models.TaskProjectStatus(input.Status)
+	if input.Status != "" {
+		taskProject.Status = models.TaskProjectStatus(input.Status)
+	}
 	workflowChanged := false
 	if input.WorkflowID != nil && (taskProject.WorkflowID == nil || *taskProject.WorkflowID != *input.WorkflowID) {
 		workflow, err := s.validateWorkflowForTeam(ctx, *input.WorkflowID, taskProject.TeamID, workflowAppliesToTask)
@@ -1643,13 +1649,15 @@ func (s *DbTaskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.
 		taskProject.WorkflowID = &workflow.ID
 		workflowChanged = true
 	}
-	status, workflowStatusID, err := s.resolveProjectWorkflowStatus(ctx, taskProject.TeamID, taskProject.CreatedByMemberID, input.WorkflowStatusID, taskProject.Status)
-	if err != nil {
-		return err
+	if input.Status != "" || input.WorkflowStatusID != nil {
+		status, workflowStatusID, err := s.resolveProjectWorkflowStatus(ctx, taskProject.TeamID, taskProject.CreatedByMemberID, input.WorkflowStatusID, taskProject.Status)
+		if err != nil {
+			return err
+		}
+		taskProject.Status = status
+		input.Status = status
+		taskProject.WorkflowStatusID = workflowStatusID
 	}
-	taskProject.Status = status
-	input.Status = status
-	taskProject.WorkflowStatusID = workflowStatusID
 	taskProject.Rank = input.Rank
 	_, err = repository.TaskProject.PutOne(ctx, s.db, taskProject)
 	if err != nil {
