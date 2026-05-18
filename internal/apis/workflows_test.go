@@ -63,7 +63,7 @@ func TestApi_TeamWorkflowList(t *testing.T) {
 			},
 		},
 		{
-			Name:            "fail: guest cannot list workflows",
+			Name:            "fail: non-member cannot list workflows",
 			Method:          http.MethodGet,
 			URL:             "/teams/{team-id}/workflows",
 			ExpectedStatus:  http.StatusForbidden,
@@ -74,6 +74,24 @@ func TestApi_TeamWorkflowList(t *testing.T) {
 				other := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
 
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, other.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows", team.Team.ID.String())
+			},
+		},
+		{
+			Name:            "fail: member cannot list workflows (workflow.manage required)",
+			Method:          http.MethodGet,
+			URL:             "/teams/{team-id}/workflows",
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				memberUser := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				core.CreateTeamMemberWithOptions(t, app, team.Team.ID, memberUser.User.ID, core.TeamWithRole(models.TeamMemberRoleMember))
+				core.CreateProjectAndTasks(t, app, &team.Member)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, memberUser.User.Email)
 				scenario.Headers = []string{tokenHeader}
 				scenario.URL = fmt.Sprintf("/teams/%s/workflows", team.Team.ID.String())
 			},
@@ -194,6 +212,28 @@ func TestApi_TeamWorkflowUpdate(t *testing.T) {
 				result := test.MustUnMarshal[apis.Workflow](t, res.Body.Bytes())
 				assert.Equal(t, "Renamed task workflow", result.Name)
 				assert.Equal(t, "Updated task workflow description.", *result.Description)
+			},
+		},
+		{
+			Name:            "fail: member cannot update workflow",
+			Method:          http.MethodPut,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}",
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				memberUser := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				core.CreateTeamMemberWithOptions(t, app, team.Team.ID, memberUser.User.ID, core.TeamWithRole(models.TeamMemberRoleMember))
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				workflowID := findWorkflowID(t, app, team.Team.ID, "task")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, memberUser.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s", team.Team.ID, workflowID)
+				scenario.Body = apis.JsonToReader(t, stores.UpdateWorkflowDTO{
+					Name: types.Pointer("Attempt rename"),
+				})
 			},
 		},
 		{
@@ -369,6 +409,37 @@ func TestApi_TeamWorkflowDefault(t *testing.T) {
 				oldDefault, err := app.Adapter().Task().FindWorkflowByID(t.Context(), oldDefaultID)
 				assert.NoError(t, err)
 				assert.False(t, oldDefault.IsDefault)
+			},
+		},
+		{
+			Name:            "fail: workflow missing required category cannot be set as default",
+			Method:          http.MethodPut,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/default",
+			ExpectedStatus:  http.StatusBadRequest,
+			ExpectedContent: []string{"workflow must have statuses for todo, in_progress, and done before assignment"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				workflow, err := app.Adapter().Task().CreateWorkflow(t.Context(), &stores.CreateWorkflowDTO{
+					TeamID:            team.Team.ID,
+					CreatedByMemberID: &team.Member.ID,
+					AppliesTo:         "task",
+					Name:              "Partial workflow",
+				})
+				assert.NoError(t, err)
+				// Only add todo + in_progress — missing done
+				_, err = app.Adapter().Task().CreateWorkflowStatus(t.Context(), workflow.ID, &stores.CreateWorkflowStatusDTO{
+					Name: "Todo", Category: string(models.TaskStatusTodo),
+				})
+				assert.NoError(t, err)
+				_, err = app.Adapter().Task().CreateWorkflowStatus(t.Context(), workflow.ID, &stores.CreateWorkflowStatusDTO{
+					Name: "Doing", Category: string(models.TaskStatusInProgress),
+				})
+				assert.NoError(t, err)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/default", team.Team.ID, workflow.ID)
 			},
 		},
 		{
@@ -595,6 +666,31 @@ func TestApi_TeamWorkflowStatusUpdate(t *testing.T) {
 				})
 			},
 		},
+		{
+			Name:           "success: can override is_completed on in_progress category status",
+			Method:         http.MethodPut,
+			URL:            "/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				workflowID := findWorkflowID(t, app, team.Team.ID, "task")
+				statusID := findWorkflowStatusID(t, app, team.Team.ID, "task", "in_progress")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses/%s", team.Team.ID, workflowID, statusID)
+				scenario.Body = apis.JsonToReader(t, stores.UpdateWorkflowStatusDTO{
+					IsCompleted: types.Pointer(true),
+				})
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.WorkflowStatus](t, res.Body.Bytes())
+				assert.Equal(t, string(models.TaskStatusInProgress), result.Category)
+				assert.True(t, result.IsCompleted, "IsCompleted override should persist")
+			},
+		},
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
@@ -772,6 +868,26 @@ func TestApi_TeamWorkflowStatusDelete(t *testing.T) {
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
 				scenario.Headers = []string{tokenHeader}
 				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses/%s", team.Team.ID, workflowID, statusID)
+			},
+		},
+		{
+			Name:            "fail: cannot delete workflow status used by a project",
+			Method:          http.MethodDelete,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
+			ExpectedStatus:  http.StatusConflict,
+			ExpectedContent: []string{"workflow status is in use"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				// CreateProjectAndTasks auto-assigns a workflow_status_id from the default project workflow.
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				// Get the project workflow and its todo status ID.
+				projectWorkflowID := findWorkflowID(t, app, team.Team.ID, "project")
+				todoStatusID := findWorkflowStatusID(t, app, team.Team.ID, "project", "todo")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses/%s", team.Team.ID, projectWorkflowID, todoStatusID)
 			},
 		},
 		{

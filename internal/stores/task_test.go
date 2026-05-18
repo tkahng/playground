@@ -136,39 +136,67 @@ func TestGetUserTaskStats(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create task: %v", err)
 		}
-		type args struct {
-			ctx    context.Context
-			db     database.Dbx
-			userID uuid.UUID
+		// Setup: 1 project (done) + 1 task (done). Verify the CTE returns correct counts.
+		stats, err := adapter.Task().GetTeamTaskStats(ctx, member.TeamID)
+		if err != nil {
+			t.Fatalf("GetTeamTaskStats() error = %v", err)
 		}
-		tests := []struct {
-			name    string
-			args    args
-			want    *models.TaskStats
-			wantErr bool
-		}{
-			// TODO: Add test cases.
+		if stats == nil {
+			t.Fatal("GetTeamTaskStats() returned nil")
 		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				got, err := adapter.Task().GetTeamTaskStats(tt.args.ctx, tt.args.userID)
-				if (err != nil) != tt.wantErr {
-					t.Errorf("GetUserTaskStats() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				if !reflect.DeepEqual(got.TotalTasks, tt.want.TotalTasks) {
-					t.Errorf("GetUserTaskStats() = %v, want %v", got.TotalTasks, tt.want.TotalTasks)
-				}
-				if !reflect.DeepEqual(got.CompletedTasks, tt.want.CompletedTasks) {
-					t.Errorf("GetUserTaskStats() = %v, want %v", got.CompletedTasks, tt.want.CompletedTasks)
-				}
-				if !reflect.DeepEqual(got.TotalProjects, tt.want.TotalProjects) {
-					t.Errorf("GetUserTaskStats() = %v, want %v", got.TotalProjects, tt.want.TotalProjects)
-				}
-				if !reflect.DeepEqual(got.CompletedProjects, tt.want.CompletedProjects) {
-					t.Errorf("GetUserTaskStats() = %v, want %v", got.CompletedProjects, tt.want.CompletedProjects)
-				}
-			})
+		if stats.TotalProjects != 1 {
+			t.Errorf("TotalProjects = %d, want 1", stats.TotalProjects)
+		}
+		if stats.CompletedProjects != 1 {
+			t.Errorf("CompletedProjects = %d, want 1", stats.CompletedProjects)
+		}
+		if stats.TotalTasks != 1 {
+			t.Errorf("TotalTasks = %d, want 1", stats.TotalTasks)
+		}
+		if stats.CompletedTasks != 1 {
+			t.Errorf("CompletedTasks = %d, want 1", stats.CompletedTasks)
+		}
+
+		// Add a second project (todo) + 2 more tasks (1 done, 1 todo). Verify incremental counts.
+		taskProject2, err := taskStore.CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
+			Name:     "Second Project",
+			Status:   models.TaskProjectStatusTodo,
+			TeamID:   member.TeamID,
+			MemberID: member.ID,
+		})
+		if err != nil {
+			t.Fatalf("failed to create second task project: %v", err)
+		}
+		_, err = taskStore.CreateTaskFromInput(ctx, member.TeamID, taskProject2.ID, member.ID, &stores.CreateTaskProjectTaskDTO{
+			Name:   "Todo Task",
+			Status: models.TaskStatusTodo,
+		})
+		if err != nil {
+			t.Fatalf("failed to create todo task: %v", err)
+		}
+		_, err = taskStore.CreateTaskFromInput(ctx, member.TeamID, taskProject2.ID, member.ID, &stores.CreateTaskProjectTaskDTO{
+			Name:   "Done Task 2",
+			Status: models.TaskStatusDone,
+		})
+		if err != nil {
+			t.Fatalf("failed to create second done task: %v", err)
+		}
+
+		stats2, err := adapter.Task().GetTeamTaskStats(ctx, member.TeamID)
+		if err != nil {
+			t.Fatalf("GetTeamTaskStats() second check error = %v", err)
+		}
+		if stats2.TotalProjects != 2 {
+			t.Errorf("TotalProjects = %d, want 2", stats2.TotalProjects)
+		}
+		if stats2.CompletedProjects != 1 {
+			t.Errorf("CompletedProjects = %d, want 1", stats2.CompletedProjects)
+		}
+		if stats2.TotalTasks != 3 {
+			t.Errorf("TotalTasks = %d, want 3", stats2.TotalTasks)
+		}
+		if stats2.CompletedTasks != 2 {
+			t.Errorf("CompletedTasks = %d, want 2", stats2.CompletedTasks)
 		}
 	})
 }
@@ -1680,6 +1708,7 @@ func TestUpdateTaskPositionStatus(t *testing.T) {
 				wantErr: false,
 			},
 		}
+
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				err := taskStore.UpdateTaskRankStatus(tt.args.ctx, tt.args.taskID, tt.args.position, tt.args.status, nil)
@@ -1742,5 +1771,51 @@ func TestUpdateTaskPositionStatus(t *testing.T) {
 				}
 			})
 		}
+
+		// Verify passing an explicit workflowStatusID resolves correctly.
+		// Uses a fresh task to avoid interfering with the position tests above.
+		t.Run("update task with explicit workflow status id", func(t *testing.T) {
+			if taskProject.WorkflowID == nil {
+				t.Fatal("taskProject.WorkflowID is nil")
+			}
+			statuses, loadErr := taskStore.LoadWorkflowStatuses(ctx, *taskProject.WorkflowID)
+			if loadErr != nil || len(statuses) == 0 {
+				t.Fatalf("failed to load workflow statuses: %v", loadErr)
+			}
+			var inProgressStatusID *uuid.UUID
+			for _, s := range statuses[0] {
+				if s.Category == string(models.TaskStatusInProgress) {
+					id := s.ID
+					inProgressStatusID = &id
+					break
+				}
+			}
+			if inProgressStatusID == nil {
+				t.Fatal("in_progress workflow status not found")
+			}
+			freshTask, freshErr := taskStore.CreateTask(ctx, &models.Task{
+				Name:      "Fresh task for explicit status test",
+				Status:    models.TaskStatusDone,
+				ProjectID: taskProject.ID,
+				Rank:      9999,
+				TeamID:    task1.TeamID,
+			})
+			if freshErr != nil {
+				t.Fatalf("failed to create fresh task: %v", freshErr)
+			}
+			if err := taskStore.UpdateTaskRankStatus(ctx, freshTask.ID, 0, models.TaskStatusInProgress, inProgressStatusID); err != nil {
+				t.Fatalf("UpdateTaskRankStatus with explicit workflowStatusID failed: %v", err)
+			}
+			updated, findErr := taskStore.FindTaskByID(ctx, freshTask.ID)
+			if findErr != nil {
+				t.Fatalf("FindTaskByID failed: %v", findErr)
+			}
+			if updated.Status != models.TaskStatusInProgress {
+				t.Errorf("Status = %v, want in_progress", updated.Status)
+			}
+			if updated.WorkflowStatusID == nil || *updated.WorkflowStatusID != *inProgressStatusID {
+				t.Errorf("WorkflowStatusID = %v, want %v", updated.WorkflowStatusID, inProgressStatusID)
+			}
+		})
 	})
 }

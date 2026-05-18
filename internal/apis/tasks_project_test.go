@@ -125,6 +125,34 @@ func TestApi_TeamTaskProjectList(t *testing.T) {
 			tt.Test(t)
 		}
 	})
+
+	// Permission tests run in independent transactions.
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+		permTests := []apis.ApiScenario{
+			{
+				Name:            "fail: guest cannot list projects (projects.create required)",
+				Method:          http.MethodGet,
+				URL:             "/teams/{team-id}/task-projects",
+				ExpectedStatus:  http.StatusForbidden,
+				ExpectedContent: []string{"You do not have the required team permission"},
+				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+					owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+					team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+					guestUser := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+					core.CreateTeamMemberWithOptions(t, app, team.Team.ID, guestUser.User.ID, core.TeamWithRole(models.TeamMemberRoleGuest))
+
+					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, guestUser.User.Email)
+					scenario.Headers = []string{tokenHeader}
+					scenario.URL = fmt.Sprintf("/teams/%s/task-projects", team.Team.ID.String())
+				},
+			},
+		}
+		for _, tt := range permTests {
+			tt.Test(t)
+		}
+	})
 }
 func TestApi_TeamTaskProjectCreate(t *testing.T) {
 	// task

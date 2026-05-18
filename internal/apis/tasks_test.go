@@ -109,6 +109,48 @@ func TestApi_TeamTaskList(t *testing.T) {
 			tt.Test(t)
 		}
 	})
+
+	// Permission tests run in independent transactions — no outer tx context.
+	permTests := []apis.ApiScenario{
+		{
+			Name:            "fail: unauthenticated user cannot list tasks",
+			Method:          http.MethodGet,
+			URL:             "/task-projects/{task-project-id}/tasks",
+			ExpectedStatus:  http.StatusUnauthorized,
+			ExpectedContent: []string{"you are not authenticated"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				project := core.CreateProjectAndTasks(t, app, &team.Member)
+				scenario.URL = fmt.Sprintf("/task-projects/%s/tasks", project.ID.String())
+			},
+		},
+		{
+			Name:            "fail: guest cannot list tasks (tasks.create required)",
+			Method:          http.MethodGet,
+			URL:             "/task-projects/{task-project-id}/tasks",
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"You do not have the required team permission"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				guestUser := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				core.CreateTeamMemberWithOptions(t, app, team.Team.ID, guestUser.User.ID, core.TeamWithRole(models.TeamMemberRoleGuest))
+				project := core.CreateProjectAndTasks(t, app, &team.Member)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, guestUser.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/task-projects/%s/tasks", project.ID.String())
+			},
+		},
+	}
+	for _, tt := range permTests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi { return testApi }
+			tt.Test(t)
+		})
+	}
 }
 
 func TestApi_TeamTaskUpdate(t *testing.T) {
@@ -332,6 +374,34 @@ func TestApi_TeamTaskUpdate(t *testing.T) {
 					Name:             "updated",
 					Status:           models.TaskStatusDone,
 					WorkflowStatusID: &otherTeamStatusID,
+				})
+			},
+		},
+		{
+			Name:            "fail: user from team1 cannot update task belonging to team2",
+			Method:          http.MethodPut,
+			URL:             "/tasks/{task-id}",
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"team info not found"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner1 := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner1.User)
+				owner2 := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				team2 := core.CreateTeamAndMemberWithOptions(t, app, &owner2.User)
+				project2 := core.CreateProjectAndTasks(t, app, &team2.Member)
+				task := repository.MustCreateOneCtx(t, t.Context(), repository.Task, app.Db(), &models.Task{
+					TeamID:    team2.Team.ID,
+					ProjectID: project2.ID,
+					Status:    models.TaskStatusTodo,
+					Rank:      0,
+				})
+				// Authenticate as team1 owner and try to update team2's task
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team1.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/tasks/%s", task.ID.String())
+				scenario.Body = apis.JsonToReader(t, stores.UpdateTaskDto{
+					Name:   "cross-team hijack",
+					Status: models.TaskStatusDone,
 				})
 			},
 		},
