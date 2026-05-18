@@ -61,6 +61,7 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *UpdateTaskDto) error
 	FindTasksDueToday(ctx context.Context) ([]*models.Task, error)
 	FindTasksOverdue(ctx context.Context) ([]*models.Task, error)
+	ArchiveWorkflow(ctx context.Context, workflowID uuid.UUID) (*models.Workflow, error)
 	CreateWorkflow(ctx context.Context, input *CreateWorkflowDTO) (*models.Workflow, error)
 	UpdateWorkflow(ctx context.Context, workflowID uuid.UUID, input *UpdateWorkflowDTO) (*models.Workflow, error)
 	DeleteWorkflow(ctx context.Context, workflowID uuid.UUID) error
@@ -80,10 +81,11 @@ func (s *DbTaskStore) WithTx(dbx database.Dbx) *DbTaskStore {
 }
 
 type WorkflowFilter struct {
-	Ids       []uuid.UUID `query:"ids,omitempty" json:"ids,omitempty" format:"uuid" required:"false"`
-	TeamIds   []uuid.UUID `query:"team_ids,omitempty" json:"team_ids,omitempty" format:"uuid" required:"false"`
-	AppliesTo []string    `query:"applies_to,omitempty" json:"applies_to,omitempty" required:"false"`
-	IsDefault *bool       `query:"is_default,omitempty" json:"is_default,omitempty" required:"false"`
+	Ids             []uuid.UUID `query:"ids,omitempty" json:"ids,omitempty" format:"uuid" required:"false"`
+	TeamIds         []uuid.UUID `query:"team_ids,omitempty" json:"team_ids,omitempty" format:"uuid" required:"false"`
+	AppliesTo       []string    `query:"applies_to,omitempty" json:"applies_to,omitempty" required:"false"`
+	IsDefault       *bool       `query:"is_default,omitempty" json:"is_default,omitempty" required:"false"`
+	IncludeArchived bool        `query:"include_archived,omitempty" json:"include_archived,omitempty" required:"false"`
 }
 
 type CreateWorkflowDTO struct {
@@ -114,6 +116,11 @@ func (s *DbTaskStore) ListWorkflows(ctx context.Context, filter *WorkflowFilter)
 		if filter.IsDefault != nil {
 			where["is_default"] = map[string]any{"_eq": *filter.IsDefault}
 		}
+		if !filter.IncludeArchived {
+			where["is_archived"] = map[string]any{"_eq": false}
+		}
+	} else {
+		where["is_archived"] = map[string]any{"_eq": false}
 	}
 	var wherePtr *map[string]any
 	if len(where) > 0 {
@@ -305,6 +312,22 @@ func (s *DbTaskStore) SetDefaultWorkflow(ctx context.Context, workflowID uuid.UU
 	return updated, nil
 }
 
+func (s *DbTaskStore) ArchiveWorkflow(ctx context.Context, workflowID uuid.UUID) (*models.Workflow, error) {
+	archive := squirrel.Update(repository.WorkflowBuilder.TableName()).
+		Set("is_archived", true).
+		Where(squirrel.Eq{"id": workflowID}).
+		Suffix("returning " + repository.WorkflowBuilder.ColumnNamesJoined()).
+		PlaceholderFormat(squirrel.Dollar)
+	workflows, err := database.QueryWithBuilder[models.Workflow](ctx, s.db, archive)
+	if err != nil {
+		return nil, err
+	}
+	if len(workflows) == 0 {
+		return nil, apierrors.NotFound("workflow not found")
+	}
+	return &workflows[0], nil
+}
+
 func (s *DbTaskStore) validateWorkflowAssignable(ctx context.Context, workflowID uuid.UUID) error {
 	statuses, err := s.LoadWorkflowStatuses(ctx, workflowID)
 	if err != nil {
@@ -460,6 +483,9 @@ func (s *DbTaskStore) CreateWorkflowStatus(ctx context.Context, workflowID uuid.
 	if input.IsCompleted != nil {
 		isCompleted = *input.IsCompleted
 	}
+	if isCompleted && category != string(models.TaskStatusDone) {
+		return nil, apierrors.BadRequest("is_completed can only be true for statuses with category 'done'")
+	}
 	status, err := repository.WorkflowStatus.PostOne(ctx, s.db, &models.WorkflowStatus{
 		WorkflowID:  workflowID,
 		Name:        name,
@@ -523,6 +549,9 @@ func (s *DbTaskStore) UpdateWorkflowStatus(ctx context.Context, workflowStatusID
 	}
 	if input.IsCompleted != nil {
 		status.IsCompleted = *input.IsCompleted
+	}
+	if status.IsCompleted && status.Category != string(models.TaskStatusDone) {
+		return nil, apierrors.BadRequest("is_completed can only be true for statuses with category 'done'")
 	}
 	if status.Category != originalCategory {
 		statuses, err := s.LoadWorkflowStatuses(ctx, status.WorkflowID)

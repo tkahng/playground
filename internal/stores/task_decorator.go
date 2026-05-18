@@ -48,6 +48,7 @@ type TaskDecorator struct {
 	FindAndUpdateTaskFunc           func(ctx context.Context, taskID uuid.UUID, input *UpdateTaskDto) error
 	FindTasksDueTodayFunc           func(ctx context.Context) ([]*models.Task, error)
 	FindTasksOverdueFunc            func(ctx context.Context) ([]*models.Task, error)
+	ArchiveWorkflowFunc             func(ctx context.Context, workflowID uuid.UUID) (*models.Workflow, error)
 	CreateWorkflowFunc              func(ctx context.Context, input *CreateWorkflowDTO) (*models.Workflow, error)
 	UpdateWorkflowFunc              func(ctx context.Context, workflowID uuid.UUID, input *UpdateWorkflowDTO) (*models.Workflow, error)
 	DeleteWorkflowFunc              func(ctx context.Context, workflowID uuid.UUID) error
@@ -240,6 +241,16 @@ func (t *TaskDecorator) ListWorkflows(ctx context.Context, filter *WorkflowFilte
 		return nil, ErrDelegateNil
 	}
 	return t.Delegate.ListWorkflows(ctx, filter)
+}
+
+func (t *TaskDecorator) ArchiveWorkflow(ctx context.Context, workflowID uuid.UUID) (*models.Workflow, error) {
+	if t.ArchiveWorkflowFunc != nil {
+		return t.ArchiveWorkflowFunc(ctx, workflowID)
+	}
+	if t.Delegate == nil {
+		return nil, ErrDelegateNil
+	}
+	return t.Delegate.ArchiveWorkflow(ctx, workflowID)
 }
 
 func (t *TaskDecorator) CreateWorkflow(ctx context.Context, input *CreateWorkflowDTO) (*models.Workflow, error) {

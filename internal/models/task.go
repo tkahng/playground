@@ -67,6 +67,7 @@ type Workflow struct {
 	Name              string            `db:"name" json:"name"`
 	Description       *string           `db:"description" json:"description" nullable:"true"`
 	IsDefault         bool              `db:"is_default" json:"is_default"`
+	IsArchived        bool              `db:"is_archived" json:"is_archived"`
 	CreatedAt         time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt         time.Time         `db:"updated_at" json:"updated_at"`
 	Statuses          []*WorkflowStatus `db:"statuses" src:"id" dest:"workflow_id" table:"task.workflow_statuses" json:"statuses,omitempty"`

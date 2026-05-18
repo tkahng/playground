@@ -26,6 +26,7 @@ type Workflow struct {
 	Name              string            `json:"name"`
 	Description       *string           `json:"description,omitempty" nullable:"true"`
 	IsDefault         bool              `json:"is_default"`
+	IsArchived        bool              `json:"is_archived"`
 	CreatedAt         time.Time         `json:"created_at"`
 	UpdatedAt         time.Time         `json:"updated_at"`
 	Statuses          []*WorkflowStatus `json:"statuses,omitempty"`
@@ -57,6 +58,7 @@ func fromModelWorkflow(workflow *models.Workflow) *Workflow {
 		Name:              workflow.Name,
 		Description:       workflow.Description,
 		IsDefault:         workflow.IsDefault,
+		IsArchived:        workflow.IsArchived,
 		CreatedAt:         workflow.CreatedAt,
 		UpdatedAt:         workflow.UpdatedAt,
 		Statuses:          mapper.Map(workflow.Statuses, fromModelWorkflowStatus),
@@ -121,6 +123,11 @@ type WorkflowCreateRequestDTO struct {
 
 type WorkflowResponse struct {
 	Body *Workflow
+}
+
+type WorkflowArchiveParams struct {
+	TeamID     string `path:"team-id" required:"true" format:"uuid"`
+	WorkflowID string `path:"workflow-id" required:"true" format:"uuid"`
 }
 
 type WorkflowStatusCreateParams struct {
@@ -370,6 +377,50 @@ func (api *Api) TeamWorkflowDefaultBind(humaApi huma.API) {
 				return nil, apierrors.NotFound("workflow not found")
 			}
 			workflow, err = api.App().Adapter().Task().SetDefaultWorkflow(ctx, workflowID)
+			if err != nil {
+				return nil, err
+			}
+			return &WorkflowResponse{Body: fromModelWorkflow(workflow)}, nil
+		},
+	)
+}
+
+func (api *Api) TeamWorkflowArchiveBind(humaApi huma.API) {
+	huma.Register(
+		humaApi,
+		huma.Operation{
+			OperationID: "workflow-archive",
+			Method:      http.MethodPut,
+			Path:        "/teams/{team-id}/workflows/{workflow-id}/archive",
+			Summary:     "Workflow archive",
+			Description: "Archive a workflow so it no longer appears in active workflow lists. Projects already using the workflow are unaffected.",
+			Tags:        []string{"Task"},
+			Errors:      []int{http.StatusBadRequest, http.StatusForbidden, http.StatusNotFound},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionWorkflowManage),
+			),
+		},
+		func(ctx context.Context, input *WorkflowArchiveParams) (*WorkflowResponse, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("Unauthorized")
+			}
+			workflowID, err := uuid.Parse(input.WorkflowID)
+			if err != nil {
+				return nil, huma.Error400BadRequest("Invalid workflow id", err)
+			}
+			workflow, err := api.App().Adapter().Task().FindWorkflowByID(ctx, workflowID)
+			if err != nil {
+				return nil, err
+			}
+			if workflow == nil || workflow.TeamID != teamInfo.Team.ID {
+				return nil, apierrors.NotFound("workflow not found")
+			}
+			workflow, err = api.App().Adapter().Task().ArchiveWorkflow(ctx, workflowID)
 			if err != nil {
 				return nil, err
 			}

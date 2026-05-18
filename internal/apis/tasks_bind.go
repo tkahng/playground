@@ -98,6 +98,7 @@ func bindTaskApi(appApi *Api) {
 	appApi.TeamWorkflowUpdateBind(taskGroup)
 	appApi.TeamWorkflowDeleteBind(taskGroup)
 	appApi.TeamWorkflowDefaultBind(taskGroup)
+	appApi.TeamWorkflowArchiveBind(taskGroup)
 	appApi.TeamWorkflowStatusCreateBind(taskGroup)
 	appApi.TeamWorkflowStatusReorderBind(taskGroup)
 	appApi.TeamWorkflowStatusUpdateBind(taskGroup)

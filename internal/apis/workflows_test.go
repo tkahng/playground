@@ -667,10 +667,11 @@ func TestApi_TeamWorkflowStatusUpdate(t *testing.T) {
 			},
 		},
 		{
-			Name:           "success: can override is_completed on in_progress category status",
-			Method:         http.MethodPut,
-			URL:            "/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
-			ExpectedStatus: http.StatusOK,
+			Name:            "fail: cannot set is_completed=true on non-done category status",
+			Method:          http.MethodPut,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
+			ExpectedStatus:  http.StatusBadRequest,
+			ExpectedContent: []string{"is_completed can only be true for statuses with category 'done'"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -684,11 +685,6 @@ func TestApi_TeamWorkflowStatusUpdate(t *testing.T) {
 				scenario.Body = apis.JsonToReader(t, stores.UpdateWorkflowStatusDTO{
 					IsCompleted: types.Pointer(true),
 				})
-			},
-			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
-				result := test.MustUnMarshal[apis.WorkflowStatus](t, res.Body.Bytes())
-				assert.Equal(t, string(models.TaskStatusInProgress), result.Category)
-				assert.True(t, result.IsCompleted, "IsCompleted override should persist")
 			},
 		},
 	}
@@ -931,6 +927,192 @@ func TestApi_TeamWorkflowStatusDelete(t *testing.T) {
 				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, memberUser.User.Email)
 				scenario.Headers = []string{tokenHeader}
 				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses/%s", team.Team.ID, workflowID, statusID)
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
+				return testApi
+			}
+			tt.Test(t)
+		})
+	}
+}
+
+func TestApi_TeamWorkflowArchive(t *testing.T) {
+	tests := []apis.ApiScenario{
+		{
+			Name:           "success: owner can archive a workflow",
+			Method:         http.MethodPut,
+			URL:            "/teams/{team-id}/workflows/{workflow-id}/archive",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				workflow, err := app.Adapter().Task().CreateWorkflow(t.Context(), &stores.CreateWorkflowDTO{
+					TeamID:            team.Team.ID,
+					CreatedByMemberID: &team.Member.ID,
+					AppliesTo:         "task",
+					Name:              "Retired workflow",
+				})
+				require.NoError(t, err)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/archive", team.Team.ID, workflow.ID)
+				scenario.Store.Set("workflow_id", workflow.ID)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.Workflow](t, res.Body.Bytes())
+				assert.True(t, result.IsArchived)
+
+				workflowID := scenario.Store.Get("workflow_id").(uuid.UUID)
+				workflow, err := app.Adapter().Task().FindWorkflowByID(t.Context(), workflowID)
+				assert.NoError(t, err)
+				assert.True(t, workflow.IsArchived)
+			},
+		},
+		{
+			Name:           "success: archived workflow excluded from default list",
+			Method:         http.MethodGet,
+			URL:            "/teams/{team-id}/workflows",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				workflow, err := app.Adapter().Task().CreateWorkflow(t.Context(), &stores.CreateWorkflowDTO{
+					TeamID:            team.Team.ID,
+					CreatedByMemberID: &team.Member.ID,
+					AppliesTo:         "task",
+					Name:              "Archived workflow",
+				})
+				require.NoError(t, err)
+				_, err = app.Adapter().Task().ArchiveWorkflow(t.Context(), workflow.ID)
+				require.NoError(t, err)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows", team.Team.ID)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[[]*apis.Workflow](t, res.Body.Bytes())
+				assert.Len(t, result, 2, "archived workflow should not appear in default list")
+				for _, w := range result {
+					assert.False(t, w.IsArchived)
+				}
+			},
+		},
+		{
+			Name:            "fail: member cannot archive workflow",
+			Method:          http.MethodPut,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/archive",
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				memberUser := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				core.CreateTeamMemberWithOptions(t, app, team.Team.ID, memberUser.User.ID, core.TeamWithRole(models.TeamMemberRoleMember))
+				workflow, err := app.Adapter().Task().CreateWorkflow(t.Context(), &stores.CreateWorkflowDTO{
+					TeamID:            team.Team.ID,
+					CreatedByMemberID: &team.Member.ID,
+					AppliesTo:         "task",
+					Name:              "Target workflow",
+				})
+				require.NoError(t, err)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, memberUser.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/archive", team.Team.ID, workflow.ID)
+			},
+		},
+		{
+			Name:            "fail: cannot archive another team workflow",
+			Method:          http.MethodPut,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/archive",
+			ExpectedStatus:  http.StatusNotFound,
+			ExpectedContent: []string{"workflow not found"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				otherOwner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				otherTeam := core.CreateTeamAndMemberWithOptions(t, app, &otherOwner.User)
+				otherWorkflow, err := app.Adapter().Task().CreateWorkflow(t.Context(), &stores.CreateWorkflowDTO{
+					TeamID:            otherTeam.Team.ID,
+					CreatedByMemberID: &otherTeam.Member.ID,
+					AppliesTo:         "task",
+					Name:              "Other team workflow",
+				})
+				require.NoError(t, err)
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/archive", team.Team.ID, otherWorkflow.ID)
+			},
+		},
+	}
+	for _, tt := range tests {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := apis.SetupApi(t, ctx, db)
+			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
+				return testApi
+			}
+			tt.Test(t)
+		})
+	}
+}
+
+func TestApi_WorkflowStatusIsCompletedConstraint(t *testing.T) {
+	tests := []apis.ApiScenario{
+		{
+			Name:            "fail: cannot create status with is_completed=true on non-done category",
+			Method:          http.MethodPost,
+			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses",
+			ExpectedStatus:  http.StatusBadRequest,
+			ExpectedContent: []string{"is_completed can only be true for statuses with category 'done'"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				workflowID := findWorkflowID(t, app, team.Team.ID, "task")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses", team.Team.ID, workflowID)
+				scenario.Body = apis.JsonToReader(t, stores.CreateWorkflowStatusDTO{
+					Name:        "Blocked",
+					Category:    string(models.TaskStatusInProgress),
+					IsCompleted: types.Pointer(true),
+				})
+			},
+		},
+		{
+			Name:           "success: can create status with is_completed=true on done category",
+			Method:         http.MethodPost,
+			URL:            "/teams/{team-id}/workflows/{workflow-id}/statuses",
+			ExpectedStatus: http.StatusOK,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				core.CreateProjectAndTasks(t, app, &team.Member)
+				workflowID := findWorkflowID(t, app, team.Team.ID, "task")
+
+				tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
+				scenario.Headers = []string{tokenHeader}
+				scenario.URL = fmt.Sprintf("/teams/%s/workflows/%s/statuses", team.Team.ID, workflowID)
+				scenario.Body = apis.JsonToReader(t, stores.CreateWorkflowStatusDTO{
+					Name:        "Shipped",
+					Category:    string(models.TaskStatusDone),
+					IsCompleted: types.Pointer(true),
+				})
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.WorkflowStatus](t, res.Body.Bytes())
+				assert.Equal(t, string(models.TaskStatusDone), result.Category)
+				assert.True(t, result.IsCompleted)
 			},
 		},
 	}
