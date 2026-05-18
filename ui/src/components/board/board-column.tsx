@@ -34,7 +34,7 @@ export const BoardColumn = ({
   });
 
   const variants = cva(
-    "h-full w-[300px] bg-primary-foreground flex flex-col flex-shrink-0 snap-center mt-4 overflow-y-auto transition-colors",
+    "h-full w-[calc(100vw-2rem)] sm:w-[300px] bg-primary-foreground flex flex-col flex-shrink-0 snap-center mt-4 overflow-y-auto transition-colors",
     {
       variants: {
         state: {
@@ -92,25 +92,32 @@ export const BoardColumn = ({
 export const BoardContainer = ({ children }: { children: React.ReactNode }) => {
   const dndContext = useDndContext();
 
-  const variations = cva("px-2 md:px-0 flex lg:justify-center pb-4", {
-    variants: {
-      dragging: {
-        default: "snap-x snap-mandatory",
-        active: "snap-none",
+  const variations = cva(
+    "px-4 md:px-0 flex lg:justify-center pb-4 overscroll-x-contain",
+    {
+      variants: {
+        dragging: {
+          default: "snap-x snap-mandatory",
+          active: "snap-none",
+        },
       },
     },
-  });
+  );
 
   return (
-    <ScrollArea
-      className={variations({
-        dragging: dndContext.active ? "active" : "default",
-      })}
-    >
-      <div className="flex gap-4 items-start flex-row justify-center">
-        {children}
-      </div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
+    <div className="relative">
+      <ScrollArea
+        className={variations({
+          dragging: dndContext.active ? "active" : "default",
+        })}
+      >
+        <div className="flex gap-4 items-start flex-row justify-center">
+          {children}
+        </div>
+        <ScrollBar orientation="horizontal" />
+      </ScrollArea>
+      {/* Fade indicator — hints that more columns exist to the right */}
+      <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent sm:hidden" />
+    </div>
   );
 };
