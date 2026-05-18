@@ -10,7 +10,7 @@ export function MainNav({
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <nav className={cn("flex items-center h-12", className)} {...props}>
+    <nav className={cn("flex items-center h-12 overflow-x-auto scrollbar-none gap-1", className)} {...props}>
       {links.map((link) => (
         <Link
           key={link.to}
