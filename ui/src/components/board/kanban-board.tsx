@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { updateTaskPositionStatus } from "@/lib/task-queries";
 import { WorkflowStatus } from "@/schema.types";
 import {
   Active,
@@ -29,7 +30,6 @@ import {
 } from "./board-column";
 import {
   applyCardOverCard,
-  applyCardOverColumn,
   type ColumnId,
 } from "./kanban-board.utils";
 import { coordinateGetter } from "./keyboard-preset";
@@ -51,13 +51,37 @@ export function KanbanBoard(props: {
       })),
     [props.workflowStatuses],
   );
-  const [cards, setCards] = useState<Task[]>(props.cards);
+
+  // Track per-card column overrides applied by drag. Overrides are cleared when
+  // the server data updates (after a successful mutation + refetch).
+  const [overrides, setOverrides] = useState<Record<string, ColumnId>>({});
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   const [activeCard, setActiveCard] = useState<Task | null>(null);
   const dndContextId = useId();
 
+  // Merge server cards with local drag overrides.
+  const cards = useMemo<Task[]>(
+    () =>
+      props.cards.map((card) =>
+        overrides[card.id as string]
+          ? { ...card, columnId: overrides[card.id as string]! }
+          : card,
+      ),
+    [props.cards, overrides],
+  );
+
+  // Clear overrides that are now consistent with server data (after refetch).
   useEffect(() => {
-    setCards(props.cards);
+    setOverrides((prev) => {
+      const stale = Object.keys(prev).filter((id) => {
+        const card = props.cards.find((c) => c.id === id);
+        return card && card.columnId === prev[id];
+      });
+      if (stale.length === 0) return prev;
+      const next = { ...prev };
+      stale.forEach((id) => delete next[id]);
+      return next;
+    });
   }, [props.cards]);
 
   const queryClient = useQueryClient();
@@ -71,22 +95,24 @@ export function KanbanBoard(props: {
       taskId: string;
       workflowStatusId: string;
       position: number;
+      previousCards: Record<string, ColumnId>;
     }) => {
-      if (!user?.tokens.access_token) return;
-      const { updateTaskPositionStatus } = await import("@/lib/task-queries");
-      await updateTaskPositionStatus(user?.tokens.access_token, taskId, {
+      if (!user?.tokens.access_token) {
+        throw new Error("Not authenticated");
+      }
+      await updateTaskPositionStatus(user.tokens.access_token, taskId, {
         workflow_status_id: workflowStatusId,
         position: position,
       });
-      return;
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({
         queryKey: [{ key: "project-tasks", project_id: props.projectId }],
       });
-      toast.success("Task updated");
     },
-    onError: (error) => {
+    onError: (error, variables) => {
+      // Roll back to pre-drag override state
+      setOverrides(variables.previousCards);
       toast.error("Failed to update task", {
         description: error.message,
       });
@@ -165,22 +191,20 @@ export function KanbanBoard(props: {
             ? overData.card.columnId
             : (over.id as ColumnId);
 
-      const oldColumnId = activeData.card.columnId;
+      // Snapshot current overrides for rollback on error
+      const previousOverrides = { ...overrides };
+
+      // Apply optimistic override
+      setOverrides((prev) => ({ ...prev, [activeId.toString()]: newColumnId }));
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const position: number = (overData as any)?.sortable?.index ?? 0;
-
-      if (oldColumnId !== newColumnId) {
-        setCards((cars) =>
-          cars.map((car) =>
-            car.id === activeId ? { ...car, columnId: newColumnId } : car,
-          ),
-        );
-      }
 
       mutation.mutate({
         taskId: activeId.toString(),
         workflowStatusId: newColumnId,
         position,
+        previousCards: previousOverrides,
       });
     }
   };
@@ -202,11 +226,19 @@ export function KanbanBoard(props: {
     if (activeData?.type !== "Task") return;
 
     if (overData?.type === "Task") {
-      setCards((cars) => applyCardOverCard(cars, activeId, overId));
+      const result = applyCardOverCard(cards, activeId, overId);
+      const moved = result.find((c) => c.id === activeId);
+      if (moved) {
+        setOverrides((prev) => ({
+          ...prev,
+          [activeId.toString()]: moved.columnId,
+        }));
+      }
     } else if (overData?.type === "Column") {
-      setCards((cars) =>
-        applyCardOverColumn(cars, activeId, overId as ColumnId),
-      );
+      setOverrides((prev) => ({
+        ...prev,
+        [activeId.toString()]: overId as ColumnId,
+      }));
     }
   };
 

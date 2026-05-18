@@ -1,4 +1,5 @@
-import { KanbanBoard } from "@/components/board/kanban-board";
+import { KanbanBoard, type ColumnId } from "@/components/board/kanban-board";
+import type { Task } from "@/components/board/task-card";
 import { WorkflowSettingsPanel } from "@/components/board/workflow-settings-panel";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,22 @@ import { Link } from "@tanstack/react-router";
 import { ChevronLeft } from "lucide-react";
 import { useEffect, useState } from "react";
 import { ProjectEditDialog } from "./edit-project-dialog";
+
+// Defined outside component so it has a stable reference — prevents React Query
+// from re-running select and producing new array references on every render.
+function selectTasks(data: Awaited<ReturnType<typeof taskList>>) {
+  const res = data.data?.map(
+    (task): Task => ({
+      task,
+      name: task.name,
+      rank: task.rank,
+      columnId: (task.workflow_status_id ?? "") as ColumnId,
+      content: task.description,
+      id: task.id,
+    }),
+  );
+  return { meta: data.meta, data: res ?? [] };
+}
 
 export default function ProjectEdit() {
   const { user } = useAuthProvider();
@@ -48,17 +65,7 @@ export default function ProjectEdit() {
     isLoading: isTasksLoading,
     error: tasksError,
   } = useQuery({
-    select: (data) => {
-      const res = data.data?.map((task) => ({
-        task: task,
-        name: task.name,
-        rank: task.rank,
-        columnId: task.workflow_status_id ?? "",
-        content: task.description,
-        id: task.id,
-      }));
-      return { meta: data.meta, data: res };
-    },
+    select: selectTasks,
     queryKey: [{ key: "project-tasks", project_id: project?.id, input }],
     queryFn: async () => {
       return await taskList(user!.tokens.access_token, project!.id, {
