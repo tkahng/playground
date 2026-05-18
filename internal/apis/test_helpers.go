@@ -19,6 +19,7 @@ import (
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
+	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/store"
 )
 
@@ -34,6 +35,9 @@ func SetupApi(t testing.TB, ctx context.Context, db database.Dbx) *TestApi {
 	t.Helper()
 	cfg := conf.ZeroEnvConfig()
 	app := core.NewTestBaseApp(cfg, db)
+	if err := app.Adapter().Rbac().CreateTeamRolePermissions(ctx, shared.KnownTeamRolePermissionsMap); err != nil {
+		t.Fatalf("seed team role permissions: %v", err)
+	}
 	router, api := NewHumaApi(t, app)
 	appApi := NewAppApi(app, router, api)
 	appApi.RegisterRoutes()

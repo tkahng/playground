@@ -17,11 +17,10 @@ import (
 func TestApi_TaskOwnership(t *testing.T) {
 	tests := []apis.ApiScenario{
 		{
-			Name:            "non-owner PUT is rejected with 403",
-			Method:          http.MethodPut,
-			URL:             "/tasks/{task-id}",
-			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"only the task creator"},
+			Name:           "member can PUT another member's task with edit permission",
+			Method:         http.MethodPut,
+			URL:            "/tasks/{task-id}",
+			ExpectedStatus: http.StatusNoContent,
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, sc *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -44,11 +43,38 @@ func TestApi_TaskOwnership(t *testing.T) {
 			},
 		},
 		{
+			Name:            "guest PUT is rejected without edit permission",
+			Method:          http.MethodPut,
+			URL:             "/tasks/{task-id}",
+			ExpectedStatus:  http.StatusForbidden,
+			ExpectedContent: []string{"Forbidden"},
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, sc *apis.ApiScenario) {
+				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
+				guest := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
+				core.CreateTeamMemberWithOptions(t, app, team.Team.ID, guest.User.ID,
+					core.TeamWithRole(models.TeamMemberRoleGuest),
+					core.TeamWithBilling(false),
+				)
+				project := core.CreateProjectAndTasks(t, app, &team.Member)
+				task := repository.MustCreateOneCtx(t, t.Context(), repository.Task, app.Db(), &models.Task{
+					TeamID:            team.Team.ID,
+					ProjectID:         project.ID,
+					Status:            models.TaskStatusTodo,
+					CreatedByMemberID: &team.Member.ID,
+				})
+				header, _ := core.CreateAccessHeaderAndRefreshToken(t, app, guest.User.Email)
+				sc.Headers = []string{header}
+				sc.URL = fmt.Sprintf("/tasks/%s", task.ID)
+				sc.Body = apis.JsonToReader(t, stores.UpdateTaskDto{Name: "hijacked", Status: models.TaskStatusInProgress})
+			},
+		},
+		{
 			Name:            "non-owner DELETE is rejected with 403",
 			Method:          http.MethodDelete,
 			URL:             "/tasks/{task-id}",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"only the task creator"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, sc *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)

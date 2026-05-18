@@ -126,7 +126,7 @@ func (i *InvitationService) CheckValidInvitation(
 	if invite.Email != user.Email {
 		return false, fmt.Errorf("user does not match invitation")
 	}
-	if invite.ExpiresAt.After(time.Now()) {
+	if invite.ExpiresAt.Before(time.Now()) {
 		return false, fmt.Errorf("invitation is expired")
 	}
 	if invite.Status != models.TeamInvitationStatusPending {

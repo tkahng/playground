@@ -25,6 +25,7 @@ type Task struct {
 	CreatedByMemberID *uuid.UUID        `db:"created_by_member_id" json:"created_by_member_id" nullable:"true"`
 	TeamID            uuid.UUID         `db:"team_id" json:"team_id"`
 	ProjectID         uuid.UUID         `db:"project_id" json:"project_id"`
+	WorkflowStatusID  *uuid.UUID        `db:"workflow_status_id" json:"workflow_status_id" nullable:"true"`
 	Name              string            `db:"name" json:"name"`
 	Description       *string           `db:"description" json:"description"`
 	Status            models.TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
@@ -42,6 +43,7 @@ type Task struct {
 	Reporter          *TeamMember       `db:"reporter" src:"reporter_id" dest:"id" table:"team_members" json:"reporter,omitempty"`
 	Team              *Team             `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
 	Project           *TaskProject      `db:"project" src:"project_id" dest:"id" table:"task_projects" json:"project,omitempty"`
+	WorkflowStatus    *WorkflowStatus   `db:"workflow_status" src:"workflow_status_id" dest:"id" table:"task.workflow_statuses" json:"workflow_status,omitempty"`
 	Parent            *Task             `db:"parent" src:"parent_id" dest:"id" table:"tasks" json:"parent,omitempty"`
 }
 
@@ -54,6 +56,7 @@ func fromModelTask(task *models.Task) *Task {
 		CreatedByMemberID: task.CreatedByMemberID,
 		TeamID:            task.TeamID,
 		ProjectID:         task.ProjectID,
+		WorkflowStatusID:  task.WorkflowStatusID,
 		Name:              task.Name,
 		Description:       task.Description,
 		Status:            task.Status,
@@ -69,6 +72,7 @@ func fromModelTask(task *models.Task) *Task {
 		CreatedByMember:   fromTeamMemberModel(task.CreatedByMember),
 		Team:              fromTeamModel(task.Team),
 		Project:           FromModelProject(task.Project),
+		WorkflowStatus:    fromModelWorkflowStatus(task.WorkflowStatus),
 		Assignee:          fromTeamMemberModel(task.Assignee),
 		Reporter:          fromTeamMemberModel(task.Reporter),
 		Parent:            fromModelTask(task.Parent),
@@ -76,10 +80,11 @@ func fromModelTask(task *models.Task) *Task {
 }
 
 type CreateTaskProjectTaskDTO struct {
-	Name        string            `json:"name" required:"true"`
-	Description *string           `json:"description,omitempty" required:"false"`
-	Status      models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Rank        float64           `json:"rank,omitempty" required:"false"`
+	Name             string            `json:"name" required:"true"`
+	Description      *string           `json:"description,omitempty" required:"false"`
+	Status           models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	WorkflowStatusID *uuid.UUID        `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
+	Rank             float64           `json:"rank,omitempty" required:"false"`
 }
 
 type UpdateTaskInput struct {
@@ -88,8 +93,9 @@ type UpdateTaskInput struct {
 }
 
 type TaskPositionStatusDTO struct {
-	Position int64             `json:"position" required:"true"`
-	Status   models.TaskStatus `json:"status" required:"true" enum:"todo,in_progress,done"`
+	Position         int64             `json:"position" required:"true"`
+	Status           models.TaskStatus `json:"status,omitempty" required:"false" enum:"todo,in_progress,done"`
+	WorkflowStatusID *uuid.UUID        `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
 }
 
 type TaskPositionStatusInput struct {
@@ -105,6 +111,7 @@ type TeamTaskListParams struct {
 	PaginatedInput
 	Q                 string              `query:"q,omitempty" required:"false"`
 	Status            []models.TaskStatus `query:"status,omitempty" required:"false" enum:"todo,in_progress,done"`
+	WorkflowStatusIds []string            `query:"workflow_status_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	CreatedByMemberID string              `query:"created_by,omitempty" required:"false" format:"uuid"`
 	Ids               []string            `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	ParentID          string              `query:"parent_id,omitempty" required:"false" format:"uuid"`
@@ -122,12 +129,13 @@ func (api *Api) TeamTaskListBind(humaApi huma.API) {
 			Summary:     "Task list",
 			Description: "List of tasks",
 			Tags:        []string{"Task"},
-			Errors:      []int{http.StatusNotFound},
+			Errors:      []int{http.StatusForbidden, http.StatusNotFound},
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionTasksCreate),
 			),
 		},
 		func(ctx context.Context, input *TeamTaskListParams) (*TaskListResponse, error) {
@@ -143,6 +151,7 @@ func (api *Api) TeamTaskListBind(humaApi huma.API) {
 			newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
 			newInput.Q = input.Q
 			newInput.Statuses = input.Status
+			newInput.WorkflowStatusIds = utils.ParseValidUUIDs(input.WorkflowStatusIds...)
 			newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
 			newInput.ProjectIds = utils.ParseValidUUIDs(input.ProjectID)
 			if input.ParentID != "" {
@@ -193,6 +202,7 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionTasksEdit),
 			),
 		},
 		func(ctx context.Context, input *UpdateTaskInput) (*struct{}, error) {
@@ -209,9 +219,10 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 			// ensuring the notification decisions below reflect the actual DB state at
 			// the time of the update (not a stale snapshot from a concurrent request).
 			var (
-				previousStatus   models.TaskStatus
 				previousDueDate  *time.Time
 				previousAssignee *uuid.UUID
+				previousState    workflowTransitionState
+				newState         workflowTransitionState
 			)
 
 			txErr := api.App().Adapter().RunInTx(ctx, func(tx stores.StorageAdapterInterface) error {
@@ -223,26 +234,43 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 					return huma.Error404NotFound("Task not found")
 				}
 
-				previousStatus = task.Status
+				previousState, err = getWorkflowTransitionState(ctx, tx.Task(), string(task.Status), task.WorkflowStatusID, task.Status == models.TaskStatusDone)
+				if err != nil {
+					return err
+				}
 				previousDueDate = task.EndAt
 				previousAssignee = task.AssigneeID
 
+				if err := api.App().Task().ValidateTaskReferences(ctx, task.TeamID, task.ProjectID, &task.ID, input.Body.AssigneeID, input.Body.ReporterID, input.Body.ParentID); err != nil {
+					return err
+				}
+
 				task.Name = input.Body.Name
 				task.Description = input.Body.Description
-				task.Status = models.TaskStatus(input.Body.Status)
+				if input.Body.Status != "" {
+					task.Status = models.TaskStatus(input.Body.Status)
+				}
+				if input.Body.Status != "" || input.Body.WorkflowStatusID != nil {
+					task.WorkflowStatusID = input.Body.WorkflowStatusID
+				}
 				task.StartAt = input.Body.StartAt
 				task.EndAt = input.Body.EndAt
 				task.AssigneeID = input.Body.AssigneeID
 				task.ReporterID = input.Body.ReporterID
 				task.ParentID = input.Body.ParentID
 
-				return tx.Task().UpdateTask(ctx, task)
+				if err := tx.Task().UpdateTask(ctx, task); err != nil {
+					return err
+				}
+				newState, err = getWorkflowTransitionState(ctx, tx.Task(), string(task.Status), task.WorkflowStatusID, task.Status == models.TaskStatusDone)
+				if err != nil {
+					return err
+				}
+				return nil
 			})
 			if txErr != nil {
 				return nil, txErr
 			}
-
-			newStatus := models.TaskStatus(input.Body.Status)
 
 			newAssignee := previousAssignee == nil && input.Body.AssigneeID != nil
 			differentAssignee := previousAssignee != nil && input.Body.AssigneeID != nil && *previousAssignee != *input.Body.AssigneeID
@@ -280,8 +308,7 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 				}
 			}
 
-			newDoneStatus := previousStatus != newStatus && newStatus == models.TaskStatusDone
-			if newDoneStatus {
+			if !previousState.Completed && newState.Completed {
 				err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
 					TaskID:              id,
 					CompletedByMemberID: teamInfo.Member.ID,
@@ -292,12 +319,11 @@ func (api *Api) TeamTaskUpdateBind(humaApi huma.API) {
 				}
 			}
 
-			statusChanged := previousStatus != newStatus && newStatus != models.TaskStatusDone
-			if statusChanged {
+			if previousState.Status != newState.Status && !newState.Completed {
 				err = api.App().JobService().EnqueueTaskStatusChangedJob(ctx, &workers.TaskStatusChangedJobArgs{
 					TaskID:            id,
-					OldStatus:         string(previousStatus),
-					NewStatus:         string(newStatus),
+					OldStatus:         previousState.Status,
+					NewStatus:         newState.Status,
 					ChangedByMemberID: teamInfo.Member.ID,
 				})
 				if err != nil {
@@ -318,6 +344,9 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 	if input == nil {
 		return nil, huma.Error400BadRequest("Invalid input")
 	}
+	if input.Body.Status == "" && input.Body.WorkflowStatusID == nil {
+		return nil, huma.Error422UnprocessableEntity("status or workflow_status_id is required")
+	}
 
 	id, err := uuid.Parse(input.TaskID)
 	if err != nil {
@@ -334,28 +363,40 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 	if task == nil {
 		return nil, huma.Error404NotFound("Task not found")
 	}
-	err = api.App().Task().UpdateTaskRankStatus(ctx, id, input.Body.Position, models.TaskStatus(input.Body.Status))
+	previousState, err := getWorkflowTransitionState(ctx, api.App().Adapter().Task(), string(task.Status), task.WorkflowStatusID, task.Status == models.TaskStatusDone)
+	if err != nil {
+		return nil, err
+	}
+	err = api.App().Task().UpdateTaskRankStatus(ctx, id, input.Body.Position, models.TaskStatus(input.Body.Status), input.Body.WorkflowStatusID)
 	if err != nil {
 		return nil, err
 	}
 
-	newStatus := models.TaskStatus(input.Body.Status)
-	if newStatus == models.TaskStatusDone {
-		if task.Status != models.TaskStatusDone {
-			err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
-				TaskID:              id,
-				CompletedByMemberID: teamInfo.Member.ID,
-				CompletedAt:         time.Now(),
-			})
-			if err != nil {
-				return nil, err
-			}
+	updatedTask, err := api.App().Adapter().Task().FindTaskByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if updatedTask == nil {
+		return nil, huma.Error404NotFound("Task not found")
+	}
+	newState, err := getWorkflowTransitionState(ctx, api.App().Adapter().Task(), string(updatedTask.Status), updatedTask.WorkflowStatusID, updatedTask.Status == models.TaskStatusDone)
+	if err != nil {
+		return nil, err
+	}
+	if !previousState.Completed && newState.Completed {
+		err = api.App().JobService().EnqueueTaskCompletedJob(ctx, &workers.TaskCompletedJobArgs{
+			TaskID:              id,
+			CompletedByMemberID: teamInfo.Member.ID,
+			CompletedAt:         time.Now(),
+		})
+		if err != nil {
+			return nil, err
 		}
-	} else if task.Status != newStatus {
+	} else if previousState.Status != newState.Status {
 		err = api.App().JobService().EnqueueTaskStatusChangedJob(ctx, &workers.TaskStatusChangedJobArgs{
 			TaskID:            id,
-			OldStatus:         string(task.Status),
-			NewStatus:         string(newStatus),
+			OldStatus:         previousState.Status,
+			NewStatus:         newState.Status,
 			ChangedByMemberID: teamInfo.Member.ID,
 		})
 		if err != nil {
@@ -363,6 +404,31 @@ func (api *Api) UpdateTaskPositionStatus(ctx context.Context, input *TaskPositio
 		}
 	}
 	return nil, nil
+}
+
+type workflowTransitionState struct {
+	Status    string
+	Completed bool
+}
+
+func getWorkflowTransitionState(ctx context.Context, taskStore stores.DbTaskStoreInterface, fallbackStatus string, workflowStatusID *uuid.UUID, fallbackCompleted bool) (workflowTransitionState, error) {
+	if workflowStatusID == nil {
+		return workflowTransitionState{
+			Status:    fallbackStatus,
+			Completed: fallbackCompleted,
+		}, nil
+	}
+	status, err := taskStore.FindWorkflowStatusByID(ctx, *workflowStatusID)
+	if err != nil {
+		return workflowTransitionState{}, err
+	}
+	if status == nil {
+		return workflowTransitionState{}, huma.Error404NotFound("Workflow status not found")
+	}
+	return workflowTransitionState{
+		Status:    status.Slug,
+		Completed: status.IsCompleted,
+	}, nil
 }
 
 func (api *Api) TaskDelete(ctx context.Context, input *struct {

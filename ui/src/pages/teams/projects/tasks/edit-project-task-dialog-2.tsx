@@ -92,6 +92,7 @@ export function EditTaskDialog2({
         parent_id: values.parent_id || null,
         reporter_id: values.reporter_id || null,
         start_at: values.start_at || null,
+        workflow_status_id: null,
       });
     },
     onSuccess: async () => {
@@ -113,7 +114,7 @@ export function EditTaskDialog2({
         <Button variant="outline">Create Team</Button>
       </DialogTrigger> */}
       <DialogContent
-        className="sm:max-w-[425px]"
+        className="w-[90vw] max-w-[425px]"
         onInteractOutside={() => {
           setDialogOpen(false);
         }}
@@ -131,7 +132,7 @@ export function EditTaskDialog2({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid gap-4 py-4">
-              <div className="w-full px-10 space-y-4">
+              <div className="w-full px-4 md:px-10 space-y-4">
                 <FormField
                   control={form.control}
                   name="name"

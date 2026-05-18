@@ -35,6 +35,12 @@ var (
 	TaskBuilder = NewSQLBuilder[models.Task](
 		UuidV7Generator,
 	)
+	WorkflowBuilder = NewSQLBuilder[models.Workflow](
+		UuidV7Generator,
+	)
+	WorkflowStatusBuilder = NewSQLBuilder[models.WorkflowStatus](
+		UuidV7Generator,
+	)
 	ProductPermissionBuilder = NewSQLBuilder[models.ProductPermission](
 		InsertID,
 	)
@@ -115,6 +121,8 @@ var (
 	Token              Repository[models.Token]              = NewPostgresRepository(TokenBuilder)
 	TaskProject        Repository[models.TaskProject]        = NewPostgresRepository(TaskProjectBuilder)
 	Task               Repository[models.Task]               = NewPostgresRepository(TaskBuilder)
+	Workflow           Repository[models.Workflow]           = NewPostgresRepository(WorkflowBuilder)
+	WorkflowStatus     Repository[models.WorkflowStatus]     = NewPostgresRepository(WorkflowStatusBuilder)
 	ProductRole        Repository[models.ProductRole]        = NewPostgresRepository(ProductRoleBuilder)
 	ProductPermission  Repository[models.ProductPermission]  = NewPostgresRepository(ProductPermissionBuilder)
 	StripeProduct      Repository[models.StripeProduct]      = NewPostgresRepository(StripeProductBuilder)
@@ -131,11 +139,11 @@ var (
 	Job                Repository[models.JobRow]             = NewPostgresRepository(JobBuilder)
 	UserReaction       Repository[models.UserReaction]       = NewPostgresRepository(UserReactionBuilder)
 	Player             Repository[models.Player]             = NewPostgresRepository(PlayerBuilder)
-	Friendship          Repository[models.Friendship]          = NewPostgresRepository(FriendshipBuilder)
+	Friendship         Repository[models.Friendship]         = NewPostgresRepository(FriendshipBuilder)
 	RpsGame            Repository[models.RpsGame]            = NewPostgresRepository(RpsGameBuilder)
 	RpsParticipant     Repository[models.RpsParticipant]     = NewPostgresRepository(RpsParticipantBuilder)
-	RpsGameInvite        Repository[models.RpsGameInvite]        = NewPostgresRepository(RpsGameInviteBuilder)
-	RpsRematchRequest    Repository[models.RpsRematchRequest]    = NewPostgresRepository(RpsRematchRequestBuilder)
+	RpsGameInvite      Repository[models.RpsGameInvite]      = NewPostgresRepository(RpsGameInviteBuilder)
+	RpsRematchRequest  Repository[models.RpsRematchRequest]  = NewPostgresRepository(RpsRematchRequestBuilder)
 	PopulatedPlace     Repository[models.PopulatedPlace]     = NewPostgresRepository(PopulatedPlaceBuilder)
 
 	LedgerAccount  Repository[models.LedgerAccount]  = NewPostgresRepository(LedgerAccountBuilder)

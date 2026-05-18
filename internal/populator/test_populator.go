@@ -133,6 +133,28 @@ func NewTestPopulator(adapter stores.StorageAdapterInterface) *TestPopulator {
 					return p.ID
 				},
 			),
+			status: memo.New(
+				func(ctx context.Context, key uuid.UUID) (*models.WorkflowStatus, error) {
+					recorder.Increment()
+					return adapter.Task().FindWorkflowStatusByID(ctx, key)
+				},
+				func(ctx context.Context, keys ...uuid.UUID) ([]*models.WorkflowStatus, error) {
+					statuses := make([]*models.WorkflowStatus, 0, len(keys))
+					for _, key := range keys {
+						status, err := adapter.Task().FindWorkflowStatusByID(ctx, key)
+						if err != nil {
+							return nil, err
+						}
+						if status != nil {
+							statuses = append(statuses, status)
+						}
+					}
+					return statuses, nil
+				},
+				func(status *models.WorkflowStatus) uuid.UUID {
+					return status.ID
+				},
+			),
 		},
 	}
 }

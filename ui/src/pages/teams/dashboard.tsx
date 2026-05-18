@@ -119,8 +119,8 @@ export default function TeamDashboard() {
     return <div>Error: {error.message}</div>;
   }
   return (
-    <div className="mx-auto px-8 py-8 justify-start items-stretch flex-1 max-w-[1200px]">
-      <div className="flex items-center justify-between mb-6">
+    <div className="mx-auto px-4 md:px-8 py-8 justify-start items-stretch flex-1 max-w-[1200px]">
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">
             Welcome to <span className="font-extrabold">{team.name}</span>
@@ -138,7 +138,7 @@ export default function TeamDashboard() {
       </div>
       <Separator />
       <div className="mt-8 mx-auto max-w-6xl">
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-2xl font-bold tracking-tight">Your Projects</h2>
           </div>

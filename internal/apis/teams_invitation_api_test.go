@@ -21,6 +21,7 @@ import (
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/notification"
+	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/test"
 	"github.com/tkahng/playground/internal/tools/store"
@@ -85,19 +86,69 @@ func TestApi_CreateInvitation(t *testing.T) {
 			},
 			ExpectedContent: []string{
 				"Forbidden",
-				"You do not have the required team member role",
+				"Forbidden",
+			},
+		},
+		{
+			Name:           "success: create invitation by member with invite permission",
+			Method:         http.MethodPost,
+			URL:            "/teams/{team-id}/invitations",
+			ExpectedStatus: http.StatusNoContent,
+			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+				user := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
+				team := core.CreateTeamAndMemberWithOptions(t, app, &user.User, core.TeamWithRole(models.TeamMemberRoleMember))
+				GrantTeamRolePermission(t, app, models.TeamMemberRoleMember, shared.TeamPermissionMembersInvite)
+				scenario.URL = fmt.Sprintf("/teams/%s/invitations", team.Team.ID)
+				body := apis.InviteTeamMemberDto{
+					Email: "member-can-invite@example.com",
+					Role:  string(apis.TeamMemberRoleMember),
+				}
+				scenario.Body = apis.JsonToReader(t, body)
+				header := core.CreateTokenHeader(t, app, user.User.Email)
+				scenario.Headers = append(scenario.Headers, header)
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				ctx := t.Context()
+				invitation := repository.MustFindOneCtx(t, ctx, repository.TeamInvitation, app.Db(), &map[string]any{
+					"email": map[string]any{
+						"_eq": "member-can-invite@example.com",
+					},
+				})
+				assert.NotNil(t, invitation)
+				assert.Equal(t, models.TeamInvitationStatusPending, invitation.Status)
 			},
 		},
 	}
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			testApi := apis.SetupApi(t, ctx, db)
+			SeedKnownTeamRolePermissions(t, testApi.App)
 			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
 				return testApi
 			}
 			tt.Test(t)
 		})
 	}
+}
+
+func SeedKnownTeamRolePermissions(t testing.TB, app *core.BaseApp) {
+	t.Helper()
+	assert.NoError(t, app.Adapter().Rbac().CreateTeamRolePermissions(t.Context(), shared.KnownTeamRolePermissionsMap))
+}
+
+func GrantTeamRolePermission(t testing.TB, app *core.BaseApp, role models.TeamMemberRole, permissionName string) {
+	t.Helper()
+	_, err := app.Db().Exec(
+		t.Context(),
+		`
+			insert into org.team_role_permissions (role, permission_name)
+			values ($1::org.team_member_role, $2)
+			on conflict do nothing
+		`,
+		role,
+		permissionName,
+	)
+	assert.NoError(t, err)
 }
 
 func ExtractFistMessageTokenFromMailer(t testing.TB, app *core.BaseApp) string {
@@ -307,6 +358,7 @@ func TestApi_AcceptInvitation(t *testing.T) {
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			testApi := apis.SetupApi(t, ctx, db)
+			SeedKnownTeamRolePermissions(t, testApi.App)
 			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
 				return testApi
 			}
@@ -373,7 +425,7 @@ func TestApi_CancelInvitation(t *testing.T) {
 			URL:            "/teams/{team-id}/invitations/{invitation-id}",
 			ExpectedStatus: http.StatusForbidden,
 			ExpectedContent: []string{
-				"You do not have the required team member roles: [owner]",
+				"Forbidden",
 			},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				ctx := t.Context()
@@ -428,6 +480,7 @@ func TestApi_CancelInvitation(t *testing.T) {
 	for _, tt := range tests {
 		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 			testApi := apis.SetupApi(t, ctx, db)
+			SeedKnownTeamRolePermissions(t, testApi.App)
 			tt.TestAppFactory = func(t testing.TB) *apis.TestApi {
 				return testApi
 			}

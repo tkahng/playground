@@ -41,10 +41,9 @@ func (s *DbPlanFeaturesStore) WithTx(db database.Dbx) *DbPlanFeaturesStore {
 }
 
 func (s *DbPlanFeaturesStore) FindByProductID(ctx context.Context, productID string) (*models.PlanFeatures, error) {
-	data, err := repository.PlanFeatures.GetOne(ctx, s.db, &map[string]any{
+	return repository.PlanFeatures.GetOne(ctx, s.db, &map[string]any{
 		"stripe_product_id": map[string]any{"_eq": productID},
 	})
-	return database.OptionalRow(data, err)
 }
 
 func (s *DbPlanFeaturesStore) InsertIfMissing(ctx context.Context, pf *models.PlanFeatures) error {

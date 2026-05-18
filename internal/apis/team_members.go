@@ -300,7 +300,7 @@ func (api *Api) UpdateTeamMemberBind(humaApi huma.API) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
-				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionMembersManage),
 			),
 		},
 		func(ctx context.Context, input *UpdateTeamsTeamMemberInput) (*struct{}, error) {
@@ -359,7 +359,7 @@ func (api *Api) DeactivateTeamMemberBind(humaApi huma.API) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
-				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionMembersManage),
 			),
 		},
 		func(ctx context.Context, input *DeactivateTeamMemberInput) (*struct{}, error) {
@@ -471,7 +471,7 @@ func (api *Api) ReassignBillingAccess(humaApi huma.API) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
-				middleware.RequireTeamMemberRolesMiddleware(models.TeamMemberRoleOwner),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionBillingManage),
 				middleware.RequireTeamMemberBillingAccessMiddleware(),
 			),
 		},

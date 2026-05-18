@@ -12,6 +12,7 @@ import (
 	"github.com/tkahng/playground/internal/middleware"
 	"github.com/tkahng/playground/internal/middleware/humamiddleware"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/populator"
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
@@ -26,6 +27,8 @@ type TaskProject struct {
 	ID                uuid.UUID                `db:"id" json:"id"`
 	CreatedByMemberID *uuid.UUID               `db:"created_by_member_id" json:"created_by_member_id" nullable:"true"`
 	TeamID            uuid.UUID                `db:"team_id" json:"team_id"`
+	WorkflowID        *uuid.UUID               `db:"workflow_id" json:"workflow_id" nullable:"true"`
+	WorkflowStatusID  *uuid.UUID               `db:"workflow_status_id" json:"workflow_status_id" nullable:"true"`
 	Name              string                   `db:"name" json:"name"`
 	Description       *string                  `db:"description" json:"description"`
 	Status            models.TaskProjectStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
@@ -38,6 +41,7 @@ type TaskProject struct {
 	UpdatedAt         time.Time                `db:"updated_at" json:"updated_at"`
 	CreatedByMember   *TeamMember              `db:"created_by_member" src:"created_by_member_id" dest:"id" table:"team_members" json:"created_by_member,omitempty"`
 	Team              *Team                    `db:"team" src:"team_id" dest:"id" table:"teams" json:"team,omitempty"`
+	WorkflowStatus    *WorkflowStatus          `db:"workflow_status" src:"workflow_status_id" dest:"id" table:"task.workflow_statuses" json:"workflow_status,omitempty"`
 	Tasks             []*Task                  `db:"tasks" src:"id" dest:"project_id" table:"tasks" json:"tasks,omitempty"`
 }
 
@@ -49,6 +53,8 @@ func FromModelProject(task *models.TaskProject) *TaskProject {
 		ID:                task.ID,
 		CreatedByMemberID: task.CreatedByMemberID,
 		TeamID:            task.TeamID,
+		WorkflowID:        task.WorkflowID,
+		WorkflowStatusID:  task.WorkflowStatusID,
 		Name:              task.Name,
 		Description:       task.Description,
 		Status:            task.Status,
@@ -61,24 +67,29 @@ func FromModelProject(task *models.TaskProject) *TaskProject {
 		UpdatedAt:         task.UpdatedAt,
 		CreatedByMember:   fromTeamMemberModel(task.CreatedByMember),
 		Team:              fromTeamModel(task.Team),
+		WorkflowStatus:    fromModelWorkflowStatus(task.WorkflowStatus),
 		Tasks:             mapper.Map(task.Tasks, fromModelTask),
 	}
 }
 
 type CreateTaskProjectDTO struct {
-	TeamID      uuid.UUID                `json:"team_id" required:"true" format:"uuid"`
-	MemberID    uuid.UUID                `json:"member_id" required:"true" format:"uuid"`
-	Name        string                   `json:"name" required:"true"`
-	Description *string                  `json:"description,omitempty" required:"false"`
-	Status      models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Rank        float64                  `json:"rank,omitempty" required:"false"`
+	TeamID           uuid.UUID                `json:"team_id" required:"true" format:"uuid"`
+	MemberID         uuid.UUID                `json:"member_id" required:"true" format:"uuid"`
+	Name             string                   `json:"name" required:"true"`
+	Description      *string                  `json:"description,omitempty" required:"false"`
+	Status           models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	WorkflowStatusID *uuid.UUID               `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
+	WorkflowID       *uuid.UUID               `json:"workflow_id,omitempty" required:"false" format:"uuid"`
+	Rank             float64                  `json:"rank,omitempty" required:"false"`
 }
 
 type CreateTaskProjectWithoutTeamDTO struct {
-	Name        string                   `json:"name" required:"true"`
-	Description *string                  `json:"description,omitempty" required:"false"`
-	Status      models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Rank        float64                  `json:"rank,omitempty" required:"false"`
+	Name             string                   `json:"name" required:"true"`
+	Description      *string                  `json:"description,omitempty" required:"false"`
+	Status           models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	WorkflowStatusID *uuid.UUID               `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
+	WorkflowID       *uuid.UUID               `json:"workflow_id,omitempty" required:"false" format:"uuid"`
+	Rank             float64                  `json:"rank,omitempty" required:"false"`
 }
 
 type CreateTaskProjectWithoutTeamWithTasks struct {
@@ -102,9 +113,11 @@ type TaskProjectListResponse struct {
 type TeamTaskProjectsListParams struct {
 	TeamID string `path:"team-id" required:"true" format:"uuid"`
 	PaginatedInput
-	Q      string                     `query:"q,omitempty" required:"false"`
-	Status []models.TaskProjectStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
-	Ids    []string                   `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Q                 string                     `query:"q,omitempty" required:"false"`
+	Status            []models.TaskProjectStatus `query:"status,omitempty" required:"false" minimum:"1" maximum:"100" enum:"todo,in_progress,done"`
+	WorkflowIds       []string                   `query:"workflow_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	WorkflowStatusIds []string                   `query:"workflow_status_ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
+	Ids               []string                   `query:"ids,omitempty" required:"false" minimum:"1" maximum:"100" format:"uuid"`
 	SortParams
 	Expand []string `query:"expand,omitempty" required:"false" minimum:"1" maximum:"100" enum:"tasks,subtasks"`
 }
@@ -119,12 +132,13 @@ func (api *Api) TeamTaskProjectListBind(humaApi huma.API) {
 			Summary:     "Task project list",
 			Description: "List of task projects",
 			Tags:        []string{"Task"},
-			Errors:      []int{http.StatusNotFound},
+			Errors:      []int{http.StatusForbidden, http.StatusNotFound},
 			Security: []map[string][]string{{
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionProjectsCreate),
 			),
 		},
 		func(ctx context.Context, input *TeamTaskProjectsListParams) (*TaskProjectListResponse, error) {
@@ -140,10 +154,18 @@ func (api *Api) TeamTaskProjectListBind(humaApi huma.API) {
 			newInput.Ids = utils.ParseValidUUIDs(input.Ids...)
 			newInput.Q = input.Q
 			newInput.Status = input.Status
+			newInput.WorkflowIds = utils.ParseValidUUIDs(input.WorkflowIds...)
+			newInput.WorkflowStatusIds = utils.ParseValidUUIDs(input.WorkflowStatusIds...)
 			newInput.TeamIds = []uuid.UUID{teamInfo.Team.ID}
 			taskProject, err := api.App().Adapter().Task().ListTaskProjects(ctx, newInput)
 			if err != nil {
 				return nil, err
+			}
+			pop := populator.New(api.App().Adapter())
+			for _, taskProject := range taskProject {
+				if err := populator.PopulateTaskProject(ctx, pop, taskProject); err != nil {
+					return nil, err
+				}
 			}
 			total, err := api.App().Adapter().Task().CountTaskProjects(ctx, newInput)
 			if err != nil {
@@ -190,6 +212,7 @@ func (api *Api) TeamTaskProjectCreateBind(humaApi huma.API) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(api.App(), shared.TeamPermissionProjectsCreate),
 			),
 		},
 		func(ctx context.Context, input *CreateTaskProjectWithTasksInput) (*struct {
@@ -210,19 +233,22 @@ func (api *Api) TeamTaskProjectCreateBind(humaApi huma.API) {
 
 			taskProject, err := api.App().Adapter().Task().CreateTaskProjectWithTasks(ctx, &stores.CreateTaskProjectWithTasksDTO{
 				CreateTaskProjectDTO: stores.CreateTaskProjectDTO{
-					TeamID:      parsedTeamID,
-					MemberID:    teamInfo.Member.ID,
-					Name:        input.Body.Name,
-					Description: input.Body.Description,
-					Status:      input.Body.Status,
-					Rank:        input.Body.Rank,
+					TeamID:           parsedTeamID,
+					MemberID:         teamInfo.Member.ID,
+					Name:             input.Body.Name,
+					Description:      input.Body.Description,
+					Status:           input.Body.Status,
+					WorkflowStatusID: input.Body.WorkflowStatusID,
+					WorkflowID:       input.Body.WorkflowID,
+					Rank:             input.Body.Rank,
 				},
 				Tasks: mapper.Map(input.Body.Tasks, func(task CreateTaskProjectTaskDTO) stores.CreateTaskProjectTaskDTO {
 					return stores.CreateTaskProjectTaskDTO{
-						Name:        task.Name,
-						Description: task.Description,
-						Status:      models.TaskStatus(task.Status),
-						Rank:        task.Rank,
+						Name:             task.Name,
+						Description:      task.Description,
+						Status:           models.TaskStatus(task.Status),
+						WorkflowStatusID: task.WorkflowStatusID,
+						Rank:             task.Rank,
 					}
 				}),
 			})
@@ -337,7 +363,10 @@ func (api *Api) TeamTaskProjectUpdate(ctx context.Context, input *UpdateTaskProj
 	if existing == nil {
 		return nil, huma.Error404NotFound("Task project not found")
 	}
-	oldStatus := string(existing.Status)
+	oldState, err := getWorkflowTransitionState(ctx, api.App().Adapter().Task(), string(existing.Status), existing.WorkflowStatusID, existing.Status == models.TaskProjectStatusDone)
+	if err != nil {
+		return nil, err
+	}
 
 	payload := input.Body
 	err = api.App().Adapter().Task().UpdateTaskProject(ctx, id, &payload)
@@ -345,13 +374,25 @@ func (api *Api) TeamTaskProjectUpdate(ctx context.Context, input *UpdateTaskProj
 		return nil, err
 	}
 
-	if oldStatus != string(payload.Status) {
+	updated, err := api.App().Adapter().Task().FindTaskProjectByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if updated == nil {
+		return nil, huma.Error404NotFound("Task project not found")
+	}
+	newState, err := getWorkflowTransitionState(ctx, api.App().Adapter().Task(), string(updated.Status), updated.WorkflowStatusID, updated.Status == models.TaskProjectStatusDone)
+	if err != nil {
+		return nil, err
+	}
+
+	if oldState.Status != newState.Status {
 		teamInfo := contextstore.GetContextTeamInfo(ctx)
 		if teamInfo != nil {
 			_ = api.App().JobService().EnqueueProjectStatusChangedJob(ctx, &workers.ProjectStatusChangedJobArgs{
 				ProjectID:         id,
-				OldStatus:         oldStatus,
-				NewStatus:         string(payload.Status),
+				OldStatus:         oldState.Status,
+				NewStatus:         newState.Status,
 				ChangedByMemberID: teamInfo.Member.ID,
 			})
 		}
@@ -394,6 +435,10 @@ func (api *Api) TeamTaskProjectGet(ctx context.Context, input *struct {
 	}
 	taskProject, err := api.App().Adapter().Task().FindTaskProjectByID(ctx, id)
 	if err != nil {
+		return nil, err
+	}
+	pop := populator.New(api.App().Adapter())
+	if err := populator.PopulateTaskProject(ctx, pop, taskProject); err != nil {
 		return nil, err
 	}
 	if input.Expand != nil && slices.Contains(input.Expand, "tasks") {

@@ -8,12 +8,12 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cva } from "class-variance-authority";
 import { GripVertical } from "lucide-react";
-import { ColumnId } from "./kanban-board";
 
 export type Task = {
   id: UniqueIdentifier;
   name: string;
-  columnId: ColumnId;
+  /** Workflow status UUID — used by parent to place card in the correct column. */
+  workflowStatusId: string;
   content: string | null;
   rank: number;
   task: DbTask;
@@ -77,9 +77,9 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
           variant="ghost"
           {...attributes}
           {...listeners}
-          className="p-1 -ml-2 h-auto cursor-grab"
+          className="p-3 md:p-1 -ml-2 h-auto cursor-grab touch-none"
         >
-          <span className="sr-only">Move car</span>
+          <span className="sr-only">Move card</span>
           <GripVertical />
         </Button>
         <div className="text-sm">

@@ -12,6 +12,7 @@ func Test_taskStore_TaskWhere(t *testing.T) {
 	var id1 = uuid.New()
 	var id2 = uuid.New()
 	var id3 = uuid.New()
+	var id4 = uuid.New()
 	type args struct {
 		Task *TaskFilter
 	}
@@ -130,6 +131,19 @@ func Test_taskStore_TaskWhere(t *testing.T) {
 			},
 		},
 		{
+			name: "workflow status",
+			args: args{
+				Task: &TaskFilter{
+					WorkflowStatusIds: []uuid.UUID{id4},
+				},
+			},
+			want: &map[string]any{
+				"workflow_status_id": map[string]any{
+					"_in": []uuid.UUID{id4},
+				},
+			},
+		},
+		{
 			name: "project_id and status",
 			args: args{
 				Task: &TaskFilter{
@@ -191,6 +205,11 @@ func Test_taskStore_TaskWhere(t *testing.T) {
 					if k == "project_id" {
 						if len(tt.args.Task.ProjectIds) == 0 {
 							t.Errorf("have key %v, but have %v", k, tt.args.Task.ProjectIds)
+						}
+					}
+					if k == "workflow_status_id" {
+						if len(tt.args.Task.WorkflowStatusIds) == 0 {
+							t.Errorf("have key %v, but have %v", k, tt.args.Task.WorkflowStatusIds)
 						}
 					}
 				}

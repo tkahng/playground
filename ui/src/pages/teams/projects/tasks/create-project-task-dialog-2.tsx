@@ -87,7 +87,7 @@ export function CreateProjectTaskDialog2({
     onFinish();
   });
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    mutation.mutate(values);
+    mutation.mutate({ ...values, workflow_status_id: null });
   };
   return (
     <>

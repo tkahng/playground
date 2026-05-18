@@ -115,6 +115,46 @@ func RequireTeamMemberRolesMiddleware(roles ...models.TeamMemberRole) HTTPMiddle
 	}
 }
 
+func RequireTeamPermission(app core.App, permissionName string) HTTPMiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			rawCtx := r.Context()
+			info := contextstore.GetContextTeamInfo(rawCtx)
+			if info == nil {
+				appHttp.WriteErr(
+					w,
+					r,
+					http.StatusForbidden,
+					"You do not have the required team info",
+				)
+				return
+			}
+			allowed, err := app.Adapter().Rbac().HasTeamRolePermission(rawCtx, info.Member.Role, permissionName)
+			if err != nil {
+				slog.ErrorContext(
+					rawCtx,
+					"RequireTeamPermission: error checking team permission",
+					slog.Any("error", err),
+					slog.String("role", string(info.Member.Role)),
+					slog.String("permission", permissionName),
+				)
+				appHttp.WriteErr(w, r, http.StatusInternalServerError, "error checking team permission", err)
+				return
+			}
+			if !allowed {
+				appHttp.WriteErr(
+					w,
+					r,
+					http.StatusForbidden,
+					"Forbidden",
+				)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // RequireTeamMemberRolesMiddleware checks if the member has the required team member roles
 func RequireTeamMemberBillingAccessMiddleware() HTTPMiddlewareFunc {
 	return func(next http.Handler) http.Handler {

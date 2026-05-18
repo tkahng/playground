@@ -25,7 +25,7 @@ export function ConfirmDialog({
   return (
     <Dialog {...dialogProps}>
       {/* This will contain the open and onOpenChange props */}
-      <DialogContent>{children}</DialogContent>
+      <DialogContent className="w-[90vw] max-w-[425px]">{children}</DialogContent>
     </Dialog>
   );
 }

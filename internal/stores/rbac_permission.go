@@ -121,7 +121,7 @@ func (p *DbRbacStore) FindPermission(ctx context.Context, filter *PermissionFilt
 
 // FindPermissionByName implements RBACStore.
 func (p *DbRbacStore) FindPermissionByName(ctx context.Context, name string) (*models.Permission, error) {
-	data, err := repository.Permission.GetOne(
+	return repository.Permission.GetOne(
 		ctx,
 		p.db,
 		&map[string]any{
@@ -130,11 +130,10 @@ func (p *DbRbacStore) FindPermissionByName(ctx context.Context, name string) (*m
 			},
 		},
 	)
-	return database.OptionalRow(data, err)
 }
 
 func (a *DbRbacStore) FindPermissionById(ctx context.Context, id uuid.UUID) (*models.Permission, error) {
-	data, err := repository.Permission.GetOne(
+	return repository.Permission.GetOne(
 		ctx,
 		a.db,
 		&map[string]any{
@@ -143,7 +142,6 @@ func (a *DbRbacStore) FindPermissionById(ctx context.Context, id uuid.UUID) (*mo
 			},
 		},
 	)
-	return database.OptionalRow(data, err)
 }
 
 func (p *DbRbacStore) FindPermissionsByIds(ctx context.Context, params []uuid.UUID) ([]*models.Permission, error) {

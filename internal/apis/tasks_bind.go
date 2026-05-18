@@ -12,7 +12,6 @@ import (
 func bindTaskApi(appApi *Api) {
 	api := appApi.Api()
 	app := appApi.App()
-	checkTaskOwnerMiddleware := middleware.CheckTaskOwnerMiddleware(appApi.App())
 
 	taskGroup := huma.NewGroup(api)
 	taskGroup.UseMiddleware(
@@ -23,7 +22,6 @@ func bindTaskApi(appApi *Api) {
 			middleware.TeamInfoFromContext(app),
 		)...,
 	)
-	taskGroup.UseMiddleware(humamiddleware.HumaChiMiddlewares(checkTaskOwnerMiddleware)...)
 	// task list
 	appApi.TeamTaskListBind(taskGroup)
 	// task create
@@ -46,6 +44,7 @@ func bindTaskApi(appApi *Api) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(app, shared.TeamPermissionTasksEdit),
 			),
 		},
 		appApi.UpdateTaskPositionStatus,
@@ -66,6 +65,7 @@ func bindTaskApi(appApi *Api) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(app, shared.TeamPermissionTasksDelete),
 			),
 		},
 		appApi.TaskDelete,
@@ -93,6 +93,16 @@ func bindTaskApi(appApi *Api) {
 
 	// task project routes -------------------------------------------------------------------------------------------------
 
+	appApi.TeamWorkflowListBind(taskGroup)
+	appApi.TeamWorkflowCreateBind(taskGroup)
+	appApi.TeamWorkflowUpdateBind(taskGroup)
+	appApi.TeamWorkflowDeleteBind(taskGroup)
+	appApi.TeamWorkflowDefaultBind(taskGroup)
+	appApi.TeamWorkflowArchiveBind(taskGroup)
+	appApi.TeamWorkflowStatusCreateBind(taskGroup)
+	appApi.TeamWorkflowStatusReorderBind(taskGroup)
+	appApi.TeamWorkflowStatusUpdateBind(taskGroup)
+	appApi.TeamWorkflowStatusDeleteBind(taskGroup)
 	// task project list
 	appApi.TeamTaskProjectListBind(taskGroup)
 	// task project create
@@ -117,6 +127,7 @@ func bindTaskApi(appApi *Api) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(app, shared.TeamPermissionProjectsManage),
 			),
 		},
 		appApi.TeamTaskProjectUpdate,
@@ -137,6 +148,7 @@ func bindTaskApi(appApi *Api) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(app, shared.TeamPermissionProjectsDelete),
 			),
 		},
 		appApi.TeamTaskProjectDelete,
@@ -177,6 +189,7 @@ func bindTaskApi(appApi *Api) {
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
 				middleware.RequireTeamInfo(),
+				middleware.RequireTeamPermission(app, shared.TeamPermissionTasksCreate),
 			),
 		},
 		appApi.TeamTaskProjectTasksCreate,

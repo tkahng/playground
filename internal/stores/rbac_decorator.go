@@ -22,6 +22,7 @@ type RbacStoreDecorator struct {
 	CreateRolePermissionsFunc        func(ctx context.Context, roleId uuid.UUID, permissionIds ...uuid.UUID) error
 	CreateUserPermissionsFunc        func(ctx context.Context, userId uuid.UUID, permissionIds ...uuid.UUID) error
 	CreateRolesAndPermissionsFunc    func(ctx context.Context, rolePermissionsMap map[string][]string) error
+	CreateTeamRolePermissionsFunc    func(ctx context.Context, rolePermissionsMap map[string][]string) error
 	CreateUserRolesFunc              func(ctx context.Context, userId uuid.UUID, roleIds ...uuid.UUID) error
 	DeletePermissionFunc             func(ctx context.Context, id uuid.UUID) error
 	DeleteProductRolesFunc           func(ctx context.Context, productId string, roleIds ...uuid.UUID) error
@@ -40,6 +41,7 @@ type RbacStoreDecorator struct {
 	FindRoleByNameFunc               func(ctx context.Context, name string) (*models.Role, error)
 	FindRolesByIdsFunc               func(ctx context.Context, params []uuid.UUID) ([]*models.Role, error)
 	GetUserRolesFunc                 func(ctx context.Context, userIds ...uuid.UUID) ([][]*models.Role, error)
+	HasTeamRolePermissionFunc        func(ctx context.Context, role models.TeamMemberRole, permissionName string) (bool, error)
 
 	ListPermissionsFunc              func(ctx context.Context, input *PermissionFilter) ([]*models.Permission, error)
 	ListRolesFunc                    func(ctx context.Context, input *RoleListFilter) ([]*models.Role, error)
@@ -82,6 +84,7 @@ func (r *RbacStoreDecorator) Cleanup() {
 	r.CreateRolePermissionsFunc = nil
 	r.CreateUserPermissionsFunc = nil
 	r.CreateRolesAndPermissionsFunc = nil
+	r.CreateTeamRolePermissionsFunc = nil
 	r.DeleteProductPermissionsFunc = nil
 	r.CreateUserRolesFunc = nil
 	r.DeletePermissionFunc = nil
@@ -100,6 +103,7 @@ func (r *RbacStoreDecorator) Cleanup() {
 	r.FindRoleByNameFunc = nil
 	r.FindRolesByIdsFunc = nil
 	r.GetUserRolesFunc = nil
+	r.HasTeamRolePermissionFunc = nil
 	r.ListPermissionsFunc = nil
 	r.ListRolesFunc = nil
 	r.ListUserNotPermissionsSourceFunc = nil
@@ -108,6 +112,26 @@ func (r *RbacStoreDecorator) Cleanup() {
 	r.LoadRolePermissionsFunc = nil
 	r.UpdatePermissionFunc = nil
 	r.UpdateRoleFunc = nil
+}
+
+func (r *RbacStoreDecorator) HasTeamRolePermission(ctx context.Context, role models.TeamMemberRole, permissionName string) (bool, error) {
+	if r.HasTeamRolePermissionFunc != nil {
+		return r.HasTeamRolePermissionFunc(ctx, role, permissionName)
+	}
+	if r.Delegate == nil {
+		return false, ErrDelegateNil
+	}
+	return r.Delegate.HasTeamRolePermission(ctx, role, permissionName)
+}
+
+func (r *RbacStoreDecorator) CreateTeamRolePermissions(ctx context.Context, rolePermissionsMap map[string][]string) error {
+	if r.CreateTeamRolePermissionsFunc != nil {
+		return r.CreateTeamRolePermissionsFunc(ctx, rolePermissionsMap)
+	}
+	if r.Delegate == nil {
+		return ErrDelegateNil
+	}
+	return r.Delegate.CreateTeamRolePermissions(ctx, rolePermissionsMap)
 }
 
 // AssignUserRoles implements DbRbacStoreInterface.

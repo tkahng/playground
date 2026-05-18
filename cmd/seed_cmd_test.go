@@ -10,6 +10,7 @@ import (
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
+	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 )
@@ -27,6 +28,17 @@ func TestSeedRoles(t *testing.T) {
 			}
 			if role == nil {
 				t.Errorf("role %q not found after SeedRoles", roleName)
+			}
+		}
+		for roleName, permissions := range shared.KnownTeamRolePermissionsMap {
+			for _, permission := range permissions {
+				allowed, err := rbacStore.HasTeamRolePermission(ctx, models.TeamMemberRole(roleName), permission)
+				if err != nil {
+					t.Fatalf("HasTeamRolePermission(%q, %q) error = %v", roleName, permission, err)
+				}
+				if !allowed {
+					t.Errorf("team role permission %q/%q not found after SeedRoles", roleName, permission)
+				}
 			}
 		}
 	})

@@ -64,23 +64,22 @@ const formSchema = z.object({
 
 export function CreateProjectTaskDialog({
   projectId,
-  status,
+  workflowStatusId,
 }: {
   projectId: string;
-  status: "todo" | "in_progress" | "done";
+  workflowStatusId?: string;
 }) {
   const { user } = useAuthProvider();
   const { teamMember, team } = useTeam();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const queryClient = useQueryClient();
-  // const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
       description: "",
-      status,
+      status: "todo",
       assignee_id: null,
       created_by_member_id: teamMember?.id,
       end_at: null,
@@ -97,7 +96,10 @@ export function CreateProjectTaskDialog({
       if (!user?.tokens.access_token) {
         throw new Error("Missing access token");
       }
-      await createTask(user.tokens.access_token, projectId, values);
+      await createTask(user.tokens.access_token, projectId, {
+        ...values,
+        workflow_status_id: workflowStatusId ?? null,
+      });
     },
     onSuccess: async () => {
       setDialogOpen(false);
@@ -118,7 +120,7 @@ export function CreateProjectTaskDialog({
       <DialogTrigger asChild>
         <Button variant="outline">Add Task to Project</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[90vw] max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add Task to Project</DialogTitle>
           <DialogDescription>
@@ -128,7 +130,7 @@ export function CreateProjectTaskDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid gap-4 py-4">
-              <div className="w-full px-10">
+              <div className="w-full px-4 md:px-10">
                 <FormField
                   control={form.control}
                   name="name"

@@ -15,6 +15,7 @@ import (
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/tools/mapper"
+	"github.com/tkahng/playground/internal/tools/slug"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
@@ -34,22 +35,36 @@ type DbTaskStoreInterface interface { // size=16 (0x10)
 	FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error)
 	FindTaskByIDForUpdate(ctx context.Context, id uuid.UUID) (*models.Task, error)
 	FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error)
+	FindWorkflowByID(ctx context.Context, id uuid.UUID) (*models.Workflow, error)
+	FindWorkflowStatusByID(ctx context.Context, id uuid.UUID) (*models.WorkflowStatus, error)
+	FindWorkflowStatusesByIDs(ctx context.Context, ids ...uuid.UUID) ([]*models.WorkflowStatus, error)
 	GetTaskFirstPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskLastPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskPositions(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID, offset int64) ([]float64, error)
+	ListWorkflows(ctx context.Context, filter *WorkflowFilter) ([]*models.Workflow, error)
 	ListTaskProjects(ctx context.Context, input *TaskProjectsFilter) ([]*models.TaskProject, error)
 	ListTasks(ctx context.Context, input *TaskFilter) ([]*models.Task, error)
+	LoadWorkflowStatuses(ctx context.Context, workflowIds ...uuid.UUID) ([][]*models.WorkflowStatus, error)
+	CreateWorkflowStatus(ctx context.Context, workflowID uuid.UUID, input *CreateWorkflowStatusDTO) (*models.WorkflowStatus, error)
+	UpdateWorkflowStatus(ctx context.Context, workflowStatusID uuid.UUID, input *UpdateWorkflowStatusDTO) (*models.WorkflowStatus, error)
+	ReorderWorkflowStatuses(ctx context.Context, workflowID uuid.UUID, statusIDs []uuid.UUID) ([]*models.WorkflowStatus, error)
+	DeleteWorkflowStatus(ctx context.Context, workflowStatusID uuid.UUID) error
 	LoadTaskProjectsTasks(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error)
 	taskWhere(task *TaskFilter) *map[string]any
 	UpdateTask(ctx context.Context, task *models.Task) error
 	UpdateTaskProject(ctx context.Context, taskProjectID uuid.UUID, input *UpdateTaskProjectBaseDTO) error
 	UpdateTaskProjectUpdateDate(ctx context.Context, taskProjectID uuid.UUID) error
-	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error
+	UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus, workflowStatusID *uuid.UUID) error
 	WithTx(dbx database.Dbx) *DbTaskStore
 	GetTeamTaskStats(ctx context.Context, teamId uuid.UUID) (*models.TaskStats, error)
 	FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *UpdateTaskDto) error
 	FindTasksDueToday(ctx context.Context) ([]*models.Task, error)
 	FindTasksOverdue(ctx context.Context) ([]*models.Task, error)
+	ArchiveWorkflow(ctx context.Context, workflowID uuid.UUID) (*models.Workflow, error)
+	CreateWorkflow(ctx context.Context, input *CreateWorkflowDTO) (*models.Workflow, error)
+	UpdateWorkflow(ctx context.Context, workflowID uuid.UUID, input *UpdateWorkflowDTO) (*models.Workflow, error)
+	DeleteWorkflow(ctx context.Context, workflowID uuid.UUID) error
+	SetDefaultWorkflow(ctx context.Context, workflowID uuid.UUID) (*models.Workflow, error)
 }
 
 type DbTaskStore struct {
@@ -64,7 +79,623 @@ func (s *DbTaskStore) WithTx(dbx database.Dbx) *DbTaskStore {
 	}
 }
 
+type WorkflowFilter struct {
+	Ids             []uuid.UUID `query:"ids,omitempty" json:"ids,omitempty" format:"uuid" required:"false"`
+	TeamIds         []uuid.UUID `query:"team_ids,omitempty" json:"team_ids,omitempty" format:"uuid" required:"false"`
+	AppliesTo       []string    `query:"applies_to,omitempty" json:"applies_to,omitempty" required:"false"`
+	IsDefault       *bool       `query:"is_default,omitempty" json:"is_default,omitempty" required:"false"`
+	IncludeArchived bool        `query:"include_archived,omitempty" json:"include_archived,omitempty" required:"false"`
+}
+
+type CreateWorkflowDTO struct {
+	TeamID            uuid.UUID  `json:"team_id" required:"true" format:"uuid"`
+	CreatedByMemberID *uuid.UUID `json:"created_by_member_id,omitempty" required:"false" format:"uuid"`
+	AppliesTo         string     `json:"applies_to" required:"true" enum:"project,task"`
+	Name              string     `json:"name" required:"true" minLength:"1"`
+	Description       *string    `json:"description,omitempty" required:"false"`
+}
+
+type UpdateWorkflowDTO struct {
+	Name        *string `json:"name,omitempty" required:"false" minLength:"1"`
+	Description *string `json:"description,omitempty" required:"false"`
+}
+
+func (s *DbTaskStore) ListWorkflows(ctx context.Context, filter *WorkflowFilter) ([]*models.Workflow, error) {
+	where := map[string]any{}
+	if filter != nil {
+		if len(filter.Ids) > 0 {
+			where["id"] = map[string]any{"_in": filter.Ids}
+		}
+		if len(filter.TeamIds) > 0 {
+			where["team_id"] = map[string]any{"_in": filter.TeamIds}
+		}
+		if len(filter.AppliesTo) > 0 {
+			where["applies_to"] = map[string]any{"_in": filter.AppliesTo}
+		}
+		if filter.IsDefault != nil {
+			where["is_default"] = map[string]any{"_eq": *filter.IsDefault}
+		}
+		if !filter.IncludeArchived {
+			where["is_archived"] = map[string]any{"_eq": false}
+		}
+	} else {
+		where["is_archived"] = map[string]any{"_eq": false}
+	}
+	var wherePtr *map[string]any
+	if len(where) > 0 {
+		wherePtr = &where
+	}
+	return repository.Workflow.Get(
+		ctx,
+		s.db,
+		wherePtr,
+		&map[string]string{"applies_to": "ASC", "created_at": "ASC"},
+		nil,
+		nil,
+	)
+}
+
+func (s *DbTaskStore) LoadWorkflowStatuses(ctx context.Context, workflowIds ...uuid.UUID) ([][]*models.WorkflowStatus, error) {
+	if len(workflowIds) == 0 {
+		return [][]*models.WorkflowStatus{}, nil
+	}
+	statuses, err := repository.WorkflowStatus.Get(
+		ctx,
+		s.db,
+		&map[string]any{
+			"workflow_id": map[string]any{
+				"_in": workflowIds,
+			},
+		},
+		&map[string]string{
+			"rank": "ASC",
+		},
+		nil,
+		nil,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.MapToManyPointer(statuses, workflowIds, func(status *models.WorkflowStatus) uuid.UUID {
+		return status.WorkflowID
+	}), nil
+}
+
+func (s *DbTaskStore) CreateWorkflow(ctx context.Context, input *CreateWorkflowDTO) (*models.Workflow, error) {
+	if input == nil {
+		return nil, apierrors.BadRequest("workflow input is required")
+	}
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, apierrors.BadRequest("workflow name is required")
+	}
+	appliesTo, err := normalizeWorkflowAppliesTo(input.AppliesTo)
+	if err != nil {
+		return nil, err
+	}
+	workflow, err := repository.Workflow.PostOne(ctx, s.db, &models.Workflow{
+		TeamID:            input.TeamID,
+		CreatedByMemberID: input.CreatedByMemberID,
+		AppliesTo:         appliesTo,
+		Name:              name,
+		Description:       input.Description,
+		IsDefault:         false,
+	})
+	if database.IsUniqConstraintErr(err) {
+		return nil, apierrors.Conflict("workflow already exists")
+	}
+	return workflow, err
+}
+
+func (s *DbTaskStore) UpdateWorkflow(ctx context.Context, workflowID uuid.UUID, input *UpdateWorkflowDTO) (*models.Workflow, error) {
+	if input == nil {
+		return nil, apierrors.BadRequest("workflow input is required")
+	}
+	var updated *models.Workflow
+	err := s.db.RunInTx(ctx, func(tx database.Dbx) error {
+		workflow, err := repository.Workflow.GetOneForUpdate(ctx, tx, &map[string]any{
+			"id": map[string]any{"_eq": workflowID},
+		})
+		if err != nil {
+			return err
+		}
+		if workflow == nil {
+			return apierrors.NotFound("workflow not found")
+		}
+		if input.Name != nil {
+			name := strings.TrimSpace(*input.Name)
+			if name == "" {
+				return apierrors.BadRequest("workflow name is required")
+			}
+			workflow.Name = name
+		}
+		if input.Description != nil {
+			workflow.Description = input.Description
+		}
+		result, err := repository.Workflow.PutOne(ctx, tx, workflow)
+		if database.IsUniqConstraintErr(err) {
+			return apierrors.Conflict("workflow already exists")
+		}
+		if err != nil {
+			return err
+		}
+		updated = result
+		return nil
+	})
+	return updated, err
+}
+
+func (s *DbTaskStore) DeleteWorkflow(ctx context.Context, workflowID uuid.UUID) error {
+	workflow, err := s.FindWorkflowByID(ctx, workflowID)
+	if err != nil {
+		return err
+	}
+	if workflow == nil {
+		return apierrors.NotFound("workflow not found")
+	}
+	if workflow.IsDefault {
+		return apierrors.Conflict("default workflow cannot be deleted")
+	}
+	projectCount, err := s.countProjectsUsingWorkflow(ctx, workflowID)
+	if err != nil {
+		return err
+	}
+	if projectCount > 0 {
+		return apierrors.Conflict("workflow is in use")
+	}
+	statuses, err := s.LoadWorkflowStatuses(ctx, workflowID)
+	if err != nil {
+		return err
+	}
+	if len(statuses) > 0 {
+		for _, status := range statuses[0] {
+			if err := s.ensureWorkflowStatusUnused(ctx, status.ID); err != nil {
+				return err
+			}
+		}
+	}
+	_, err = repository.Workflow.Delete(ctx, s.db, &map[string]any{
+		"id": map[string]any{
+			"_eq": workflowID,
+		},
+	})
+	return err
+}
+
+func (s *DbTaskStore) SetDefaultWorkflow(ctx context.Context, workflowID uuid.UUID) (*models.Workflow, error) {
+	workflow, err := s.FindWorkflowByID(ctx, workflowID)
+	if err != nil {
+		return nil, err
+	}
+	if workflow == nil {
+		return nil, apierrors.NotFound("workflow not found")
+	}
+	if err := s.validateWorkflowAssignable(ctx, workflowID); err != nil {
+		return nil, err
+	}
+
+	var updated *models.Workflow
+	err = s.db.RunInTx(ctx, func(tx database.Dbx) error {
+		clearDefault := squirrel.Update(repository.WorkflowBuilder.TableName()).
+			Set("is_default", false).
+			Where(squirrel.Eq{
+				"team_id":    workflow.TeamID,
+				"applies_to": workflow.AppliesTo,
+				"is_default": true,
+			}).
+			PlaceholderFormat(squirrel.Dollar)
+		if _, err := database.ExecWithBuilder(ctx, tx, clearDefault); err != nil {
+			return err
+		}
+
+		setDefault := squirrel.Update(repository.WorkflowBuilder.TableName()).
+			Set("is_default", true).
+			Where(squirrel.Eq{
+				"id": workflowID,
+			}).
+			Suffix("returning " + repository.WorkflowBuilder.ColumnNamesJoined()).
+			PlaceholderFormat(squirrel.Dollar)
+		workflows, err := database.QueryWithBuilder[models.Workflow](ctx, tx, setDefault)
+		if err != nil {
+			return err
+		}
+		if len(workflows) == 0 {
+			return apierrors.NotFound("workflow not found")
+		}
+		updated = &workflows[0]
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return updated, nil
+}
+
+func (s *DbTaskStore) ArchiveWorkflow(ctx context.Context, workflowID uuid.UUID) (*models.Workflow, error) {
+	archive := squirrel.Update(repository.WorkflowBuilder.TableName()).
+		Set("is_archived", true).
+		Where(squirrel.Eq{"id": workflowID}).
+		Suffix("returning " + repository.WorkflowBuilder.ColumnNamesJoined()).
+		PlaceholderFormat(squirrel.Dollar)
+	workflows, err := database.QueryWithBuilder[models.Workflow](ctx, s.db, archive)
+	if err != nil {
+		return nil, err
+	}
+	if len(workflows) == 0 {
+		return nil, apierrors.NotFound("workflow not found")
+	}
+	return &workflows[0], nil
+}
+
+func (s *DbTaskStore) validateWorkflowAssignable(ctx context.Context, workflowID uuid.UUID) error {
+	statuses, err := s.LoadWorkflowStatuses(ctx, workflowID)
+	if err != nil {
+		return err
+	}
+	if len(statuses) == 0 || len(statuses[0]) == 0 {
+		return apierrors.BadRequest("workflow must have statuses before assignment")
+	}
+	if !workflowStatusesIncludeRequiredCategories(statuses[0]) {
+		return apierrors.BadRequest("workflow must have statuses for todo, in_progress, and done before assignment")
+	}
+	return nil
+}
+
+func requiredWorkflowStatusCategories() []string {
+	return []string{
+		string(models.TaskStatusTodo),
+		string(models.TaskStatusInProgress),
+		string(models.TaskStatusDone),
+	}
+}
+
+func workflowStatusesIncludeRequiredCategories(statuses []*models.WorkflowStatus) bool {
+	categories := map[string]bool{}
+	for _, status := range statuses {
+		categories[status.Category] = true
+	}
+	for _, category := range requiredWorkflowStatusCategories() {
+		if !categories[category] {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *DbTaskStore) countProjectsUsingWorkflow(ctx context.Context, workflowID uuid.UUID) (int64, error) {
+	return repository.TaskProject.Count(ctx, s.db, &map[string]any{
+		"workflow_id": map[string]any{
+			"_eq": workflowID,
+		},
+	})
+}
+
+func (s *DbTaskStore) ensureActiveWorkflowKeepsAssignableStatuses(ctx context.Context, workflowID uuid.UUID, statuses []*models.WorkflowStatus) error {
+	workflow, err := s.FindWorkflowByID(ctx, workflowID)
+	if err != nil {
+		return err
+	}
+	if workflow == nil {
+		return apierrors.NotFound("workflow not found")
+	}
+	if !workflow.IsDefault {
+		projectCount, err := s.countProjectsUsingWorkflow(ctx, workflowID)
+		if err != nil {
+			return err
+		}
+		if projectCount == 0 {
+			return nil
+		}
+	}
+	if !workflowStatusesIncludeRequiredCategories(statuses) {
+		return apierrors.Conflict("workflow must keep statuses for todo, in_progress, and done while in use")
+	}
+	return nil
+}
+
+type CreateWorkflowStatusDTO struct {
+	Name        string   `json:"name" required:"true" minLength:"1"`
+	Slug        *string  `json:"slug,omitempty" required:"false"`
+	Description *string  `json:"description,omitempty" required:"false"`
+	Category    string   `json:"category" required:"true" enum:"todo,in_progress,done"`
+	Color       *string  `json:"color,omitempty" required:"false"`
+	Rank        *float64 `json:"rank,omitempty" required:"false"`
+	IsCompleted *bool    `json:"is_completed,omitempty" required:"false"`
+}
+
+type UpdateWorkflowStatusDTO struct {
+	Name        *string  `json:"name,omitempty" required:"false" minLength:"1"`
+	Slug        *string  `json:"slug,omitempty" required:"false"`
+	Description *string  `json:"description,omitempty" required:"false"`
+	Category    *string  `json:"category,omitempty" required:"false" enum:"todo,in_progress,done"`
+	Color       *string  `json:"color,omitempty" required:"false"`
+	Rank        *float64 `json:"rank,omitempty" required:"false"`
+	IsCompleted *bool    `json:"is_completed,omitempty" required:"false"`
+}
+
+type ReorderWorkflowStatusesDTO struct {
+	StatusIds []uuid.UUID `json:"status_ids" required:"true" minimum:"1" maximum:"100" format:"uuid"`
+}
+
+func (s *DbTaskStore) FindWorkflowByID(ctx context.Context, id uuid.UUID) (*models.Workflow, error) {
+	return repository.Workflow.GetOne(
+		ctx,
+		s.db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": id,
+			},
+		},
+	)
+}
+
+func (s *DbTaskStore) FindWorkflowStatusByID(ctx context.Context, id uuid.UUID) (*models.WorkflowStatus, error) {
+	return s.findWorkflowStatusByID(ctx, id)
+}
+
+func (s *DbTaskStore) FindWorkflowStatusesByIDs(ctx context.Context, ids ...uuid.UUID) ([]*models.WorkflowStatus, error) {
+	if len(ids) == 0 {
+		return []*models.WorkflowStatus{}, nil
+	}
+	return repository.WorkflowStatus.Get(
+		ctx,
+		s.db,
+		&map[string]any{
+			"id": map[string]any{
+				"_in": ids,
+			},
+		},
+		nil,
+		nil,
+		nil,
+	)
+}
+
+func (s *DbTaskStore) CreateWorkflowStatus(ctx context.Context, workflowID uuid.UUID, input *CreateWorkflowStatusDTO) (*models.WorkflowStatus, error) {
+	if input == nil {
+		return nil, apierrors.BadRequest("workflow status input is required")
+	}
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, apierrors.BadRequest("workflow status name is required")
+	}
+	category, err := normalizeWorkflowStatusCategory(input.Category)
+	if err != nil {
+		return nil, err
+	}
+	statusSlug := slug.NewSlug(name)
+	if input.Slug != nil {
+		statusSlug = slug.NewSlug(*input.Slug)
+	}
+	if statusSlug == "" {
+		return nil, apierrors.BadRequest("workflow status slug is required")
+	}
+	rank := input.Rank
+	if rank == nil {
+		nextRank, err := s.nextWorkflowStatusRank(ctx, workflowID)
+		if err != nil {
+			return nil, err
+		}
+		rank = &nextRank
+	}
+	isCompleted := category == string(models.TaskStatusDone)
+	if input.IsCompleted != nil {
+		isCompleted = *input.IsCompleted
+	}
+	status, err := repository.WorkflowStatus.PostOne(ctx, s.db, &models.WorkflowStatus{
+		WorkflowID:  workflowID,
+		Name:        name,
+		Slug:        statusSlug,
+		Description: input.Description,
+		Category:    category,
+		Color:       input.Color,
+		Rank:        *rank,
+		IsCompleted: isCompleted,
+	})
+	if database.IsUniqConstraintErr(err) {
+		return nil, apierrors.Conflict("workflow status already exists")
+	}
+	return status, err
+}
+
+func (s *DbTaskStore) UpdateWorkflowStatus(ctx context.Context, workflowStatusID uuid.UUID, input *UpdateWorkflowStatusDTO) (*models.WorkflowStatus, error) {
+	if input == nil {
+		return nil, apierrors.BadRequest("workflow status input is required")
+	}
+	status, err := s.findWorkflowStatusByID(ctx, workflowStatusID)
+	if err != nil {
+		return nil, err
+	}
+	if status == nil {
+		return nil, apierrors.NotFound("workflow status not found")
+	}
+	originalCategory := status.Category
+	if input.Name != nil {
+		name := strings.TrimSpace(*input.Name)
+		if name == "" {
+			return nil, apierrors.BadRequest("workflow status name is required")
+		}
+		status.Name = name
+	}
+	if input.Slug != nil {
+		statusSlug := slug.NewSlug(*input.Slug)
+		if statusSlug == "" {
+			return nil, apierrors.BadRequest("workflow status slug is required")
+		}
+		status.Slug = statusSlug
+	}
+	if input.Description != nil {
+		status.Description = input.Description
+	}
+	if input.Category != nil {
+		category, err := normalizeWorkflowStatusCategory(*input.Category)
+		if err != nil {
+			return nil, err
+		}
+		status.Category = category
+		if input.IsCompleted == nil {
+			status.IsCompleted = category == string(models.TaskStatusDone)
+		}
+	}
+	if input.Color != nil {
+		status.Color = input.Color
+	}
+	if input.Rank != nil {
+		status.Rank = *input.Rank
+	}
+	if input.IsCompleted != nil {
+		status.IsCompleted = *input.IsCompleted
+	}
+	if status.Category != originalCategory {
+		statuses, err := s.LoadWorkflowStatuses(ctx, status.WorkflowID)
+		if err != nil {
+			return nil, err
+		}
+		if len(statuses) == 0 {
+			return nil, apierrors.NotFound("workflow not found")
+		}
+		for _, workflowStatus := range statuses[0] {
+			if workflowStatus.ID == status.ID {
+				workflowStatus.Category = status.Category
+			}
+		}
+		if err := s.ensureActiveWorkflowKeepsAssignableStatuses(ctx, status.WorkflowID, statuses[0]); err != nil {
+			return nil, err
+		}
+	}
+	updated, err := repository.WorkflowStatus.PutOne(ctx, s.db, status)
+	if database.IsUniqConstraintErr(err) {
+		return nil, apierrors.Conflict("workflow status already exists")
+	}
+	return updated, err
+}
+
+func (s *DbTaskStore) ReorderWorkflowStatuses(ctx context.Context, workflowID uuid.UUID, statusIDs []uuid.UUID) ([]*models.WorkflowStatus, error) {
+	statuses, err := s.LoadWorkflowStatuses(ctx, workflowID)
+	if err != nil {
+		return nil, err
+	}
+	if len(statuses) == 0 {
+		return nil, apierrors.NotFound("workflow not found")
+	}
+	if !workflowStatusIDsMatch(statuses[0], statusIDs) {
+		return nil, apierrors.BadRequest("workflow status ids must include each workflow status exactly once")
+	}
+
+	err = s.db.RunInTx(ctx, func(tx database.Dbx) error {
+		args := make([]any, 0, len(statusIDs)*2+1)
+		valueParts := make([]string, 0, len(statusIDs))
+		for idx, statusID := range statusIDs {
+			n := len(args) + 1
+			args = append(args, statusID, float64((idx+1)*1000))
+			valueParts = append(valueParts, fmt.Sprintf("($%d::uuid, $%d::double precision)", n, n+1))
+		}
+		args = append(args, workflowID)
+		table := repository.WorkflowStatusBuilder.TableName()
+		query := fmt.Sprintf(
+			"UPDATE %s SET rank = v.rank FROM (VALUES %s) AS v(id, rank) WHERE %s.id = v.id AND %s.workflow_id = $%d",
+			table, strings.Join(valueParts, ", "), table, table, len(args),
+		)
+		_, err := database.Exec(ctx, tx, query, args...)
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	updated, err := s.LoadWorkflowStatuses(ctx, workflowID)
+	if err != nil {
+		return nil, err
+	}
+	if len(updated) == 0 {
+		return []*models.WorkflowStatus{}, nil
+	}
+	return updated[0], nil
+}
+
+func workflowStatusIDsMatch(statuses []*models.WorkflowStatus, statusIDs []uuid.UUID) bool {
+	if len(statuses) == 0 || len(statusIDs) != len(statuses) {
+		return false
+	}
+	existing := make(map[uuid.UUID]bool, len(statuses))
+	for _, status := range statuses {
+		existing[status.ID] = true
+	}
+	seen := make(map[uuid.UUID]bool, len(statusIDs))
+	for _, statusID := range statusIDs {
+		if statusID == uuid.Nil || !existing[statusID] || seen[statusID] {
+			return false
+		}
+		seen[statusID] = true
+	}
+	return true
+}
+
+func (s *DbTaskStore) DeleteWorkflowStatus(ctx context.Context, workflowStatusID uuid.UUID) error {
+	status, err := s.findWorkflowStatusByID(ctx, workflowStatusID)
+	if err != nil {
+		return err
+	}
+	if status == nil {
+		return apierrors.NotFound("workflow status not found")
+	}
+	if err := s.ensureWorkflowStatusUnused(ctx, workflowStatusID); err != nil {
+		return err
+	}
+	statuses, err := s.LoadWorkflowStatuses(ctx, status.WorkflowID)
+	if err != nil {
+		return err
+	}
+	if len(statuses) == 0 {
+		return apierrors.NotFound("workflow not found")
+	}
+	remainingStatuses := make([]*models.WorkflowStatus, 0, len(statuses[0]))
+	for _, workflowStatus := range statuses[0] {
+		if workflowStatus.ID != workflowStatusID {
+			remainingStatuses = append(remainingStatuses, workflowStatus)
+		}
+	}
+	if err := s.ensureActiveWorkflowKeepsAssignableStatuses(ctx, status.WorkflowID, remainingStatuses); err != nil {
+		return err
+	}
+	_, err = repository.WorkflowStatus.Delete(ctx, s.db, &map[string]any{
+		"id": map[string]any{
+			"_eq": workflowStatusID,
+		},
+	})
+	return err
+}
+
+func (s *DbTaskStore) ensureWorkflowStatusUnused(ctx context.Context, workflowStatusID uuid.UUID) error {
+	taskCount, err := repository.Task.Count(ctx, s.db, &map[string]any{
+		"workflow_status_id": map[string]any{
+			"_eq": workflowStatusID,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	projectCount, err := repository.TaskProject.Count(ctx, s.db, &map[string]any{
+		"workflow_status_id": map[string]any{
+			"_eq": workflowStatusID,
+		},
+	})
+	if err != nil {
+		return err
+	}
+	if taskCount > 0 || projectCount > 0 {
+		return apierrors.Conflict("workflow status is in use")
+	}
+	return nil
+}
+
 func (s *DbTaskStore) CreateTask(ctx context.Context, task *models.Task) (*models.Task, error) {
+	status, workflowStatusID, err := s.resolveTaskWorkflowStatus(ctx, task.ProjectID, task.WorkflowStatusID, task.Status)
+	if err != nil {
+		return nil, err
+	}
+	task.Status = status
+	task.WorkflowStatusID = workflowStatusID
 	return repository.Task.PostOne(ctx, s.db, task)
 }
 
@@ -82,6 +713,7 @@ type TaskFilter struct {
 	ProjectIds         []uuid.UUID         `query:"project_ids,omitempty" json:"project_ids,omitempty" format:"uuid" required:"false"`
 	Names              []string            `query:"names,omitempty" json:"names,omitempty" required:"false"`
 	Statuses           []models.TaskStatus `query:"statuses,omitempty" json:"statuses,omitempty" required:"false"`
+	WorkflowStatusIds  []uuid.UUID         `query:"workflow_status_ids,omitempty" json:"workflow_status_ids,omitempty" format:"uuid" required:"false"`
 	TeamIds            []uuid.UUID         `query:"team_ids,omitempty" json:"team_ids,omitempty" format:"uuid" required:"false"`
 	CreatedByMemberIds []uuid.UUID         `query:"created_by_member_ids,omitempty" json:"created_by_member_ids,omitempty" format:"uuid" required:"false"`
 	ParentIds          []uuid.UUID         `query:"parent_ids,omitempty" json:"parent_ids,omitempty" format:"uuid" required:"false"`
@@ -144,6 +776,11 @@ func (*DbTaskStore) taskWhere(task *TaskFilter) *map[string]any {
 			"_in": task.Statuses,
 		}
 	}
+	if len(task.WorkflowStatusIds) > 0 {
+		where["workflow_status_id"] = map[string]any{
+			"_in": task.WorkflowStatusIds,
+		}
+	}
 
 	if len(task.ParentIds) > 0 {
 		where["parent_id"] = map[string]any{
@@ -154,14 +791,15 @@ func (*DbTaskStore) taskWhere(task *TaskFilter) *map[string]any {
 }
 
 type UpdateTaskDto struct {
-	Name        string            `db:"name" json:"name"`
-	Description *string           `db:"description" json:"description"`
-	Status      models.TaskStatus `db:"status" json:"status" enum:"todo,in_progress,done"`
-	StartAt     *time.Time        `db:"start_at" json:"start_at" nullable:"true"`
-	EndAt       *time.Time        `db:"end_at" json:"end_at" nullable:"true"`
-	AssigneeID  *uuid.UUID        `db:"assignee_id" json:"assignee_id" nullable:"true"`
-	ReporterID  *uuid.UUID        `db:"reporter_id" json:"reporter_id" nullable:"true"`
-	ParentID    *uuid.UUID        `db:"parent_id" json:"parent_id" nullable:"true"`
+	Name             string            `db:"name" json:"name"`
+	Description      *string           `db:"description" json:"description"`
+	Status           models.TaskStatus `db:"status" json:"status,omitempty" required:"false" enum:"todo,in_progress,done"`
+	WorkflowStatusID *uuid.UUID        `db:"workflow_status_id" json:"workflow_status_id" nullable:"true"`
+	StartAt          *time.Time        `db:"start_at" json:"start_at" nullable:"true"`
+	EndAt            *time.Time        `db:"end_at" json:"end_at" nullable:"true"`
+	AssigneeID       *uuid.UUID        `db:"assignee_id" json:"assignee_id" nullable:"true"`
+	ReporterID       *uuid.UUID        `db:"reporter_id" json:"reporter_id" nullable:"true"`
+	ParentID         *uuid.UUID        `db:"parent_id" json:"parent_id" nullable:"true"`
 }
 
 func (s *DbTaskStore) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, input *UpdateTaskDto) error {
@@ -175,7 +813,12 @@ func (s *DbTaskStore) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, i
 
 	task.Name = input.Name
 	task.Description = input.Description
-	task.Status = models.TaskStatus(input.Status)
+	if input.Status != "" {
+		task.Status = models.TaskStatus(input.Status)
+	}
+	if input.Status != "" || input.WorkflowStatusID != nil {
+		task.WorkflowStatusID = input.WorkflowStatusID
+	}
 	task.StartAt = input.StartAt
 	task.EndAt = input.EndAt
 	task.AssigneeID = input.AssigneeID
@@ -189,7 +832,13 @@ func (s *DbTaskStore) FindAndUpdateTask(ctx context.Context, taskID uuid.UUID, i
 }
 
 func (s *DbTaskStore) UpdateTask(ctx context.Context, task *models.Task) error {
-	_, err := repository.Task.PutOne(ctx, s.db, task)
+	status, workflowStatusID, err := s.resolveTaskWorkflowStatus(ctx, task.ProjectID, task.WorkflowStatusID, task.Status)
+	if err != nil {
+		return err
+	}
+	task.Status = status
+	task.WorkflowStatusID = workflowStatusID
+	_, err = repository.Task.PutOne(ctx, s.db, task)
 	return err
 }
 
@@ -209,78 +858,82 @@ func (s *DbTaskStore) CountItems(ctx context.Context, projectID uuid.UUID, statu
 			},
 		},
 	)
-	// var count int64
-	// query := `
-	// 	SELECT COUNT(*)
-	// 	FROM tasks
-	// 	WHERE project_id = $1 AND status = $2 AND id != $3
-	// `
-	// err := s.db.QueryRow(ctx, query, projectID, status, excludeID).Scan(&count)
-	// return count, err
 }
 
-type QueryAdapter struct {
-	query string
-	args  []any
-	err   error
+type rankRow struct {
+	Rank float64 `db:"rank"`
 }
 
-func (a *QueryAdapter) ToSql() (string, []any, error) {
-	return a.query, a.args, a.err
-}
 func (s *DbTaskStore) GetTaskFirstPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error) {
-	var rank float64
-	var err error
-	query := `
-		SELECT rank 
-		FROM task.tasks 
-		WHERE project_id = $1 AND status = $2 AND id != $3
-		ORDER BY rank ASC 
-		LIMIT 1
-	`
-	rank, err = database.QueryOneSingleColumn[float64](ctx, s.db, query, projectID, status, excludeID)
-	return rank, err
+	q := squirrel.Select("rank").
+		From(repository.TaskBuilder.TableName()).
+		Where(squirrel.Eq{
+			"project_id": projectID,
+			"status":     status,
+		}).
+		Where(squirrel.NotEq{"id": excludeID}).
+		OrderBy("rank ASC").
+		Limit(1).
+		PlaceholderFormat(squirrel.Dollar)
+
+	rows, err := database.QueryWithBuilder[rankRow](ctx, s.db, q)
+	if err != nil {
+		return 0, err
+	}
+	if len(rows) == 0 {
+		return 0, nil
+	}
+	return rows[0].Rank, nil
 }
 
 func (s *DbTaskStore) GetTaskLastPosition(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error) {
-	var rank float64
-	var err error
-	query := `
-		SELECT rank 
-		FROM task.tasks 
-		WHERE project_id = $1 AND status = $2 AND id != $3
-		ORDER BY rank DESC 
-		LIMIT 1
-	`
-	rank, err = database.QueryOneSingleColumn[float64](ctx, s.db, query, projectID, status, excludeID)
-	return rank, err
+	q := squirrel.Select("rank").
+		From(repository.TaskBuilder.TableName()).
+		Where(squirrel.Eq{
+			"project_id": projectID,
+			"status":     status,
+		}).
+		Where(squirrel.NotEq{"id": excludeID}).
+		OrderBy("rank DESC").
+		Limit(1).
+		PlaceholderFormat(squirrel.Dollar)
+
+	rows, err := database.QueryWithBuilder[rankRow](ctx, s.db, q)
+	if err != nil {
+		return 0, err
+	}
+	if len(rows) == 0 {
+		return 0, nil
+	}
+	return rows[0].Rank, nil
 }
 
 func (s *DbTaskStore) GetTaskPositions(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID, offset int64) ([]float64, error) {
-	query := `
-		SELECT rank 
-		FROM task.tasks 
-		WHERE project_id = $1 AND status = $2 AND id != $3
-		ORDER BY rank ASC 
-		LIMIT $4 OFFSET $5
-	`
-	return database.QueryManySingleColumn[float64](ctx, s.db, query, projectID, status, excludeID, 2, offset)
+	q := squirrel.Select("rank").
+		From(repository.TaskBuilder.TableName()).
+		Where(squirrel.Eq{
+			"project_id": projectID,
+			"status":     status,
+		}).
+		Where(squirrel.NotEq{"id": excludeID}).
+		OrderBy("rank ASC").
+		Limit(2).
+		Offset(uint64(offset)).
+		PlaceholderFormat(squirrel.Dollar)
+
+	rows, err := database.QueryWithBuilder[rankRow](ctx, s.db, q)
+	if err != nil {
+		return nil, err
+	}
+	return mapper.Map(rows, func(row rankRow) float64 {
+		return row.Rank
+	}), nil
 }
 func NewDbTaskStore(db database.Dbx) *DbTaskStore {
 	return &DbTaskStore{
 		db: db,
 	}
 }
-
-const (
-	LoadTaskProjectsTasksQuery = `
-SELECT tp.id as key,
-        json_agg(to_json(t.*)) AS "data"
-FROM task.task_projects tp
-        LEFT JOIN task.tasks t ON tp.id = t.project_id
-WHERE tp.id = ANY ($1::uuid [])
-GROUP BY tp.id;`
-)
 
 func (s *DbTaskStore) LoadTaskProjectsTasks(ctx context.Context, projectIds ...uuid.UUID) ([][]*models.Task, error) {
 	tasks, err := repository.Task.Get(
@@ -304,7 +957,7 @@ func (s *DbTaskStore) LoadTaskProjectsTasks(ctx context.Context, projectIds ...u
 }
 
 func (s *DbTaskStore) FindTaskByID(ctx context.Context, id uuid.UUID) (*models.Task, error) {
-	task, err := repository.Task.GetOne(
+	return repository.Task.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -313,13 +966,12 @@ func (s *DbTaskStore) FindTaskByID(ctx context.Context, id uuid.UUID) (*models.T
 			},
 		},
 	)
-	return database.OptionalRow(task, err)
 }
 
 // FindTaskByIDForUpdate fetches the task and acquires a row-level lock (SELECT … FOR UPDATE).
 // Must be called inside a transaction.
 func (s *DbTaskStore) FindTaskByIDForUpdate(ctx context.Context, id uuid.UUID) (*models.Task, error) {
-	task, err := repository.Task.GetOneForUpdate(
+	return repository.Task.GetOneForUpdate(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -328,7 +980,6 @@ func (s *DbTaskStore) FindTaskByIDForUpdate(ctx context.Context, id uuid.UUID) (
 			},
 		},
 	)
-	return database.OptionalRow(task, err)
 }
 
 func (s *DbTaskStore) FindLastTaskRank(ctx context.Context, taskProjectID uuid.UUID) (float64, error) {
@@ -372,14 +1023,16 @@ func (s *DbTaskStore) DeleteTask(ctx context.Context, taskID uuid.UUID) error {
 type TaskProjectsFilter struct {
 	PaginatedInput
 	SortParams
-	Q       string                     `query:"q,omitempty" json:"q,omitempty" required:"false"`
-	Ids     []uuid.UUID                `query:"ids,omitempty" json:"ids,omitempty" format:"uuid" required:"false"`
-	TeamIds []uuid.UUID                `query:"team_ids,omitempty" json:"team_ids,omitempty" format:"uuid" required:"false"`
-	Status  []models.TaskProjectStatus `query:"status,omitempty" json:"statuses,omitempty" required:"false"`
+	Q                 string                     `query:"q,omitempty" json:"q,omitempty" required:"false"`
+	Ids               []uuid.UUID                `query:"ids,omitempty" json:"ids,omitempty" format:"uuid" required:"false"`
+	TeamIds           []uuid.UUID                `query:"team_ids,omitempty" json:"team_ids,omitempty" format:"uuid" required:"false"`
+	WorkflowIds       []uuid.UUID                `query:"workflow_ids,omitempty" json:"workflow_ids,omitempty" format:"uuid" required:"false"`
+	WorkflowStatusIds []uuid.UUID                `query:"workflow_status_ids,omitempty" json:"workflow_status_ids,omitempty" format:"uuid" required:"false"`
+	Status            []models.TaskProjectStatus `query:"status,omitempty" json:"statuses,omitempty" required:"false"`
 }
 
 func (s *DbTaskStore) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*models.TaskProject, error) {
-	task, err := repository.TaskProject.GetOne(
+	return repository.TaskProject.GetOne(
 		ctx,
 		s.db,
 		&map[string]any{
@@ -388,7 +1041,6 @@ func (s *DbTaskStore) FindTaskProjectByID(ctx context.Context, id uuid.UUID) (*m
 			},
 		},
 	)
-	return database.OptionalRow(task, err)
 }
 func (s *DbTaskStore) DeleteTaskProject(ctx context.Context, taskProjectID uuid.UUID) error {
 	_, err := repository.TaskProject.Delete(
@@ -484,6 +1136,16 @@ func (*DbTaskStore) TaskProjectWhere(task *TaskProjectsFilter) *map[string]any {
 			"_in": task.Status,
 		}
 	}
+	if len(task.WorkflowIds) > 0 {
+		where["workflow_id"] = map[string]any{
+			"_in": task.WorkflowIds,
+		}
+	}
+	if len(task.WorkflowStatusIds) > 0 {
+		where["workflow_status_id"] = map[string]any{
+			"_in": task.WorkflowStatusIds,
+		}
+	}
 
 	return &where
 }
@@ -523,13 +1185,305 @@ func (s *DbTaskStore) CountTaskProjects(ctx context.Context, filter *TaskProject
 	return repository.TaskProject.Count(ctx, s.db, where)
 }
 
+const (
+	workflowAppliesToProject = "project"
+	workflowAppliesToTask    = "task"
+)
+
+type defaultWorkflowStatus struct {
+	name        string
+	slug        string
+	category    string
+	color       string
+	rank        float64
+	isCompleted bool
+}
+
+var defaultWorkflowStatuses = []defaultWorkflowStatus{
+	{name: "To do", slug: "todo", category: "todo", color: "#6b7280", rank: 1000, isCompleted: false},
+	{name: "In progress", slug: "in_progress", category: "in_progress", color: "#2563eb", rank: 2000, isCompleted: false},
+	{name: "Done", slug: "done", category: "done", color: "#16a34a", rank: 3000, isCompleted: true},
+}
+
+func (s *DbTaskStore) ensureDefaultWorkflow(ctx context.Context, teamID uuid.UUID, memberID *uuid.UUID, appliesTo string) (*models.Workflow, error) {
+	workflow, err := s.findDefaultWorkflow(ctx, teamID, appliesTo)
+	if err != nil {
+		return nil, err
+	}
+	if workflow != nil {
+		return workflow, s.ensureDefaultWorkflowStatuses(ctx, workflow.ID)
+	}
+
+	name := "Default task workflow"
+	description := "Default workflow for task board status."
+	if appliesTo == workflowAppliesToProject {
+		name = "Default project workflow"
+		description = "Default workflow for project lifecycle status."
+	}
+
+	var created *models.Workflow
+	err = s.db.RunInTx(ctx, func(tx database.Dbx) error {
+		clearDefault := squirrel.Update(repository.WorkflowBuilder.TableName()).
+			Set("is_default", false).
+			Where(squirrel.Eq{
+				"team_id":    teamID,
+				"applies_to": appliesTo,
+				"is_default": true,
+			}).
+			PlaceholderFormat(squirrel.Dollar)
+		if _, err := database.ExecWithBuilder(ctx, tx, clearDefault); err != nil {
+			return err
+		}
+		q := squirrel.Insert(repository.WorkflowBuilder.TableName()).
+			Columns("team_id", "created_by_member_id", "applies_to", "name", "description", "is_default").
+			Values(teamID, memberID, appliesTo, name, description, true).
+			Suffix("on conflict (team_id, applies_to, name) do update set is_default = true returning " + repository.WorkflowBuilder.ColumnNamesJoined()).
+			PlaceholderFormat(squirrel.Dollar)
+		rows, err := database.QueryWithBuilder[models.Workflow](ctx, tx, q)
+		if err != nil {
+			return err
+		}
+		if len(rows) == 0 {
+			return fmt.Errorf("insert workflow returned no rows")
+		}
+		created = &rows[0]
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if err := s.ensureDefaultWorkflowStatuses(ctx, created.ID); err != nil {
+		return nil, err
+	}
+	return created, nil
+}
+
+func (s *DbTaskStore) findDefaultWorkflow(ctx context.Context, teamID uuid.UUID, appliesTo string) (*models.Workflow, error) {
+	q := squirrel.Select(repository.WorkflowBuilder.ColumnNames()...).
+		From(repository.WorkflowBuilder.TableName()).
+		Where(squirrel.Eq{
+			"team_id":    teamID,
+			"applies_to": appliesTo,
+			"is_default": true,
+		}).
+		Limit(1).
+		PlaceholderFormat(squirrel.Dollar)
+
+	workflows, err := database.QueryWithBuilder[models.Workflow](ctx, s.db, q)
+	if err != nil {
+		return nil, err
+	}
+	if len(workflows) == 0 {
+		return nil, nil
+	}
+	return &workflows[0], nil
+}
+
+func (s *DbTaskStore) ensureDefaultWorkflowStatuses(ctx context.Context, workflowID uuid.UUID) error {
+	for _, status := range defaultWorkflowStatuses {
+		q := squirrel.Insert(repository.WorkflowStatusBuilder.TableName()).
+			Columns("workflow_id", "name", "slug", "category", "color", "rank", "is_completed").
+			Values(workflowID, status.name, status.slug, status.category, status.color, status.rank, status.isCompleted).
+			Suffix("on conflict (workflow_id, slug) do nothing").
+			PlaceholderFormat(squirrel.Dollar)
+		if _, err := database.ExecWithBuilder(ctx, s.db, q); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *DbTaskStore) findWorkflowStatusIDByCategory(ctx context.Context, workflowID uuid.UUID, category string) (*uuid.UUID, error) {
+	q := squirrel.Select("id").
+		From(repository.WorkflowStatusBuilder.TableName()).
+		Where(squirrel.Eq{
+			"workflow_id": workflowID,
+			"category":    category,
+		}).
+		OrderBy("rank ASC").
+		Limit(1).
+		PlaceholderFormat(squirrel.Dollar)
+
+	id, err := database.PgxQuerySingleScalar[uuid.UUID](ctx, s.db, q)
+	if err != nil {
+		return nil, err
+	}
+	if id == uuid.Nil {
+		return nil, nil
+	}
+	return &id, nil
+}
+
+func normalizeWorkflowStatusCategory(category string) (string, error) {
+	category = strings.TrimSpace(category)
+	if slices.Contains([]string{
+		string(models.TaskStatusTodo),
+		string(models.TaskStatusInProgress),
+		string(models.TaskStatusDone),
+	}, category) {
+		return category, nil
+	}
+	return "", apierrors.BadRequest("workflow status category must be todo, in_progress, or done")
+}
+
+func normalizeWorkflowAppliesTo(appliesTo string) (string, error) {
+	appliesTo = strings.TrimSpace(appliesTo)
+	if slices.Contains([]string{workflowAppliesToProject, workflowAppliesToTask}, appliesTo) {
+		return appliesTo, nil
+	}
+	return "", apierrors.BadRequest("workflow applies_to must be project or task")
+}
+
+func (s *DbTaskStore) nextWorkflowStatusRank(ctx context.Context, workflowID uuid.UUID) (float64, error) {
+	q := squirrel.Select("coalesce(max(rank), 0) + 1000").
+		From(repository.WorkflowStatusBuilder.TableName()).
+		Where(squirrel.Eq{
+			"workflow_id": workflowID,
+		}).
+		PlaceholderFormat(squirrel.Dollar)
+
+	return database.PgxQuerySingleScalar[float64](ctx, s.db, q)
+}
+
+func (s *DbTaskStore) findWorkflowStatusByID(ctx context.Context, id uuid.UUID) (*models.WorkflowStatus, error) {
+	return repository.WorkflowStatus.GetOne(
+		ctx,
+		s.db,
+		&map[string]any{
+			"id": map[string]any{
+				"_eq": id,
+			},
+		},
+	)
+}
+
+func (s *DbTaskStore) validateWorkflowStatus(ctx context.Context, id uuid.UUID, workflowID uuid.UUID) (*models.WorkflowStatus, error) {
+	status, err := s.findWorkflowStatusByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if status == nil {
+		return nil, apierrors.BadRequest("workflow status not found")
+	}
+	if status.WorkflowID != workflowID {
+		return nil, apierrors.BadRequest("workflow status must belong to the workflow")
+	}
+	return status, nil
+}
+
+func (s *DbTaskStore) validateWorkflowForTeam(ctx context.Context, workflowID uuid.UUID, teamID uuid.UUID, appliesTo string) (*models.Workflow, error) {
+	workflow, err := s.FindWorkflowByID(ctx, workflowID)
+	if err != nil {
+		return nil, err
+	}
+	if workflow == nil || workflow.TeamID != teamID {
+		return nil, apierrors.BadRequest("workflow not found")
+	}
+	if workflow.AppliesTo != appliesTo {
+		return nil, apierrors.BadRequest("workflow applies_to does not match")
+	}
+	return workflow, nil
+}
+
+func (s *DbTaskStore) resolveProjectWorkflowStatus(ctx context.Context, teamID uuid.UUID, memberID *uuid.UUID, workflowStatusID *uuid.UUID, status models.TaskProjectStatus) (models.TaskProjectStatus, *uuid.UUID, error) {
+	workflow, err := s.ensureDefaultWorkflow(ctx, teamID, memberID, workflowAppliesToProject)
+	if err != nil {
+		return status, nil, err
+	}
+	if workflowStatusID == nil {
+		id, err := s.findWorkflowStatusIDByCategory(ctx, workflow.ID, string(status))
+		return status, id, err
+	}
+	workflowStatus, err := s.validateWorkflowStatus(ctx, *workflowStatusID, workflow.ID)
+	if err != nil {
+		return status, nil, err
+	}
+	return models.TaskProjectStatus(workflowStatus.Category), workflowStatusID, nil
+}
+
+func (s *DbTaskStore) findTaskWorkflowStatusID(ctx context.Context, projectID uuid.UUID, status models.TaskStatus) (*uuid.UUID, error) {
+	project, err := s.FindTaskProjectByID(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	if project == nil {
+		return nil, apierrors.NotFound("task project not found")
+	}
+	workflowID := project.WorkflowID
+	if workflowID == nil {
+		workflow, err := s.ensureDefaultWorkflow(ctx, project.TeamID, project.CreatedByMemberID, workflowAppliesToTask)
+		if err != nil {
+			return nil, err
+		}
+		workflowID = &workflow.ID
+		project.WorkflowID = workflowID
+		if _, err := repository.TaskProject.PutOne(ctx, s.db, project); err != nil {
+			return nil, err
+		}
+	}
+	return s.findWorkflowStatusIDByCategory(ctx, *workflowID, string(status))
+}
+
+func (s *DbTaskStore) resolveTaskWorkflowStatus(ctx context.Context, projectID uuid.UUID, workflowStatusID *uuid.UUID, status models.TaskStatus) (models.TaskStatus, *uuid.UUID, error) {
+	project, err := s.FindTaskProjectByID(ctx, projectID)
+	if err != nil {
+		return status, nil, err
+	}
+	if project == nil {
+		return status, nil, apierrors.NotFound("task project not found")
+	}
+	workflowID := project.WorkflowID
+	if workflowID == nil {
+		workflow, err := s.ensureDefaultWorkflow(ctx, project.TeamID, project.CreatedByMemberID, workflowAppliesToTask)
+		if err != nil {
+			return status, nil, err
+		}
+		workflowID = &workflow.ID
+		project.WorkflowID = workflowID
+		if _, err := repository.TaskProject.PutOne(ctx, s.db, project); err != nil {
+			return status, nil, err
+		}
+	}
+	if workflowStatusID == nil {
+		id, err := s.findWorkflowStatusIDByCategory(ctx, *workflowID, string(status))
+		return status, id, err
+	}
+	workflowStatus, err := s.validateWorkflowStatus(ctx, *workflowStatusID, *workflowID)
+	if err != nil {
+		return status, nil, err
+	}
+	return models.TaskStatus(workflowStatus.Category), workflowStatusID, nil
+}
+
 func (s *DbTaskStore) CreateTaskProject(ctx context.Context, input *CreateTaskProjectDTO) (*models.TaskProject, error) {
+	var taskWorkflow *models.Workflow
+	var err error
+	if input.WorkflowID != nil {
+		taskWorkflow, err = s.validateWorkflowForTeam(ctx, *input.WorkflowID, input.TeamID, workflowAppliesToTask)
+		if err != nil {
+			return nil, err
+		}
+		if err := s.validateWorkflowAssignable(ctx, taskWorkflow.ID); err != nil {
+			return nil, err
+		}
+	} else {
+		taskWorkflow, err = s.ensureDefaultWorkflow(ctx, input.TeamID, &input.MemberID, workflowAppliesToTask)
+		if err != nil {
+			return nil, err
+		}
+	}
+	projectStatus, projectWorkflowStatusID, err := s.resolveProjectWorkflowStatus(ctx, input.TeamID, &input.MemberID, input.WorkflowStatusID, input.Status)
+	if err != nil {
+		return nil, err
+	}
 	taskProject := models.TaskProject{
 		TeamID:            input.TeamID,
 		CreatedByMemberID: &input.MemberID,
+		WorkflowID:        &taskWorkflow.ID,
+		WorkflowStatusID:  projectWorkflowStatusID,
 		Name:              input.Name,
 		Description:       input.Description,
-		Status:            models.TaskProjectStatus(input.Status),
+		Status:            projectStatus,
 		Rank:              input.Rank,
 	}
 	projects, err := repository.TaskProject.PostOne(ctx, s.db, &taskProject)
@@ -540,18 +1494,21 @@ func (s *DbTaskStore) CreateTaskProject(ctx context.Context, input *CreateTaskPr
 }
 
 type CreateTaskProjectDTO struct {
-	TeamID      uuid.UUID                `json:"team_id" required:"true" format:"uuid"`
-	MemberID    uuid.UUID                `json:"member_id" required:"true" format:"uuid"`
-	Name        string                   `json:"name" required:"true"`
-	Description *string                  `json:"description,omitempty" required:"false"`
-	Status      models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Rank        float64                  `json:"rank,omitempty" required:"false"`
+	TeamID           uuid.UUID                `json:"team_id" required:"true" format:"uuid"`
+	MemberID         uuid.UUID                `json:"member_id" required:"true" format:"uuid"`
+	Name             string                   `json:"name" required:"true"`
+	Description      *string                  `json:"description,omitempty" required:"false"`
+	Status           models.TaskProjectStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	WorkflowStatusID *uuid.UUID               `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
+	WorkflowID       *uuid.UUID               `json:"workflow_id,omitempty" required:"false" format:"uuid"`
+	Rank             float64                  `json:"rank,omitempty" required:"false"`
 }
 type CreateTaskProjectTaskDTO struct {
-	Name        string            `json:"name" required:"true"`
-	Description *string           `json:"description,omitempty" required:"false"`
-	Status      models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
-	Rank        float64           `json:"rank,omitempty" required:"false"`
+	Name             string            `json:"name" required:"true"`
+	Description      *string           `json:"description,omitempty" required:"false"`
+	Status           models.TaskStatus `json:"status" required:"false" enum:"todo,in_progress,done" default:"todo"`
+	WorkflowStatusID *uuid.UUID        `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
+	Rank             float64           `json:"rank,omitempty" required:"false"`
 }
 type CreateTaskProjectWithTasksDTO struct {
 	CreateTaskProjectDTO
@@ -592,6 +1549,7 @@ func (s *DbTaskStore) CreateTaskFromInput(ctx context.Context, teamID uuid.UUID,
 		Name:              input.Name,
 		Description:       input.Description,
 		Status:            models.TaskStatus(input.Status),
+		WorkflowStatusID:  input.WorkflowStatusID,
 		Rank:              input.Rank,
 	}
 	task, err := s.CreateTask(ctx, &setter)
@@ -722,11 +1680,13 @@ func (s *DbTaskStore) UpdateTaskProjectUpdateDate(ctx context.Context, taskProje
 }
 
 type UpdateTaskProjectBaseDTO struct {
-	Name        string                   `json:"name" required:"true"`
-	Description *string                  `json:"description,omitempty" required:"false"`
-	Status      models.TaskProjectStatus `json:"status" enum:"todo,in_progress,done"`
-	Rank        float64                  `json:"rank"`
-	Position    *int64                   `json:"position,omitempty" required:"false"`
+	Name             string                   `json:"name" required:"true"`
+	Description      *string                  `json:"description,omitempty" required:"false"`
+	Status           models.TaskProjectStatus `json:"status,omitempty" required:"false" enum:"todo,in_progress,done"`
+	WorkflowStatusID *uuid.UUID               `json:"workflow_status_id,omitempty" required:"false" format:"uuid"`
+	WorkflowID       *uuid.UUID               `json:"workflow_id,omitempty" required:"false" format:"uuid"`
+	Rank             float64                  `json:"rank"`
+	Position         *int64                   `json:"position,omitempty" required:"false"`
 }
 
 func (s *DbTaskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.UUID, input *UpdateTaskProjectBaseDTO) error {
@@ -739,16 +1699,57 @@ func (s *DbTaskStore) UpdateTaskProject(ctx context.Context, taskProjectID uuid.
 	}
 	taskProject.Name = input.Name
 	taskProject.Description = input.Description
-	taskProject.Status = models.TaskProjectStatus(input.Status)
+	if input.Status != "" {
+		taskProject.Status = models.TaskProjectStatus(input.Status)
+	}
+	workflowChanged := false
+	if input.WorkflowID != nil && (taskProject.WorkflowID == nil || *taskProject.WorkflowID != *input.WorkflowID) {
+		workflow, err := s.validateWorkflowForTeam(ctx, *input.WorkflowID, taskProject.TeamID, workflowAppliesToTask)
+		if err != nil {
+			return err
+		}
+		if err := s.validateWorkflowAssignable(ctx, workflow.ID); err != nil {
+			return err
+		}
+		taskProject.WorkflowID = &workflow.ID
+		workflowChanged = true
+	}
+	if input.Status != "" || input.WorkflowStatusID != nil {
+		status, workflowStatusID, err := s.resolveProjectWorkflowStatus(ctx, taskProject.TeamID, taskProject.CreatedByMemberID, input.WorkflowStatusID, taskProject.Status)
+		if err != nil {
+			return err
+		}
+		taskProject.Status = status
+		input.Status = status
+		taskProject.WorkflowStatusID = workflowStatusID
+	}
 	taskProject.Rank = input.Rank
 	_, err = repository.TaskProject.PutOne(ctx, s.db, taskProject)
 	if err != nil {
 		return err
 	}
+	if workflowChanged {
+		if err := s.remapTaskWorkflowStatuses(ctx, taskProject.ID, *taskProject.WorkflowID); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func (s *DbTaskStore) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus) error {
+func (s *DbTaskStore) remapTaskWorkflowStatuses(ctx context.Context, taskProjectID uuid.UUID, workflowID uuid.UUID) error {
+	q := squirrel.Update(repository.TaskBuilder.TableName()).
+		Set("workflow_status_id", squirrel.Expr(
+			"(select id from task.workflow_statuses where workflow_id = ? and category = task.tasks.status::text order by rank asc limit 1)",
+			workflowID,
+		)).
+		Where(squirrel.Eq{"project_id": taskProjectID}).
+		PlaceholderFormat(squirrel.Dollar)
+
+	_, err := database.ExecWithBuilder(ctx, s.db, q)
+	return err
+}
+
+func (s *DbTaskStore) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID, position int64, status models.TaskStatus, workflowStatusID *uuid.UUID) error {
 	task, err := s.FindTaskByID(ctx, taskID)
 	if err != nil {
 		return err
@@ -756,11 +1757,20 @@ func (s *DbTaskStore) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID
 	if task == nil {
 		return apierrors.NotFound("task not found")
 	}
+	if workflowStatusID == nil && status == "" {
+		return apierrors.BadRequest("task status or workflow status is required")
+	}
+	status, resolvedWorkflowStatusID, err := s.resolveTaskWorkflowStatus(ctx, task.ProjectID, workflowStatusID, status)
+	if err != nil {
+		return err
+	}
 	rank, err := s.CalculateTaskRankStatus(ctx, task.ID, task.ProjectID, status, task.Rank, position)
 	if err != nil {
 		return err
 	}
 	task.Rank = rank
+	task.Status = status
+	task.WorkflowStatusID = resolvedWorkflowStatusID
 	_, err = repository.Task.PutOne(ctx, s.db, task)
 	if err != nil {
 		return err
@@ -772,33 +1782,24 @@ func (s *DbTaskStore) UpdateTaskRankStatus(ctx context.Context, taskID uuid.UUID
 	return nil
 }
 
-const TeamTaskStatsQuery = `
+const teamTaskStatsQuery = `
 WITH project_stats AS (
-    SELECT COUNT(*) as total_projects,
-        COUNT(*) FILTER (
-            WHERE tp.status = 'done'
-        ) as completed_projects
+    SELECT COUNT(*) AS total_projects,
+        COUNT(*) FILTER (WHERE tp.status = 'done') AS completed_projects
     FROM task.task_projects tp
     WHERE tp.team_id = $1
 ),
 task_stats AS (
-    SELECT COUNT(*) as total_tasks,
-        COUNT(*) FILTER (
-            WHERE t.status = 'done'
-        ) as completed_tasks
+    SELECT COUNT(*) AS total_tasks,
+        COUNT(*) FILTER (WHERE t.status = 'done') AS completed_tasks
     FROM task.tasks t
     WHERE t.team_id = $1
 )
-SELECT ps.total_projects,
-    ps.completed_projects,
-    ts.total_tasks,
-    ts.completed_tasks
-FROM project_stats ps
-    CROSS JOIN task_stats ts;
-	`
+SELECT ps.total_projects, ps.completed_projects, ts.total_tasks, ts.completed_tasks
+FROM project_stats ps CROSS JOIN task_stats ts`
 
 func (s *DbTaskStore) GetTeamTaskStats(ctx context.Context, teamId uuid.UUID) (*models.TaskStats, error) {
-	res, err := database.QueryAll[models.TaskStats](ctx, s.db, TeamTaskStatsQuery, teamId)
+	res, err := database.QueryAll[models.TaskStats](ctx, s.db, teamTaskStatsQuery, teamId)
 	if err != nil {
 		return nil, err
 	}
