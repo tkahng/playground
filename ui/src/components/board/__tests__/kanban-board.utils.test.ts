@@ -1,160 +1,81 @@
 import { describe, expect, it } from "vitest";
-import type { Task } from "../task-card";
-import {
-  applyCardOverCard,
-  applyCardOverColumn,
-} from "../kanban-board.utils";
+import { buildItems, findContainer } from "../kanban-board.utils";
 
-// Use UUID-style column IDs matching the production contract (workflow status IDs).
 const COL_A = "11111111-1111-1111-1111-111111111111";
 const COL_B = "22222222-2222-2222-2222-222222222222";
 const COL_C = "33333333-3333-3333-3333-333333333333";
 
-function makeTask(id: string, columnId: string, rank = 0): Task {
-  return {
-    id,
-    name: `Task ${id}`,
-    columnId,
-    content: null,
-    rank,
-    task: {} as Task["task"],
-  };
-}
+// ---------------------------------------------------------------------------
+// buildItems
+// ---------------------------------------------------------------------------
 
-describe("applyCardOverCard", () => {
-  it("reorders within the same column without changing columnId", () => {
+describe("buildItems", () => {
+  it("groups task IDs by workflowStatusId", () => {
     const cards = [
-      makeTask("a", COL_A),
-      makeTask("b", COL_A),
-      makeTask("c", COL_A),
+      { id: "t1", workflowStatusId: COL_A },
+      { id: "t2", workflowStatusId: COL_A },
+      { id: "t3", workflowStatusId: COL_B },
     ];
-
-    const result = applyCardOverCard(cards, "a", "c");
-
-    expect(result.map((c) => c.id)).toEqual(["b", "c", "a"]);
-    expect(result.every((c) => c.columnId === COL_A)).toBe(true);
+    const result = buildItems(cards);
+    expect(result[COL_A]).toEqual(["t1", "t2"]);
+    expect(result[COL_B]).toEqual(["t3"]);
+    expect(result[COL_C]).toBeUndefined();
   });
 
-  it("moves card to the target column when columns differ", () => {
+  it("skips tasks with empty workflowStatusId", () => {
     const cards = [
-      makeTask("a", COL_A),
-      makeTask("b", COL_B),
-      makeTask("c", COL_B),
+      { id: "t1", workflowStatusId: COL_A },
+      { id: "t2", workflowStatusId: "" },
     ];
-
-    const result = applyCardOverCard(cards, "a", "b");
-
-    const moved = result.find((c) => c.id === "a")!;
-    expect(moved.columnId).toBe(COL_B);
+    const result = buildItems(cards);
+    expect(result[COL_A]).toEqual(["t1"]);
+    expect(Object.keys(result)).toHaveLength(1);
   });
 
-  it("does not mutate the original cards array or its elements", () => {
-    const cards = [makeTask("a", COL_A), makeTask("b", COL_B)];
-    const originalColumnId = cards[0]?.columnId;
-
-    applyCardOverCard(cards, "a", "b");
-
-    expect(cards[0]?.columnId).toBe(originalColumnId);
-    expect(cards).toHaveLength(2);
-  });
-
-  it("returns the original array when activeId is not found", () => {
-    const cards = [makeTask("a", COL_A), makeTask("b", COL_A)];
-
-    const result = applyCardOverCard(cards, "nonexistent", "b");
-
-    expect(result).toBe(cards);
-  });
-
-  it("handles a single card (no-op)", () => {
-    const cards = [makeTask("a", COL_A)];
-
-    const result = applyCardOverCard(cards, "a", "a");
-
-    expect(result.map((c) => c.id)).toEqual(["a"]);
-  });
-
-  it("preserves all other card properties when changing column", () => {
-    const cards = [makeTask("a", COL_A), makeTask("b", COL_C)];
-
-    const result = applyCardOverCard(cards, "a", "b");
-    const moved = result.find((c) => c.id === "a")!;
-
-    expect(moved.name).toBe("Task a");
-    expect(moved.content).toBeNull();
-  });
-
-  it("cross-column move: positions moved card before the over card", () => {
+  it("preserves insertion order within each column", () => {
     const cards = [
-      makeTask("x", COL_A),
-      makeTask("a", COL_B),
-      makeTask("b", COL_B),
-      makeTask("c", COL_B),
+      { id: "t3", workflowStatusId: COL_A },
+      { id: "t1", workflowStatusId: COL_A },
+      { id: "t2", workflowStatusId: COL_A },
     ];
+    expect(buildItems(cards)[COL_A]).toEqual(["t3", "t1", "t2"]);
+  });
 
-    const result = applyCardOverCard(cards, "x", "b");
+  it("returns empty object for empty input", () => {
+    expect(buildItems([])).toEqual({});
+  });
 
-    const ids = result.map((c) => c.id);
-    expect(ids.indexOf("x")).toBeLessThan(ids.indexOf("b"));
+  it("handles numeric ids by coercing to string", () => {
+    const cards = [{ id: 42, workflowStatusId: COL_A }];
+    expect(buildItems(cards)[COL_A]).toEqual(["42"]);
   });
 });
 
-describe("applyCardOverColumn", () => {
-  it("changes the columnId of the active card", () => {
-    const cards = [makeTask("a", COL_A), makeTask("b", COL_A)];
+// ---------------------------------------------------------------------------
+// findContainer
+// ---------------------------------------------------------------------------
 
-    const result = applyCardOverColumn(cards, "a", COL_C);
+describe("findContainer", () => {
+  const items = {
+    [COL_A]: ["t1", "t2"],
+    [COL_B]: ["t3"],
+    [COL_C]: [],
+  };
 
-    const moved = result.find((c) => c.id === "a")!;
-    expect(moved.columnId).toBe(COL_C);
+  it("returns the column id when given a column id directly", () => {
+    expect(findContainer(items, COL_A)).toBe(COL_A);
   });
 
-  it("does not change other cards' columns", () => {
-    const cards = [makeTask("a", COL_A), makeTask("b", COL_A)];
-
-    const result = applyCardOverColumn(cards, "a", COL_C);
-
-    const other = result.find((c) => c.id === "b")!;
-    expect(other.columnId).toBe(COL_A);
+  it("finds the container for a task id", () => {
+    expect(findContainer(items, "t1")).toBe(COL_A);
+    expect(findContainer(items, "t3")).toBe(COL_B);
   });
 
-  it("does not mutate the original cards array or its elements", () => {
-    const cards = [makeTask("a", COL_A), makeTask("b", COL_B)];
-    const snapshot = cards[0]?.columnId;
-
-    applyCardOverColumn(cards, "a", COL_C);
-
-    expect(cards[0]?.columnId).toBe(snapshot);
-    expect(cards).toHaveLength(2);
+  it("returns undefined for an unknown id", () => {
+    expect(findContainer(items, "ghost")).toBeUndefined();
   });
 
-  it("returns the original array when activeId is not found", () => {
-    const cards = [makeTask("a", COL_A)];
-
-    const result = applyCardOverColumn(cards, "ghost", COL_C);
-
-    expect(result).toBe(cards);
-  });
-
-  it("preserves all other card properties", () => {
-    const cards = [makeTask("a", COL_A)];
-
-    const result = applyCardOverColumn(cards, "a", COL_B);
-    const moved = result[0];
-
-    expect(moved?.name).toBe("Task a");
-    expect(moved?.id).toBe("a");
-  });
-
-  it("keeps the card at the same index (no reordering)", () => {
-    const cards = [
-      makeTask("x", COL_A),
-      makeTask("a", COL_A),
-      makeTask("y", COL_A),
-    ];
-
-    const result = applyCardOverColumn(cards, "a", COL_C);
-
-    expect(result.map((c) => c.id)).toEqual(["x", "a", "y"]);
+  it("returns the column id for an empty column (column is still a key)", () => {
+    expect(findContainer(items, COL_C)).toBe(COL_C);
   });
 });

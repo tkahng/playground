@@ -1,47 +1,26 @@
-import type { UniqueIdentifier } from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
+// Utilities for multi-container kanban drag-and-drop.
 
 export type ColumnId = string;
 
-type CardLike = { id: UniqueIdentifier; columnId: ColumnId };
-
-/**
- * Computes next card array when an active card is dragged over another card.
- * Pure — never mutates the input array or its elements.
- */
-export function applyCardOverCard<T extends CardLike>(
-  cards: T[],
-  activeId: UniqueIdentifier,
-  overId: UniqueIdentifier,
-): T[] {
-  const activeIndex = cards.findIndex((c) => c.id === activeId);
-  const overIndex = cards.findIndex((c) => c.id === overId);
-  const active = cards[activeIndex];
-  const over = cards[overIndex];
-  if (!active) return cards;
-  if (over && active.columnId !== over.columnId) {
-    const updated = cards.map((c) =>
-      c.id === activeId ? { ...c, columnId: over.columnId } : c,
-    ) as T[];
-    return arrayMove(updated, activeIndex, overIndex - 1);
-  }
-  return arrayMove(cards, activeIndex, overIndex);
+/** O(1) lookup: which container holds `id`? */
+export function findContainer(
+  items: Record<string, string[]>,
+  id: string,
+): string | undefined {
+  if (id in items) return id; // id is itself a container
+  return Object.keys(items).find((key) => items[key]?.includes(id));
 }
 
-/**
- * Computes next card array when an active card is dragged over a column drop zone.
- * Pure — never mutates the input array or its elements.
- */
-export function applyCardOverColumn<T extends CardLike>(
-  cards: T[],
-  activeId: UniqueIdentifier,
-  columnId: ColumnId,
-): T[] {
-  const activeIndex = cards.findIndex((c) => c.id === activeId);
-  if (activeIndex === -1) return cards;
-  return arrayMove(
-    cards.map((c) => (c.id === activeId ? { ...c, columnId } : c)) as T[],
-    activeIndex,
-    activeIndex,
-  );
+/** Build a container→taskIds map from a flat task array. */
+export function buildItems(
+  cards: { id: string | number; workflowStatusId: string }[],
+): Record<string, string[]> {
+  const result: Record<string, string[]> = {};
+  for (const card of cards) {
+    const col = card.workflowStatusId;
+    if (!col) continue;
+    if (!result[col]) result[col] = [];
+    result[col].push(card.id.toString());
+  }
+  return result;
 }

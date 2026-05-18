@@ -2,11 +2,9 @@ import { CreateProjectTaskDialog } from "@/components/board/create-project-task-
 import { Task, TaskCard } from "@/components/board/task-card";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { useDndContext, type UniqueIdentifier } from "@dnd-kit/core";
-import { SortableContext, useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { useDndContext, useDroppable, type UniqueIdentifier } from "@dnd-kit/core";
+import { SortableContext } from "@dnd-kit/sortable";
 import { cva } from "class-variance-authority";
-import { useMemo } from "react";
 import { Badge } from "../ui/badge";
 
 export interface Column {
@@ -15,65 +13,44 @@ export interface Column {
   color?: string | null;
 }
 
-export type ColumnType = "Column";
-
-export type ColumnDragData = {
-  type: ColumnType;
-  column: Column;
-};
-
 interface BoardColumnProps {
   column: Column;
-  cards: Task[];
+  taskIds: string[];
+  taskMap: Record<string, Task>;
   isOverlay?: boolean;
   projectId: string;
 }
 
 export const BoardColumn = ({
   column,
-  cards: cards,
+  taskIds,
+  taskMap,
   isOverlay,
   projectId,
 }: BoardColumnProps) => {
-  const cardIds = useMemo(() => {
-    return cards.map((card) => card.id);
-  }, [cards]);
-
-  const { setNodeRef, transform, transition, isDragging } = useSortable({
+  const { setNodeRef, isOver } = useDroppable({
     id: column.id,
-    data: {
-      type: "Column",
-      column,
-    } satisfies ColumnDragData,
-    attributes: {
-      roleDescription: `Column: ${column.title}`,
-    },
+    data: { type: "Column", column },
   });
 
-  const style = {
-    transition,
-    transform: CSS.Translate.toString(transform),
-  };
-
   const variants = cva(
-    "h-full w-[300px] bg-primary-foreground flex flex-col flex-shrink-0 snap-center mt-4 overflow-y-auto",
+    "h-full w-[300px] bg-primary-foreground flex flex-col flex-shrink-0 snap-center mt-4 overflow-y-auto transition-colors",
     {
       variants: {
-        dragging: {
+        state: {
           default: "border-2 border-transparent",
-          over: "ring-2 opacity-30",
+          over: "border-2 border-primary/40 bg-primary/5",
           overlay: "ring-2 ring-primary",
         },
       },
-    }
+    },
   );
 
   return (
     <Card
       ref={setNodeRef}
-      style={style}
       className={variants({
-        dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
+        state: isOverlay ? "overlay" : isOver ? "over" : "default",
       })}
     >
       <CardHeader className="p-4 font-semibold border-b-2 flex flex-row items-center justify-between">
@@ -86,17 +63,20 @@ export const BoardColumn = ({
           )}
           <h1>{column.title}</h1>
         </div>
-        <Badge variant="outline">{cards.length}</Badge>
+        <Badge variant="outline">{taskIds.length}</Badge>
       </CardHeader>
       <ScrollArea>
         <CardContent className="flex flex-grow flex-col gap-2 p-2">
-          <SortableContext items={cardIds}>
-            {cards.length === 0 ? (
-              <div className="flex flex-grow items-center justify-center">
-                <p className="">No tasks here.</p>
+          <SortableContext items={taskIds}>
+            {taskIds.length === 0 ? (
+              <div className="flex flex-grow items-center justify-center py-8 text-sm text-muted-foreground">
+                No tasks here.
               </div>
             ) : (
-              cards.map((card) => <TaskCard key={card.id} task={card} />)
+              taskIds.map((id) => {
+                const card = taskMap[id];
+                return card ? <TaskCard key={id} task={card} /> : null;
+              })
             )}
           </SortableContext>
           <CreateProjectTaskDialog

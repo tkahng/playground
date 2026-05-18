@@ -1,4 +1,4 @@
-import { KanbanBoard, type ColumnId } from "@/components/board/kanban-board";
+import { KanbanBoard } from "@/components/board/kanban-board";
 import type { Task } from "@/components/board/task-card";
 import { WorkflowSettingsPanel } from "@/components/board/workflow-settings-panel";
 import { CenteredSpinner } from "@/components/centered-spinner";
@@ -23,7 +23,7 @@ function selectTasks(data: Awaited<ReturnType<typeof taskList>>) {
       task,
       name: task.name,
       rank: task.rank,
-      columnId: (task.workflow_status_id ?? "") as ColumnId,
+      workflowStatusId: task.workflow_status_id ?? "",
       content: task.description,
       id: task.id,
     }),

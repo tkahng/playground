@@ -5,37 +5,26 @@ import { useAuthProvider } from "@/hooks/use-auth-provider";
 import { updateTaskPositionStatus } from "@/lib/task-queries";
 import { WorkflowStatus } from "@/schema.types";
 import {
-  Active,
-  DataRef,
+  closestCorners,
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
-  DragOverlay,
   type DragStartEvent,
-  KeyboardSensor,
-  MouseSensor,
-  Over,
-  TouchSensor,
+  DragOverlay,
+  PointerSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { SortableContext } from "@dnd-kit/sortable";
+import { arrayMove, SortableContext } from "@dnd-kit/sortable";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  BoardColumn,
-  BoardContainer,
-  Column,
-  ColumnDragData,
-} from "./board-column";
-import {
-  applyCardOverCard,
-  type ColumnId,
-} from "./kanban-board.utils";
-import { coordinateGetter } from "./keyboard-preset";
-import { CardDragData, Task, TaskCard } from "./task-card";
+import { BoardColumn, BoardContainer, Column } from "./board-column";
+import { buildItems, findContainer } from "./kanban-board.utils";
+import { Task, TaskCard } from "./task-card";
 
 export type { ColumnId } from "./kanban-board.utils";
+
+type Items = Record<string, string[]>;
 
 export function KanbanBoard(props: {
   cards: Task[];
@@ -52,40 +41,29 @@ export function KanbanBoard(props: {
     [props.workflowStatuses],
   );
 
-  // Track per-card column overrides applied by drag. Overrides are cleared when
-  // the server data updates (after a successful mutation + refetch).
-  const [overrides, setOverrides] = useState<Record<string, ColumnId>>({});
-  const [activeColumn, setActiveColumn] = useState<Column | null>(null);
-  const [activeCard, setActiveCard] = useState<Task | null>(null);
+  const [items, setItems] = useState<Items>(() => buildItems(props.cards));
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [snapshot, setSnapshot] = useState<Items | null>(null);
   const dndContextId = useId();
 
-  // Merge server cards with local drag overrides.
-  const cards = useMemo<Task[]>(
+  // Sync from server data. Stable because selectTasks is defined outside the
+  // parent component — only fires when the server data actually changes.
+  useEffect(() => {
+    setItems(buildItems(props.cards));
+  }, [props.cards]);
+
+  // O(1) task lookup for rendering.
+  const taskMap = useMemo(
     () =>
-      props.cards.map((card) =>
-        overrides[card.id as string]
-          ? { ...card, columnId: overrides[card.id as string]! }
-          : card,
-      ),
-    [props.cards, overrides],
+      Object.fromEntries(props.cards.map((c) => [c.id.toString(), c])),
+    [props.cards],
   );
 
-  // Clear overrides that are now consistent with server data (after refetch).
-  useEffect(() => {
-    setOverrides((prev) => {
-      const stale = Object.keys(prev).filter((id) => {
-        const card = props.cards.find((c) => c.id === id);
-        return card && card.columnId === prev[id];
-      });
-      if (stale.length === 0) return prev;
-      const next = { ...prev };
-      stale.forEach((id) => delete next[id]);
-      return next;
-    });
-  }, [props.cards]);
+  const activeTask = activeId ? taskMap[activeId] : null;
 
   const queryClient = useQueryClient();
   const { user } = useAuthProvider();
+
   const mutation = useMutation({
     mutationFn: async ({
       taskId,
@@ -95,14 +73,14 @@ export function KanbanBoard(props: {
       taskId: string;
       workflowStatusId: string;
       position: number;
-      previousCards: Record<string, ColumnId>;
+      snapshot: Items;
     }) => {
       if (!user?.tokens.access_token) {
         throw new Error("Not authenticated");
       }
       await updateTaskPositionStatus(user.tokens.access_token, taskId, {
         workflow_status_id: workflowStatusId,
-        position: position,
+        position,
       });
     },
     onSuccess: async () => {
@@ -111,164 +89,141 @@ export function KanbanBoard(props: {
       });
     },
     onError: (error, variables) => {
-      // Roll back to pre-drag override state
-      setOverrides(variables.previousCards);
-      toast.error("Failed to update task", {
-        description: error.message,
-      });
+      setItems(variables.snapshot);
+      toast.error("Failed to move task", { description: error.message });
     },
   });
+
   const sensors = useSensors(
-    useSensor(MouseSensor),
-    useSensor(TouchSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: coordinateGetter,
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
     }),
   );
 
-  const hasDraggableData = <T extends Active | Over>(
-    entry: T | null | undefined,
-  ): entry is T & {
-    data: DataRef<CardDragData | ColumnDragData>;
-  } => {
-    if (!entry) {
-      return false;
-    }
-
-    const data = entry.data.current;
-
-    if (data?.type === "Column" || data?.type === "Task") {
-      return true;
-    }
-
-    return false;
+  const onDragStart = ({ active: dragActive }: DragStartEvent) => {
+    const id = dragActive.id.toString();
+    setActiveId(id);
+    // Deep copy for rollback — only item arrays need cloning.
+    setSnapshot(
+      Object.fromEntries(
+        Object.entries(items).map(([k, v]) => [k, [...v]]),
+      ),
+    );
   };
 
-  const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
-
-  const onDragStart = (event: DragStartEvent) => {
-    if (!hasDraggableData(event.active)) return;
-    const data = event.active.data.current;
-    if (data?.type === "Column") {
-      setActiveColumn(data.column);
-      return;
-    }
-
-    if (data?.type === "Task") {
-      setActiveCard(data.card);
-      return;
-    }
-  };
-
-  const onDragEnd = (event: DragEndEvent) => {
-    setActiveColumn(null);
-    setActiveCard(null);
-
-    const { active } = event;
-
-    if (!hasDraggableData(active)) return;
-    const activeData = active.data.current;
-    if (activeData?.type !== "Task") return;
+  // onDragOver handles cross-container moves only; same-container reordering
+  // is finalized in onDragEnd.
+  const onDragOver = ({ active, over }: DragOverEvent) => {
+    const overId = over?.id?.toString();
+    if (!overId) return;
 
     const activeId = active.id.toString();
+    const activeContainer = findContainer(items, activeId);
+    const overContainer = findContainer(items, overId);
 
-    // The target column is whatever onDragOver set in overrides.
-    // We use this instead of event.over.id because after onDragOver moves the
-    // card to its new column, dnd-kit may report the dragged card itself as the
-    // over target (activeId === over.id), which would cause the early-return guard
-    // to fire and prevent the mutation.
-    const newColumnId = overrides[activeId];
-    if (!newColumnId) return; // card was never dragged over a valid target
+    if (!activeContainer || !overContainer || activeContainer === overContainer)
+      return;
 
-    const previousOverrides = { ...overrides };
+    setItems((prev) => {
+      const fromItems = prev[activeContainer] ?? [];
+      const toItems = prev[overContainer] ?? [];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const position: number = (event.over?.data?.current as any)?.sortable?.index ?? 0;
+      // Insert before the item it's hovering over (or end of container).
+      const overIndex = toItems.indexOf(overId);
+      const insertAt = overIndex === -1 ? toItems.length : overIndex;
 
-    mutation.mutate({
-      taskId: activeId,
-      workflowStatusId: newColumnId,
-      position,
-      previousCards: previousOverrides,
+      return {
+        ...prev,
+        [activeContainer]: fromItems.filter((id) => id !== activeId),
+        [overContainer]: [
+          ...toItems.slice(0, insertAt),
+          activeId,
+          ...toItems.slice(insertAt),
+        ],
+      };
     });
   };
 
-  const onDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
+  const onDragEnd = ({ over }: DragEndEvent) => {
+    const prevActiveId = activeId;
+    const prevSnapshot = snapshot;
+    setActiveId(null);
+    setSnapshot(null);
 
-    const activeId = active.id;
-    const overId = over.id;
+    if (!prevActiveId) return;
 
-    if (activeId === overId) return;
+    if (!over) {
+      if (prevSnapshot) setItems(prevSnapshot);
+      return;
+    }
 
-    if (!hasDraggableData(active) || !hasDraggableData(over)) return;
+    const overId = over.id.toString();
+    const activeContainer = findContainer(items, prevActiveId);
+    const overContainer = findContainer(items, overId);
 
-    const activeData = active.data.current;
-    const overData = over.data.current;
+    if (!activeContainer || !overContainer) {
+      if (prevSnapshot) setItems(prevSnapshot);
+      return;
+    }
 
-    if (activeData?.type !== "Task") return;
+    let finalPosition = (items[activeContainer] ?? []).indexOf(prevActiveId);
 
-    if (overData?.type === "Task") {
-      const result = applyCardOverCard(cards, activeId, overId);
-      const moved = result.find((c) => c.id === activeId);
-      if (moved) {
-        setOverrides((prev) => ({
-          ...prev,
-          [activeId.toString()]: moved.columnId,
-        }));
+    if (activeContainer === overContainer) {
+      // Same container: apply the final drop position.
+      const containerItems = items[activeContainer] ?? [];
+      const activeIndex = containerItems.indexOf(prevActiveId);
+      const overIndex = containerItems.indexOf(overId);
+
+      if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
+        const reordered = arrayMove(containerItems, activeIndex, overIndex);
+        finalPosition = overIndex;
+        setItems((prev) => ({ ...prev, [activeContainer]: reordered }));
       }
-    } else if (overData?.type === "Column") {
-      setOverrides((prev) => ({
-        ...prev,
-        [activeId.toString()]: overId as ColumnId,
-      }));
     }
 
-    // Also initialise override on first drag so onDragEnd can always read it,
-    // even if the card never leaves its original column.
-    const currentCard = cards.find((c) => c.id === activeId);
-    if (currentCard && !overrides[activeId.toString()]) {
-      setOverrides((prev) => ({
-        ...prev,
-        [activeId.toString()]: currentCard.columnId,
-      }));
-    }
+    mutation.mutate({
+      taskId: prevActiveId,
+      workflowStatusId: activeContainer,
+      position: Math.max(0, finalPosition),
+      snapshot: prevSnapshot ?? {},
+    });
   };
+
+  // All task IDs across all columns — used for the overlay SortableContext.
+  const allTaskIds = useMemo(
+    () => Object.values(items).flat(),
+    [items],
+  );
 
   return (
     <DndContext
       id={dndContextId}
       sensors={sensors}
+      collisionDetection={closestCorners}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
       onDragOver={onDragOver}
     >
       <BoardContainer>
-        <SortableContext items={columnsId}>
-          {columns.map((col) => (
-            <BoardColumn
-              key={col.id}
-              column={col}
-              cards={cards.filter((card) => card.columnId === col.id)}
-              projectId={props.projectId}
-            />
-          ))}
-        </SortableContext>
+        {columns.map((col) => (
+          <BoardColumn
+            key={col.id}
+            column={col}
+            taskIds={items[col.id.toString()] ?? []}
+            taskMap={taskMap}
+            projectId={props.projectId}
+          />
+        ))}
       </BoardContainer>
 
       {typeof window !== "undefined" &&
         createPortal(
           <DragOverlay>
-            {activeColumn && (
-              <BoardColumn
-                projectId={props.projectId}
-                column={activeColumn}
-                cards={cards.filter((car) => car.columnId === activeColumn.id)}
-                isOverlay
-              />
+            {activeTask && (
+              <SortableContext items={allTaskIds}>
+                <TaskCard task={activeTask} isOverlay />
+              </SortableContext>
             )}
-            {activeCard && <TaskCard task={activeCard} isOverlay />}
           </DragOverlay>,
           document.body,
         )}
