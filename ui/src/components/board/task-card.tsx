@@ -79,7 +79,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
           {...listeners}
           className="p-1 -ml-2 h-auto cursor-grab"
         >
-          <span className="sr-only">Move car</span>
+          <span className="sr-only">Move card</span>
           <GripVertical />
         </Button>
         <div className="text-sm">
