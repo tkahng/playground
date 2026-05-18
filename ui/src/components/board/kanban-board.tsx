@@ -160,53 +160,37 @@ export function KanbanBoard(props: {
     }
   };
 
-  const onDragEnd = async (event: DragEndEvent) => {
+  const onDragEnd = (event: DragEndEvent) => {
     setActiveColumn(null);
     setActiveCard(null);
 
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeId = active.id;
-    const overId = over.id;
+    const { active } = event;
 
     if (!hasDraggableData(active)) return;
-
     const activeData = active.data.current;
+    if (activeData?.type !== "Task") return;
 
-    if (activeId === overId) return;
+    const activeId = active.id.toString();
 
-    const isActiveAColumn = activeData?.type === "Column";
-    if (isActiveAColumn) {
-      // Column reordering is managed server-side via workflow-status-reorder.
-      return;
-    }
+    // The target column is whatever onDragOver set in overrides.
+    // We use this instead of event.over.id because after onDragOver moves the
+    // card to its new column, dnd-kit may report the dragged card itself as the
+    // over target (activeId === over.id), which would cause the early-return guard
+    // to fire and prevent the mutation.
+    const newColumnId = overrides[activeId];
+    if (!newColumnId) return; // card was never dragged over a valid target
 
-    if (activeData?.type === "Task") {
-      const overData = hasDraggableData(over) ? over.data.current : null;
-      const newColumnId: ColumnId =
-        overData?.type === "Column"
-          ? (over.id as ColumnId)
-          : overData?.type === "Task"
-            ? overData.card.columnId
-            : (over.id as ColumnId);
+    const previousOverrides = { ...overrides };
 
-      // Snapshot current overrides for rollback on error
-      const previousOverrides = { ...overrides };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const position: number = (event.over?.data?.current as any)?.sortable?.index ?? 0;
 
-      // Apply optimistic override
-      setOverrides((prev) => ({ ...prev, [activeId.toString()]: newColumnId }));
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const position: number = (overData as any)?.sortable?.index ?? 0;
-
-      mutation.mutate({
-        taskId: activeId.toString(),
-        workflowStatusId: newColumnId,
-        position,
-        previousCards: previousOverrides,
-      });
-    }
+    mutation.mutate({
+      taskId: activeId,
+      workflowStatusId: newColumnId,
+      position,
+      previousCards: previousOverrides,
+    });
   };
 
   const onDragOver = (event: DragOverEvent) => {
@@ -238,6 +222,16 @@ export function KanbanBoard(props: {
       setOverrides((prev) => ({
         ...prev,
         [activeId.toString()]: overId as ColumnId,
+      }));
+    }
+
+    // Also initialise override on first drag so onDragEnd can always read it,
+    // even if the card never leaves its original column.
+    const currentCard = cards.find((c) => c.id === activeId);
+    if (currentCard && !overrides[activeId.toString()]) {
+      setOverrides((prev) => ({
+        ...prev,
+        [activeId.toString()]: currentCard.columnId,
       }));
     }
   };
