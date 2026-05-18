@@ -24,8 +24,9 @@ type TaskDecorator struct {
 	FindTaskFunc                    func(ctx context.Context, task *TaskFilter) (*models.Task, error)
 	FindTaskByIDFunc                func(ctx context.Context, id uuid.UUID) (*models.Task, error)
 	FindTaskProjectByIDFunc         func(ctx context.Context, id uuid.UUID) (*models.TaskProject, error)
-	FindWorkflowByIDFunc            func(ctx context.Context, id uuid.UUID) (*models.Workflow, error)
-	FindWorkflowStatusByIDFunc      func(ctx context.Context, id uuid.UUID) (*models.WorkflowStatus, error)
+	FindWorkflowByIDFunc             func(ctx context.Context, id uuid.UUID) (*models.Workflow, error)
+	FindWorkflowStatusByIDFunc       func(ctx context.Context, id uuid.UUID) (*models.WorkflowStatus, error)
+	FindWorkflowStatusesByIDsFunc    func(ctx context.Context, ids ...uuid.UUID) ([]*models.WorkflowStatus, error)
 	GetTaskFirstPositionFunc        func(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskLastPositionFunc         func(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID) (float64, error)
 	GetTaskPositionsFunc            func(ctx context.Context, projectID uuid.UUID, status models.TaskStatus, excludeID uuid.UUID, offset int64) ([]float64, error)
@@ -194,6 +195,9 @@ func (t *TaskDecorator) FindWorkflowStatusByID(ctx context.Context, id uuid.UUID
 }
 
 func (t *TaskDecorator) FindWorkflowStatusesByIDs(ctx context.Context, ids ...uuid.UUID) ([]*models.WorkflowStatus, error) {
+	if t.FindWorkflowStatusesByIDsFunc != nil {
+		return t.FindWorkflowStatusesByIDsFunc(ctx, ids...)
+	}
 	if t.Delegate == nil {
 		return nil, ErrDelegateNil
 	}

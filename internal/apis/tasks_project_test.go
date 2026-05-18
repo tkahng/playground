@@ -135,7 +135,7 @@ func TestApi_TeamTaskProjectList(t *testing.T) {
 				Method:          http.MethodGet,
 				URL:             "/teams/{team-id}/task-projects",
 				ExpectedStatus:  http.StatusForbidden,
-				ExpectedContent: []string{"You do not have the required team permission"},
+				ExpectedContent: []string{"Forbidden"},
 				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
@@ -226,7 +226,7 @@ func TestApi_TeamTaskProjectCreate(t *testing.T) {
 			Method:          http.MethodPost,
 			URL:             "/teams/{team-id}/task-projects",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission: projects.create"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -370,7 +370,7 @@ func TestApi_TeamTaskProjectPermissions(t *testing.T) {
 			Method:          http.MethodPut,
 			URL:             "/task-projects/{task-project-id}",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission: projects.manage"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -392,7 +392,7 @@ func TestApi_TeamTaskProjectPermissions(t *testing.T) {
 			Method:          http.MethodDelete,
 			URL:             "/task-projects/{task-project-id}",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission: projects.delete"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -475,7 +475,7 @@ func TestApi_TeamTaskProjectTasksCreateReferences(t *testing.T) {
 			Method:          http.MethodPost,
 			URL:             "/task-projects/{task-project-id}",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission: tasks.create"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team1 := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)

@@ -130,7 +130,7 @@ func TestApi_TeamTaskList(t *testing.T) {
 			Method:          http.MethodGet,
 			URL:             "/task-projects/{task-project-id}/tasks",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)

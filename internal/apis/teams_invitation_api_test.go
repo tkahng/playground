@@ -86,7 +86,7 @@ func TestApi_CreateInvitation(t *testing.T) {
 			},
 			ExpectedContent: []string{
 				"Forbidden",
-				"You do not have the required team permission: team.members.invite",
+				"Forbidden",
 			},
 		},
 		{
@@ -425,7 +425,7 @@ func TestApi_CancelInvitation(t *testing.T) {
 			URL:            "/teams/{team-id}/invitations/{invitation-id}",
 			ExpectedStatus: http.StatusForbidden,
 			ExpectedContent: []string{
-				"You do not have the required team permission: team.members.invite",
+				"Forbidden",
 			},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				ctx := t.Context()

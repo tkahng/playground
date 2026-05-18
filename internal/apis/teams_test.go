@@ -389,7 +389,7 @@ func TestUpdateTeam_failedNotOwner(t *testing.T) {
 		if resp.Code != 403 {
 			t.Fatalf("Unexpected response: %v", resp.Code)
 		}
-		if !strings.Contains(resp.Body.String(), "You do not have the required team permission: team.settings.manage") {
+		if !strings.Contains(resp.Body.String(), "Forbidden") {
 			t.Fatalf("Unexpected response: %s", resp.Body.String())
 		}
 	})
@@ -545,7 +545,7 @@ func TestDeleteTeam_failNonOwner(t *testing.T) {
 		if resp.Code != 403 {
 			t.Fatalf("Unexpected response: %s", resp.Body.String())
 		}
-		if !strings.Contains(resp.Body.String(), "You do not have the required team permission: team.delete") {
+		if !strings.Contains(resp.Body.String(), "Forbidden") {
 			t.Fatalf("Unexpected response: %s", resp.Body.String())
 		}
 	})

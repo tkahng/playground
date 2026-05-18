@@ -47,7 +47,7 @@ func TestApi_TaskOwnership(t *testing.T) {
 			Method:          http.MethodPut,
 			URL:             "/tasks/{task-id}",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission: tasks.edit"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, sc *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -74,7 +74,7 @@ func TestApi_TaskOwnership(t *testing.T) {
 			Method:          http.MethodDelete,
 			URL:             "/tasks/{task-id}",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission: tasks.delete"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, sc *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow(), core.UserWithEmail(randomEmail()))
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)

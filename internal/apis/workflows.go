@@ -184,9 +184,6 @@ func (api *Api) TeamWorkflowListBind(humaApi huma.API) {
 		},
 		func(ctx context.Context, input *WorkflowListParams) (*WorkflowListResponse, error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
-			if teamInfo == nil {
-				return nil, huma.Error401Unauthorized("Unauthorized")
-			}
 			workflows, err := api.App().Adapter().Task().ListWorkflows(ctx, &stores.WorkflowFilter{
 				TeamIds:   []uuid.UUID{teamInfo.Team.ID},
 				Ids:       utils.ParseValidUUIDs(input.Ids...),
@@ -236,9 +233,6 @@ func (api *Api) TeamWorkflowCreateBind(humaApi huma.API) {
 		},
 		func(ctx context.Context, input *WorkflowCreateParams) (*WorkflowResponse, error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
-			if teamInfo == nil {
-				return nil, huma.Error401Unauthorized("Unauthorized")
-			}
 			workflow, err := api.App().Adapter().Task().CreateWorkflow(ctx, &stores.CreateWorkflowDTO{
 				TeamID:            teamInfo.Team.ID,
 				CreatedByMemberID: &teamInfo.Member.ID,
@@ -275,9 +269,6 @@ func (api *Api) TeamWorkflowUpdateBind(humaApi huma.API) {
 		},
 		func(ctx context.Context, input *WorkflowUpdateParams) (*WorkflowResponse, error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
-			if teamInfo == nil {
-				return nil, huma.Error401Unauthorized("Unauthorized")
-			}
 			workflowID, err := uuid.Parse(input.WorkflowID)
 			if err != nil {
 				return nil, huma.Error400BadRequest("Invalid workflow id", err)
@@ -319,9 +310,6 @@ func (api *Api) TeamWorkflowDeleteBind(humaApi huma.API) {
 		},
 		func(ctx context.Context, input *WorkflowDeleteParams) (*struct{}, error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
-			if teamInfo == nil {
-				return nil, huma.Error401Unauthorized("Unauthorized")
-			}
 			workflowID, err := uuid.Parse(input.WorkflowID)
 			if err != nil {
 				return nil, huma.Error400BadRequest("Invalid workflow id", err)
@@ -362,9 +350,6 @@ func (api *Api) TeamWorkflowDefaultBind(humaApi huma.API) {
 		},
 		func(ctx context.Context, input *WorkflowDefaultParams) (*WorkflowResponse, error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
-			if teamInfo == nil {
-				return nil, huma.Error401Unauthorized("Unauthorized")
-			}
 			workflowID, err := uuid.Parse(input.WorkflowID)
 			if err != nil {
 				return nil, huma.Error400BadRequest("Invalid workflow id", err)
@@ -406,9 +391,6 @@ func (api *Api) TeamWorkflowArchiveBind(humaApi huma.API) {
 		},
 		func(ctx context.Context, input *WorkflowArchiveParams) (*WorkflowResponse, error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
-			if teamInfo == nil {
-				return nil, huma.Error401Unauthorized("Unauthorized")
-			}
 			workflowID, err := uuid.Parse(input.WorkflowID)
 			if err != nil {
 				return nil, huma.Error400BadRequest("Invalid workflow id", err)
@@ -450,9 +432,6 @@ func (api *Api) TeamWorkflowStatusCreateBind(humaApi huma.API) {
 		},
 		func(ctx context.Context, input *WorkflowStatusCreateParams) (*WorkflowStatusResponse, error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
-			if teamInfo == nil {
-				return nil, huma.Error401Unauthorized("Unauthorized")
-			}
 			workflowID, err := uuid.Parse(input.WorkflowID)
 			if err != nil {
 				return nil, huma.Error400BadRequest("Invalid workflow id", err)
@@ -497,9 +476,6 @@ func (api *Api) TeamWorkflowStatusUpdateBind(humaApi huma.API) {
 		},
 		func(ctx context.Context, input *WorkflowStatusUpdateParams) (*WorkflowStatusResponse, error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
-			if teamInfo == nil {
-				return nil, huma.Error401Unauthorized("Unauthorized")
-			}
 			workflowID, err := uuid.Parse(input.WorkflowID)
 			if err != nil {
 				return nil, huma.Error400BadRequest("Invalid workflow id", err)
@@ -552,9 +528,6 @@ func (api *Api) TeamWorkflowStatusReorderBind(humaApi huma.API) {
 		},
 		func(ctx context.Context, input *WorkflowStatusReorderParams) (*WorkflowStatusesResponse, error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
-			if teamInfo == nil {
-				return nil, huma.Error401Unauthorized("Unauthorized")
-			}
 			workflowID, err := uuid.Parse(input.WorkflowID)
 			if err != nil {
 				return nil, huma.Error400BadRequest("Invalid workflow id", err)
@@ -596,9 +569,6 @@ func (api *Api) TeamWorkflowStatusDeleteBind(humaApi huma.API) {
 		},
 		func(ctx context.Context, input *WorkflowStatusDeleteParams) (*struct{}, error) {
 			teamInfo := contextstore.GetContextTeamInfo(ctx)
-			if teamInfo == nil {
-				return nil, huma.Error401Unauthorized("Unauthorized")
-			}
 			workflowID, err := uuid.Parse(input.WorkflowID)
 			if err != nil {
 				return nil, huma.Error400BadRequest("Invalid workflow id", err)

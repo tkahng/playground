@@ -1,5 +1,7 @@
 package shared
 
+import "github.com/tkahng/playground/internal/models"
+
 const (
 	PermissionNameAdmin    string = "superuser"
 	PermissionNameBasic    string = "basic"
@@ -30,7 +32,7 @@ var (
 		PermissionNameAdmin:    {PermissionNameBasic, PermissionNamePro, PermissionNameAdvanced, PermissionNameAdmin},
 	}
 	KnownTeamRolePermissionsMap map[string][]string = map[string][]string{
-		"owner": {
+		string(models.TeamMemberRoleOwner): {
 			TeamPermissionSettingsManage,
 			TeamPermissionDelete,
 			TeamPermissionMembersInvite,
@@ -45,7 +47,7 @@ var (
 			TeamPermissionTasksDelete,
 			TeamPermissionWorkflowManage,
 		},
-		"member": {
+		string(models.TeamMemberRoleMember): {
 			TeamPermissionProjectsCreate,
 			TeamPermissionTasksCreate,
 			TeamPermissionTasksEdit,

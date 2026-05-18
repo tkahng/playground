@@ -10,7 +10,6 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/tkahng/playground/internal/apierrors"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
@@ -483,9 +482,6 @@ func (s *DbTaskStore) CreateWorkflowStatus(ctx context.Context, workflowID uuid.
 	if input.IsCompleted != nil {
 		isCompleted = *input.IsCompleted
 	}
-	if isCompleted && category != string(models.TaskStatusDone) {
-		return nil, apierrors.BadRequest("is_completed can only be true for statuses with category 'done'")
-	}
 	status, err := repository.WorkflowStatus.PostOne(ctx, s.db, &models.WorkflowStatus{
 		WorkflowID:  workflowID,
 		Name:        name,
@@ -549,9 +545,6 @@ func (s *DbTaskStore) UpdateWorkflowStatus(ctx context.Context, workflowStatusID
 	}
 	if input.IsCompleted != nil {
 		status.IsCompleted = *input.IsCompleted
-	}
-	if status.IsCompleted && status.Category != string(models.TaskStatusDone) {
-		return nil, apierrors.BadRequest("is_completed can only be true for statuses with category 'done'")
 	}
 	if status.Category != originalCategory {
 		statuses, err := s.LoadWorkflowStatuses(ctx, status.WorkflowID)
@@ -1214,11 +1207,11 @@ var defaultWorkflowStatuses = []defaultWorkflowStatus{
 
 func (s *DbTaskStore) ensureDefaultWorkflow(ctx context.Context, teamID uuid.UUID, memberID *uuid.UUID, appliesTo string) (*models.Workflow, error) {
 	workflow, err := s.findDefaultWorkflow(ctx, teamID, appliesTo)
-	if err == nil {
-		return workflow, s.ensureDefaultWorkflowStatuses(ctx, workflow.ID)
-	}
-	if !errors.Is(err, pgx.ErrNoRows) {
+	if err != nil {
 		return nil, err
+	}
+	if workflow != nil {
+		return workflow, s.ensureDefaultWorkflowStatuses(ctx, workflow.ID)
 	}
 
 	name := "Default task workflow"
@@ -1251,7 +1244,7 @@ func (s *DbTaskStore) ensureDefaultWorkflow(ctx context.Context, teamID uuid.UUI
 			return err
 		}
 		if len(rows) == 0 {
-			return pgx.ErrNoRows
+			return fmt.Errorf("insert workflow returned no rows")
 		}
 		created = &rows[0]
 		return nil
@@ -1281,7 +1274,7 @@ func (s *DbTaskStore) findDefaultWorkflow(ctx context.Context, teamID uuid.UUID,
 		return nil, err
 	}
 	if len(workflows) == 0 {
-		return nil, pgx.ErrNoRows
+		return nil, nil
 	}
 	return &workflows[0], nil
 }
@@ -1316,7 +1309,7 @@ func (s *DbTaskStore) findWorkflowStatusIDByCategory(ctx context.Context, workfl
 		return nil, err
 	}
 	if id == uuid.Nil {
-		return nil, pgx.ErrNoRows
+		return nil, nil
 	}
 	return &id, nil
 }

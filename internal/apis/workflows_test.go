@@ -83,7 +83,7 @@ func TestApi_TeamWorkflowList(t *testing.T) {
 			Method:          http.MethodGet,
 			URL:             "/teams/{team-id}/workflows",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -159,7 +159,7 @@ func TestApi_TeamWorkflowCreate(t *testing.T) {
 			Method:          http.MethodPost,
 			URL:             "/teams/{team-id}/workflows",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -219,7 +219,7 @@ func TestApi_TeamWorkflowUpdate(t *testing.T) {
 			Method:          http.MethodPut,
 			URL:             "/teams/{team-id}/workflows/{workflow-id}",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -347,7 +347,7 @@ func TestApi_TeamWorkflowDelete(t *testing.T) {
 			Method:          http.MethodDelete,
 			URL:             "/teams/{team-id}/workflows/{workflow-id}",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -469,7 +469,7 @@ func TestApi_TeamWorkflowDefault(t *testing.T) {
 			Method:          http.MethodPut,
 			URL:             "/teams/{team-id}/workflows/{workflow-id}/default",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -531,7 +531,7 @@ func TestApi_TeamWorkflowStatusCreate(t *testing.T) {
 			Method:          http.MethodPost,
 			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -622,7 +622,7 @@ func TestApi_TeamWorkflowStatusUpdate(t *testing.T) {
 			Method:          http.MethodPut,
 			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -667,11 +667,10 @@ func TestApi_TeamWorkflowStatusUpdate(t *testing.T) {
 			},
 		},
 		{
-			Name:            "fail: cannot set is_completed=true on non-done category status",
-			Method:          http.MethodPut,
-			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
-			ExpectedStatus:  http.StatusBadRequest,
-			ExpectedContent: []string{"is_completed can only be true for statuses with category 'done'"},
+			Name:           "success: can set is_completed=true on non-done category status",
+			Method:         http.MethodPut,
+			URL:            "/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
+			ExpectedStatus: http.StatusOK,
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -685,6 +684,11 @@ func TestApi_TeamWorkflowStatusUpdate(t *testing.T) {
 				scenario.Body = apis.JsonToReader(t, stores.UpdateWorkflowStatusDTO{
 					IsCompleted: types.Pointer(true),
 				})
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.WorkflowStatus](t, res.Body.Bytes())
+				assert.Equal(t, string(models.TaskStatusInProgress), result.Category)
+				assert.True(t, result.IsCompleted)
 			},
 		},
 	}
@@ -788,7 +792,7 @@ func TestApi_TeamWorkflowStatusReorder(t *testing.T) {
 			Method:          http.MethodPut,
 			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses/reorder",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -914,7 +918,7 @@ func TestApi_TeamWorkflowStatusDelete(t *testing.T) {
 			Method:          http.MethodDelete,
 			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses/{workflow-status-id}",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -1010,7 +1014,7 @@ func TestApi_TeamWorkflowArchive(t *testing.T) {
 			Method:          http.MethodPut,
 			URL:             "/teams/{team-id}/workflows/{workflow-id}/archive",
 			ExpectedStatus:  http.StatusForbidden,
-			ExpectedContent: []string{"You do not have the required team permission: workflow.manage"},
+			ExpectedContent: []string{"Forbidden"},
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -1068,11 +1072,10 @@ func TestApi_TeamWorkflowArchive(t *testing.T) {
 func TestApi_WorkflowStatusIsCompletedConstraint(t *testing.T) {
 	tests := []apis.ApiScenario{
 		{
-			Name:            "fail: cannot create status with is_completed=true on non-done category",
-			Method:          http.MethodPost,
-			URL:             "/teams/{team-id}/workflows/{workflow-id}/statuses",
-			ExpectedStatus:  http.StatusBadRequest,
-			ExpectedContent: []string{"is_completed can only be true for statuses with category 'done'"},
+			Name:           "success: can create status with is_completed=true on non-done category",
+			Method:         http.MethodPost,
+			URL:            "/teams/{team-id}/workflows/{workflow-id}/statuses",
+			ExpectedStatus: http.StatusOK,
 			BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 				owner := core.CreateUserWithOptions(t, app, core.UserWithVerifiedNow())
 				team := core.CreateTeamAndMemberWithOptions(t, app, &owner.User)
@@ -1087,6 +1090,11 @@ func TestApi_WorkflowStatusIsCompletedConstraint(t *testing.T) {
 					Category:    string(models.TaskStatusInProgress),
 					IsCompleted: types.Pointer(true),
 				})
+			},
+			AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+				result := test.MustUnMarshal[apis.WorkflowStatus](t, res.Body.Bytes())
+				assert.Equal(t, string(models.TaskStatusInProgress), result.Category)
+				assert.True(t, result.IsCompleted)
 			},
 		},
 		{

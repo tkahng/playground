@@ -43,7 +43,6 @@ create table if not exists task.workflow_statuses (
     color text,
     rank double precision not null default 0.0,
     is_completed boolean not null default false,
-    check (not is_completed or category = 'done'),
     created_at timestamptz not null default clock_timestamp(),
     updated_at timestamptz not null default clock_timestamp(),
     unique (workflow_id, slug)

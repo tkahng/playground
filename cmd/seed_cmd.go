@@ -60,11 +60,13 @@ var seedRolesCmd = &cobra.Command{
 }
 
 func SeedRoles(ctx context.Context, db database.Dbx) error {
-	rbacStore := stores.NewDbRBACStore(db)
-	if err := rbacStore.CreateRolesAndPermissions(ctx, shared.KnownRoleNamesPermissionsMap); err != nil {
-		return err
-	}
-	return rbacStore.CreateTeamRolePermissions(ctx, shared.KnownTeamRolePermissionsMap)
+	return db.RunInTx(ctx, func(tx database.Dbx) error {
+		rbacStore := stores.NewDbRBACStore(tx)
+		if err := rbacStore.CreateRolesAndPermissions(ctx, shared.KnownRoleNamesPermissionsMap); err != nil {
+			return err
+		}
+		return rbacStore.CreateTeamRolePermissions(ctx, shared.KnownTeamRolePermissionsMap)
+	})
 }
 
 var seedUserCmd = &cobra.Command{

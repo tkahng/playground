@@ -146,7 +146,7 @@ func RequireTeamPermission(app core.App, permissionName string) HTTPMiddlewareFu
 					w,
 					r,
 					http.StatusForbidden,
-					fmt.Sprintf("You do not have the required team permission: %s", permissionName),
+					"Forbidden",
 				)
 				return
 			}
