@@ -120,7 +120,7 @@ export function CreateProjectTaskDialog({
       <DialogTrigger asChild>
         <Button variant="outline">Add Task to Project</Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="w-[90vw] max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add Task to Project</DialogTitle>
           <DialogDescription>
@@ -130,7 +130,7 @@ export function CreateProjectTaskDialog({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div className="grid gap-4 py-4">
-              <div className="w-full px-10">
+              <div className="w-full px-4 md:px-10">
                 <FormField
                   control={form.control}
                   name="name"

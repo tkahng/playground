@@ -77,7 +77,7 @@ export function TaskCard({ task, isOverlay }: TaskCardProps) {
           variant="ghost"
           {...attributes}
           {...listeners}
-          className="p-1 -ml-2 h-auto cursor-grab"
+          className="p-3 md:p-1 -ml-2 h-auto cursor-grab touch-none"
         >
           <span className="sr-only">Move card</span>
           <GripVertical />

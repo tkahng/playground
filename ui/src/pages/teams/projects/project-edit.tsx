@@ -85,7 +85,7 @@ export default function ProjectEdit() {
   if (tasksError) return <p>Error: {tasksError.message}</p>;
 
   return (
-    <div className="flex-1 space-y-6 w-full px-8">
+    <div className="flex-1 space-y-6 w-full px-4 md:px-8">
       <Link
         to="/teams/$teamSlug/dashboard"
         params={{ teamSlug: team?.slug ?? "" }}
@@ -94,7 +94,7 @@ export default function ProjectEdit() {
         <ChevronLeft className="h-4 w-4" />
         Back to Projects
       </Link>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-2xl font-bold">{project.name}</h1>
         <div className="flex items-center gap-2">
           {project.workflow_id && (
@@ -123,7 +123,7 @@ export default function ProjectEdit() {
           placeholder="Filter tasks..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          className="h-8 w-[150px] lg:w-[250px]"
+          className="h-8 w-full sm:w-[150px] lg:w-[250px]"
         />
       </div>
       {tasks?.meta && tasks.meta.total > 100 && (

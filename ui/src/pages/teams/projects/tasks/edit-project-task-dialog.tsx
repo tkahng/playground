@@ -176,7 +176,7 @@ export function EditProjectTaskDialog({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <div className="grid gap-4 py-4">
-            <div className="w-full px-10 space-y-4">
+            <div className="w-full px-4 md:px-10 space-y-4">
               <FormField
                 control={form.control}
                 name="name"

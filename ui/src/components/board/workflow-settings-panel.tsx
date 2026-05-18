@@ -245,7 +245,7 @@ export function WorkflowSettingsPanel({
           Manage columns
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-[380px] flex flex-col gap-4 overflow-y-auto">
+      <SheetContent className="w-[min(380px,100vw-2rem)] flex flex-col gap-4 overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Workflow columns</SheetTitle>
         </SheetHeader>
@@ -326,7 +326,7 @@ export function WorkflowSettingsPanel({
                   <button
                     key={c}
                     onClick={() => setEditing({ ...editing, color: c })}
-                    className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110"
+                    className="w-8 h-8 sm:w-6 sm:h-6 rounded-full border-2 transition-transform hover:scale-110"
                     style={{
                       backgroundColor: c,
                       borderColor:
@@ -341,7 +341,7 @@ export function WorkflowSettingsPanel({
                   onChange={(e) =>
                     setEditing({ ...editing, color: e.target.value })
                   }
-                  className="w-6 h-6 rounded cursor-pointer border p-0"
+                  className="w-8 h-8 sm:w-6 sm:h-6 rounded cursor-pointer border p-0"
                   title="Custom color"
                 />
               </div>
@@ -395,7 +395,7 @@ export function WorkflowSettingsPanel({
                 <button
                   key={c}
                   onClick={() => setNewColor(c)}
-                  className="w-6 h-6 rounded-full border-2 transition-transform hover:scale-110"
+                  className="w-8 h-8 sm:w-6 sm:h-6 rounded-full border-2 transition-transform hover:scale-110"
                   style={{
                     backgroundColor: c,
                     borderColor: newColor === c ? "white" : "transparent",
@@ -407,7 +407,7 @@ export function WorkflowSettingsPanel({
                 type="color"
                 value={newColor}
                 onChange={(e) => setNewColor(e.target.value)}
-                className="w-6 h-6 rounded cursor-pointer border p-0"
+                className="w-8 h-8 sm:w-6 sm:h-6 rounded cursor-pointer border p-0"
                 title="Custom color"
               />
             </div>
