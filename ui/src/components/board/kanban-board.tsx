@@ -41,16 +41,24 @@ export function KanbanBoard(props: {
     [props.workflowStatuses],
   );
 
-  const [items, setItems] = useState<Items>(() => buildItems(props.cards));
+  const columnIds = useMemo(
+    () => columns.map((c) => c.id.toString()),
+    [columns],
+  );
+
+  const [items, setItems] = useState<Items>(() =>
+    buildItems(props.cards, columnIds),
+  );
   const [activeId, setActiveId] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<Items | null>(null);
   const dndContextId = useId();
 
   // Sync from server data. Stable because selectTasks is defined outside the
   // parent component — only fires when the server data actually changes.
+  // Also re-syncs when workflow statuses change (new column added/removed).
   useEffect(() => {
-    setItems(buildItems(props.cards));
-  }, [props.cards]);
+    setItems(buildItems(props.cards, columnIds));
+  }, [props.cards, columnIds]);
 
   // O(1) task lookup for rendering.
   const taskMap = useMemo(

@@ -16,10 +16,17 @@ describe("buildItems", () => {
       { id: "t2", workflowStatusId: COL_A },
       { id: "t3", workflowStatusId: COL_B },
     ];
-    const result = buildItems(cards);
+    const result = buildItems(cards, [COL_A, COL_B, COL_C]);
     expect(result[COL_A]).toEqual(["t1", "t2"]);
     expect(result[COL_B]).toEqual(["t3"]);
-    expect(result[COL_C]).toBeUndefined();
+    expect(result[COL_C]).toEqual([]); // pre-initialised even though empty
+  });
+
+  it("pre-initialises empty columns so they are valid drag targets", () => {
+    const result = buildItems([], [COL_A, COL_B]);
+    expect(result[COL_A]).toEqual([]);
+    expect(result[COL_B]).toEqual([]);
+    expect(Object.keys(result)).toHaveLength(2);
   });
 
   it("skips tasks with empty workflowStatusId", () => {
@@ -27,9 +34,8 @@ describe("buildItems", () => {
       { id: "t1", workflowStatusId: COL_A },
       { id: "t2", workflowStatusId: "" },
     ];
-    const result = buildItems(cards);
+    const result = buildItems(cards, [COL_A]);
     expect(result[COL_A]).toEqual(["t1"]);
-    expect(Object.keys(result)).toHaveLength(1);
   });
 
   it("preserves insertion order within each column", () => {
@@ -38,16 +44,19 @@ describe("buildItems", () => {
       { id: "t1", workflowStatusId: COL_A },
       { id: "t2", workflowStatusId: COL_A },
     ];
-    expect(buildItems(cards)[COL_A]).toEqual(["t3", "t1", "t2"]);
+    expect(buildItems(cards, [COL_A])[COL_A]).toEqual(["t3", "t1", "t2"]);
   });
 
-  it("returns empty object for empty input", () => {
-    expect(buildItems([])).toEqual({});
+  it("returns only column keys when no tasks provided", () => {
+    expect(buildItems([], [COL_A, COL_C])).toEqual({
+      [COL_A]: [],
+      [COL_C]: [],
+    });
   });
 
   it("handles numeric ids by coercing to string", () => {
     const cards = [{ id: 42, workflowStatusId: COL_A }];
-    expect(buildItems(cards)[COL_A]).toEqual(["42"]);
+    expect(buildItems(cards, [COL_A])[COL_A]).toEqual(["42"]);
   });
 });
 
