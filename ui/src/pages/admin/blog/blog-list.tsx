@@ -1,10 +1,22 @@
-import { CenteredSpinner } from "@/components/centered-spinner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { CenteredSpinner } from "@/components/centered-spinner";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -16,6 +28,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useAuthProvider } from "@/hooks/use-auth-provider";
+import { useSearchParams } from "@/hooks/use-search-params";
 import {
   archiveBlogPost,
   deleteBlogPost,
@@ -27,6 +40,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MoreHorizontal, Plus } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 const statusVariant: Record<string, "default" | "secondary" | "outline"> = {
@@ -35,18 +49,58 @@ const statusVariant: Record<string, "default" | "secondary" | "outline"> = {
   archived: "outline",
 };
 
+function DeletePostDialog({ post, onConfirm }: { post: BlogPost; onConfirm: () => void }) {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <DropdownMenuItem
+          className="text-destructive focus:text-destructive"
+          onSelect={(e) => e.preventDefault()}
+        >
+          Delete
+        </DropdownMenuItem>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete "{post.title}"?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This permanently removes the post and cannot be undone. Consider
+            archiving instead to hide it from readers.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            onClick={onConfirm}
+          >
+            Delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
 export default function AdminBlogListPage() {
   const { user } = useAuthProvider();
   const token = user?.tokens.access_token ?? "";
   const qc = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const pageIndex = parseInt(searchParams.get("page") || "0", 10);
+  const pageSize = parseInt(searchParams.get("per_page") || "10", 10);
+
+  const [openMenuPostId, setOpenMenuPostId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-blog-posts"],
-    queryFn: () => listBlogPosts({ per_page: 50 }, token),
+    queryKey: ["admin-blog-posts", pageIndex, pageSize],
+    queryFn: () => listBlogPosts({ page: pageIndex, per_page: pageSize }, token),
     enabled: !!token,
   });
 
-  const invalidate = () => qc.invalidateQueries({ queryKey: ["admin-blog-posts"] });
+  const invalidate = () =>
+    qc.invalidateQueries({ queryKey: ["admin-blog-posts"] });
 
   const publishMutation = useMutation({
     mutationFn: (id: string) => publishBlogPost(token, id),
@@ -75,12 +129,13 @@ export default function AdminBlogListPage() {
   if (isLoading) return <CenteredSpinner />;
 
   const posts: BlogPost[] = data?.data ?? [];
+  const total = data?.meta.total ?? 0;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          Manage blog posts. Admins only.
+          {total} post{total !== 1 ? "s" : ""} total
         </p>
         <Button asChild size="sm">
           <Link to="/admin/blog/new">
@@ -103,7 +158,10 @@ export default function AdminBlogListPage() {
         <TableBody>
           {posts.length === 0 && (
             <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+              <TableCell
+                colSpan={5}
+                className="text-center text-muted-foreground py-8"
+              >
                 No posts yet.
               </TableCell>
             </TableRow>
@@ -133,7 +191,12 @@ export default function AdminBlogListPage() {
                 {post.view_count}
               </TableCell>
               <TableCell>
-                <DropdownMenu>
+                <DropdownMenu
+                  open={openMenuPostId === post.id}
+                  onOpenChange={(open) =>
+                    setOpenMenuPostId(open ? post.id : null)
+                  }
+                >
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">
                       <MoreHorizontal className="h-4 w-4" />
@@ -141,35 +204,40 @@ export default function AdminBlogListPage() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild>
-                      <Link to="/admin/blog/$postId/edit" params={{ postId: post.id }}>
+                      <Link
+                        to="/admin/blog/$postId/edit"
+                        params={{ postId: post.id }}
+                      >
                         Edit
                       </Link>
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     {post.status !== "published" && (
-                      <DropdownMenuItem onClick={() => publishMutation.mutate(post.id)}>
+                      <DropdownMenuItem
+                        onClick={() => publishMutation.mutate(post.id)}
+                      >
                         Publish
                       </DropdownMenuItem>
                     )}
                     {post.status === "published" && (
-                      <DropdownMenuItem onClick={() => unpublishMutation.mutate(post.id)}>
+                      <DropdownMenuItem
+                        onClick={() => unpublishMutation.mutate(post.id)}
+                      >
                         Unpublish
                       </DropdownMenuItem>
                     )}
                     {post.status !== "archived" && (
-                      <DropdownMenuItem onClick={() => archiveMutation.mutate(post.id)}>
+                      <DropdownMenuItem
+                        onClick={() => archiveMutation.mutate(post.id)}
+                      >
                         Archive
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      onClick={() => {
-                        if (confirm("Delete this post?")) {
-                          deleteMutation.mutate(post.id);
-                        }
-                      }}
-                    >
-                      Delete
-                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DeletePostDialog
+                      post={post}
+                      onConfirm={() => deleteMutation.mutate(post.id)}
+                    />
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
@@ -177,6 +245,36 @@ export default function AdminBlogListPage() {
           ))}
         </TableBody>
       </Table>
+
+      {total > pageSize && (
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">
+            Page {pageIndex + 1} of {Math.ceil(total / pageSize)}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pageIndex === 0}
+              onClick={() =>
+                setSearchParams({ page: String(pageIndex - 1), per_page: String(pageSize) })
+              }
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={(pageIndex + 1) * pageSize >= total}
+              onClick={() =>
+                setSearchParams({ page: String(pageIndex + 1), per_page: String(pageSize) })
+              }
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

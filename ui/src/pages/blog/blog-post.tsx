@@ -109,8 +109,9 @@ function MarkdownRenderer({ content }: { content: string }) {
 }
 
 function TiptapRenderer({ content }: { content: string }) {
-  // Tiptap stores JSON; render as formatted JSON until the Tiptap editor/renderer
-  // package is installed. Replace with @tiptap/react <EditorContent readonly />.
+  // Tiptap stores JSON; render via a tree walker until @tiptap/react is installed.
+  // When switching to a real renderer, avoid dangerouslySetInnerHTML without
+  // sanitizing with DOMPurify first — Tiptap allows arbitrary HTML marks.
   let parsed: unknown;
   try {
     parsed = JSON.parse(content);
