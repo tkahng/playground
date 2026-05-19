@@ -21,6 +21,12 @@ const (
 	TeamPermissionTasksAssign    string = "tasks.assign"
 	TeamPermissionTasksDelete    string = "tasks.delete"
 	TeamPermissionWorkflowManage string = "workflow.manage"
+
+	BlogPermissionPostsCreate  string = "blog.posts.create"
+	BlogPermissionPostsEdit    string = "blog.posts.edit"
+	BlogPermissionPostsPublish string = "blog.posts.publish"
+	BlogPermissionPostsDelete  string = "blog.posts.delete"
+	BlogPermissionTagsManage   string = "blog.tags.manage"
 )
 
 var (

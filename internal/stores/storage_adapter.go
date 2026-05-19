@@ -30,6 +30,7 @@ type StorageAdapterInterface interface {
 	Ledger() LedgerStore
 	AiUsage() AiUsageStoreInterface
 	PlanFeatures() PlanFeaturesStoreInterface
+	Blog() BlogStoreInterface
 	// WithTx(tx database.Dbx) *StorageAdapter
 	RunInTxCtx(ctx context.Context, fn func(txCtx context.Context) error) error
 	RunInTx(ctx context.Context, fn func(tx StorageAdapterInterface) error) error
@@ -57,6 +58,12 @@ type StorageAdapter struct {
 	ledger         *DBLedgerStore
 	aiUsage        *DbAiUsageStore
 	planFeatures   *DbPlanFeaturesStore
+	blog           *DbBlogStore
+}
+
+// Blog implements [StorageAdapterInterface].
+func (s *StorageAdapter) Blog() BlogStoreInterface {
+	return s.blog
 }
 
 // AiUsage implements [StorageAdapterInterface].
@@ -144,6 +151,7 @@ func (s *StorageAdapter) RunInTx(ctx context.Context, fn func(tx StorageAdapterI
 			ledger:         s.ledger.WithTx(db),
 			aiUsage:        s.aiUsage.WithTx(db),
 			planFeatures:   s.planFeatures.WithTx(db),
+			blog:           s.blog.WithTx(db),
 		}
 		return fn(tx)
 	})
@@ -216,5 +224,6 @@ func NewStorageAdapter(db database.Dbx) *StorageAdapter {
 		ledger:         NewDBLedgerStore(db),
 		aiUsage:        NewDbAiUsageStore(db),
 		planFeatures:   NewDbPlanFeaturesStore(db),
+		blog:           NewDbBlogStore(db),
 	}
 }
