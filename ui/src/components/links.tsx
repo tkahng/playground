@@ -137,6 +137,16 @@ export const RouteLinks = {
     current: (pathname: string) =>
       pathname.startsWith(RouteMap.ADMIN_AI_USAGE),
   },
+  ADMIN_DASHBOARD_BLOG: {
+    to: RouteMap.ADMIN_BLOG,
+    title: "Blog",
+    current: (pathname: string) => pathname.startsWith(RouteMap.ADMIN_BLOG),
+  },
+  BLOG: {
+    to: RouteMap.BLOG,
+    title: "Blog",
+    current: (pathname: string) => pathname.startsWith(RouteMap.BLOG),
+  },
   PROTECTED: {
     to: RouteMap.PROTECTED,
     title: "Protected",
@@ -153,6 +163,7 @@ export const landingLinks: LinkDto[] = [
   RouteLinks.FEATURES,
   RouteLinks.PRICING,
   RouteLinks.ABOUT,
+  RouteLinks.BLOG,
 ];
 
 export const userDropdownLinks: LinkDto[] = [
@@ -170,6 +181,7 @@ export const adminHeaderLinks: LinkDto[] = [
   RouteLinks.ADMIN_DASHBOARD_PLAN_FEATURES,
   RouteLinks.ADMIN_DASHBOARD_AI_USAGE,
   RouteLinks.ADMIN_DASHBOARD_JOBS,
+  RouteLinks.ADMIN_DASHBOARD_BLOG,
 ];
 
 export const authenticatedSubHeaderLinks: LinkDto[] = [
