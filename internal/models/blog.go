@@ -39,7 +39,7 @@ type BlogPost struct {
 	CreatedAt          time.Time         `db:"created_at" json:"created_at"`
 	UpdatedAt          time.Time         `db:"updated_at" json:"updated_at"`
 	Author             *User             `db:"author" src:"author_id" dest:"id" table:"auth.users" json:"author,omitempty"`
-	Tags               []*BlogTag        `db:"tags" src:"id" dest:"post_id" table:"blog.post_tags" json:"tags,omitempty"`
+	Tags               []*BlogTag        `db:"tags" src:"id" dest:"id" table:"blog.tags" through:"blog.post_tags" through_src:"post_id" through_dest:"tag_id" json:"tags,omitempty"`
 }
 
 type BlogTag struct {

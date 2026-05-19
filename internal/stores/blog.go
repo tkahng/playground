@@ -2,12 +2,14 @@ package stores
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 	"unicode"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/tkahng/playground/internal/apierrors"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
@@ -55,11 +57,14 @@ type BlogPostFilter struct {
 	Q        string                  `query:"q,omitempty" required:"false"`
 }
 
+// CreateBlogPostDTO carries data for a new post. AuthorID is always set
+// server-side from the authenticated user; the field exists for internal store
+// use only and is not exposed as a writable API field.
 type CreateBlogPostDTO struct {
 	Title            string                   `json:"title" required:"true" minLength:"1"`
 	Content          string                   `json:"content" required:"false"`
 	ContentFormat    models.BlogContentFormat `json:"content_format" required:"false" enum:"tiptap,markdown"`
-	AuthorID         uuid.UUID                `json:"author_id" required:"true" format:"uuid"`
+	AuthorID         uuid.UUID                `json:"-"`
 	FeaturedImageKey *string                  `json:"featured_image_key,omitempty" required:"false"`
 	SeoTitle         *string                  `json:"seo_title,omitempty" required:"false"`
 	SeoDescription   *string                  `json:"seo_description,omitempty" required:"false"`
@@ -91,6 +96,13 @@ func (s *DbBlogStore) buildPostWhere(filter *BlogPostFilter) *map[string]any {
 	if filter.AuthorID != nil {
 		where["author_id"] = map[string]any{"_eq": *filter.AuthorID}
 	}
+	if filter.Q != "" {
+		pattern := "%" + filter.Q + "%"
+		where["_or"] = []map[string]any{
+			{"title": map[string]any{"_ilike": pattern}},
+			{"seo_description": map[string]any{"_ilike": pattern}},
+		}
+	}
 	return &where
 }
 
@@ -108,6 +120,10 @@ func (s *DbBlogStore) buildPostOrder(filter *BlogPostFilter) *map[string]string 
 	return &map[string]string{sortBy: sortOrder}
 }
 
+// uniqueSlug generates a URL-safe slug unique within blog.posts.
+// It attempts exact match first, then appends -2, -3, … up to 100 times.
+// A unique constraint on blog.posts.slug is the final safety net if two
+// concurrent requests race through here with the same candidate.
 func (s *DbBlogStore) uniqueSlug(ctx context.Context, base string) (string, error) {
 	candidate := slug.NewSlug(base)
 	if candidate == "" {
@@ -122,7 +138,6 @@ func (s *DbBlogStore) uniqueSlug(ctx context.Context, base string) (string, erro
 			"slug": map[string]any{"_eq": attempt},
 		})
 		if err != nil {
-			// not found → slug is free
 			return attempt, nil
 		}
 	}
@@ -150,16 +165,23 @@ func estimateReadingTime(content string) int {
 	return minutes
 }
 
+// isUniqueViolation returns true when err is a Postgres unique-constraint error.
+func isUniqueViolation(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505"
+}
+
 func (s *DbBlogStore) CreatePost(ctx context.Context, input *CreateBlogPostDTO) (*models.BlogPost, error) {
-	input.Title = strings.TrimSpace(input.Title)
-	if input.Title == "" {
+	title := strings.TrimSpace(input.Title)
+	if title == "" {
 		return nil, apierrors.BadRequest("title is required")
 	}
-	if input.ContentFormat == "" {
-		input.ContentFormat = models.BlogContentFormatTiptap
+	contentFormat := input.ContentFormat
+	if contentFormat == "" {
+		contentFormat = models.BlogContentFormatMarkdown
 	}
 
-	postSlug, err := s.uniqueSlug(ctx, input.Title)
+	postSlug, err := s.uniqueSlug(ctx, title)
 	if err != nil {
 		return nil, err
 	}
@@ -167,9 +189,9 @@ func (s *DbBlogStore) CreatePost(ctx context.Context, input *CreateBlogPostDTO) 
 	rt := estimateReadingTime(input.Content)
 	post := &models.BlogPost{
 		Slug:               postSlug,
-		Title:              input.Title,
+		Title:              title,
 		Content:            input.Content,
-		ContentFormat:      input.ContentFormat,
+		ContentFormat:      contentFormat,
 		Status:             models.BlogPostStatusDraft,
 		AuthorID:           input.AuthorID,
 		FeaturedImageKey:   input.FeaturedImageKey,
@@ -178,17 +200,27 @@ func (s *DbBlogStore) CreatePost(ctx context.Context, input *CreateBlogPostDTO) 
 		ReadingTimeMinutes: &rt,
 	}
 
-	created, err := repository.BlogPost.PostOne(ctx, s.db, post)
+	var created *models.BlogPost
+	err = s.db.RunInTx(ctx, func(tx database.Dbx) error {
+		txStore := s.WithTx(tx)
+		var txErr error
+		created, txErr = repository.BlogPost.PostOne(ctx, tx, post)
+		if txErr != nil {
+			if isUniqueViolation(txErr) {
+				return apierrors.Conflict("a post with this slug already exists")
+			}
+			return txErr
+		}
+		if len(input.TagIDs) > 0 {
+			if txErr = txStore.SetPostTags(ctx, created.ID, input.TagIDs); txErr != nil {
+				return txErr
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	if len(input.TagIDs) > 0 {
-		if err := s.SetPostTags(ctx, created.ID, input.TagIDs); err != nil {
-			return nil, err
-		}
-	}
-
 	return created, nil
 }
 
@@ -225,17 +257,24 @@ func (s *DbBlogStore) UpdatePost(ctx context.Context, postID uuid.UUID, input *U
 		post.SeoDescription = input.SeoDescription
 	}
 
-	updated, err := repository.BlogPost.PutOne(ctx, s.db, post)
+	var updated *models.BlogPost
+	err = s.db.RunInTx(ctx, func(tx database.Dbx) error {
+		txStore := s.WithTx(tx)
+		var txErr error
+		updated, txErr = repository.BlogPost.PutOne(ctx, tx, post)
+		if txErr != nil {
+			return txErr
+		}
+		if input.TagIDs != nil {
+			if txErr = txStore.SetPostTags(ctx, postID, input.TagIDs); txErr != nil {
+				return txErr
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
-
-	if input.TagIDs != nil {
-		if err := s.SetPostTags(ctx, postID, input.TagIDs); err != nil {
-			return nil, err
-		}
-	}
-
 	return updated, nil
 }
 
@@ -344,6 +383,9 @@ func (s *DbBlogStore) ListTags(ctx context.Context) ([]*models.BlogTag, error) {
 	return repository.BlogTag.Get(ctx, s.db, &where, &order, nil, nil)
 }
 
+// SetPostTags replaces all tags for a post atomically.
+// postID and each tagID are typed uuid.UUID — not user-supplied strings —
+// so the positional placeholder construction below is not a SQL injection risk.
 func (s *DbBlogStore) SetPostTags(ctx context.Context, postID uuid.UUID, tagIDs []uuid.UUID) error {
 	_, err := database.Exec(ctx, s.db,
 		`delete from blog.post_tags where post_id = $1`, postID)
