@@ -22,22 +22,22 @@ type BlogTag struct {
 }
 
 type BlogPost struct {
-	ID                 uuid.UUID              `json:"id"`
-	Slug               string                 `json:"slug"`
-	Title              string                 `json:"title"`
-	Content            string                 `json:"content"`
+	ID                 uuid.UUID                `json:"id"`
+	Slug               string                   `json:"slug"`
+	Title              string                   `json:"title"`
+	Content            string                   `json:"content"`
 	ContentFormat      models.BlogContentFormat `json:"content_format"`
-	Status             models.BlogPostStatus  `json:"status"`
-	AuthorID           uuid.UUID              `json:"author_id"`
-	PublishedAt        *time.Time             `json:"published_at" nullable:"true"`
-	FeaturedImageKey   *string                `json:"featured_image_key" nullable:"true"`
-	SeoTitle           *string                `json:"seo_title" nullable:"true"`
-	SeoDescription     *string                `json:"seo_description" nullable:"true"`
-	ReadingTimeMinutes *int                   `json:"reading_time_minutes" nullable:"true"`
-	ViewCount          int64                  `json:"view_count"`
-	Tags               []*BlogTag             `json:"tags,omitempty"`
-	CreatedAt          time.Time              `json:"created_at"`
-	UpdatedAt          time.Time              `json:"updated_at"`
+	Status             models.BlogPostStatus    `json:"status"`
+	AuthorID           uuid.UUID                `json:"author_id"`
+	PublishedAt        *time.Time               `json:"published_at" nullable:"true"`
+	FeaturedImageURL   *string                  `json:"featured_image_url" nullable:"true"`
+	SeoTitle           *string                  `json:"seo_title" nullable:"true"`
+	SeoDescription     *string                  `json:"seo_description" nullable:"true"`
+	ReadingTimeMinutes *int                     `json:"reading_time_minutes" nullable:"true"`
+	ViewCount          int64                    `json:"view_count"`
+	Tags               []*BlogTag               `json:"tags,omitempty"`
+	CreatedAt          time.Time                `json:"created_at"`
+	UpdatedAt          time.Time                `json:"updated_at"`
 }
 
 func fromModelBlogTag(t *models.BlogTag) *BlogTag {
@@ -47,13 +47,18 @@ func fromModelBlogTag(t *models.BlogTag) *BlogTag {
 	return &BlogTag{ID: t.ID, Name: t.Name, Slug: t.Slug, CreatedAt: t.CreatedAt}
 }
 
-func fromModelBlogPost(p *models.BlogPost) *BlogPost {
+func (api *Api) fromModelBlogPost(p *models.BlogPost) *BlogPost {
 	if p == nil {
 		return nil
 	}
 	tags := make([]*BlogTag, len(p.Tags))
 	for i, t := range p.Tags {
 		tags[i] = fromModelBlogTag(t)
+	}
+	var featuredImageURL *string
+	if p.FeaturedImageKey != nil {
+		u := api.App().Fs().PublicURL(*p.FeaturedImageKey)
+		featuredImageURL = &u
 	}
 	return &BlogPost{
 		ID:                 p.ID,
@@ -64,7 +69,7 @@ func fromModelBlogPost(p *models.BlogPost) *BlogPost {
 		Status:             p.Status,
 		AuthorID:           p.AuthorID,
 		PublishedAt:        p.PublishedAt,
-		FeaturedImageKey:   p.FeaturedImageKey,
+		FeaturedImageURL:   featuredImageURL,
 		SeoTitle:           p.SeoTitle,
 		SeoDescription:     p.SeoDescription,
 		ReadingTimeMinutes: p.ReadingTimeMinutes,
@@ -123,7 +128,7 @@ func (api *Api) BlogPostList(ctx context.Context, input *BlogPostListInput) (*Ap
 
 	data := make([]*BlogPost, len(posts))
 	for i, p := range posts {
-		data[i] = fromModelBlogPost(p)
+		data[i] = api.fromModelBlogPost(p)
 	}
 	return &ApiPaginatedOutput[*BlogPost]{
 		Body: ApiPaginatedResponse[*BlogPost]{
@@ -157,7 +162,7 @@ func (api *Api) BlogPostGet(ctx context.Context, input *struct {
 		}()
 	}
 
-	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: fromModelBlogPost(post)}}, nil
+	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post)}}, nil
 }
 
 // ── Create post (admin) ────────────────────────────────────────────────────
@@ -177,7 +182,7 @@ func (api *Api) BlogPostCreate(ctx context.Context, input *BlogPostCreateInput) 
 	if err != nil {
 		return nil, err
 	}
-	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: fromModelBlogPost(post)}}, nil
+	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post)}}, nil
 }
 
 // ── Update post (admin) ────────────────────────────────────────────────────
@@ -196,7 +201,7 @@ func (api *Api) BlogPostUpdate(ctx context.Context, input *BlogPostUpdateInput) 
 	if err != nil {
 		return nil, err
 	}
-	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: fromModelBlogPost(post)}}, nil
+	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post)}}, nil
 }
 
 // ── Publish post (admin) ───────────────────────────────────────────────────
@@ -212,7 +217,7 @@ func (api *Api) BlogPostPublish(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: fromModelBlogPost(post)}}, nil
+	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post)}}, nil
 }
 
 // ── Unpublish post (admin) ─────────────────────────────────────────────────
@@ -228,7 +233,7 @@ func (api *Api) BlogPostUnpublish(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: fromModelBlogPost(post)}}, nil
+	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post)}}, nil
 }
 
 // ── Archive post (admin) ───────────────────────────────────────────────────
@@ -244,7 +249,7 @@ func (api *Api) BlogPostArchive(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: fromModelBlogPost(post)}}, nil
+	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post)}}, nil
 }
 
 // ── Delete post (admin) ────────────────────────────────────────────────────

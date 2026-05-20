@@ -39,11 +39,12 @@ func WithMinioContainer(t testing.TB, fn func(ctx context.Context, fs FileSystem
 	endpoint := "http://" + host
 
 	cfg := conf.StorageConfig{
-		ClientId:     ctr.Username,
-		ClientSecret: ctr.Password,
-		BucketName:   testBucketName,
-		EndpointUrl:  endpoint,
-		Region:       testBucketRegion,
+		ClientId:      ctr.Username,
+		ClientSecret:  ctr.Password,
+		BucketName:    testBucketName,
+		EndpointUrl:   endpoint,
+		Region:        testBucketRegion,
+		PublicBaseURL: endpoint + "/" + testBucketName,
 	}
 
 	awsCfg, err := config.LoadDefaultConfig(ctx,

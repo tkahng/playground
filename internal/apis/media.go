@@ -98,14 +98,11 @@ func (api *Api) GetMedia(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	url, err := api.App().Fs().GeneratePresignedURL(ctx, media.Disk, path.Join(media.Directory, media.Filename))
-	if err != nil {
-		return nil, err
-	}
+	key := path.Join(media.Directory, media.Filename)
 	return &Media{
 		ID:        media.ID,
 		Filename:  media.Filename,
-		URL:       url,
+		URL:       api.App().Fs().PublicURL(key),
 		CreatedAt: media.CreatedAt,
 		UpdatedAt: media.UpdatedAt,
 	}, nil
@@ -133,14 +130,11 @@ func (api *Api) MediaList(ctx context.Context, input *MediaListFilter) (*ApiPagi
 	}
 	data := []*Media{}
 	for _, media := range medias {
-		url, err := api.App().Fs().GeneratePresignedURL(ctx, media.Disk, path.Join(media.Directory, media.Filename))
-		if err != nil {
-			return nil, err
-		}
+		key := path.Join(media.Directory, media.Filename)
 		data = append(data, &Media{
 			ID:        media.ID,
 			Filename:  media.Filename,
-			URL:       url,
+			URL:       api.App().Fs().PublicURL(key),
 			CreatedAt: media.CreatedAt,
 			UpdatedAt: media.UpdatedAt,
 		})

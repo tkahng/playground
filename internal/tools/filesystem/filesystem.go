@@ -10,11 +10,9 @@ import (
 	"path"
 	"regexp"
 	"strings"
-	"time"
 	"unicode"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
@@ -27,10 +25,6 @@ type StorageClient interface {
 	PutObject(ctx context.Context, params *awss3.PutObjectInput, optFns ...func(*awss3.Options)) (*awss3.PutObjectOutput, error)
 }
 
-type PresignClient interface {
-	PresignGetObject(ctx context.Context, params *awss3.GetObjectInput, optFns ...func(*awss3.PresignOptions)) (*v4.PresignedHTTPRequest, error)
-}
-
 type HttpRequestDoer interface {
 	Do(req *http.Request) (*http.Response, error)
 }
@@ -38,7 +32,6 @@ type HttpRequestDoer interface {
 type S3FileSystem struct {
 	httpClient    HttpRequestDoer
 	storageClient StorageClient
-	presignClient PresignClient
 	cfg           conf.StorageConfig
 }
 
@@ -65,27 +58,15 @@ func NewFileSystem(ctx context.Context, cfg conf.StorageConfig) (FileSystem, err
 		o.UsePathStyle = true
 	})
 
-	presignClient := awss3.NewPresignClient(client)
-	httpClient := http.DefaultClient
 	return &S3FileSystem{
 		storageClient: client,
 		cfg:           cfg,
-		presignClient: presignClient,
-		httpClient:    httpClient,
+		httpClient:    http.DefaultClient,
 	}, nil
 }
 
-func (fs *S3FileSystem) GeneratePresignedURL(ctx context.Context, bucket, key string) (string, error) {
-	presignResult, err := fs.presignClient.PresignGetObject(ctx, &awss3.GetObjectInput{
-		Bucket: aws.String(bucket),
-		Key:    aws.String(key),
-	}, awss3.WithPresignExpires(10*time.Minute))
-
-	if err != nil {
-		return "", err
-	}
-
-	return presignResult.URL, nil
+func (fs *S3FileSystem) PublicURL(key string) string {
+	return strings.TrimRight(fs.cfg.PublicBaseURL, "/") + "/" + key
 }
 
 var snakecaseSplitRegex = regexp.MustCompile(`[\W_]+`)

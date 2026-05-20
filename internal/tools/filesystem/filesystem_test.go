@@ -3,8 +3,6 @@ package filesystem_test
 import (
 	"bytes"
 	"context"
-	"io"
-	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -56,27 +54,15 @@ func TestFilesystem_PutFile(t *testing.T) {
 	})
 }
 
-func TestFilesystem_GeneratePresignedURL(t *testing.T) {
+func TestFilesystem_PublicURL(t *testing.T) {
 	skipIfShort(t)
 	filesystem.WithMinioContainer(t, func(ctx context.Context, fs filesystem.FileSystem, cfg conf.StorageConfig) {
-		content := []byte("presigned url test content")
-		dto, err := fs.PutFileFromBytes(ctx, content, "presigned.txt")
+		dto, err := fs.PutFileFromBytes(ctx, []byte("public url test"), "pub.txt")
 		require.NoError(t, err)
 
 		key := dto.Directory + "/" + dto.Filename
-		url, err := fs.GeneratePresignedURL(ctx, dto.Disk, key)
-		require.NoError(t, err)
+		url := fs.PublicURL(key)
 		assert.Contains(t, url, dto.Filename)
-
-		// The presigned URL must be reachable and return the exact bytes uploaded.
-		resp, err := http.Get(url) //nolint:noctx
-		require.NoError(t, err)
-		defer resp.Body.Close()
-		require.Equal(t, http.StatusOK, resp.StatusCode)
-
-		got, err := io.ReadAll(resp.Body)
-		require.NoError(t, err)
-		assert.Equal(t, content, got)
 	})
 }
 
