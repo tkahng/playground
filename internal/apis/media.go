@@ -87,9 +87,13 @@ type Media struct {
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
+type GetMediaOutput struct {
+	Body *Media
+}
+
 func (api *Api) GetMedia(ctx context.Context, input *struct {
 	ID string `path:"id" format:"uuid" required:"true" description:"Id of the media"`
-}) (*Media, error) {
+}) (*GetMediaOutput, error) {
 	id, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, err
@@ -98,14 +102,17 @@ func (api *Api) GetMedia(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
+	if media == nil {
+		return nil, huma.Error404NotFound("media not found")
+	}
 	key := path.Join(media.Directory, media.Filename)
-	return &Media{
+	return &GetMediaOutput{Body: &Media{
 		ID:        media.ID,
 		Filename:  media.Filename,
 		URL:       api.App().Fs().PublicURL(key),
 		CreatedAt: media.CreatedAt,
 		UpdatedAt: media.UpdatedAt,
-	}, nil
+	}}, nil
 }
 
 type MediaListFilter struct {

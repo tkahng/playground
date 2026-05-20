@@ -87,12 +87,12 @@ func TestApi_BlogPostList(t *testing.T) {
 				},
 			},
 			{
-				Name:           "anon search returns matching published post",
-				Method:         http.MethodGet,
-				URL:            "/blog/posts?q=hello",
-				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				Name:            "anon search returns matching published post",
+				Method:          http.MethodGet,
+				URL:             "/blog/posts?q=Published",
+				ExpectedStatus:  http.StatusOK,
 				ExpectedContent: []string{`"title":"Published Post"`},
+				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 			},
 			{
 				Name:           "anon search with no match returns empty",
@@ -136,11 +136,12 @@ func TestApi_BlogPostGet(t *testing.T) {
 				ExpectedContent: []string{`"slug":"hello-world"`},
 			},
 			{
-				Name:           "anon cannot get draft — 404",
-				Method:         http.MethodGet,
-				URL:            fmt.Sprintf("/blog/posts/%s", draft.Slug),
-				ExpectedStatus: http.StatusNotFound,
-				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				Name:            "anon cannot get draft — 404",
+				Method:          http.MethodGet,
+				URL:             fmt.Sprintf("/blog/posts/%s", draft.Slug),
+				ExpectedStatus:  http.StatusNotFound,
+				ExpectedContent: []string{`"status":404`},
+				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 			},
 			{
 				Name:           "admin can get draft",
@@ -155,11 +156,12 @@ func TestApi_BlogPostGet(t *testing.T) {
 				ExpectedContent: []string{`"status":"draft"`},
 			},
 			{
-				Name:           "nonexistent slug returns 404",
-				Method:         http.MethodGet,
-				URL:            "/blog/posts/does-not-exist",
-				ExpectedStatus: http.StatusNotFound,
-				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				Name:            "nonexistent slug returns 404",
+				Method:          http.MethodGet,
+				URL:             "/blog/posts/does-not-exist",
+				ExpectedStatus:  http.StatusNotFound,
+				ExpectedContent: []string{`"status":404`},
+				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 			},
 		}
 		for _, tt := range tests {
@@ -185,22 +187,24 @@ func TestApi_BlogPostCreate(t *testing.T) {
 
 		tests := []apis.ApiScenario{
 			{
-				// CheckPermissionsMiddleware returns 403 for unauthenticated requests
-				Name:           "anon cannot create post — 403",
-				Method:         http.MethodPost,
-				URL:            "/blog/posts",
-				Body:           strings.NewReader(`{"title":"Test","content":"body"}`),
-				ExpectedStatus: http.StatusForbidden,
-				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				// Unauthenticated requests are rejected by the auth middleware with 401.
+				Name:            "anon cannot create post — 401",
+				Method:          http.MethodPost,
+				URL:             "/blog/posts",
+				Body:            strings.NewReader(`{"title":"Test","content":"body"}`),
+				ExpectedStatus:  http.StatusUnauthorized,
+				ExpectedContent: []string{`"status":401`},
+				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 			},
 			{
-				// Non-admin authenticated user is also rejected with 403
-				Name:           "regular user cannot create post — 403",
-				Method:         http.MethodPost,
-				URL:            "/blog/posts",
-				Body:           strings.NewReader(`{"title":"Test","content":"body"}`),
-				ExpectedStatus: http.StatusForbidden,
-				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				// Authenticated but non-admin users are rejected with 403.
+				Name:            "regular user cannot create post — 403",
+				Method:          http.MethodPost,
+				URL:             "/blog/posts",
+				Body:            strings.NewReader(`{"title":"Test","content":"body"}`),
+				ExpectedStatus:  http.StatusForbidden,
+				ExpectedContent: []string{`"status":403`},
+				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					header, _ := core.CreateAccessHeaderAndRefreshToken(t, app, regular.User.Email)
 					scenario.Headers = []string{header}
@@ -244,12 +248,13 @@ func TestApi_BlogPostUpdate(t *testing.T) {
 
 		tests := []apis.ApiScenario{
 			{
-				Name:           "non-admin cannot update — 403",
-				Method:         http.MethodPatch,
-				URL:            fmt.Sprintf("/blog/posts/%s", post.ID),
-				Body:           strings.NewReader(`{"title":"Hacked"}`),
-				ExpectedStatus: http.StatusForbidden,
-				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				Name:            "non-admin cannot update — 403",
+				Method:          http.MethodPatch,
+				URL:             fmt.Sprintf("/blog/posts/%s", post.ID),
+				Body:            strings.NewReader(`{"title":"Hacked"}`),
+				ExpectedStatus:  http.StatusForbidden,
+				ExpectedContent: []string{`"status":403`},
+				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					header, _ := core.CreateAccessHeaderAndRefreshToken(t, app, regular.User.Email)
 					scenario.Headers = []string{header}
@@ -385,19 +390,21 @@ func TestApi_BlogTags(t *testing.T) {
 				ExpectedContent: []string{`"slug":"go"`},
 			},
 			{
-				Name:           "anon cannot create tag — 403",
-				Method:         http.MethodPost,
-				URL:            "/blog/tags",
-				Body:           strings.NewReader(`{"name":"Rust"}`),
-				ExpectedStatus: http.StatusForbidden,
-				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				Name:            "anon cannot create tag — 401",
+				Method:          http.MethodPost,
+				URL:             "/blog/tags",
+				Body:            strings.NewReader(`{"name":"Rust"}`),
+				ExpectedStatus:  http.StatusUnauthorized,
+				ExpectedContent: []string{`"status":401`},
+				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 			},
 			{
-				Name:           "list tags is public",
-				Method:         http.MethodGet,
-				URL:            "/blog/tags",
-				ExpectedStatus: http.StatusOK,
-				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				Name:            "list tags is public",
+				Method:          http.MethodGet,
+				URL:             "/blog/tags",
+				ExpectedStatus:  http.StatusOK,
+				ExpectedContent: []string{`"data"`},
+				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 			},
 		}
 		for _, tt := range tests {

@@ -82,7 +82,7 @@ func TestApi_UploadMedia(t *testing.T) {
 					ExpectedStatus: http.StatusNoContent,
 					TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
 					BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
-						scenario.Headers = []string{header, "Content-Type", ct}
+						scenario.Headers = []string{header, "Content-Type: " + ct}
 					},
 					AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
 						medias, err := app.Adapter().Media().FindMedia(ctx, nil)
@@ -107,14 +107,16 @@ func TestApi_UploadMedia_Unauthenticated(t *testing.T) {
 
 		tests := []apis.ApiScenario{
 			{
-				Name:           "unauthenticated upload returns 404",
-				Method:         http.MethodPost,
-				URL:            "/media",
-				Body:           body,
-				ExpectedStatus: http.StatusNotFound,
-				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				// Auth middleware rejects unauthenticated requests with 401 before the handler runs.
+				Name:            "unauthenticated upload returns 401",
+				Method:          http.MethodPost,
+				URL:             "/media",
+				Body:            body,
+				ExpectedStatus:  http.StatusUnauthorized,
+				ExpectedContent: []string{`"status":401`},
+				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
-					scenario.Headers = []string{"Content-Type", ct}
+					scenario.Headers = []string{"Content-Type: " + ct}
 				},
 			},
 		}
@@ -175,11 +177,12 @@ func TestApi_GetMedia(t *testing.T) {
 					},
 				},
 				{
-					Name:           "get nonexistent media ID returns error",
-					Method:         http.MethodGet,
-					URL:            fmt.Sprintf("/media/%s", uuid.New()),
-					ExpectedStatus: http.StatusInternalServerError,
-					TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+					Name:            "get nonexistent media ID returns 404",
+					Method:          http.MethodGet,
+					URL:             fmt.Sprintf("/media/%s", uuid.New()),
+					ExpectedStatus:  http.StatusNotFound,
+					ExpectedContent: []string{`"status":404`},
+					TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 					BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 						scenario.Headers = []string{header}
 					},

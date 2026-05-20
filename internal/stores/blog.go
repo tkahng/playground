@@ -134,10 +134,13 @@ func (s *DbBlogStore) uniqueSlug(ctx context.Context, base string) (string, erro
 		if i > 0 {
 			attempt = fmt.Sprintf("%s-%d", candidate, i+1)
 		}
-		_, err := repository.BlogPost.GetOne(ctx, s.db, &map[string]any{
+		existing, err := repository.BlogPost.GetOne(ctx, s.db, &map[string]any{
 			"slug": map[string]any{"_eq": attempt},
 		})
 		if err != nil {
+			return "", err
+		}
+		if existing == nil {
 			return attempt, nil
 		}
 	}
@@ -228,7 +231,7 @@ func (s *DbBlogStore) UpdatePost(ctx context.Context, postID uuid.UUID, input *U
 	post, err := repository.BlogPost.GetOne(ctx, s.db, &map[string]any{
 		"id": map[string]any{"_eq": postID},
 	})
-	if err != nil {
+	if err != nil || post == nil {
 		return nil, apierrors.NotFound("post not found")
 	}
 
@@ -282,7 +285,7 @@ func (s *DbBlogStore) PublishPost(ctx context.Context, postID uuid.UUID) (*model
 	post, err := repository.BlogPost.GetOne(ctx, s.db, &map[string]any{
 		"id": map[string]any{"_eq": postID},
 	})
-	if err != nil {
+	if err != nil || post == nil {
 		return nil, apierrors.NotFound("post not found")
 	}
 	now := time.Now()
@@ -295,7 +298,7 @@ func (s *DbBlogStore) UnpublishPost(ctx context.Context, postID uuid.UUID) (*mod
 	post, err := repository.BlogPost.GetOne(ctx, s.db, &map[string]any{
 		"id": map[string]any{"_eq": postID},
 	})
-	if err != nil {
+	if err != nil || post == nil {
 		return nil, apierrors.NotFound("post not found")
 	}
 	post.Status = models.BlogPostStatusDraft
@@ -307,7 +310,7 @@ func (s *DbBlogStore) ArchivePost(ctx context.Context, postID uuid.UUID) (*model
 	post, err := repository.BlogPost.GetOne(ctx, s.db, &map[string]any{
 		"id": map[string]any{"_eq": postID},
 	})
-	if err != nil {
+	if err != nil || post == nil {
 		return nil, apierrors.NotFound("post not found")
 	}
 	post.Status = models.BlogPostStatusArchived
@@ -325,7 +328,7 @@ func (s *DbBlogStore) FindPostByID(ctx context.Context, postID uuid.UUID) (*mode
 	post, err := repository.BlogPost.GetOne(ctx, s.db, &map[string]any{
 		"id": map[string]any{"_eq": postID},
 	})
-	if err != nil {
+	if err != nil || post == nil {
 		return nil, apierrors.NotFound("post not found")
 	}
 	return post, nil
@@ -335,7 +338,7 @@ func (s *DbBlogStore) FindPostBySlug(ctx context.Context, postSlug string) (*mod
 	post, err := repository.BlogPost.GetOne(ctx, s.db, &map[string]any{
 		"slug": map[string]any{"_eq": postSlug},
 	})
-	if err != nil {
+	if err != nil || post == nil {
 		return nil, apierrors.NotFound("post not found")
 	}
 	return post, nil
@@ -368,7 +371,10 @@ func (s *DbBlogStore) CreateTag(ctx context.Context, input *CreateBlogTagDTO) (*
 	existing, err := repository.BlogTag.GetOne(ctx, s.db, &map[string]any{
 		"slug": map[string]any{"_eq": tagSlug},
 	})
-	if err == nil {
+	if err != nil {
+		return nil, err
+	}
+	if existing != nil {
 		return existing, nil
 	}
 	return repository.BlogTag.PostOne(ctx, s.db, &models.BlogTag{

@@ -155,11 +155,8 @@ func (api *Api) BlogPostGet(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("post not found")
 	}
 
-	// fire-and-forget view count for published posts
 	if post.Status == models.BlogPostStatusPublished {
-		go func() {
-			_ = api.App().Adapter().Blog().IncrementViewCount(context.Background(), post.ID)
-		}()
+		_ = api.App().Adapter().Blog().IncrementViewCount(ctx, post.ID)
 	}
 
 	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post)}}, nil
