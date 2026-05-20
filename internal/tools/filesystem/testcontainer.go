@@ -65,6 +65,15 @@ func WithMinioContainer(t testing.TB, fn func(ctx context.Context, fs FileSystem
 		t.Fatalf("create test bucket: %v", err)
 	}
 
+	// Allow anonymous reads so PublicURL-based fetches work in tests.
+	policy := `{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":"*","Action":"s3:GetObject","Resource":"arn:aws:s3:::` + testBucketName + `/*"}]}`
+	if _, err = s3c.PutBucketPolicy(ctx, &awss3.PutBucketPolicyInput{
+		Bucket: aws.String(cfg.BucketName),
+		Policy: aws.String(policy),
+	}); err != nil {
+		t.Fatalf("set bucket public-read policy: %v", err)
+	}
+
 	fs, err := NewFileSystem(ctx, cfg)
 	if err != nil {
 		t.Fatalf("build filesystem: %v", err)

@@ -147,7 +147,7 @@ func TestApi_GetMedia(t *testing.T) {
 
 			tests := []apis.ApiScenario{
 				{
-					Name:           "get media returns record and working presigned URL",
+					Name:           "get media returns record with stable public URL",
 					Method:         http.MethodGet,
 					URL:            fmt.Sprintf("/media/%s", medium.ID),
 					ExpectedStatus: http.StatusOK,
@@ -164,8 +164,7 @@ func TestApi_GetMedia(t *testing.T) {
 						require.NoError(t, json.Unmarshal(res.Body.Bytes(), &result))
 						assert.Equal(t, medium.ID, result.ID)
 						assert.NotEmpty(t, result.URL)
-
-						// Presigned URL must serve the exact bytes that were uploaded.
+						// Public URL must be credential-free and serve the uploaded bytes.
 						resp, err := http.Get(result.URL) //nolint:noctx
 						require.NoError(t, err)
 						defer resp.Body.Close()
@@ -216,7 +215,7 @@ func TestApi_MediaList(t *testing.T) {
 
 			tests := []apis.ApiScenario{
 				{
-					Name:           "list media returns all files with presigned URLs",
+					Name:           "list media returns all files with public URLs",
 					Method:         http.MethodGet,
 					URL:            "/media",
 					ExpectedStatus: http.StatusOK,
@@ -229,7 +228,7 @@ func TestApi_MediaList(t *testing.T) {
 						require.NoError(t, json.Unmarshal(res.Body.Bytes(), &result))
 						assert.Equal(t, int64(2), result.Meta.Total)
 						for _, m := range result.Data {
-							assert.NotEmpty(t, m.URL, "every item must have a presigned URL")
+							assert.NotEmpty(t, m.URL, "every item must have a public URL")
 						}
 					},
 				},

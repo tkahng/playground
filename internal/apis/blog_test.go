@@ -13,11 +13,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tkahng/playground/internal/apis"
+	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
+	"github.com/tkahng/playground/internal/tools/filesystem"
 )
 
 // createBlogPost is a test helper that creates a post directly through the store.
@@ -396,6 +398,65 @@ func TestApi_BlogTags(t *testing.T) {
 				URL:            "/blog/tags",
 				ExpectedStatus: http.StatusOK,
 				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+			},
+		}
+		for _, tt := range tests {
+			tt.Test(t)
+		}
+	})
+}
+
+// ── FeaturedImageURL resolution ───────────────────────────────────────────────
+
+func TestApi_BlogPost_FeaturedImageURL(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+
+		const publicBase = "https://pub.example.com"
+		testApi.App.SetFs(filesystem.NewMockFileSystem(conf.StorageConfig{
+			PublicBaseURL: publicBase,
+		}))
+
+		admin := core.CreateUserWithOptions(t, testApi.App,
+			core.UserWithVerifiedNow(),
+			core.UserWithPermission(shared.PermissionNameAdmin),
+		)
+
+		const imageKey = "media/abc123.jpg"
+		postWithImage := createBlogPost(t, testApi.App, admin.User.ID, "Image Post", "content", models.BlogPostStatusPublished)
+		imageKeyVal := imageKey
+		_, err := testApi.App.Adapter().Blog().UpdatePost(ctx, postWithImage.ID, &stores.UpdateBlogPostDTO{
+			FeaturedImageKey: &imageKeyVal,
+		})
+		require.NoError(t, err)
+
+		postNoImage := createBlogPost(t, testApi.App, admin.User.ID, "No Image Post", "content", models.BlogPostStatusPublished)
+
+		tests := []apis.ApiScenario{
+			{
+				Name:           "post with featured_image_key resolves to public URL",
+				Method:         http.MethodGet,
+				URL:            fmt.Sprintf("/blog/posts/%s", postWithImage.Slug),
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+					var body apis.ApiSingleResponse[*apis.BlogPost]
+					require.NoError(t, json.Unmarshal(res.Body.Bytes(), &body))
+					require.NotNil(t, body.Data.FeaturedImageURL)
+					assert.Equal(t, publicBase+"/"+imageKey, *body.Data.FeaturedImageURL)
+				},
+			},
+			{
+				Name:           "post without featured_image_key returns null featured_image_url",
+				Method:         http.MethodGet,
+				URL:            fmt.Sprintf("/blog/posts/%s", postNoImage.Slug),
+				ExpectedStatus: http.StatusOK,
+				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+					var body apis.ApiSingleResponse[*apis.BlogPost]
+					require.NoError(t, json.Unmarshal(res.Body.Bytes(), &body))
+					assert.Nil(t, body.Data.FeaturedImageURL)
+				},
 			},
 		}
 		for _, tt := range tests {

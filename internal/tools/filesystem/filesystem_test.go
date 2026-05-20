@@ -3,6 +3,8 @@ package filesystem_test
 import (
 	"bytes"
 	"context"
+	"io"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -57,12 +59,25 @@ func TestFilesystem_PutFile(t *testing.T) {
 func TestFilesystem_PublicURL(t *testing.T) {
 	skipIfShort(t)
 	filesystem.WithMinioContainer(t, func(ctx context.Context, fs filesystem.FileSystem, cfg conf.StorageConfig) {
-		dto, err := fs.PutFileFromBytes(ctx, []byte("public url test"), "pub.txt")
+		content := []byte("public url test content")
+		dto, err := fs.PutFileFromBytes(ctx, content, "pub.txt")
 		require.NoError(t, err)
 
 		key := dto.Directory + "/" + dto.Filename
 		url := fs.PublicURL(key)
-		assert.Contains(t, url, dto.Filename)
+
+		// URL must be exactly PublicBaseURL/key — no signing params.
+		assert.Equal(t, cfg.PublicBaseURL+"/"+key, url)
+
+		// File must be reachable without credentials.
+		resp, err := http.Get(url) //nolint:noctx
+		require.NoError(t, err)
+		defer resp.Body.Close()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		got, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+		assert.Equal(t, content, got)
 	})
 }
 
