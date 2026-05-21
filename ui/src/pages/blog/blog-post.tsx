@@ -1,4 +1,5 @@
 import { CenteredSpinner } from "@/components/centered-spinner";
+import { MarkdownRenderer, TiptapRenderer } from "@/components/blog/content-renderer";
 import { Badge } from "@/components/ui/badge";
 import { getBlogPost } from "@/lib/blog-queries";
 import { useQuery } from "@tanstack/react-query";
@@ -95,81 +96,3 @@ export default function BlogPostPage({ slug }: { slug: string }) {
   );
 }
 
-function MarkdownRenderer({ content }: { content: string }) {
-  // Simple markdown → HTML: paragraphs separated by blank lines.
-  // For production, replace with a proper parser (react-markdown, etc.)
-  const paragraphs = content.split(/\n\s*\n/).filter(Boolean);
-  return (
-    <>
-      {paragraphs.map((p, i) => (
-        <p key={i}>{p.trim()}</p>
-      ))}
-    </>
-  );
-}
-
-function TiptapRenderer({ content }: { content: string }) {
-  // Tiptap stores JSON; render via a tree walker until @tiptap/react is installed.
-  // When switching to a real renderer, avoid dangerouslySetInnerHTML without
-  // sanitizing with DOMPurify first — Tiptap allows arbitrary HTML marks.
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(content);
-  } catch {
-    return <p>{content}</p>;
-  }
-  if (
-    parsed &&
-    typeof parsed === "object" &&
-    "content" in parsed &&
-    Array.isArray((parsed as { content: unknown }).content)
-  ) {
-    return (
-      <>
-        {((parsed as { content: TiptapNode[] }).content).map((node, i) => (
-          <TiptapNode key={i} node={node} />
-        ))}
-      </>
-    );
-  }
-  return <p>{content}</p>;
-}
-
-interface TiptapNode {
-  type: string;
-  content?: TiptapNode[];
-  text?: string;
-  marks?: { type: string }[];
-}
-
-function TiptapNode({ node }: { node: TiptapNode }) {
-  const children = node.content?.map((child, i) => (
-    <TiptapNode key={i} node={child} />
-  ));
-
-  switch (node.type) {
-    case "paragraph":
-      return <p>{children}</p>;
-    case "heading":
-      return <h2>{children}</h2>;
-    case "bulletList":
-      return <ul>{children}</ul>;
-    case "listItem":
-      return <li>{children}</li>;
-    case "orderedList":
-      return <ol>{children}</ol>;
-    case "blockquote":
-      return <blockquote>{children}</blockquote>;
-    case "codeBlock":
-      return <pre><code>{children}</code></pre>;
-    case "text": {
-      let el: React.ReactNode = node.text ?? "";
-      if (node.marks?.some((m) => m.type === "bold")) el = <strong>{el}</strong>;
-      if (node.marks?.some((m) => m.type === "italic")) el = <em>{el}</em>;
-      if (node.marks?.some((m) => m.type === "code")) el = <code>{el}</code>;
-      return <>{el}</>;
-    }
-    default:
-      return <>{children}</>;
-  }
-}
