@@ -27,6 +27,7 @@ import { Route as LandingPricingRouteImport } from './routes/_landing/pricing'
 import { Route as LandingHomeRouteImport } from './routes/_landing/home'
 import { Route as LandingFeaturesRouteImport } from './routes/_landing/features'
 import { Route as LandingContactRouteImport } from './routes/_landing/contact'
+import { Route as LandingBlogRouteImport } from './routes/_landing/blog'
 import { Route as LandingAboutRouteImport } from './routes/_landing/about'
 import { Route as AuthenticatedVerifyEmailRouteImport } from './routes/_authenticated/verify-email'
 import { Route as AuthenticatedTeamsRouteImport } from './routes/_authenticated/teams'
@@ -35,6 +36,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedTeamsIndexRouteImport } from './routes/_authenticated/teams/index'
+import { Route as LandingBlogSlugRouteImport } from './routes/_landing/blog.$slug'
 import { Route as AuthenticatedProtectedProtectedLayoutRouteImport } from './routes/_authenticated/protected/_protectedLayout'
 import { Route as AuthenticatedPaymentSuccessRouteImport } from './routes/_authenticated/payment/success'
 import { Route as AuthenticatedPaymentPointsSuccessRouteImport } from './routes/_authenticated/payment/points-success'
@@ -56,7 +58,9 @@ import { Route as AuthenticatedAdminAdminLayoutRolesIndexRouteImport } from './r
 import { Route as AuthenticatedAdminAdminLayoutProductsIndexRouteImport } from './routes/_authenticated/admin/_adminLayout/products/index'
 import { Route as AuthenticatedAdminAdminLayoutPlanFeaturesIndexRouteImport } from './routes/_authenticated/admin/_adminLayout/plan-features/index'
 import { Route as AuthenticatedAdminAdminLayoutPermissionsIndexRouteImport } from './routes/_authenticated/admin/_adminLayout/permissions/index'
+import { Route as AuthenticatedAdminAdminLayoutMediaIndexRouteImport } from './routes/_authenticated/admin/_adminLayout/media/index'
 import { Route as AuthenticatedAdminAdminLayoutJobsIndexRouteImport } from './routes/_authenticated/admin/_adminLayout/jobs/index'
+import { Route as AuthenticatedAdminAdminLayoutBlogIndexRouteImport } from './routes/_authenticated/admin/_adminLayout/blog/index'
 import { Route as AuthenticatedAdminAdminLayoutAiUsageIndexRouteImport } from './routes/_authenticated/admin/_adminLayout/ai-usage/index'
 import { Route as AuthenticatedAccountAccountLayoutSettingsIndexRouteImport } from './routes/_authenticated/account/_accountLayout/settings/index'
 import { Route as AuthenticatedTeamsTeamSlugTeamLayoutDashboardRouteImport } from './routes/_authenticated/teams/$teamSlug/_teamLayout/dashboard'
@@ -66,12 +70,14 @@ import { Route as AuthenticatedAdminAdminLayoutProductsProductIdRouteImport } fr
 import { Route as AuthenticatedAdminAdminLayoutPlanFeaturesProductIdRouteImport } from './routes/_authenticated/admin/_adminLayout/plan-features/$productId'
 import { Route as AuthenticatedAdminAdminLayoutPermissionsPermissionIdRouteImport } from './routes/_authenticated/admin/_adminLayout/permissions/$permissionId'
 import { Route as AuthenticatedAdminAdminLayoutJobsJobIdRouteImport } from './routes/_authenticated/admin/_adminLayout/jobs/$jobId'
+import { Route as AuthenticatedAdminAdminLayoutBlogNewRouteImport } from './routes/_authenticated/admin/_adminLayout/blog/new'
 import { Route as AuthenticatedAccountAccountLayoutSettingsPointsRouteImport } from './routes/_authenticated/account/_accountLayout/settings/points'
 import { Route as AuthenticatedAccountAccountLayoutSettingsBillingRouteImport } from './routes/_authenticated/account/_accountLayout/settings/billing'
 import { Route as AuthenticatedTeamsTeamSlugTeamLayoutSettingsIndexRouteImport } from './routes/_authenticated/teams/$teamSlug/_teamLayout/settings/index'
 import { Route as AuthenticatedTeamsTeamSlugTeamLayoutNotificationsIndexRouteImport } from './routes/_authenticated/teams/$teamSlug/_teamLayout/notifications/index'
 import { Route as AuthenticatedTeamsTeamSlugTeamLayoutSettingsMembersRouteImport } from './routes/_authenticated/teams/$teamSlug/_teamLayout/settings/members'
 import { Route as AuthenticatedTeamsTeamSlugTeamLayoutSettingsBillingRouteImport } from './routes/_authenticated/teams/$teamSlug/_teamLayout/settings/billing'
+import { Route as AuthenticatedAdminAdminLayoutBlogPostIdEditRouteImport } from './routes/_authenticated/admin/_adminLayout/blog/$postId.edit'
 import { Route as AuthenticatedTeamsTeamSlugTeamLayoutProjectsProjectIdIndexRouteImport } from './routes/_authenticated/teams/$teamSlug/_teamLayout/projects/$projectId/index'
 import { Route as AuthenticatedTeamsTeamSlugTeamLayoutProjectsProjectIdTasksTaskIdRouteImport } from './routes/_authenticated/teams/$teamSlug/_teamLayout/projects/$projectId/tasks/$taskId'
 
@@ -164,6 +170,11 @@ const LandingContactRoute = LandingContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => LandingRoute,
 } as any)
+const LandingBlogRoute = LandingBlogRouteImport.update({
+  id: '/blog',
+  path: '/blog',
+  getParentRoute: () => LandingRoute,
+} as any)
 const LandingAboutRoute = LandingAboutRouteImport.update({
   id: '/about',
   path: '/about',
@@ -204,6 +215,11 @@ const AuthenticatedTeamsIndexRoute = AuthenticatedTeamsIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedTeamsRoute,
+} as any)
+const LandingBlogSlugRoute = LandingBlogSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => LandingBlogRoute,
 } as any)
 const AuthenticatedProtectedProtectedLayoutRoute =
   AuthenticatedProtectedProtectedLayoutRouteImport.update({
@@ -328,10 +344,22 @@ const AuthenticatedAdminAdminLayoutPermissionsIndexRoute =
     path: '/permissions/',
     getParentRoute: () => AuthenticatedAdminAdminLayoutRoute,
   } as any)
+const AuthenticatedAdminAdminLayoutMediaIndexRoute =
+  AuthenticatedAdminAdminLayoutMediaIndexRouteImport.update({
+    id: '/media/',
+    path: '/media/',
+    getParentRoute: () => AuthenticatedAdminAdminLayoutRoute,
+  } as any)
 const AuthenticatedAdminAdminLayoutJobsIndexRoute =
   AuthenticatedAdminAdminLayoutJobsIndexRouteImport.update({
     id: '/jobs/',
     path: '/jobs/',
+    getParentRoute: () => AuthenticatedAdminAdminLayoutRoute,
+  } as any)
+const AuthenticatedAdminAdminLayoutBlogIndexRoute =
+  AuthenticatedAdminAdminLayoutBlogIndexRouteImport.update({
+    id: '/blog/',
+    path: '/blog/',
     getParentRoute: () => AuthenticatedAdminAdminLayoutRoute,
   } as any)
 const AuthenticatedAdminAdminLayoutAiUsageIndexRoute =
@@ -388,6 +416,12 @@ const AuthenticatedAdminAdminLayoutJobsJobIdRoute =
     path: '/jobs/$jobId',
     getParentRoute: () => AuthenticatedAdminAdminLayoutRoute,
   } as any)
+const AuthenticatedAdminAdminLayoutBlogNewRoute =
+  AuthenticatedAdminAdminLayoutBlogNewRouteImport.update({
+    id: '/blog/new',
+    path: '/blog/new',
+    getParentRoute: () => AuthenticatedAdminAdminLayoutRoute,
+  } as any)
 const AuthenticatedAccountAccountLayoutSettingsPointsRoute =
   AuthenticatedAccountAccountLayoutSettingsPointsRouteImport.update({
     id: '/settings/points',
@@ -424,6 +458,12 @@ const AuthenticatedTeamsTeamSlugTeamLayoutSettingsBillingRoute =
     path: '/settings/billing',
     getParentRoute: () => AuthenticatedTeamsTeamSlugTeamLayoutRoute,
   } as any)
+const AuthenticatedAdminAdminLayoutBlogPostIdEditRoute =
+  AuthenticatedAdminAdminLayoutBlogPostIdEditRouteImport.update({
+    id: '/blog/$postId/edit',
+    path: '/blog/$postId/edit',
+    getParentRoute: () => AuthenticatedAdminAdminLayoutRoute,
+  } as any)
 const AuthenticatedTeamsTeamSlugTeamLayoutProjectsProjectIdIndexRoute =
   AuthenticatedTeamsTeamSlugTeamLayoutProjectsProjectIdIndexRouteImport.update({
     id: '/projects/$projectId/',
@@ -448,6 +488,7 @@ export interface FileRoutesByFullPath {
   '/teams': typeof AuthenticatedTeamsRouteWithChildren
   '/verify-email': typeof AuthenticatedVerifyEmailRoute
   '/about': typeof LandingAboutRoute
+  '/blog': typeof LandingBlogRouteWithChildren
   '/contact': typeof LandingContactRoute
   '/features': typeof LandingFeaturesRoute
   '/home': typeof LandingHomeRoute
@@ -464,6 +505,7 @@ export interface FileRoutesByFullPath {
   '/auth/callback': typeof AuthCallbackRoute
   '/payment/points-success': typeof AuthenticatedPaymentPointsSuccessRoute
   '/payment/success': typeof AuthenticatedPaymentSuccessRoute
+  '/blog/$slug': typeof LandingBlogSlugRoute
   '/teams/': typeof AuthenticatedTeamsIndexRoute
   '/account/dashboard': typeof AuthenticatedAccountAccountLayoutDashboardRoute
   '/account/friends': typeof AuthenticatedAccountAccountLayoutFriendsRoute
@@ -477,6 +519,7 @@ export interface FileRoutesByFullPath {
   '/protected/': typeof AuthenticatedProtectedProtectedLayoutIndexRoute
   '/account/settings/billing': typeof AuthenticatedAccountAccountLayoutSettingsBillingRoute
   '/account/settings/points': typeof AuthenticatedAccountAccountLayoutSettingsPointsRoute
+  '/admin/blog/new': typeof AuthenticatedAdminAdminLayoutBlogNewRoute
   '/admin/jobs/$jobId': typeof AuthenticatedAdminAdminLayoutJobsJobIdRoute
   '/admin/permissions/$permissionId': typeof AuthenticatedAdminAdminLayoutPermissionsPermissionIdRoute
   '/admin/plan-features/$productId': typeof AuthenticatedAdminAdminLayoutPlanFeaturesProductIdRoute
@@ -486,13 +529,16 @@ export interface FileRoutesByFullPath {
   '/teams/$teamSlug/dashboard': typeof AuthenticatedTeamsTeamSlugTeamLayoutDashboardRoute
   '/account/settings/': typeof AuthenticatedAccountAccountLayoutSettingsIndexRoute
   '/admin/ai-usage/': typeof AuthenticatedAdminAdminLayoutAiUsageIndexRoute
+  '/admin/blog/': typeof AuthenticatedAdminAdminLayoutBlogIndexRoute
   '/admin/jobs/': typeof AuthenticatedAdminAdminLayoutJobsIndexRoute
+  '/admin/media/': typeof AuthenticatedAdminAdminLayoutMediaIndexRoute
   '/admin/permissions/': typeof AuthenticatedAdminAdminLayoutPermissionsIndexRoute
   '/admin/plan-features/': typeof AuthenticatedAdminAdminLayoutPlanFeaturesIndexRoute
   '/admin/products/': typeof AuthenticatedAdminAdminLayoutProductsIndexRoute
   '/admin/roles/': typeof AuthenticatedAdminAdminLayoutRolesIndexRoute
   '/admin/subscriptions/': typeof AuthenticatedAdminAdminLayoutSubscriptionsIndexRoute
   '/admin/users/': typeof AuthenticatedAdminAdminLayoutUsersIndexRoute
+  '/admin/blog/$postId/edit': typeof AuthenticatedAdminAdminLayoutBlogPostIdEditRoute
   '/teams/$teamSlug/settings/billing': typeof AuthenticatedTeamsTeamSlugTeamLayoutSettingsBillingRoute
   '/teams/$teamSlug/settings/members': typeof AuthenticatedTeamsTeamSlugTeamLayoutSettingsMembersRoute
   '/teams/$teamSlug/notifications/': typeof AuthenticatedTeamsTeamSlugTeamLayoutNotificationsIndexRoute
@@ -508,6 +554,7 @@ export interface FileRoutesByTo {
   '/protected': typeof AuthenticatedProtectedProtectedLayoutIndexRoute
   '/verify-email': typeof AuthenticatedVerifyEmailRoute
   '/about': typeof LandingAboutRoute
+  '/blog': typeof LandingBlogRouteWithChildren
   '/contact': typeof LandingContactRoute
   '/features': typeof LandingFeaturesRoute
   '/home': typeof LandingHomeRoute
@@ -524,6 +571,7 @@ export interface FileRoutesByTo {
   '/auth/callback': typeof AuthCallbackRoute
   '/payment/points-success': typeof AuthenticatedPaymentPointsSuccessRoute
   '/payment/success': typeof AuthenticatedPaymentSuccessRoute
+  '/blog/$slug': typeof LandingBlogSlugRoute
   '/teams': typeof AuthenticatedTeamsIndexRoute
   '/account/dashboard': typeof AuthenticatedAccountAccountLayoutDashboardRoute
   '/account/friends': typeof AuthenticatedAccountAccountLayoutFriendsRoute
@@ -535,6 +583,7 @@ export interface FileRoutesByTo {
   '/teams/settings/billing': typeof AuthenticatedTeamsSettingsBillingRoute
   '/account/settings/billing': typeof AuthenticatedAccountAccountLayoutSettingsBillingRoute
   '/account/settings/points': typeof AuthenticatedAccountAccountLayoutSettingsPointsRoute
+  '/admin/blog/new': typeof AuthenticatedAdminAdminLayoutBlogNewRoute
   '/admin/jobs/$jobId': typeof AuthenticatedAdminAdminLayoutJobsJobIdRoute
   '/admin/permissions/$permissionId': typeof AuthenticatedAdminAdminLayoutPermissionsPermissionIdRoute
   '/admin/plan-features/$productId': typeof AuthenticatedAdminAdminLayoutPlanFeaturesProductIdRoute
@@ -544,13 +593,16 @@ export interface FileRoutesByTo {
   '/teams/$teamSlug/dashboard': typeof AuthenticatedTeamsTeamSlugTeamLayoutDashboardRoute
   '/account/settings': typeof AuthenticatedAccountAccountLayoutSettingsIndexRoute
   '/admin/ai-usage': typeof AuthenticatedAdminAdminLayoutAiUsageIndexRoute
+  '/admin/blog': typeof AuthenticatedAdminAdminLayoutBlogIndexRoute
   '/admin/jobs': typeof AuthenticatedAdminAdminLayoutJobsIndexRoute
+  '/admin/media': typeof AuthenticatedAdminAdminLayoutMediaIndexRoute
   '/admin/permissions': typeof AuthenticatedAdminAdminLayoutPermissionsIndexRoute
   '/admin/plan-features': typeof AuthenticatedAdminAdminLayoutPlanFeaturesIndexRoute
   '/admin/products': typeof AuthenticatedAdminAdminLayoutProductsIndexRoute
   '/admin/roles': typeof AuthenticatedAdminAdminLayoutRolesIndexRoute
   '/admin/subscriptions': typeof AuthenticatedAdminAdminLayoutSubscriptionsIndexRoute
   '/admin/users': typeof AuthenticatedAdminAdminLayoutUsersIndexRoute
+  '/admin/blog/$postId/edit': typeof AuthenticatedAdminAdminLayoutBlogPostIdEditRoute
   '/teams/$teamSlug/settings/billing': typeof AuthenticatedTeamsTeamSlugTeamLayoutSettingsBillingRoute
   '/teams/$teamSlug/settings/members': typeof AuthenticatedTeamsTeamSlugTeamLayoutSettingsMembersRoute
   '/teams/$teamSlug/notifications': typeof AuthenticatedTeamsTeamSlugTeamLayoutNotificationsIndexRoute
@@ -570,6 +622,7 @@ export interface FileRoutesById {
   '/_authenticated/teams': typeof AuthenticatedTeamsRouteWithChildren
   '/_authenticated/verify-email': typeof AuthenticatedVerifyEmailRoute
   '/_landing/about': typeof LandingAboutRoute
+  '/_landing/blog': typeof LandingBlogRouteWithChildren
   '/_landing/contact': typeof LandingContactRoute
   '/_landing/features': typeof LandingFeaturesRoute
   '/_landing/home': typeof LandingHomeRoute
@@ -590,6 +643,7 @@ export interface FileRoutesById {
   '/_authenticated/payment/points-success': typeof AuthenticatedPaymentPointsSuccessRoute
   '/_authenticated/payment/success': typeof AuthenticatedPaymentSuccessRoute
   '/_authenticated/protected/_protectedLayout': typeof AuthenticatedProtectedProtectedLayoutRouteWithChildren
+  '/_landing/blog/$slug': typeof LandingBlogSlugRoute
   '/_authenticated/teams/': typeof AuthenticatedTeamsIndexRoute
   '/_authenticated/account/_accountLayout/dashboard': typeof AuthenticatedAccountAccountLayoutDashboardRoute
   '/_authenticated/account/_accountLayout/friends': typeof AuthenticatedAccountAccountLayoutFriendsRoute
@@ -603,6 +657,7 @@ export interface FileRoutesById {
   '/_authenticated/protected/_protectedLayout/': typeof AuthenticatedProtectedProtectedLayoutIndexRoute
   '/_authenticated/account/_accountLayout/settings/billing': typeof AuthenticatedAccountAccountLayoutSettingsBillingRoute
   '/_authenticated/account/_accountLayout/settings/points': typeof AuthenticatedAccountAccountLayoutSettingsPointsRoute
+  '/_authenticated/admin/_adminLayout/blog/new': typeof AuthenticatedAdminAdminLayoutBlogNewRoute
   '/_authenticated/admin/_adminLayout/jobs/$jobId': typeof AuthenticatedAdminAdminLayoutJobsJobIdRoute
   '/_authenticated/admin/_adminLayout/permissions/$permissionId': typeof AuthenticatedAdminAdminLayoutPermissionsPermissionIdRoute
   '/_authenticated/admin/_adminLayout/plan-features/$productId': typeof AuthenticatedAdminAdminLayoutPlanFeaturesProductIdRoute
@@ -612,13 +667,16 @@ export interface FileRoutesById {
   '/_authenticated/teams/$teamSlug/_teamLayout/dashboard': typeof AuthenticatedTeamsTeamSlugTeamLayoutDashboardRoute
   '/_authenticated/account/_accountLayout/settings/': typeof AuthenticatedAccountAccountLayoutSettingsIndexRoute
   '/_authenticated/admin/_adminLayout/ai-usage/': typeof AuthenticatedAdminAdminLayoutAiUsageIndexRoute
+  '/_authenticated/admin/_adminLayout/blog/': typeof AuthenticatedAdminAdminLayoutBlogIndexRoute
   '/_authenticated/admin/_adminLayout/jobs/': typeof AuthenticatedAdminAdminLayoutJobsIndexRoute
+  '/_authenticated/admin/_adminLayout/media/': typeof AuthenticatedAdminAdminLayoutMediaIndexRoute
   '/_authenticated/admin/_adminLayout/permissions/': typeof AuthenticatedAdminAdminLayoutPermissionsIndexRoute
   '/_authenticated/admin/_adminLayout/plan-features/': typeof AuthenticatedAdminAdminLayoutPlanFeaturesIndexRoute
   '/_authenticated/admin/_adminLayout/products/': typeof AuthenticatedAdminAdminLayoutProductsIndexRoute
   '/_authenticated/admin/_adminLayout/roles/': typeof AuthenticatedAdminAdminLayoutRolesIndexRoute
   '/_authenticated/admin/_adminLayout/subscriptions/': typeof AuthenticatedAdminAdminLayoutSubscriptionsIndexRoute
   '/_authenticated/admin/_adminLayout/users/': typeof AuthenticatedAdminAdminLayoutUsersIndexRoute
+  '/_authenticated/admin/_adminLayout/blog/$postId/edit': typeof AuthenticatedAdminAdminLayoutBlogPostIdEditRoute
   '/_authenticated/teams/$teamSlug/_teamLayout/settings/billing': typeof AuthenticatedTeamsTeamSlugTeamLayoutSettingsBillingRoute
   '/_authenticated/teams/$teamSlug/_teamLayout/settings/members': typeof AuthenticatedTeamsTeamSlugTeamLayoutSettingsMembersRoute
   '/_authenticated/teams/$teamSlug/_teamLayout/notifications/': typeof AuthenticatedTeamsTeamSlugTeamLayoutNotificationsIndexRoute
@@ -637,6 +695,7 @@ export interface FileRouteTypes {
     | '/teams'
     | '/verify-email'
     | '/about'
+    | '/blog'
     | '/contact'
     | '/features'
     | '/home'
@@ -653,6 +712,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/payment/points-success'
     | '/payment/success'
+    | '/blog/$slug'
     | '/teams/'
     | '/account/dashboard'
     | '/account/friends'
@@ -666,6 +726,7 @@ export interface FileRouteTypes {
     | '/protected/'
     | '/account/settings/billing'
     | '/account/settings/points'
+    | '/admin/blog/new'
     | '/admin/jobs/$jobId'
     | '/admin/permissions/$permissionId'
     | '/admin/plan-features/$productId'
@@ -675,13 +736,16 @@ export interface FileRouteTypes {
     | '/teams/$teamSlug/dashboard'
     | '/account/settings/'
     | '/admin/ai-usage/'
+    | '/admin/blog/'
     | '/admin/jobs/'
+    | '/admin/media/'
     | '/admin/permissions/'
     | '/admin/plan-features/'
     | '/admin/products/'
     | '/admin/roles/'
     | '/admin/subscriptions/'
     | '/admin/users/'
+    | '/admin/blog/$postId/edit'
     | '/teams/$teamSlug/settings/billing'
     | '/teams/$teamSlug/settings/members'
     | '/teams/$teamSlug/notifications/'
@@ -697,6 +761,7 @@ export interface FileRouteTypes {
     | '/protected'
     | '/verify-email'
     | '/about'
+    | '/blog'
     | '/contact'
     | '/features'
     | '/home'
@@ -713,6 +778,7 @@ export interface FileRouteTypes {
     | '/auth/callback'
     | '/payment/points-success'
     | '/payment/success'
+    | '/blog/$slug'
     | '/teams'
     | '/account/dashboard'
     | '/account/friends'
@@ -724,6 +790,7 @@ export interface FileRouteTypes {
     | '/teams/settings/billing'
     | '/account/settings/billing'
     | '/account/settings/points'
+    | '/admin/blog/new'
     | '/admin/jobs/$jobId'
     | '/admin/permissions/$permissionId'
     | '/admin/plan-features/$productId'
@@ -733,13 +800,16 @@ export interface FileRouteTypes {
     | '/teams/$teamSlug/dashboard'
     | '/account/settings'
     | '/admin/ai-usage'
+    | '/admin/blog'
     | '/admin/jobs'
+    | '/admin/media'
     | '/admin/permissions'
     | '/admin/plan-features'
     | '/admin/products'
     | '/admin/roles'
     | '/admin/subscriptions'
     | '/admin/users'
+    | '/admin/blog/$postId/edit'
     | '/teams/$teamSlug/settings/billing'
     | '/teams/$teamSlug/settings/members'
     | '/teams/$teamSlug/notifications'
@@ -758,6 +828,7 @@ export interface FileRouteTypes {
     | '/_authenticated/teams'
     | '/_authenticated/verify-email'
     | '/_landing/about'
+    | '/_landing/blog'
     | '/_landing/contact'
     | '/_landing/features'
     | '/_landing/home'
@@ -778,6 +849,7 @@ export interface FileRouteTypes {
     | '/_authenticated/payment/points-success'
     | '/_authenticated/payment/success'
     | '/_authenticated/protected/_protectedLayout'
+    | '/_landing/blog/$slug'
     | '/_authenticated/teams/'
     | '/_authenticated/account/_accountLayout/dashboard'
     | '/_authenticated/account/_accountLayout/friends'
@@ -791,6 +863,7 @@ export interface FileRouteTypes {
     | '/_authenticated/protected/_protectedLayout/'
     | '/_authenticated/account/_accountLayout/settings/billing'
     | '/_authenticated/account/_accountLayout/settings/points'
+    | '/_authenticated/admin/_adminLayout/blog/new'
     | '/_authenticated/admin/_adminLayout/jobs/$jobId'
     | '/_authenticated/admin/_adminLayout/permissions/$permissionId'
     | '/_authenticated/admin/_adminLayout/plan-features/$productId'
@@ -800,13 +873,16 @@ export interface FileRouteTypes {
     | '/_authenticated/teams/$teamSlug/_teamLayout/dashboard'
     | '/_authenticated/account/_accountLayout/settings/'
     | '/_authenticated/admin/_adminLayout/ai-usage/'
+    | '/_authenticated/admin/_adminLayout/blog/'
     | '/_authenticated/admin/_adminLayout/jobs/'
+    | '/_authenticated/admin/_adminLayout/media/'
     | '/_authenticated/admin/_adminLayout/permissions/'
     | '/_authenticated/admin/_adminLayout/plan-features/'
     | '/_authenticated/admin/_adminLayout/products/'
     | '/_authenticated/admin/_adminLayout/roles/'
     | '/_authenticated/admin/_adminLayout/subscriptions/'
     | '/_authenticated/admin/_adminLayout/users/'
+    | '/_authenticated/admin/_adminLayout/blog/$postId/edit'
     | '/_authenticated/teams/$teamSlug/_teamLayout/settings/billing'
     | '/_authenticated/teams/$teamSlug/_teamLayout/settings/members'
     | '/_authenticated/teams/$teamSlug/_teamLayout/notifications/'
@@ -950,6 +1026,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LandingContactRouteImport
       parentRoute: typeof LandingRoute
     }
+    '/_landing/blog': {
+      id: '/_landing/blog'
+      path: '/blog'
+      fullPath: '/blog'
+      preLoaderRoute: typeof LandingBlogRouteImport
+      parentRoute: typeof LandingRoute
+    }
     '/_landing/about': {
       id: '/_landing/about'
       path: '/about'
@@ -1005,6 +1088,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/teams/'
       preLoaderRoute: typeof AuthenticatedTeamsIndexRouteImport
       parentRoute: typeof AuthenticatedTeamsRoute
+    }
+    '/_landing/blog/$slug': {
+      id: '/_landing/blog/$slug'
+      path: '/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof LandingBlogSlugRouteImport
+      parentRoute: typeof LandingBlogRoute
     }
     '/_authenticated/protected/_protectedLayout': {
       id: '/_authenticated/protected/_protectedLayout'
@@ -1153,11 +1243,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAdminLayoutPermissionsIndexRouteImport
       parentRoute: typeof AuthenticatedAdminAdminLayoutRoute
     }
+    '/_authenticated/admin/_adminLayout/media/': {
+      id: '/_authenticated/admin/_adminLayout/media/'
+      path: '/media'
+      fullPath: '/admin/media/'
+      preLoaderRoute: typeof AuthenticatedAdminAdminLayoutMediaIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminAdminLayoutRoute
+    }
     '/_authenticated/admin/_adminLayout/jobs/': {
       id: '/_authenticated/admin/_adminLayout/jobs/'
       path: '/jobs'
       fullPath: '/admin/jobs/'
       preLoaderRoute: typeof AuthenticatedAdminAdminLayoutJobsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminAdminLayoutRoute
+    }
+    '/_authenticated/admin/_adminLayout/blog/': {
+      id: '/_authenticated/admin/_adminLayout/blog/'
+      path: '/blog'
+      fullPath: '/admin/blog/'
+      preLoaderRoute: typeof AuthenticatedAdminAdminLayoutBlogIndexRouteImport
       parentRoute: typeof AuthenticatedAdminAdminLayoutRoute
     }
     '/_authenticated/admin/_adminLayout/ai-usage/': {
@@ -1223,6 +1327,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminAdminLayoutJobsJobIdRouteImport
       parentRoute: typeof AuthenticatedAdminAdminLayoutRoute
     }
+    '/_authenticated/admin/_adminLayout/blog/new': {
+      id: '/_authenticated/admin/_adminLayout/blog/new'
+      path: '/blog/new'
+      fullPath: '/admin/blog/new'
+      preLoaderRoute: typeof AuthenticatedAdminAdminLayoutBlogNewRouteImport
+      parentRoute: typeof AuthenticatedAdminAdminLayoutRoute
+    }
     '/_authenticated/account/_accountLayout/settings/points': {
       id: '/_authenticated/account/_accountLayout/settings/points'
       path: '/settings/points'
@@ -1264,6 +1375,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/teams/$teamSlug/settings/billing'
       preLoaderRoute: typeof AuthenticatedTeamsTeamSlugTeamLayoutSettingsBillingRouteImport
       parentRoute: typeof AuthenticatedTeamsTeamSlugTeamLayoutRoute
+    }
+    '/_authenticated/admin/_adminLayout/blog/$postId/edit': {
+      id: '/_authenticated/admin/_adminLayout/blog/$postId/edit'
+      path: '/blog/$postId/edit'
+      fullPath: '/admin/blog/$postId/edit'
+      preLoaderRoute: typeof AuthenticatedAdminAdminLayoutBlogPostIdEditRouteImport
+      parentRoute: typeof AuthenticatedAdminAdminLayoutRoute
     }
     '/_authenticated/teams/$teamSlug/_teamLayout/projects/$projectId/': {
       id: '/_authenticated/teams/$teamSlug/_teamLayout/projects/$projectId/'
@@ -1332,6 +1450,7 @@ const AuthenticatedAccountRouteWithChildren =
 
 interface AuthenticatedAdminAdminLayoutRouteChildren {
   AuthenticatedAdminAdminLayoutIndexRoute: typeof AuthenticatedAdminAdminLayoutIndexRoute
+  AuthenticatedAdminAdminLayoutBlogNewRoute: typeof AuthenticatedAdminAdminLayoutBlogNewRoute
   AuthenticatedAdminAdminLayoutJobsJobIdRoute: typeof AuthenticatedAdminAdminLayoutJobsJobIdRoute
   AuthenticatedAdminAdminLayoutPermissionsPermissionIdRoute: typeof AuthenticatedAdminAdminLayoutPermissionsPermissionIdRoute
   AuthenticatedAdminAdminLayoutPlanFeaturesProductIdRoute: typeof AuthenticatedAdminAdminLayoutPlanFeaturesProductIdRoute
@@ -1339,19 +1458,24 @@ interface AuthenticatedAdminAdminLayoutRouteChildren {
   AuthenticatedAdminAdminLayoutRolesRoleIdRoute: typeof AuthenticatedAdminAdminLayoutRolesRoleIdRoute
   AuthenticatedAdminAdminLayoutUsersUserIdRoute: typeof AuthenticatedAdminAdminLayoutUsersUserIdRoute
   AuthenticatedAdminAdminLayoutAiUsageIndexRoute: typeof AuthenticatedAdminAdminLayoutAiUsageIndexRoute
+  AuthenticatedAdminAdminLayoutBlogIndexRoute: typeof AuthenticatedAdminAdminLayoutBlogIndexRoute
   AuthenticatedAdminAdminLayoutJobsIndexRoute: typeof AuthenticatedAdminAdminLayoutJobsIndexRoute
+  AuthenticatedAdminAdminLayoutMediaIndexRoute: typeof AuthenticatedAdminAdminLayoutMediaIndexRoute
   AuthenticatedAdminAdminLayoutPermissionsIndexRoute: typeof AuthenticatedAdminAdminLayoutPermissionsIndexRoute
   AuthenticatedAdminAdminLayoutPlanFeaturesIndexRoute: typeof AuthenticatedAdminAdminLayoutPlanFeaturesIndexRoute
   AuthenticatedAdminAdminLayoutProductsIndexRoute: typeof AuthenticatedAdminAdminLayoutProductsIndexRoute
   AuthenticatedAdminAdminLayoutRolesIndexRoute: typeof AuthenticatedAdminAdminLayoutRolesIndexRoute
   AuthenticatedAdminAdminLayoutSubscriptionsIndexRoute: typeof AuthenticatedAdminAdminLayoutSubscriptionsIndexRoute
   AuthenticatedAdminAdminLayoutUsersIndexRoute: typeof AuthenticatedAdminAdminLayoutUsersIndexRoute
+  AuthenticatedAdminAdminLayoutBlogPostIdEditRoute: typeof AuthenticatedAdminAdminLayoutBlogPostIdEditRoute
 }
 
 const AuthenticatedAdminAdminLayoutRouteChildren: AuthenticatedAdminAdminLayoutRouteChildren =
   {
     AuthenticatedAdminAdminLayoutIndexRoute:
       AuthenticatedAdminAdminLayoutIndexRoute,
+    AuthenticatedAdminAdminLayoutBlogNewRoute:
+      AuthenticatedAdminAdminLayoutBlogNewRoute,
     AuthenticatedAdminAdminLayoutJobsJobIdRoute:
       AuthenticatedAdminAdminLayoutJobsJobIdRoute,
     AuthenticatedAdminAdminLayoutPermissionsPermissionIdRoute:
@@ -1366,8 +1490,12 @@ const AuthenticatedAdminAdminLayoutRouteChildren: AuthenticatedAdminAdminLayoutR
       AuthenticatedAdminAdminLayoutUsersUserIdRoute,
     AuthenticatedAdminAdminLayoutAiUsageIndexRoute:
       AuthenticatedAdminAdminLayoutAiUsageIndexRoute,
+    AuthenticatedAdminAdminLayoutBlogIndexRoute:
+      AuthenticatedAdminAdminLayoutBlogIndexRoute,
     AuthenticatedAdminAdminLayoutJobsIndexRoute:
       AuthenticatedAdminAdminLayoutJobsIndexRoute,
+    AuthenticatedAdminAdminLayoutMediaIndexRoute:
+      AuthenticatedAdminAdminLayoutMediaIndexRoute,
     AuthenticatedAdminAdminLayoutPermissionsIndexRoute:
       AuthenticatedAdminAdminLayoutPermissionsIndexRoute,
     AuthenticatedAdminAdminLayoutPlanFeaturesIndexRoute:
@@ -1380,6 +1508,8 @@ const AuthenticatedAdminAdminLayoutRouteChildren: AuthenticatedAdminAdminLayoutR
       AuthenticatedAdminAdminLayoutSubscriptionsIndexRoute,
     AuthenticatedAdminAdminLayoutUsersIndexRoute:
       AuthenticatedAdminAdminLayoutUsersIndexRoute,
+    AuthenticatedAdminAdminLayoutBlogPostIdEditRoute:
+      AuthenticatedAdminAdminLayoutBlogPostIdEditRoute,
   }
 
 const AuthenticatedAdminAdminLayoutRouteWithChildren =
@@ -1509,8 +1639,21 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface LandingBlogRouteChildren {
+  LandingBlogSlugRoute: typeof LandingBlogSlugRoute
+}
+
+const LandingBlogRouteChildren: LandingBlogRouteChildren = {
+  LandingBlogSlugRoute: LandingBlogSlugRoute,
+}
+
+const LandingBlogRouteWithChildren = LandingBlogRoute._addFileChildren(
+  LandingBlogRouteChildren,
+)
+
 interface LandingRouteChildren {
   LandingAboutRoute: typeof LandingAboutRoute
+  LandingBlogRoute: typeof LandingBlogRouteWithChildren
   LandingContactRoute: typeof LandingContactRoute
   LandingFeaturesRoute: typeof LandingFeaturesRoute
   LandingHomeRoute: typeof LandingHomeRoute
@@ -1522,6 +1665,7 @@ interface LandingRouteChildren {
 
 const LandingRouteChildren: LandingRouteChildren = {
   LandingAboutRoute: LandingAboutRoute,
+  LandingBlogRoute: LandingBlogRouteWithChildren,
   LandingContactRoute: LandingContactRoute,
   LandingFeaturesRoute: LandingFeaturesRoute,
   LandingHomeRoute: LandingHomeRoute,
