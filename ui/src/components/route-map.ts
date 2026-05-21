@@ -52,4 +52,5 @@ export const RouteMap = {
   ADMIN_BLOG: "/admin/blog",
   ADMIN_BLOG_NEW: "/admin/blog/new",
   ADMIN_BLOG_EDIT: "/admin/blog/:postId/edit",
+  ADMIN_MEDIA: "/admin/media",
 };

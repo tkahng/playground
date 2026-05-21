@@ -142,6 +142,11 @@ export const RouteLinks = {
     title: "Blog",
     current: (pathname: string) => pathname.startsWith(RouteMap.ADMIN_BLOG),
   },
+  ADMIN_DASHBOARD_MEDIA: {
+    to: RouteMap.ADMIN_MEDIA,
+    title: "Media",
+    current: (pathname: string) => pathname.startsWith(RouteMap.ADMIN_MEDIA),
+  },
   BLOG: {
     to: RouteMap.BLOG,
     title: "Blog",
@@ -182,6 +187,7 @@ export const adminHeaderLinks: LinkDto[] = [
   RouteLinks.ADMIN_DASHBOARD_AI_USAGE,
   RouteLinks.ADMIN_DASHBOARD_JOBS,
   RouteLinks.ADMIN_DASHBOARD_BLOG,
+  RouteLinks.ADMIN_DASHBOARD_MEDIA,
 ];
 
 export const authenticatedSubHeaderLinks: LinkDto[] = [
