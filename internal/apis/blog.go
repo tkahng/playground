@@ -22,22 +22,23 @@ type BlogTag struct {
 }
 
 type BlogPost struct {
-	ID                 uuid.UUID                `json:"id"`
-	Slug               string                   `json:"slug"`
-	Title              string                   `json:"title"`
-	Content            string                   `json:"content"`
-	ContentFormat      models.BlogContentFormat `json:"content_format"`
-	Status             models.BlogPostStatus    `json:"status"`
-	AuthorID           uuid.UUID                `json:"author_id"`
-	PublishedAt        *time.Time               `json:"published_at" nullable:"true"`
-	FeaturedImageURL   *string                  `json:"featured_image_url" nullable:"true"`
-	SeoTitle           *string                  `json:"seo_title" nullable:"true"`
-	SeoDescription     *string                  `json:"seo_description" nullable:"true"`
-	ReadingTimeMinutes *int                     `json:"reading_time_minutes" nullable:"true"`
-	ViewCount          int64                    `json:"view_count"`
-	Tags               []*BlogTag               `json:"tags,omitempty"`
-	CreatedAt          time.Time                `json:"created_at"`
-	UpdatedAt          time.Time                `json:"updated_at"`
+	ID                   uuid.UUID                `json:"id"`
+	Slug                 string                   `json:"slug"`
+	Title                string                   `json:"title"`
+	Content              string                   `json:"content"`
+	ContentFormat        models.BlogContentFormat `json:"content_format"`
+	Status               models.BlogPostStatus    `json:"status"`
+	AuthorID             uuid.UUID                `json:"author_id"`
+	PublishedAt          *time.Time               `json:"published_at" nullable:"true"`
+	FeaturedImageID      *uuid.UUID               `json:"featured_image_id" nullable:"true"`
+	FeaturedImageURL     *string                  `json:"featured_image_url" nullable:"true"`
+	SeoTitle             *string                  `json:"seo_title" nullable:"true"`
+	SeoDescription       *string                  `json:"seo_description" nullable:"true"`
+	ReadingTimeMinutes   *int                     `json:"reading_time_minutes" nullable:"true"`
+	ViewCount            int64                    `json:"view_count"`
+	Tags                 []*BlogTag               `json:"tags,omitempty"`
+	CreatedAt            time.Time                `json:"created_at"`
+	UpdatedAt            time.Time                `json:"updated_at"`
 }
 
 func fromModelBlogTag(t *models.BlogTag) *BlogTag {
@@ -47,7 +48,30 @@ func fromModelBlogTag(t *models.BlogTag) *BlogTag {
 	return &BlogTag{ID: t.ID, Name: t.Name, Slug: t.Slug, CreatedAt: t.CreatedAt}
 }
 
-func (api *Api) fromModelBlogPost(p *models.BlogPost) *BlogPost {
+// loadFeaturedMedia batch-fetches media records for the given posts' featured images.
+// Returns a map of media_id → *models.Medium; missing IDs are simply absent from the map.
+func (api *Api) loadFeaturedMedia(ctx context.Context, posts ...*models.BlogPost) map[uuid.UUID]*models.Medium {
+	ids := make([]uuid.UUID, 0, len(posts))
+	for _, p := range posts {
+		if p.FeaturedImageID != nil {
+			ids = append(ids, *p.FeaturedImageID)
+		}
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	medias, err := api.App().Adapter().Media().FindMediaByIDs(ctx, ids)
+	if err != nil {
+		return nil
+	}
+	m := make(map[uuid.UUID]*models.Medium, len(medias))
+	for _, med := range medias {
+		m[med.ID] = med
+	}
+	return m
+}
+
+func (api *Api) fromModelBlogPost(p *models.BlogPost, media map[uuid.UUID]*models.Medium) *BlogPost {
 	if p == nil {
 		return nil
 	}
@@ -55,11 +79,19 @@ func (api *Api) fromModelBlogPost(p *models.BlogPost) *BlogPost {
 	for i, t := range p.Tags {
 		tags[i] = fromModelBlogTag(t)
 	}
+
 	var featuredImageURL *string
-	if p.FeaturedImageKey != nil {
-		u := api.App().Fs().PublicURL(*p.FeaturedImageKey)
-		featuredImageURL = &u
+	if p.FeaturedImageID != nil {
+		if m, ok := media[*p.FeaturedImageID]; ok {
+			if m.PublicURL != nil {
+				featuredImageURL = m.PublicURL
+			} else {
+				u := api.App().Fs().PublicURL(m.StorageKey)
+				featuredImageURL = &u
+			}
+		}
 	}
+
 	return &BlogPost{
 		ID:                 p.ID,
 		Slug:               p.Slug,
@@ -69,6 +101,7 @@ func (api *Api) fromModelBlogPost(p *models.BlogPost) *BlogPost {
 		Status:             p.Status,
 		AuthorID:           p.AuthorID,
 		PublishedAt:        p.PublishedAt,
+		FeaturedImageID:    p.FeaturedImageID,
 		FeaturedImageURL:   featuredImageURL,
 		SeoTitle:           p.SeoTitle,
 		SeoDescription:     p.SeoDescription,
@@ -98,7 +131,6 @@ func (api *Api) BlogPostList(ctx context.Context, input *BlogPostListInput) (*Ap
 	filter.SortOrder = input.SortOrder
 	filter.Q = input.Q
 
-	// non-admins only see published posts
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	isAdmin := userInfo != nil && slices.Contains(userInfo.Permissions, "superuser")
 	if !isAdmin {
@@ -126,9 +158,10 @@ func (api *Api) BlogPostList(ctx context.Context, input *BlogPostListInput) (*Ap
 		return nil, err
 	}
 
+	media := api.loadFeaturedMedia(ctx, posts...)
 	data := make([]*BlogPost, len(posts))
 	for i, p := range posts {
-		data[i] = api.fromModelBlogPost(p)
+		data[i] = api.fromModelBlogPost(p, media)
 	}
 	return &ApiPaginatedOutput[*BlogPost]{
 		Body: ApiPaginatedResponse[*BlogPost]{
@@ -148,7 +181,6 @@ func (api *Api) BlogPostGet(ctx context.Context, input *struct {
 		return nil, huma.Error404NotFound("post not found")
 	}
 
-	// Only published posts visible to anonymous; admins see all
 	userInfo := contextstore.GetContextUserInfo(ctx)
 	isAdmin := userInfo != nil && slices.Contains(userInfo.Permissions, "superuser")
 	if !isAdmin && post.Status != models.BlogPostStatusPublished {
@@ -159,7 +191,8 @@ func (api *Api) BlogPostGet(ctx context.Context, input *struct {
 		_ = api.App().Adapter().Blog().IncrementViewCount(ctx, post.ID)
 	}
 
-	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post)}}, nil
+	media := api.loadFeaturedMedia(ctx, post)
+	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post, media)}}, nil
 }
 
 // ── Create post (admin) ────────────────────────────────────────────────────
@@ -179,7 +212,8 @@ func (api *Api) BlogPostCreate(ctx context.Context, input *BlogPostCreateInput) 
 	if err != nil {
 		return nil, err
 	}
-	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post)}}, nil
+	media := api.loadFeaturedMedia(ctx, post)
+	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post, media)}}, nil
 }
 
 // ── Update post (admin) ────────────────────────────────────────────────────
@@ -198,7 +232,8 @@ func (api *Api) BlogPostUpdate(ctx context.Context, input *BlogPostUpdateInput) 
 	if err != nil {
 		return nil, err
 	}
-	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post)}}, nil
+	media := api.loadFeaturedMedia(ctx, post)
+	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post, media)}}, nil
 }
 
 // ── Publish post (admin) ───────────────────────────────────────────────────
@@ -214,7 +249,8 @@ func (api *Api) BlogPostPublish(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post)}}, nil
+	media := api.loadFeaturedMedia(ctx, post)
+	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post, media)}}, nil
 }
 
 // ── Unpublish post (admin) ─────────────────────────────────────────────────
@@ -230,7 +266,8 @@ func (api *Api) BlogPostUnpublish(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post)}}, nil
+	media := api.loadFeaturedMedia(ctx, post)
+	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post, media)}}, nil
 }
 
 // ── Archive post (admin) ───────────────────────────────────────────────────
@@ -246,7 +283,8 @@ func (api *Api) BlogPostArchive(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post)}}, nil
+	media := api.loadFeaturedMedia(ctx, post)
+	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post, media)}}, nil
 }
 
 // ── Delete post (admin) ────────────────────────────────────────────────────
@@ -289,4 +327,3 @@ func (api *Api) BlogTagCreate(ctx context.Context, input *BlogTagCreateInput) (*
 	}
 	return &ApiSingleOutput[*BlogTag]{Body: ApiSingleResponse[*BlogTag]{Data: fromModelBlogTag(tag)}}, nil
 }
-

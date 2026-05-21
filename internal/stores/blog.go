@@ -65,7 +65,7 @@ type CreateBlogPostDTO struct {
 	Content          string                   `json:"content" required:"false"`
 	ContentFormat    models.BlogContentFormat `json:"content_format" required:"false" enum:"tiptap,markdown"`
 	AuthorID         uuid.UUID                `json:"-"`
-	FeaturedImageKey *string                  `json:"featured_image_key,omitempty" required:"false"`
+	FeaturedImageMediaID *uuid.UUID               `json:"featured_image_media_id,omitempty" required:"false" format:"uuid"`
 	SeoTitle         *string                  `json:"seo_title,omitempty" required:"false"`
 	SeoDescription   *string                  `json:"seo_description,omitempty" required:"false"`
 	TagIDs           []uuid.UUID              `json:"tag_ids,omitempty" required:"false" format:"uuid"`
@@ -75,7 +75,7 @@ type UpdateBlogPostDTO struct {
 	Title            *string                   `json:"title,omitempty" required:"false" minLength:"1"`
 	Content          *string                   `json:"content,omitempty" required:"false"`
 	ContentFormat    *models.BlogContentFormat `json:"content_format,omitempty" required:"false" enum:"tiptap,markdown"`
-	FeaturedImageKey *string                   `json:"featured_image_key,omitempty" required:"false"`
+	FeaturedImageMediaID *uuid.UUID                `json:"featured_image_media_id,omitempty" required:"false" format:"uuid"`
 	SeoTitle         *string                   `json:"seo_title,omitempty" required:"false"`
 	SeoDescription   *string                   `json:"seo_description,omitempty" required:"false"`
 	TagIDs           []uuid.UUID               `json:"tag_ids,omitempty" required:"false" format:"uuid"`
@@ -197,7 +197,7 @@ func (s *DbBlogStore) CreatePost(ctx context.Context, input *CreateBlogPostDTO) 
 		ContentFormat:      contentFormat,
 		Status:             models.BlogPostStatusDraft,
 		AuthorID:           input.AuthorID,
-		FeaturedImageKey:   input.FeaturedImageKey,
+		FeaturedImageID:    input.FeaturedImageMediaID,
 		SeoTitle:           input.SeoTitle,
 		SeoDescription:     input.SeoDescription,
 		ReadingTimeMinutes: &rt,
@@ -250,8 +250,8 @@ func (s *DbBlogStore) UpdatePost(ctx context.Context, postID uuid.UUID, input *U
 	if input.ContentFormat != nil {
 		post.ContentFormat = *input.ContentFormat
 	}
-	if input.FeaturedImageKey != nil {
-		post.FeaturedImageKey = input.FeaturedImageKey
+	if input.FeaturedImageMediaID != nil {
+		post.FeaturedImageID = input.FeaturedImageMediaID
 	}
 	if input.SeoTitle != nil {
 		post.SeoTitle = input.SeoTitle

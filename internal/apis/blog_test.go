@@ -13,13 +13,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tkahng/playground/internal/apis"
-	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/tools/filesystem"
 )
 
 // createBlogPost is a test helper that creates a post directly through the store.
@@ -419,21 +417,33 @@ func TestApi_BlogPost_FeaturedImageURL(t *testing.T) {
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		testApi := apis.SetupApi(t, ctx, db)
 
-		const publicBase = "https://pub.example.com"
-		testApi.App.SetFs(filesystem.NewMockFileSystem(conf.StorageConfig{
-			PublicBaseURL: publicBase,
-		}))
+		const publicURL = "https://pub.example.com/media/abc123.jpg"
+		const storageKey = "media/abc123.jpg"
 
 		admin := core.CreateUserWithOptions(t, testApi.App,
 			core.UserWithVerifiedNow(),
 			core.UserWithPermission(shared.PermissionNameAdmin),
 		)
 
-		const imageKey = "media/abc123.jpg"
+		// Create a media record directly — no file upload needed for URL resolution test.
+		pub := publicURL
+		medium, err := testApi.App.Adapter().Media().CreateMedia(ctx, &models.Medium{
+			UserID:           &admin.User.ID,
+			StorageKey:       storageKey,
+			PublicURL:        &pub,
+			MimeType:         "image/jpeg",
+			Size:             1024,
+			OriginalFilename: "abc123.jpg",
+			Extension:        ".jpg",
+			Disk:             "test-bucket",
+			Directory:        "media",
+			Filename:         "abc123.jpg",
+		})
+		require.NoError(t, err)
+
 		postWithImage := createBlogPost(t, testApi.App, admin.User.ID, "Image Post", "content", models.BlogPostStatusPublished)
-		imageKeyVal := imageKey
-		_, err := testApi.App.Adapter().Blog().UpdatePost(ctx, postWithImage.ID, &stores.UpdateBlogPostDTO{
-			FeaturedImageKey: &imageKeyVal,
+		_, err = testApi.App.Adapter().Blog().UpdatePost(ctx, postWithImage.ID, &stores.UpdateBlogPostDTO{
+			FeaturedImageMediaID: &medium.ID,
 		})
 		require.NoError(t, err)
 
@@ -441,7 +451,7 @@ func TestApi_BlogPost_FeaturedImageURL(t *testing.T) {
 
 		tests := []apis.ApiScenario{
 			{
-				Name:           "post with featured_image_key resolves to public URL",
+				Name:           "post with featured_image_media_id returns stored public URL",
 				Method:         http.MethodGet,
 				URL:            fmt.Sprintf("/blog/posts/%s", postWithImage.Slug),
 				ExpectedStatus: http.StatusOK,
@@ -450,11 +460,13 @@ func TestApi_BlogPost_FeaturedImageURL(t *testing.T) {
 					var body apis.ApiSingleResponse[*apis.BlogPost]
 					require.NoError(t, json.Unmarshal(res.Body.Bytes(), &body))
 					require.NotNil(t, body.Data.FeaturedImageURL)
-					assert.Equal(t, publicBase+"/"+imageKey, *body.Data.FeaturedImageURL)
+					assert.Equal(t, publicURL, *body.Data.FeaturedImageURL)
+					require.NotNil(t, body.Data.FeaturedImageID)
+					assert.Equal(t, medium.ID, *body.Data.FeaturedImageID)
 				},
 			},
 			{
-				Name:           "post without featured_image_key returns null featured_image_url",
+				Name:           "post without featured image returns null featured_image_url",
 				Method:         http.MethodGet,
 				URL:            fmt.Sprintf("/blog/posts/%s", postNoImage.Slug),
 				ExpectedStatus: http.StatusOK,
@@ -463,6 +475,7 @@ func TestApi_BlogPost_FeaturedImageURL(t *testing.T) {
 					var body apis.ApiSingleResponse[*apis.BlogPost]
 					require.NoError(t, json.Unmarshal(res.Body.Bytes(), &body))
 					assert.Nil(t, body.Data.FeaturedImageURL)
+					assert.Nil(t, body.Data.FeaturedImageID)
 				},
 			},
 		}

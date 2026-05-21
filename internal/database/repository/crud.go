@@ -59,9 +59,8 @@ var (
 	StripeSubscriptionBuilder = NewSQLBuilder[models.StripeSubscription](
 		InsertID,
 	)
-	MediaBuilder = NewSQLBuilder[models.Medium](
-		UuidV7Generator,
-	)
+	MediaBuilder           = NewSQLBuilder[models.Medium](UuidV7Generator)
+	MediaAttachmentBuilder = NewSQLBuilder[models.MediaAttachment](UuidV7Generator)
 	AiUsageBuilder = NewSQLBuilder[models.AiUsage](
 		UuidV7Generator,
 	)
@@ -133,6 +132,7 @@ var (
 	StripeCustomer     Repository[models.StripeCustomer]     = NewPostgresRepository(StripeCustomerBuilder)
 	StripeSubscription Repository[models.StripeSubscription] = NewPostgresRepository(StripeSubscriptionBuilder)
 	Media              Repository[models.Medium]             = NewPostgresRepository(MediaBuilder)
+	MediaAttachment    Repository[models.MediaAttachment]   = NewPostgresRepository(MediaAttachmentBuilder)
 	AiUsage            Repository[models.AiUsage]            = NewPostgresRepository(AiUsageBuilder)
 	PlanFeatures       Repository[models.PlanFeatures]       = NewPostgresRepository(PlanFeaturesBuilder)
 	Team               Repository[models.Team]               = NewPostgresRepository(TeamBuilder)

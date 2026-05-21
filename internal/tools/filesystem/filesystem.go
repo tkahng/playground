@@ -147,13 +147,15 @@ func (fs *S3FileSystem) PutFileFromBytes(ctx context.Context, b []byte, name str
 
 	dto := &FileDto{
 		ID:           id,
+		StorageKey:   key,
+		PublicURL:    fs.PublicURL(key),
+		MimeType:     mime,
+		Size:         int64(size),
+		OriginalName: name,
+		Extension:    ext,
 		Disk:         fs.cfg.BucketName,
 		Directory:    path.Dir(key),
 		Filename:     path.Base(key),
-		OriginalName: name,
-		Extension:    ext,
-		MimeType:     mime,
-		Size:         int64(size),
 	}
 	return dto, nil
 }

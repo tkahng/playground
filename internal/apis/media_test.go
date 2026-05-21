@@ -45,15 +45,18 @@ func buildMultipart(t testing.TB, fieldName, filename string, content []byte) (*
 
 // buildMedium constructs a Medium model from a filesystem FileDto and a user ID.
 func buildMedium(userID uuid.UUID, dto *filesystem.FileDto) *models.Medium {
+	pub := dto.PublicURL
 	return &models.Medium{
 		UserID:           &userID,
+		StorageKey:       dto.StorageKey,
+		PublicURL:        &pub,
+		MimeType:         dto.MimeType,
+		Size:             dto.Size,
+		OriginalFilename: dto.OriginalName,
+		Extension:        dto.Extension,
 		Disk:             dto.Disk,
 		Directory:        dto.Directory,
 		Filename:         dto.Filename,
-		OriginalFilename: dto.OriginalName,
-		Extension:        dto.Extension,
-		MimeType:         dto.MimeType,
-		Size:             dto.Size,
 	}
 }
 

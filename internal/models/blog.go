@@ -31,7 +31,7 @@ type BlogPost struct {
 	Status             BlogPostStatus    `db:"status" json:"status"`
 	AuthorID           uuid.UUID         `db:"author_id" json:"author_id"`
 	PublishedAt        *time.Time        `db:"published_at" json:"published_at" nullable:"true"`
-	FeaturedImageKey   *string           `db:"featured_image_key" json:"featured_image_key" nullable:"true"`
+	FeaturedImageID    *uuid.UUID        `db:"featured_image_id" json:"featured_image_id" nullable:"true"`
 	SeoTitle           *string           `db:"seo_title" json:"seo_title" nullable:"true"`
 	SeoDescription     *string           `db:"seo_description" json:"seo_description" nullable:"true"`
 	ReadingTimeMinutes *int              `db:"reading_time_minutes" json:"reading_time_minutes" nullable:"true"`

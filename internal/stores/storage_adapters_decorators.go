@@ -208,6 +208,11 @@ func (s *StorageAdapterDecorator) Media() MediaStoreInterface {
 	return s.Delegate.Media()
 }
 
+// MediaAttachment implements StorageAdapterInterface.
+func (s *StorageAdapterDecorator) MediaAttachment() MediaAttachmentStoreInterface {
+	return s.Delegate.MediaAttachment()
+}
+
 // Rbac implements StorageAdapterInterface.
 func (s *StorageAdapterDecorator) Rbac() DbRbacStoreInterface {
 	if s.RbacFunc != nil {

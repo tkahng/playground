@@ -3,12 +3,15 @@ package filesystem
 import "github.com/google/uuid"
 
 type FileDto struct {
-	ID           uuid.UUID `json:"id"`
-	Disk         string    `db:"disk" json:"disk"`
-	Directory    string    `db:"directory" json:"directory"`
-	Filename     string    `db:"filename" json:"filename"`
-	OriginalName string    `db:"original_name" json:"original_name"`
-	Extension    string    `db:"extension" json:"extension"`
-	MimeType     string    `db:"mime_type" json:"mime_type"`
-	Size         int64     `db:"size" json:"size"`
+	ID           uuid.UUID
+	StorageKey   string // full bucket path, e.g. "media/uuid.jpg"
+	PublicURL    string // stable public URL stored at upload time
+	MimeType     string
+	Size         int64
+	OriginalName string
+	Extension    string
+	// Legacy fields retained for backward compatibility.
+	Disk      string
+	Directory string
+	Filename  string
 }
