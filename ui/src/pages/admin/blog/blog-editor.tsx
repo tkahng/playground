@@ -1,4 +1,5 @@
 import { CenteredSpinner } from "@/components/centered-spinner";
+import { MediaPickerDialog } from "@/components/blog/media-picker-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,7 @@ import {
 } from "@/lib/blog-queries";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { type MediaItem } from "@/lib/media-queries";
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -50,6 +52,7 @@ export default function BlogEditor({ postId }: BlogEditorProps) {
   const [seoDescription, setSeoDescription] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [newTagName, setNewTagName] = useState("");
+  const [featuredImage, setFeaturedImage] = useState<MediaItem | null>(null);
 
   const { data: existingPost, isLoading: loadingPost } = useQuery({
     queryKey: ["admin-blog-post", postId],
@@ -70,6 +73,21 @@ export default function BlogEditor({ postId }: BlogEditorProps) {
       setSeoTitle(existingPost.seo_title ?? "");
       setSeoDescription(existingPost.seo_description ?? "");
       setSelectedTagIds((existingPost.tags ?? []).map((t) => t.id));
+      if (existingPost.featured_image_id && existingPost.featured_image_url) {
+        setFeaturedImage({
+          id: existingPost.featured_image_id,
+          url: existingPost.featured_image_url,
+          storage_key: "",
+          mime_type: "image/jpeg",
+          size: 0,
+          original_filename: "Featured image",
+          alt_text: null,
+          width: null,
+          height: null,
+          created_at: "",
+          updated_at: "",
+        });
+      }
     }
   }, [existingPost]);
 
@@ -141,6 +159,7 @@ export default function BlogEditor({ postId }: BlogEditorProps) {
       seo_title: seoTitle || undefined,
       seo_description: seoDescription || undefined,
       tag_ids: selectedTagIds,
+      featured_image_media_id: featuredImage?.id,
     };
     if (isEdit) {
       updateMutation.mutate(input);
@@ -305,6 +324,37 @@ export default function BlogEditor({ postId }: BlogEditorProps) {
             placeholder="Brief description for search engines"
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Featured Image</Label>
+        {featuredImage ? (
+          <div className="flex items-start gap-3 p-3 border rounded-lg bg-muted/30">
+            {featuredImage.mime_type.startsWith("image/") && (
+              <img
+                src={featuredImage.url}
+                alt={featuredImage.alt_text ?? featuredImage.original_filename}
+                className="w-24 h-16 object-cover rounded"
+              />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{featuredImage.original_filename}</p>
+              <p className="text-xs text-muted-foreground truncate">{featuredImage.url}</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              className="shrink-0"
+              onClick={() => setFeaturedImage(null)}
+              aria-label="Remove featured image"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ) : (
+          <MediaPickerDialog onSelect={setFeaturedImage} />
+        )}
       </div>
 
       <div className="space-y-2">

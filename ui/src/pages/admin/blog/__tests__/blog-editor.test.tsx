@@ -10,6 +10,10 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-router")>();
   return { ...actual, useNavigate: () => vi.fn() };
 });
+vi.mock("@/lib/media-queries", () => ({
+  listMedia: vi.fn().mockResolvedValue({ data: [], meta: { page: 0, per_page: 20, total: 0, next_page: null, prev_page: null, has_more: false } }),
+  uploadMedia: vi.fn(),
+}));
 
 const draftPost: BlogPost = {
   id: "post-1",
@@ -51,6 +55,11 @@ describe("BlogEditor — new post", () => {
     expect(screen.queryByRole("button", { name: /publish/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /unpublish/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /archive/i })).not.toBeInTheDocument();
+  });
+
+  it("shows 'Choose image' featured image picker button", () => {
+    render(<BlogEditor />);
+    expect(screen.getByRole("button", { name: /choose image/i })).toBeInTheDocument();
   });
 });
 
