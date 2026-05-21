@@ -19,7 +19,8 @@ export interface BlogPost {
   status: BlogPostStatus;
   author_id: string;
   published_at: string | null;
-  featured_image_key: string | null;
+  featured_image_id: string | null;
+  featured_image_url: string | null;
   seo_title: string | null;
   seo_description: string | null;
   reading_time_minutes: number | null;
@@ -47,7 +48,7 @@ export interface CreateBlogPostInput {
   title: string;
   content?: string;
   content_format?: BlogContentFormat;
-  featured_image_key?: string;
+  featured_image_media_id?: string;
   seo_title?: string;
   seo_description?: string;
   tag_ids?: string[];
@@ -57,7 +58,7 @@ export interface UpdateBlogPostInput {
   title?: string;
   content?: string;
   content_format?: BlogContentFormat;
-  featured_image_key?: string;
+  featured_image_media_id?: string;
   seo_title?: string;
   seo_description?: string;
   tag_ids?: string[];
