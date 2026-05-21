@@ -443,7 +443,7 @@ func TestApi_BlogPost_FeaturedImageURL(t *testing.T) {
 
 		postWithImage := createBlogPost(t, testApi.App, admin.User.ID, "Image Post", "content", models.BlogPostStatusPublished)
 		_, err = testApi.App.Adapter().Blog().UpdatePost(ctx, postWithImage.ID, &stores.UpdateBlogPostDTO{
-			FeaturedImageMediaID: &medium.ID,
+			FeaturedImageMediaID: stores.NullableUUID{Set: true, Value: &medium.ID},
 		})
 		require.NoError(t, err)
 

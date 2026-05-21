@@ -132,6 +132,7 @@ export function TiptapNodeRenderer({ node }: { node: TiptapNode }) {
 
     case "image": {
       const src = node.attrs?.src as string | undefined;
+      if (!src) return null;
       const alt = node.attrs?.alt as string | undefined;
       const title = node.attrs?.title as string | undefined;
       return <img src={src} alt={alt ?? ""} title={title} />;

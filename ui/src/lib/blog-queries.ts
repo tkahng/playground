@@ -58,9 +58,12 @@ export interface UpdateBlogPostInput {
   title?: string;
   content?: string;
   content_format?: BlogContentFormat;
-  featured_image_media_id?: string;
-  seo_title?: string;
-  seo_description?: string;
+  /** null = clear the featured image; omit = leave unchanged. */
+  featured_image_media_id?: string | null;
+  /** null = clear; omit = leave unchanged. */
+  seo_title?: string | null;
+  /** null = clear; omit = leave unchanged. */
+  seo_description?: string | null;
   tag_ids?: string[];
 }
 

@@ -23,6 +23,7 @@ import (
 
 type StorageClient interface {
 	PutObject(ctx context.Context, params *awss3.PutObjectInput, optFns ...func(*awss3.Options)) (*awss3.PutObjectOutput, error)
+	DeleteObject(ctx context.Context, params *awss3.DeleteObjectInput, optFns ...func(*awss3.Options)) (*awss3.DeleteObjectOutput, error)
 }
 
 type HttpRequestDoer interface {
@@ -63,6 +64,14 @@ func NewFileSystem(ctx context.Context, cfg conf.StorageConfig) (FileSystem, err
 		cfg:           cfg,
 		httpClient:    http.DefaultClient,
 	}, nil
+}
+
+func (fs *S3FileSystem) DeleteObject(ctx context.Context, key string) error {
+	_, err := fs.storageClient.DeleteObject(ctx, &awss3.DeleteObjectInput{
+		Bucket: aws.String(fs.cfg.BucketName),
+		Key:    aws.String(key),
+	})
+	return err
 }
 
 func (fs *S3FileSystem) PublicURL(key string) string {

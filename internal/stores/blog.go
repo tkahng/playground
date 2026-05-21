@@ -72,13 +72,13 @@ type CreateBlogPostDTO struct {
 }
 
 type UpdateBlogPostDTO struct {
-	Title            *string                   `json:"title,omitempty" required:"false" minLength:"1"`
-	Content          *string                   `json:"content,omitempty" required:"false"`
-	ContentFormat    *models.BlogContentFormat `json:"content_format,omitempty" required:"false" enum:"tiptap,markdown"`
-	FeaturedImageMediaID *uuid.UUID                `json:"featured_image_media_id,omitempty" required:"false" format:"uuid"`
-	SeoTitle         *string                   `json:"seo_title,omitempty" required:"false"`
-	SeoDescription   *string                   `json:"seo_description,omitempty" required:"false"`
-	TagIDs           []uuid.UUID               `json:"tag_ids,omitempty" required:"false" format:"uuid"`
+	Title                *string                   `json:"title,omitempty" required:"false" minLength:"1"`
+	Content              *string                   `json:"content,omitempty" required:"false"`
+	ContentFormat        *models.BlogContentFormat `json:"content_format,omitempty" required:"false" enum:"tiptap,markdown"`
+	FeaturedImageMediaID NullableUUID              `json:"featured_image_media_id" required:"false"`
+	SeoTitle             NullableString            `json:"seo_title" required:"false"`
+	SeoDescription       NullableString            `json:"seo_description" required:"false"`
+	TagIDs               []uuid.UUID               `json:"tag_ids,omitempty" required:"false" format:"uuid"`
 }
 
 type CreateBlogTagDTO struct {
@@ -250,14 +250,14 @@ func (s *DbBlogStore) UpdatePost(ctx context.Context, postID uuid.UUID, input *U
 	if input.ContentFormat != nil {
 		post.ContentFormat = *input.ContentFormat
 	}
-	if input.FeaturedImageMediaID != nil {
-		post.FeaturedImageID = input.FeaturedImageMediaID
+	if input.FeaturedImageMediaID.Set {
+		post.FeaturedImageID = input.FeaturedImageMediaID.Value
 	}
-	if input.SeoTitle != nil {
-		post.SeoTitle = input.SeoTitle
+	if input.SeoTitle.Set {
+		post.SeoTitle = input.SeoTitle.Value
 	}
-	if input.SeoDescription != nil {
-		post.SeoDescription = input.SeoDescription
+	if input.SeoDescription.Set {
+		post.SeoDescription = input.SeoDescription.Value
 	}
 
 	var updated *models.BlogPost

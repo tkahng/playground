@@ -2,6 +2,7 @@ package apis
 
 import (
 	"context"
+	"log/slog"
 	"slices"
 	"time"
 
@@ -62,6 +63,7 @@ func (api *Api) loadFeaturedMedia(ctx context.Context, posts ...*models.BlogPost
 	}
 	medias, err := api.App().Adapter().Media().FindMediaByIDs(ctx, ids)
 	if err != nil {
+		slog.ErrorContext(ctx, "loadFeaturedMedia: FindMediaByIDs failed", "error", err)
 		return nil
 	}
 	m := make(map[uuid.UUID]*models.Medium, len(medias))
@@ -176,8 +178,15 @@ func (api *Api) BlogPostList(ctx context.Context, input *BlogPostListInput) (*Ap
 func (api *Api) BlogPostGet(ctx context.Context, input *struct {
 	Slug string `path:"slug" required:"true"`
 }) (*ApiSingleOutput[*BlogPost], error) {
-	post, err := api.App().Adapter().Blog().FindPostBySlug(ctx, input.Slug)
-	if err != nil {
+	var post *models.BlogPost
+	var err error
+	// Accept a UUID (admin direct link by post ID) or a slug (public URL).
+	if id, parseErr := uuid.Parse(input.Slug); parseErr == nil {
+		post, err = api.App().Adapter().Blog().FindPostByID(ctx, id)
+	} else {
+		post, err = api.App().Adapter().Blog().FindPostBySlug(ctx, input.Slug)
+	}
+	if err != nil || post == nil {
 		return nil, huma.Error404NotFound("post not found")
 	}
 

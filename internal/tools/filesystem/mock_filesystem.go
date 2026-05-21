@@ -9,8 +9,9 @@ import (
 )
 
 type StorageClientDecorator struct {
-	StorageClientFunc func() StorageClient
-	PutObjectFunc     func(ctx context.Context, params *awss3.PutObjectInput, optFns ...func(*awss3.Options)) (*awss3.PutObjectOutput, error)
+	StorageClientFunc  func() StorageClient
+	PutObjectFunc      func(ctx context.Context, params *awss3.PutObjectInput, optFns ...func(*awss3.Options)) (*awss3.PutObjectOutput, error)
+	DeleteObjectFunc   func(ctx context.Context, params *awss3.DeleteObjectInput, optFns ...func(*awss3.Options)) (*awss3.DeleteObjectOutput, error)
 }
 
 func (s *StorageClientDecorator) PutObject(ctx context.Context, params *awss3.PutObjectInput, optFns ...func(*awss3.Options)) (*awss3.PutObjectOutput, error) {
@@ -18,6 +19,13 @@ func (s *StorageClientDecorator) PutObject(ctx context.Context, params *awss3.Pu
 		return s.PutObjectFunc(ctx, params, optFns...)
 	}
 	return s.StorageClientFunc().PutObject(ctx, params, optFns...)
+}
+
+func (s *StorageClientDecorator) DeleteObject(ctx context.Context, params *awss3.DeleteObjectInput, optFns ...func(*awss3.Options)) (*awss3.DeleteObjectOutput, error) {
+	if s.DeleteObjectFunc != nil {
+		return s.DeleteObjectFunc(ctx, params, optFns...)
+	}
+	return s.StorageClientFunc().DeleteObject(ctx, params, optFns...)
 }
 
 func NewMockFileSystem(cfg conf.StorageConfig) FileSystem {
@@ -31,6 +39,7 @@ type S3FileSystemDecorator struct {
 	PutFileFunc           func(ctx context.Context, authority string, key string, file io.Reader) error
 	PutFileFromBytesFunc  func(ctx context.Context, b []byte, name string) (*FileDto, error)
 	PutNewFileFromURLFunc func(ctx context.Context, url string) (*FileDto, error)
+	DeleteObjectFunc      func(ctx context.Context, key string) error
 	PublicURLFunc         func(key string) string
 	StorageClientFunc     func() StorageClient
 	HttpClientFunc        func() HttpRequestDoer
@@ -58,6 +67,14 @@ func (s *S3FileSystemDecorator) PutNewFileFromURL(ctx context.Context, url strin
 		return s.PutNewFileFromURLFunc(ctx, url)
 	}
 	return s.Delegate.PutNewFileFromURL(ctx, url)
+}
+
+// DeleteObject implements FileSystem.
+func (s *S3FileSystemDecorator) DeleteObject(ctx context.Context, key string) error {
+	if s.DeleteObjectFunc != nil {
+		return s.DeleteObjectFunc(ctx, key)
+	}
+	return s.Delegate.DeleteObject(ctx, key)
 }
 
 // PublicURL implements FileSystem.

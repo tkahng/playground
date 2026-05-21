@@ -152,19 +152,27 @@ export default function BlogEditor({ postId }: BlogEditorProps) {
   });
 
   const handleSave = () => {
-    const input = {
-      title,
-      content,
-      content_format: contentFormat,
-      seo_title: seoTitle || undefined,
-      seo_description: seoDescription || undefined,
-      tag_ids: selectedTagIds,
-      featured_image_media_id: featuredImage?.id,
-    };
     if (isEdit) {
-      updateMutation.mutate(input);
+      updateMutation.mutate({
+        title,
+        content,
+        content_format: contentFormat,
+        // null = explicitly clear the field; backend distinguishes null from absent
+        seo_title: seoTitle || null,
+        seo_description: seoDescription || null,
+        featured_image_media_id: featuredImage?.id ?? null,
+        tag_ids: selectedTagIds,
+      });
     } else {
-      createMutation.mutate(input);
+      createMutation.mutate({
+        title,
+        content,
+        content_format: contentFormat,
+        seo_title: seoTitle || undefined,
+        seo_description: seoDescription || undefined,
+        featured_image_media_id: featuredImage?.id,
+        tag_ids: selectedTagIds,
+      });
     }
   };
 

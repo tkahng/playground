@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"log/slog"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -22,7 +23,7 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 }) (*struct{}, error) {
 	user := contextstore.GetContextUserInfo(ctx)
 	if user == nil {
-		return nil, huma.Error404NotFound("User not found")
+		return nil, huma.Error401Unauthorized("unauthorized")
 	}
 	formData := input.RawBody.Data()
 
@@ -183,6 +184,12 @@ func (api *Api) DeleteMedia(ctx context.Context, input *struct {
 	}
 	if err := api.App().Adapter().Media().DeleteMedia(ctx, id); err != nil {
 		return nil, err
+	}
+	// Best-effort: remove the object from storage after the DB row is gone.
+	// A failure here is logged but does not undo the delete.
+	if err := api.App().Fs().DeleteObject(ctx, media.StorageKey); err != nil {
+		slog.ErrorContext(ctx, "DeleteMedia: failed to remove storage object",
+			"key", media.StorageKey, "error", err)
 	}
 	return nil, nil
 }
