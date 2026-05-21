@@ -82,6 +82,7 @@ require (
 	github.com/sony/gobreaker v1.0.0 // indirect
 	github.com/testcontainers/testcontainers-go v0.42.0 // indirect
 	github.com/testcontainers/testcontainers-go/modules/minio v0.42.0 // indirect
+	github.com/testcontainers/testcontainers-go/modules/postgres v0.42.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.16 // indirect
 	github.com/tklauser/numcpus v0.11.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
