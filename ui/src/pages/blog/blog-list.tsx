@@ -18,7 +18,15 @@ function formatDate(iso: string) {
 
 function PostCard({ post }: { post: BlogPost }) {
   return (
-    <article className="group border rounded-xl p-6 hover:shadow-md transition-shadow bg-card">
+    <article className="group border rounded-xl overflow-hidden hover:shadow-md transition-shadow bg-card">
+      {post.featured_image_url && (
+        <img
+          src={post.featured_image_url}
+          alt={post.title}
+          className="w-full aspect-video object-cover"
+        />
+      )}
+      <div className="p-6">
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
         <Calendar className="h-4 w-4" />
         <span>{post.published_at ? formatDate(post.published_at) : "—"}</span>
@@ -49,6 +57,7 @@ function PostCard({ post }: { post: BlogPost }) {
           ))}
         </div>
       )}
+      </div>
     </article>
   );
 }

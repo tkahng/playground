@@ -45,6 +45,9 @@ export default function BlogPostPage({ slug }: { slug: string }) {
         <meta property="og:title" content={metaTitle} />
         {metaDescription && <meta property="og:description" content={metaDescription} />}
         <meta property="og:type" content="article" />
+        {post.featured_image_url && (
+          <meta property="og:image" content={post.featured_image_url} />
+        )}
         {post.published_at && (
           <meta property="article:published_time" content={post.published_at} />
         )}
@@ -56,6 +59,14 @@ export default function BlogPostPage({ slug }: { slug: string }) {
         <ArrowLeft className="h-4 w-4" />
         Back to blog
       </Link>
+
+      {post.featured_image_url && (
+        <img
+          src={post.featured_image_url}
+          alt={post.title}
+          className="w-full aspect-video object-cover rounded-xl mb-8"
+        />
+      )}
 
       <header className="mb-8">
         {post.tags && post.tags.length > 0 && (
