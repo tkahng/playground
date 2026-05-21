@@ -18,6 +18,7 @@ type MediaStoreInterface interface {
 	FindMediaByID(ctx context.Context, mediaId uuid.UUID) (*models.Medium, error)
 	FindMediaByIDs(ctx context.Context, mediaIds []uuid.UUID) ([]*models.Medium, error)
 	UpdateMedia(ctx context.Context, media *models.Medium) (*models.Medium, error)
+	DeleteMedia(ctx context.Context, mediaId uuid.UUID) error
 	FindMedia(ctx context.Context, filter *MediaListFilter) ([]*models.Medium, error)
 	CountMedia(ctx context.Context, filter *MediaListFilter) (int64, error)
 }
@@ -46,6 +47,13 @@ func (s *DbMediaStore) FindMediaByID(ctx context.Context, mediaId uuid.UUID) (*m
 	return repository.Media.GetOne(ctx, s.dbx, &map[string]any{
 		"id": map[string]any{"_eq": mediaId},
 	})
+}
+
+func (s *DbMediaStore) DeleteMedia(ctx context.Context, mediaId uuid.UUID) error {
+	_, err := repository.Media.Delete(ctx, s.dbx, &map[string]any{
+		"id": map[string]any{"_eq": mediaId},
+	})
+	return err
 }
 
 func (s *DbMediaStore) FindMediaByIDs(ctx context.Context, mediaIds []uuid.UUID) ([]*models.Medium, error) {
@@ -118,6 +126,7 @@ type MediaStoreDecorator struct {
 	FindMediaByIDFunc   func(ctx context.Context, mediaId uuid.UUID) (*models.Medium, error)
 	FindMediaByIDsFunc  func(ctx context.Context, mediaIds []uuid.UUID) ([]*models.Medium, error)
 	UpdateMediaFunc     func(ctx context.Context, media *models.Medium) (*models.Medium, error)
+	DeleteMediaFunc     func(ctx context.Context, mediaId uuid.UUID) error
 }
 
 func (m *MediaStoreDecorator) CountMedia(ctx context.Context, filter *MediaListFilter) (int64, error) {
@@ -160,6 +169,13 @@ func (m *MediaStoreDecorator) UpdateMedia(ctx context.Context, media *models.Med
 		return m.UpdateMediaFunc(ctx, media)
 	}
 	return m.Delegate.UpdateMedia(ctx, media)
+}
+
+func (m *MediaStoreDecorator) DeleteMedia(ctx context.Context, mediaId uuid.UUID) error {
+	if m.DeleteMediaFunc != nil {
+		return m.DeleteMediaFunc(ctx, mediaId)
+	}
+	return m.Delegate.DeleteMedia(ctx, mediaId)
 }
 
 var _ MediaStoreInterface = (*MediaStoreDecorator)(nil)

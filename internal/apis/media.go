@@ -140,6 +140,53 @@ func (api *Api) GetMedia(ctx context.Context, input *struct {
 	return &GetMediaOutput{Body: api.mediaFromModel(media)}, nil
 }
 
+type UpdateMediaInput struct {
+	ID   string `path:"id" format:"uuid" required:"true"`
+	Body struct {
+		AltText *string `json:"alt_text" nullable:"true"`
+	}
+}
+
+func (api *Api) UpdateMedia(ctx context.Context, input *UpdateMediaInput) (*GetMediaOutput, error) {
+	id, err := uuid.Parse(input.ID)
+	if err != nil {
+		return nil, err
+	}
+	media, err := api.App().Adapter().Media().FindMediaByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if media == nil {
+		return nil, huma.Error404NotFound("media not found")
+	}
+	media.AltText = input.Body.AltText
+	updated, err := api.App().Adapter().Media().UpdateMedia(ctx, media)
+	if err != nil {
+		return nil, err
+	}
+	return &GetMediaOutput{Body: api.mediaFromModel(updated)}, nil
+}
+
+func (api *Api) DeleteMedia(ctx context.Context, input *struct {
+	ID string `path:"id" format:"uuid" required:"true"`
+}) (*struct{}, error) {
+	id, err := uuid.Parse(input.ID)
+	if err != nil {
+		return nil, err
+	}
+	media, err := api.App().Adapter().Media().FindMediaByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if media == nil {
+		return nil, huma.Error404NotFound("media not found")
+	}
+	if err := api.App().Adapter().Media().DeleteMedia(ctx, id); err != nil {
+		return nil, err
+	}
+	return nil, nil
+}
+
 type MediaListFilter struct {
 	PaginatedInput
 	SortParams
