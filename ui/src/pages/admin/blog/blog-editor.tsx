@@ -17,11 +17,13 @@ import {
   BlogTag,
   CreateBlogPostInput,
   UpdateBlogPostInput,
+  archiveBlogPost,
   createBlogPost,
   createBlogTag,
   getBlogPost,
   listBlogTags,
   publishBlogPost,
+  unpublishBlogPost,
   updateBlogPost,
 } from "@/lib/blog-queries";
 import { useNavigate } from "@tanstack/react-router";
@@ -100,6 +102,26 @@ export default function BlogEditor({ postId }: BlogEditorProps) {
     onError: () => toast.error("Failed to publish"),
   });
 
+  const unpublishMutation = useMutation({
+    mutationFn: () => unpublishBlogPost(token, postId!),
+    onSuccess: () => {
+      toast.success("Unpublished");
+      qc.invalidateQueries({ queryKey: ["admin-blog-post", postId] });
+      qc.invalidateQueries({ queryKey: ["admin-blog-posts"] });
+    },
+    onError: () => toast.error("Failed to unpublish"),
+  });
+
+  const archiveMutation = useMutation({
+    mutationFn: () => archiveBlogPost(token, postId!),
+    onSuccess: () => {
+      toast.success("Archived");
+      qc.invalidateQueries({ queryKey: ["admin-blog-post", postId] });
+      qc.invalidateQueries({ queryKey: ["admin-blog-posts"] });
+    },
+    onError: () => toast.error("Failed to archive"),
+  });
+
   const createTagMutation = useMutation({
     mutationFn: (name: string) => createBlogTag(token, { name }),
     onSuccess: (tag: BlogTag) => {
@@ -136,7 +158,9 @@ export default function BlogEditor({ postId }: BlogEditorProps) {
   if (isEdit && loadingPost) return <CenteredSpinner />;
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
-  const isPublished = existingPost?.status === "published";
+  const status = existingPost?.status;
+  const isPublished = status === "published";
+  const isArchived = status === "archived";
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -145,7 +169,7 @@ export default function BlogEditor({ postId }: BlogEditorProps) {
           {isEdit ? "Edit Post" : "New Post"}
         </h2>
         <div className="flex gap-2">
-          {isEdit && !isPublished && (
+          {isEdit && !isPublished && !isArchived && (
             <Button
               variant="outline"
               size="sm"
@@ -153,6 +177,26 @@ export default function BlogEditor({ postId }: BlogEditorProps) {
               disabled={publishMutation.isPending}
             >
               Publish
+            </Button>
+          )}
+          {isEdit && isPublished && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => unpublishMutation.mutate()}
+              disabled={unpublishMutation.isPending}
+            >
+              Unpublish
+            </Button>
+          )}
+          {isEdit && !isArchived && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => archiveMutation.mutate()}
+              disabled={archiveMutation.isPending}
+            >
+              Archive
             </Button>
           )}
           <Button size="sm" onClick={handleSave} disabled={isSaving}>
@@ -178,7 +222,7 @@ export default function BlogEditor({ postId }: BlogEditorProps) {
           {existingPost.slug && (
             <>
               <span>·</span>
-              <span>Slug: <code className="font-mono">{existingPost.slug}</code></span>
+              <span className="font-mono text-xs">{existingPost.slug}</span>
             </>
           )}
         </div>
@@ -193,6 +237,20 @@ export default function BlogEditor({ postId }: BlogEditorProps) {
           placeholder="Post title"
         />
       </div>
+
+      {isEdit && existingPost?.slug && (
+        <div className="space-y-1">
+          <Label htmlFor="slug" className="text-muted-foreground text-xs">
+            Slug (read-only — set on creation)
+          </Label>
+          <Input
+            id="slug"
+            value={existingPost.slug}
+            readOnly
+            className="font-mono text-sm bg-muted text-muted-foreground cursor-default"
+          />
+        </div>
+      )}
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
