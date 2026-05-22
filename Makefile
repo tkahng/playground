@@ -24,15 +24,15 @@ setupuser1:
 
 .PHONY: gotestsum
 gotestsum:
-	gotestsum -- -v ./... -race
+	gotestsum -- -v -tags integration ./... -race
 
 .PHONY: gotest
 gotest:
-	go test -v ./... -race
+	go test -v -tags integration ./... -race
 
-.PHONY: gotest-short
-gotest-short:
-	go test -short -count=1 -timeout 2m ./...
+.PHONY: gotest-unit
+gotest-unit:
+	go test -count=1 -timeout 2m ./...
 
 .PHONY: gotest-race-concurrent
 gotest-race-concurrent:

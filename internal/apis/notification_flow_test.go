@@ -1,3 +1,5 @@
+//go:build integration
+
 package apis_test
 
 import (

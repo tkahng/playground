@@ -1,3 +1,5 @@
+//go:build integration
+
 package apis_test
 
 // Tests verifying that TeamTaskUpdateBind reads the CURRENT committed DB state

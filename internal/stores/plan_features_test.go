@@ -1,3 +1,5 @@
+//go:build integration
+
 package stores_test
 
 import (

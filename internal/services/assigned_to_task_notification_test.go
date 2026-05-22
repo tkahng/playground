@@ -1,3 +1,5 @@
+//go:build integration
+
 package services_test
 
 // Tests for the assigned_to_task notification pipeline:
