@@ -123,7 +123,7 @@ func (fs *S3FileSystem) PutNewFileFromURL(ctx context.Context, url string) (*Fil
 		return nil, err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := fs.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
