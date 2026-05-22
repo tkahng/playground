@@ -74,8 +74,16 @@ func (fs *S3FileSystem) DeleteObject(ctx context.Context, key string) error {
 	return err
 }
 
+func (fs *S3FileSystem) publicBase() string {
+	if fs.cfg.PublicBaseURL != "" {
+		return strings.TrimRight(fs.cfg.PublicBaseURL, "/")
+	}
+	// Derive from endpoint + bucket when STORAGE_PUBLIC_BASE_URL is not set.
+	return strings.TrimRight(fs.cfg.EndpointUrl, "/") + "/" + fs.cfg.BucketName
+}
+
 func (fs *S3FileSystem) PublicURL(key string) string {
-	return strings.TrimRight(fs.cfg.PublicBaseURL, "/") + "/" + key
+	return fs.publicBase() + "/" + key
 }
 
 var snakecaseSplitRegex = regexp.MustCompile(`[\W_]+`)

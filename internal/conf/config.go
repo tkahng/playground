@@ -19,7 +19,7 @@ type StorageConfig struct {
 	BucketName    string `env:"STORAGE_BUCKET_NAME" required:"true" json:"bucket_name"`
 	EndpointUrl   string `env:"STORAGE_ENDPOINT_URL" required:"true" json:"endpoint_url"`
 	Region        string `env:"STORAGE_REGION" required:"true" json:"region"`
-	PublicBaseURL string `env:"STORAGE_PUBLIC_BASE_URL" required:"true" json:"public_base_url"`
+	PublicBaseURL string `env:"STORAGE_PUBLIC_BASE_URL" envDefault:"" json:"public_base_url"`
 }
 type AppConfig struct {
 	AppUrl        string `env:"APP_URL" envDefault:"http://localhost:8080"`
