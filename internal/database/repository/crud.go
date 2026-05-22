@@ -59,9 +59,8 @@ var (
 	StripeSubscriptionBuilder = NewSQLBuilder[models.StripeSubscription](
 		InsertID,
 	)
-	MediaBuilder = NewSQLBuilder[models.Medium](
-		UuidV7Generator,
-	)
+	MediaBuilder           = NewSQLBuilder[models.Medium](UuidV7Generator)
+	MediaAttachmentBuilder = NewSQLBuilder[models.MediaAttachment](UuidV7Generator)
 	AiUsageBuilder = NewSQLBuilder[models.AiUsage](
 		UuidV7Generator,
 	)
@@ -108,6 +107,9 @@ var (
 
 	LedgerAccountBuilder  = NewSQLBuilder[models.LedgerAccount](UuidV7Generator)
 	LedgerTransferBuilder = NewSQLBuilder[models.LedgerTransfer](UuidV7Generator)
+
+	BlogPostBuilder = NewSQLBuilder[models.BlogPost](UuidV7Generator)
+	BlogTagBuilder  = NewSQLBuilder[models.BlogTag](UuidV7Generator)
 )
 
 var (
@@ -130,6 +132,7 @@ var (
 	StripeCustomer     Repository[models.StripeCustomer]     = NewPostgresRepository(StripeCustomerBuilder)
 	StripeSubscription Repository[models.StripeSubscription] = NewPostgresRepository(StripeSubscriptionBuilder)
 	Media              Repository[models.Medium]             = NewPostgresRepository(MediaBuilder)
+	MediaAttachment    Repository[models.MediaAttachment]   = NewPostgresRepository(MediaAttachmentBuilder)
 	AiUsage            Repository[models.AiUsage]            = NewPostgresRepository(AiUsageBuilder)
 	PlanFeatures       Repository[models.PlanFeatures]       = NewPostgresRepository(PlanFeaturesBuilder)
 	Team               Repository[models.Team]               = NewPostgresRepository(TeamBuilder)
@@ -148,4 +151,7 @@ var (
 
 	LedgerAccount  Repository[models.LedgerAccount]  = NewPostgresRepository(LedgerAccountBuilder)
 	LedgerTransfer Repository[models.LedgerTransfer] = NewPostgresRepository(LedgerTransferBuilder)
+
+	BlogPost Repository[models.BlogPost] = NewPostgresRepository(BlogPostBuilder)
+	BlogTag  Repository[models.BlogTag]  = NewPostgresRepository(BlogTagBuilder)
 )

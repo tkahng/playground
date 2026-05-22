@@ -10,11 +10,9 @@ import (
 	"path"
 	"regexp"
 	"strings"
-	"time"
 	"unicode"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	awss3 "github.com/aws/aws-sdk-go-v2/service/s3"
@@ -25,10 +23,7 @@ import (
 
 type StorageClient interface {
 	PutObject(ctx context.Context, params *awss3.PutObjectInput, optFns ...func(*awss3.Options)) (*awss3.PutObjectOutput, error)
-}
-
-type PresignClient interface {
-	PresignGetObject(ctx context.Context, params *awss3.GetObjectInput, optFns ...func(*awss3.PresignOptions)) (*v4.PresignedHTTPRequest, error)
+	DeleteObject(ctx context.Context, params *awss3.DeleteObjectInput, optFns ...func(*awss3.Options)) (*awss3.DeleteObjectOutput, error)
 }
 
 type HttpRequestDoer interface {
@@ -38,13 +33,12 @@ type HttpRequestDoer interface {
 type S3FileSystem struct {
 	httpClient    HttpRequestDoer
 	storageClient StorageClient
-	presignClient PresignClient
 	cfg           conf.StorageConfig
 }
 
 func (fs *S3FileSystem) PutFile(ctx context.Context, authority string, key string, file io.Reader) error {
 	_, err := fs.storageClient.PutObject(ctx, &awss3.PutObjectInput{
-		Bucket: aws.String(fs.cfg.BucketName),
+		Bucket: aws.String(authority),
 		Key:    aws.String(key),
 		Body:   file,
 	})
@@ -65,27 +59,31 @@ func NewFileSystem(ctx context.Context, cfg conf.StorageConfig) (FileSystem, err
 		o.UsePathStyle = true
 	})
 
-	presignClient := awss3.NewPresignClient(client)
-	httpClient := http.DefaultClient
 	return &S3FileSystem{
 		storageClient: client,
 		cfg:           cfg,
-		presignClient: presignClient,
-		httpClient:    httpClient,
+		httpClient:    http.DefaultClient,
 	}, nil
 }
 
-func (fs *S3FileSystem) GeneratePresignedURL(ctx context.Context, bucket, key string) (string, error) {
-	presignResult, err := fs.presignClient.PresignGetObject(ctx, &awss3.GetObjectInput{
-		Bucket: aws.String(bucket),
+func (fs *S3FileSystem) DeleteObject(ctx context.Context, key string) error {
+	_, err := fs.storageClient.DeleteObject(ctx, &awss3.DeleteObjectInput{
+		Bucket: aws.String(fs.cfg.BucketName),
 		Key:    aws.String(key),
-	}, awss3.WithPresignExpires(10*time.Minute))
+	})
+	return err
+}
 
-	if err != nil {
-		return "", err
+func (fs *S3FileSystem) publicBase() string {
+	if fs.cfg.PublicBaseURL != "" {
+		return strings.TrimRight(fs.cfg.PublicBaseURL, "/")
 	}
+	// Derive from endpoint + bucket when STORAGE_PUBLIC_BASE_URL is not set.
+	return strings.TrimRight(fs.cfg.EndpointUrl, "/") + "/" + fs.cfg.BucketName
+}
 
-	return presignResult.URL, nil
+func (fs *S3FileSystem) PublicURL(key string) string {
+	return fs.publicBase() + "/" + key
 }
 
 var snakecaseSplitRegex = regexp.MustCompile(`[\W_]+`)
@@ -105,14 +103,13 @@ func Snakecase(str string) string {
 			result.WriteString("_")
 		}
 
+		var prev rune
 		for i, c := range word {
-			if unicode.IsUpper(c) && i > 0 &&
-				// is not a following uppercase character
-				!unicode.IsUpper(rune(word[i-1])) {
+			if unicode.IsUpper(c) && i > 0 && !unicode.IsUpper(prev) {
 				result.WriteString("_")
 			}
-
 			result.WriteRune(c)
+			prev = c
 		}
 	}
 
@@ -125,7 +122,7 @@ func (fs *S3FileSystem) PutNewFileFromURL(ctx context.Context, url string) (*Fil
 		return nil, err
 	}
 
-	res, err := http.DefaultClient.Do(req)
+	res, err := fs.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -135,10 +132,16 @@ func (fs *S3FileSystem) PutNewFileFromURL(ctx context.Context, url string) (*Fil
 		return nil, fmt.Errorf("failed to download url %s (%d)", url, res.StatusCode)
 	}
 
-	var buf bytes.Buffer
+	const maxDownloadBytes = 50 * 1024 * 1024 // 50 MB
 
-	if _, err = io.Copy(&buf, res.Body); err != nil {
+	lr := &io.LimitedReader{R: res.Body, N: maxDownloadBytes + 1}
+	var buf bytes.Buffer
+	if _, err = io.Copy(&buf, lr); err != nil {
 		return nil, err
+	}
+	if int64(buf.Len()) > maxDownloadBytes {
+		return nil, fmt.Errorf("remote file at %s exceeds the %d MB size limit",
+			url, maxDownloadBytes/(1024*1024))
 	}
 
 	return fs.PutFileFromBytes(ctx, buf.Bytes(), path.Base(url))
@@ -166,13 +169,15 @@ func (fs *S3FileSystem) PutFileFromBytes(ctx context.Context, b []byte, name str
 
 	dto := &FileDto{
 		ID:           id,
+		StorageKey:   key,
+		PublicURL:    fs.PublicURL(key),
+		MimeType:     mime,
+		Size:         int64(size),
+		OriginalName: name,
+		Extension:    ext,
 		Disk:         fs.cfg.BucketName,
 		Directory:    path.Dir(key),
 		Filename:     path.Base(key),
-		OriginalName: name,
-		Extension:    ext,
-		MimeType:     mime,
-		Size:         int64(size),
 	}
 	return dto, nil
 }

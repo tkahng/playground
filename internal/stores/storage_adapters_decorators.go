@@ -30,6 +30,7 @@ func NewAdapterDecorators() *StorageAdapterDecorator {
 		LedgerFunc:         &DbLedgerStoreDecorator{},
 		AiUsageFunc:        &AiUsageStoreDecorator{},
 		PlanFeaturesFunc:   &PlanFeaturesStoreDecorator{},
+		BlogFunc:           &BlogStoreDecorator{},
 	}
 }
 
@@ -58,6 +59,7 @@ func NewDbAdapterDecorators(db database.Dbx) *StorageAdapterDecorator {
 		LedgerFunc:       NewDbLedgerStoreDecorator(db),
 		AiUsageFunc:      NewAiUsageStoreDecorator(db),
 		PlanFeaturesFunc: NewPlanFeaturesStoreDecorator(db),
+		BlogFunc:         NewBlogStoreDecorator(db),
 	}
 }
 
@@ -122,6 +124,15 @@ type StorageAdapterDecorator struct {
 	LedgerFunc         *DbLedgerStoreDecorator
 	AiUsageFunc        *AiUsageStoreDecorator
 	PlanFeaturesFunc   *PlanFeaturesStoreDecorator
+	BlogFunc           *BlogStoreDecorator
+}
+
+// Blog implements [StorageAdapterInterface].
+func (s *StorageAdapterDecorator) Blog() BlogStoreInterface {
+	if s.BlogFunc != nil {
+		return s.BlogFunc
+	}
+	return s.Delegate.Blog()
 }
 
 // Gis implements [StorageAdapterInterface].
@@ -195,6 +206,11 @@ func (s *StorageAdapterDecorator) Media() MediaStoreInterface {
 		return s.MediaFunc
 	}
 	return s.Delegate.Media()
+}
+
+// MediaAttachment implements StorageAdapterInterface.
+func (s *StorageAdapterDecorator) MediaAttachment() MediaAttachmentStoreInterface {
+	return s.Delegate.MediaAttachment()
 }
 
 // Rbac implements StorageAdapterInterface.

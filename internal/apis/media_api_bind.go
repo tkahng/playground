@@ -43,6 +43,38 @@ func bindMediaApi(appApi *Api) {
 		},
 		appApi.GetMedia,
 	)
+	// ---- Update Media (alt text, etc.)
+	huma.Register(
+		mediaGroup,
+		huma.Operation{
+			OperationID: "update-media",
+			Method:      http.MethodPatch,
+			Path:        "/media/{id}",
+			Summary:     "Update media metadata",
+			Tags:        []string{"Media"},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Errors: []int{http.StatusUnauthorized, http.StatusNotFound, http.StatusInternalServerError},
+		},
+		appApi.UpdateMedia,
+	)
+	// ---- Delete Media
+	huma.Register(
+		mediaGroup,
+		huma.Operation{
+			OperationID: "delete-media",
+			Method:      http.MethodDelete,
+			Path:        "/media/{id}",
+			Summary:     "Delete media",
+			Tags:        []string{"Media"},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Errors: []int{http.StatusUnauthorized, http.StatusNotFound, http.StatusInternalServerError},
+		},
+		appApi.DeleteMedia,
+	)
 	// ---- Get Media List
 	huma.Register(
 		mediaGroup,

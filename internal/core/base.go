@@ -305,6 +305,11 @@ func (app *BaseApp) Fs() filesystem.FileSystem {
 	return app.fs
 }
 
+// SetFs replaces the filesystem used by the app. Intended for tests only.
+func (app *BaseApp) SetFs(fs filesystem.FileSystem) {
+	app.fs = fs
+}
+
 // Payment implements App.
 func (a *BaseApp) Payment() services.PaymentService {
 	if a.payment == nil {

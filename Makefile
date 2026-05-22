@@ -13,6 +13,10 @@ reset:
 	go run . stripe sync
 	go run . stripe role
 
+.PHONY: devadmin
+devadmin:
+	go run . superuser create admin@k2dv.io AdminPassword123!
+
 .PHONY: setupuser1
 setupuser1:
 	go run . seed user tkahng+01@gmail.com Password123! true

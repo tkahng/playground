@@ -37,6 +37,7 @@ func DbSetup(cfg *conf.EnvConfig) (context.Context, *Queries) {
 }
 
 func WithSingletonTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
+	initTestDB(t)
 	DbSetup(conf.ZeroEnvConfig())
 	ctx := ctxInstance
 	tx, err := dbx.BeginTx(ctx)
@@ -63,10 +64,7 @@ func WithSingletonTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 // WithNewTestTx creates a new pool connection, runs the test within that transactions, rolls back, and closes the pool.
 func WithNewTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	t.Helper()
-	// TODO: add context timeout
-	// ctx, cancel := context.WithCancel(context.Background())
-	// defer cancel()
-	// ctx := t.Context()
+	initTestDB(t)
 	_ = logger.GetDefaultLogger()
 	ctx := context.Background()
 	cfg := conf.ZeroEnvConfig()
@@ -98,6 +96,7 @@ func WithNewTestTx(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 
 func WithNewDatabase(t *testing.T, fn func(ctx context.Context, db Dbx)) {
 	t.Helper()
+	initTestDB(t)
 	_ = logger.GetDefaultLogger()
 	ctx := context.Background()
 	cfg := conf.ZeroEnvConfig()

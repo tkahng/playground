@@ -3,8 +3,11 @@ package apis
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
-	"path"
+	"log/slog"
+	"net/http"
+	"slices"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -15,6 +18,11 @@ import (
 	"github.com/tkahng/playground/internal/tools/utils"
 )
 
+// maxUploadBytes is the per-file size cap for both multipart file uploads and
+// URL-sourced downloads.  Files larger than this are rejected before any bytes
+// are forwarded to object storage.
+const maxUploadBytes = 50 * 1024 * 1024 // 50 MB
+
 func (api *Api) UploadMedia(ctx context.Context, input *struct {
 	RawBody huma.MultipartFormFiles[struct {
 		Files []huma.FormFile `form:"files" required:"false" description:"Files to upload"`
@@ -23,30 +31,40 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 }) (*struct{}, error) {
 	user := contextstore.GetContextUserInfo(ctx)
 	if user == nil {
-		return nil, huma.Error404NotFound("User not found")
+		return nil, huma.Error401Unauthorized("unauthorized")
 	}
 	formData := input.RawBody.Data()
 
 	if formData.Files != nil {
 		for _, file := range formData.Files {
+			// Read at most maxUploadBytes+1 so we can detect an oversize file
+			// without buffering the entire body first.
+			lr := &io.LimitedReader{R: file.File, N: maxUploadBytes + 1}
 			var buf bytes.Buffer
-			if _, err := io.Copy(&buf, file.File); err != nil {
+			if _, err := io.Copy(&buf, lr); err != nil {
 				return nil, err
 			}
-
+			if int64(buf.Len()) > maxUploadBytes {
+				return nil, huma.NewError(http.StatusRequestEntityTooLarge,
+					fmt.Sprintf("file %q exceeds the %d MB upload limit",
+						file.Filename, maxUploadBytes/(1024*1024)))
+			}
 			dto, err := api.App().Fs().PutFileFromBytes(ctx, buf.Bytes(), file.Filename)
 			if err != nil {
 				return nil, err
 			}
+			publicURL := dto.PublicURL
 			_, err = api.App().Adapter().Media().CreateMedia(ctx, &models.Medium{
 				UserID:           &user.User.ID,
+				StorageKey:       dto.StorageKey,
+				PublicURL:        &publicURL,
+				MimeType:         dto.MimeType,
+				Size:             dto.Size,
+				OriginalFilename: dto.OriginalName,
+				Extension:        dto.Extension,
 				Disk:             dto.Disk,
 				Directory:        dto.Directory,
 				Filename:         dto.Filename,
-				OriginalFilename: dto.OriginalName,
-				Extension:        dto.Extension,
-				MimeType:         dto.MimeType,
-				Size:             dto.Size,
 			})
 			if err != nil {
 				return nil, err
@@ -60,15 +78,18 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 			if err != nil {
 				return nil, err
 			}
+			publicURL := dto.PublicURL
 			_, err = api.App().Adapter().Media().CreateMedia(ctx, &models.Medium{
 				UserID:           &user.User.ID,
+				StorageKey:       dto.StorageKey,
+				PublicURL:        &publicURL,
+				MimeType:         dto.MimeType,
+				Size:             dto.Size,
+				OriginalFilename: dto.OriginalName,
+				Extension:        dto.Extension,
 				Disk:             dto.Disk,
 				Directory:        dto.Directory,
 				Filename:         dto.Filename,
-				OriginalFilename: dto.OriginalName,
-				Extension:        dto.Extension,
-				MimeType:         dto.MimeType,
-				Size:             dto.Size,
 			})
 			if err != nil {
 				return nil, err
@@ -80,16 +101,48 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 }
 
 type Media struct {
-	ID        uuid.UUID `json:"id" db:"id" format:"uuid"`
-	Filename  string    `json:"filename" db:"filename"`
-	URL       string    `json:"url" db:"url" format:"uri"`
-	CreatedAt time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+	ID               uuid.UUID `json:"id" format:"uuid"`
+	StorageKey       string    `json:"storage_key"`
+	URL              string    `json:"url" format:"uri"`
+	MimeType         string    `json:"mime_type"`
+	Size             int64     `json:"size"`
+	OriginalFilename string    `json:"original_filename"`
+	AltText          *string   `json:"alt_text" nullable:"true"`
+	Width            *int      `json:"width" nullable:"true"`
+	Height           *int      `json:"height" nullable:"true"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}
+
+func (api *Api) mediaFromModel(m *models.Medium) *Media {
+	url := ""
+	if m.PublicURL != nil {
+		url = *m.PublicURL
+	} else {
+		url = api.App().Fs().PublicURL(m.StorageKey)
+	}
+	return &Media{
+		ID:               m.ID,
+		StorageKey:       m.StorageKey,
+		URL:              url,
+		MimeType:         m.MimeType,
+		Size:             m.Size,
+		OriginalFilename: m.OriginalFilename,
+		AltText:          m.AltText,
+		Width:            m.Width,
+		Height:           m.Height,
+		CreatedAt:        m.CreatedAt,
+		UpdatedAt:        m.UpdatedAt,
+	}
+}
+
+type GetMediaOutput struct {
+	Body *Media
 }
 
 func (api *Api) GetMedia(ctx context.Context, input *struct {
 	ID string `path:"id" format:"uuid" required:"true" description:"Id of the media"`
-}) (*Media, error) {
+}) (*GetMediaOutput, error) {
 	id, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, err
@@ -98,17 +151,79 @@ func (api *Api) GetMedia(ctx context.Context, input *struct {
 	if err != nil {
 		return nil, err
 	}
-	url, err := api.App().Fs().GeneratePresignedURL(ctx, media.Disk, path.Join(media.Directory, media.Filename))
+	if media == nil {
+		return nil, huma.Error404NotFound("media not found")
+	}
+	return &GetMediaOutput{Body: api.mediaFromModel(media)}, nil
+}
+
+type UpdateMediaInput struct {
+	ID   string `path:"id" format:"uuid" required:"true"`
+	Body struct {
+		AltText *string `json:"alt_text" nullable:"true"`
+	}
+}
+
+func (api *Api) UpdateMedia(ctx context.Context, input *UpdateMediaInput) (*GetMediaOutput, error) {
+	caller := contextstore.GetContextUserInfo(ctx)
+	if caller == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	id, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, err
 	}
-	return &Media{
-		ID:        media.ID,
-		Filename:  media.Filename,
-		URL:       url,
-		CreatedAt: media.CreatedAt,
-		UpdatedAt: media.UpdatedAt,
-	}, nil
+	media, err := api.App().Adapter().Media().FindMediaByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if media == nil {
+		return nil, huma.Error404NotFound("media not found")
+	}
+	isAdmin := slices.Contains(caller.Permissions, "superuser")
+	if !isAdmin && (media.UserID == nil || *media.UserID != caller.User.ID) {
+		return nil, huma.Error403Forbidden("forbidden")
+	}
+	media.AltText = input.Body.AltText
+	updated, err := api.App().Adapter().Media().UpdateMedia(ctx, media)
+	if err != nil {
+		return nil, err
+	}
+	return &GetMediaOutput{Body: api.mediaFromModel(updated)}, nil
+}
+
+func (api *Api) DeleteMedia(ctx context.Context, input *struct {
+	ID string `path:"id" format:"uuid" required:"true"`
+}) (*struct{}, error) {
+	caller := contextstore.GetContextUserInfo(ctx)
+	if caller == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	id, err := uuid.Parse(input.ID)
+	if err != nil {
+		return nil, err
+	}
+	media, err := api.App().Adapter().Media().FindMediaByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if media == nil {
+		return nil, huma.Error404NotFound("media not found")
+	}
+	isAdmin := slices.Contains(caller.Permissions, "superuser")
+	if !isAdmin && (media.UserID == nil || *media.UserID != caller.User.ID) {
+		return nil, huma.Error403Forbidden("forbidden")
+	}
+	if err := api.App().Adapter().Media().DeleteMedia(ctx, id); err != nil {
+		return nil, err
+	}
+	// Best-effort: remove the object from storage after the DB row is gone.
+	// A failure here is logged but does not undo the delete.
+	if err := api.App().Fs().DeleteObject(ctx, media.StorageKey); err != nil {
+		slog.ErrorContext(ctx, "DeleteMedia: failed to remove storage object",
+			"key", media.StorageKey, "error", err)
+	}
+	return nil, nil
 }
 
 type MediaListFilter struct {
@@ -119,35 +234,39 @@ type MediaListFilter struct {
 }
 
 func (api *Api) MediaList(ctx context.Context, input *MediaListFilter) (*ApiPaginatedOutput[*Media], error) {
+	caller := contextstore.GetContextUserInfo(ctx)
+	if caller == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+
 	filter := &stores.MediaListFilter{}
 	filter.Page = input.Page
 	filter.PerPage = input.PerPage
 	filter.SortBy = input.SortBy
 	filter.SortOrder = input.SortOrder
 	filter.Q = input.Q
-	filter.UserIds = utils.ParseValidUUIDs(input.UserIds...)
+
+	isAdmin := slices.Contains(caller.Permissions, "superuser")
+	if isAdmin {
+		// Admins may optionally filter by specific user IDs; if none supplied they see all.
+		filter.UserIds = utils.ParseValidUUIDs(input.UserIds...)
+	} else {
+		// Non-admins always see only their own files regardless of any user_ids param.
+		filter.UserIds = []uuid.UUID{caller.User.ID}
+	}
 
 	medias, err := api.App().Adapter().Media().FindMedia(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	data := []*Media{}
-	for _, media := range medias {
-		url, err := api.App().Fs().GeneratePresignedURL(ctx, media.Disk, path.Join(media.Directory, media.Filename))
-		if err != nil {
-			return nil, err
-		}
-		data = append(data, &Media{
-			ID:        media.ID,
-			Filename:  media.Filename,
-			URL:       url,
-			CreatedAt: media.CreatedAt,
-			UpdatedAt: media.UpdatedAt,
-		})
-	}
 	count, err := api.App().Adapter().Media().CountMedia(ctx, filter)
 	if err != nil {
 		return nil, err
+	}
+
+	data := make([]*Media, len(medias))
+	for i, m := range medias {
+		data[i] = api.mediaFromModel(m)
 	}
 
 	return &ApiPaginatedOutput[*Media]{

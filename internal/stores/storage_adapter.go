@@ -22,6 +22,7 @@ type StorageAdapterInterface interface {
 	Product() DbProductStoreInterface
 	Subscription() DbSubscriptionStoreInterface
 	Media() MediaStoreInterface
+	MediaAttachment() MediaAttachmentStoreInterface
 	Rbac() DbRbacStoreInterface
 	Task() DbTaskStoreInterface
 	Job() JobStore
@@ -30,6 +31,7 @@ type StorageAdapterInterface interface {
 	Ledger() LedgerStore
 	AiUsage() AiUsageStoreInterface
 	PlanFeatures() PlanFeaturesStoreInterface
+	Blog() BlogStoreInterface
 	// WithTx(tx database.Dbx) *StorageAdapter
 	RunInTxCtx(ctx context.Context, fn func(txCtx context.Context) error) error
 	RunInTx(ctx context.Context, fn func(tx StorageAdapterInterface) error) error
@@ -48,7 +50,8 @@ type StorageAdapter struct {
 	subscription   *DbSubscriptionStore
 	rbac           *DbRbacStore
 	task           *DbTaskStore
-	media          *DbMediaStore
+	media           *DbMediaStore
+	mediaAttachment *DbMediaAttachmentStore
 	notification   *DbNotificationStore
 	job            *DbJobStore
 	userReaction   *DbUserReactionStore
@@ -57,6 +60,12 @@ type StorageAdapter struct {
 	ledger         *DBLedgerStore
 	aiUsage        *DbAiUsageStore
 	planFeatures   *DbPlanFeaturesStore
+	blog           *DbBlogStore
+}
+
+// Blog implements [StorageAdapterInterface].
+func (s *StorageAdapter) Blog() BlogStoreInterface {
+	return s.blog
 }
 
 // AiUsage implements [StorageAdapterInterface].
@@ -100,6 +109,10 @@ func (s *StorageAdapter) Media() MediaStoreInterface {
 	return s.media
 }
 
+func (s *StorageAdapter) MediaAttachment() MediaAttachmentStoreInterface {
+	return s.mediaAttachment
+}
+
 func (s *StorageAdapter) Task() DbTaskStoreInterface {
 	return s.task
 }
@@ -136,7 +149,8 @@ func (s *StorageAdapter) RunInTx(ctx context.Context, fn func(tx StorageAdapterI
 			subscription:   s.subscription.WithTx(db),
 			rbac:           s.rbac.WithTx(db),
 			task:           s.task.WithTx(db),
-			media:          s.media.WithTx(db),
+			media:           s.media.WithTx(db),
+			mediaAttachment: s.mediaAttachment.WithTx(db),
 			notification:   s.notification.WithTx(db),
 			job:            s.job.WithTx(db),
 			userReaction:   s.userReaction.WithTx(db),
@@ -144,6 +158,7 @@ func (s *StorageAdapter) RunInTx(ctx context.Context, fn func(tx StorageAdapterI
 			ledger:         s.ledger.WithTx(db),
 			aiUsage:        s.aiUsage.WithTx(db),
 			planFeatures:   s.planFeatures.WithTx(db),
+			blog:           s.blog.WithTx(db),
 		}
 		return fn(tx)
 	})
@@ -208,7 +223,8 @@ func NewStorageAdapter(db database.Dbx) *StorageAdapter {
 		rbac:           NewDbRBACStore(db),
 		task:           NewDbTaskStore(db),
 		job:            NewDbJobStore(db),
-		media:          NewMediaStore(db),
+		media:           NewMediaStore(db),
+		mediaAttachment: NewMediaAttachmentStore(db),
 		notification:   NewDbNotificationStore(db),
 		userReaction:   NewDbUserReactionStore(db),
 		gaming:         NewDBGamingStore(db),
@@ -216,5 +232,6 @@ func NewStorageAdapter(db database.Dbx) *StorageAdapter {
 		ledger:         NewDBLedgerStore(db),
 		aiUsage:        NewDbAiUsageStore(db),
 		planFeatures:   NewDbPlanFeaturesStore(db),
+		blog:           NewDbBlogStore(db),
 	}
 }

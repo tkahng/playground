@@ -21,6 +21,7 @@ const (
 	TeamPermissionTasksAssign    string = "tasks.assign"
 	TeamPermissionTasksDelete    string = "tasks.delete"
 	TeamPermissionWorkflowManage string = "workflow.manage"
+
 )
 
 var (

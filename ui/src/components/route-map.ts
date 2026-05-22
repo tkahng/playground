@@ -46,4 +46,11 @@ export const RouteMap = {
   TEAM_LIST_SLUG: "/teams/:teamSlug",
 
   ACCOUNT_FRIENDS: "/account/friends",
+
+  BLOG: "/blog",
+  BLOG_POST: "/blog/:slug",
+  ADMIN_BLOG: "/admin/blog",
+  ADMIN_BLOG_NEW: "/admin/blog/new",
+  ADMIN_BLOG_EDIT: "/admin/blog/:postId/edit",
+  ADMIN_MEDIA: "/admin/media",
 };
