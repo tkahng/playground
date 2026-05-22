@@ -409,6 +409,95 @@ func TestApi_DeleteMedia_Ownership(t *testing.T) {
 
 // ── MediaList ─────────────────────────────────────────────────────────────────
 
+func TestApi_MediaList_IsolatedByUser(t *testing.T) {
+	skipContainer(t)
+
+	filesystem.WithMinioContainer(t, func(fsCtx context.Context, fs filesystem.FileSystem, cfg conf.StorageConfig) {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := apis.SetupApi(t, ctx, db)
+			testApi.App.SetFs(fs)
+
+			alice := core.CreateUserWithOptions(t, testApi.App,
+				core.UserWithEmail("alice@test.local"), core.UserWithVerifiedNow())
+			bob := core.CreateUserWithOptions(t, testApi.App,
+				core.UserWithEmail("bob@test.local"), core.UserWithVerifiedNow())
+			admin := core.CreateUserWithOptions(t, testApi.App,
+				core.UserWithEmail("list-admin@test.local"),
+				core.UserWithVerifiedNow(),
+				core.UserWithPermission(shared.PermissionNameAdmin),
+			)
+
+			aliceHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, alice.User.Email)
+			bobHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, bob.User.Email)
+			adminHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, admin.User.Email)
+
+			// Upload one file per user.
+			aliceDto, err := fs.PutFileFromBytes(fsCtx, []byte("alice file"), "alice.txt")
+			require.NoError(t, err)
+			_, err = testApi.App.Adapter().Media().CreateMedia(ctx, buildMedium(alice.User.ID, aliceDto))
+			require.NoError(t, err)
+
+			bobDto, err := fs.PutFileFromBytes(fsCtx, []byte("bob file"), "bob.txt")
+			require.NoError(t, err)
+			_, err = testApi.App.Adapter().Media().CreateMedia(ctx, buildMedium(bob.User.ID, bobDto))
+			require.NoError(t, err)
+
+			tests := []apis.ApiScenario{
+				{
+					Name:           "alice sees only her own file",
+					Method:         http.MethodGet,
+					URL:            "/media",
+					ExpectedStatus: http.StatusOK,
+					TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+					BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+						scenario.Headers = []string{aliceHeader}
+					},
+					AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+						var result apis.ApiPaginatedResponse[*apis.Media]
+						require.NoError(t, json.Unmarshal(res.Body.Bytes(), &result))
+						assert.Equal(t, int64(1), result.Meta.Total)
+						assert.Equal(t, "alice.txt", result.Data[0].OriginalFilename)
+					},
+				},
+				{
+					Name:           "bob sees only his own file",
+					Method:         http.MethodGet,
+					URL:            "/media",
+					ExpectedStatus: http.StatusOK,
+					TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+					BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+						scenario.Headers = []string{bobHeader}
+					},
+					AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+						var result apis.ApiPaginatedResponse[*apis.Media]
+						require.NoError(t, json.Unmarshal(res.Body.Bytes(), &result))
+						assert.Equal(t, int64(1), result.Meta.Total)
+						assert.Equal(t, "bob.txt", result.Data[0].OriginalFilename)
+					},
+				},
+				{
+					Name:           "admin sees all files",
+					Method:         http.MethodGet,
+					URL:            "/media",
+					ExpectedStatus: http.StatusOK,
+					TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+					BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+						scenario.Headers = []string{adminHeader}
+					},
+					AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+						var result apis.ApiPaginatedResponse[*apis.Media]
+						require.NoError(t, json.Unmarshal(res.Body.Bytes(), &result))
+						assert.Equal(t, int64(2), result.Meta.Total)
+					},
+				},
+			}
+			for _, tt := range tests {
+				tt.Test(t)
+			}
+		})
+	})
+}
+
 func TestApi_MediaList(t *testing.T) {
 	skipContainer(t)
 

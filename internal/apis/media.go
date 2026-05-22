@@ -234,13 +234,26 @@ type MediaListFilter struct {
 }
 
 func (api *Api) MediaList(ctx context.Context, input *MediaListFilter) (*ApiPaginatedOutput[*Media], error) {
+	caller := contextstore.GetContextUserInfo(ctx)
+	if caller == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+
 	filter := &stores.MediaListFilter{}
 	filter.Page = input.Page
 	filter.PerPage = input.PerPage
 	filter.SortBy = input.SortBy
 	filter.SortOrder = input.SortOrder
 	filter.Q = input.Q
-	filter.UserIds = utils.ParseValidUUIDs(input.UserIds...)
+
+	isAdmin := slices.Contains(caller.Permissions, "superuser")
+	if isAdmin {
+		// Admins may optionally filter by specific user IDs; if none supplied they see all.
+		filter.UserIds = utils.ParseValidUUIDs(input.UserIds...)
+	} else {
+		// Non-admins always see only their own files regardless of any user_ids param.
+		filter.UserIds = []uuid.UUID{caller.User.ID}
+	}
 
 	medias, err := api.App().Adapter().Media().FindMedia(ctx, filter)
 	if err != nil {
