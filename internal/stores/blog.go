@@ -328,7 +328,10 @@ func (s *DbBlogStore) FindPostByID(ctx context.Context, postID uuid.UUID) (*mode
 	post, err := repository.BlogPost.GetOne(ctx, s.db, &map[string]any{
 		"id": map[string]any{"_eq": postID},
 	})
-	if err != nil || post == nil {
+	if err != nil {
+		return nil, err
+	}
+	if post == nil {
 		return nil, apierrors.NotFound("post not found")
 	}
 	return post, nil
@@ -338,7 +341,10 @@ func (s *DbBlogStore) FindPostBySlug(ctx context.Context, postSlug string) (*mod
 	post, err := repository.BlogPost.GetOne(ctx, s.db, &map[string]any{
 		"slug": map[string]any{"_eq": postSlug},
 	})
-	if err != nil || post == nil {
+	if err != nil {
+		return nil, err
+	}
+	if post == nil {
 		return nil, apierrors.NotFound("post not found")
 	}
 	return post, nil

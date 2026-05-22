@@ -2,12 +2,14 @@ package apis
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"slices"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/google/uuid"
+	"github.com/tkahng/playground/internal/apierrors"
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
@@ -186,8 +188,12 @@ func (api *Api) BlogPostGet(ctx context.Context, input *struct {
 	} else {
 		post, err = api.App().Adapter().Blog().FindPostBySlug(ctx, input.Slug)
 	}
-	if err != nil || post == nil {
-		return nil, huma.Error404NotFound("post not found")
+	if err != nil {
+		var appErr *apierrors.AppError
+		if errors.As(err, &appErr) && appErr.GetStatus() == 404 {
+			return nil, huma.Error404NotFound("post not found")
+		}
+		return nil, err
 	}
 
 	userInfo := contextstore.GetContextUserInfo(ctx)
