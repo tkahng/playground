@@ -60,6 +60,3 @@ func (d *BlogStoreDecorator) ListTags(ctx context.Context) ([]*models.BlogTag, e
 func (d *BlogStoreDecorator) SetPostTags(ctx context.Context, postID uuid.UUID, tagIDs []uuid.UUID) error {
 	return d.Delegate.SetPostTags(ctx, postID, tagIDs)
 }
-func (d *BlogStoreDecorator) WithTx(dbx database.Dbx) *DbBlogStore {
-	return d.Delegate.WithTx(dbx)
-}

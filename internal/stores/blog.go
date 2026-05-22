@@ -32,7 +32,6 @@ type BlogStoreInterface interface {
 	CreateTag(ctx context.Context, input *CreateBlogTagDTO) (*models.BlogTag, error)
 	ListTags(ctx context.Context) ([]*models.BlogTag, error)
 	SetPostTags(ctx context.Context, postID uuid.UUID, tagIDs []uuid.UUID) error
-	WithTx(dbx database.Dbx) *DbBlogStore
 }
 
 type DbBlogStore struct {
@@ -161,11 +160,7 @@ func estimateReadingTime(content string) int {
 	if words == 0 {
 		return 1
 	}
-	minutes := (words + 199) / 200
-	if minutes < 1 {
-		return 1
-	}
-	return minutes
+	return (words + 199) / 200
 }
 
 // isUniqueViolation returns true when err is a Postgres unique-constraint error.
@@ -231,7 +226,10 @@ func (s *DbBlogStore) UpdatePost(ctx context.Context, postID uuid.UUID, input *U
 	post, err := repository.BlogPost.GetOne(ctx, s.db, &map[string]any{
 		"id": map[string]any{"_eq": postID},
 	})
-	if err != nil || post == nil {
+	if err != nil {
+		return nil, err
+	}
+	if post == nil {
 		return nil, apierrors.NotFound("post not found")
 	}
 
@@ -285,7 +283,10 @@ func (s *DbBlogStore) PublishPost(ctx context.Context, postID uuid.UUID) (*model
 	post, err := repository.BlogPost.GetOne(ctx, s.db, &map[string]any{
 		"id": map[string]any{"_eq": postID},
 	})
-	if err != nil || post == nil {
+	if err != nil {
+		return nil, err
+	}
+	if post == nil {
 		return nil, apierrors.NotFound("post not found")
 	}
 	now := time.Now()
@@ -298,7 +299,10 @@ func (s *DbBlogStore) UnpublishPost(ctx context.Context, postID uuid.UUID) (*mod
 	post, err := repository.BlogPost.GetOne(ctx, s.db, &map[string]any{
 		"id": map[string]any{"_eq": postID},
 	})
-	if err != nil || post == nil {
+	if err != nil {
+		return nil, err
+	}
+	if post == nil {
 		return nil, apierrors.NotFound("post not found")
 	}
 	post.Status = models.BlogPostStatusDraft
@@ -310,7 +314,10 @@ func (s *DbBlogStore) ArchivePost(ctx context.Context, postID uuid.UUID) (*model
 	post, err := repository.BlogPost.GetOne(ctx, s.db, &map[string]any{
 		"id": map[string]any{"_eq": postID},
 	})
-	if err != nil || post == nil {
+	if err != nil {
+		return nil, err
+	}
+	if post == nil {
 		return nil, apierrors.NotFound("post not found")
 	}
 	post.Status = models.BlogPostStatusArchived

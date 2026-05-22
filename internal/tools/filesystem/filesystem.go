@@ -103,14 +103,13 @@ func Snakecase(str string) string {
 			result.WriteString("_")
 		}
 
+		var prev rune
 		for i, c := range word {
-			if unicode.IsUpper(c) && i > 0 &&
-				// is not a following uppercase character
-				!unicode.IsUpper(rune(word[i-1])) {
+			if unicode.IsUpper(c) && i > 0 && !unicode.IsUpper(prev) {
 				result.WriteString("_")
 			}
-
 			result.WriteRune(c)
+			prev = c
 		}
 	}
 
