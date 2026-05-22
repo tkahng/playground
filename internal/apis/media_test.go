@@ -130,6 +130,40 @@ func TestApi_UploadMedia_Unauthenticated(t *testing.T) {
 	})
 }
 
+// ── UploadMedia size limit ────────────────────────────────────────────────────
+
+func TestApi_UploadMedia_SizeLimit(t *testing.T) {
+	// Does not require a real MinIO — the size check fires before any S3 call.
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		testApi := apis.SetupApi(t, ctx, db)
+
+		user := core.CreateUserWithOptions(t, testApi.App, core.UserWithVerifiedNow())
+		header, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, user.User.Email)
+
+		// 51 MB — one byte over the 50 MB limit.
+		oversize := make([]byte, 51*1024*1024)
+		body, ct := buildMultipart(t, "files", "big.bin", oversize)
+
+		tests := []apis.ApiScenario{
+			{
+				Name:            "file over 50 MB is rejected with 413",
+				Method:          http.MethodPost,
+				URL:             "/media",
+				Body:            body,
+				ExpectedStatus:  http.StatusRequestEntityTooLarge,
+				ExpectedContent: []string{`"status":413`},
+				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
+				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+					scenario.Headers = []string{header, "Content-Type: " + ct}
+				},
+			},
+		}
+		for _, tt := range tests {
+			tt.Test(t)
+		}
+	})
+}
+
 // ── GetMedia ──────────────────────────────────────────────────────────────────
 
 func TestApi_GetMedia(t *testing.T) {

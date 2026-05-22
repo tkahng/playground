@@ -125,10 +125,16 @@ func (fs *S3FileSystem) PutNewFileFromURL(ctx context.Context, url string) (*Fil
 		return nil, fmt.Errorf("failed to download url %s (%d)", url, res.StatusCode)
 	}
 
-	var buf bytes.Buffer
+	const maxDownloadBytes = 50 * 1024 * 1024 // 50 MB
 
-	if _, err = io.Copy(&buf, res.Body); err != nil {
+	lr := &io.LimitedReader{R: res.Body, N: maxDownloadBytes + 1}
+	var buf bytes.Buffer
+	if _, err = io.Copy(&buf, lr); err != nil {
 		return nil, err
+	}
+	if int64(buf.Len()) > maxDownloadBytes {
+		return nil, fmt.Errorf("remote file at %s exceeds the %d MB size limit",
+			url, maxDownloadBytes/(1024*1024))
 	}
 
 	return fs.PutFileFromBytes(ctx, buf.Bytes(), path.Base(url))

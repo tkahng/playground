@@ -3,8 +3,10 @@ package apis
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"log/slog"
+	"net/http"
 	"slices"
 	"time"
 
@@ -15,6 +17,11 @@ import (
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/utils"
 )
+
+// maxUploadBytes is the per-file size cap for both multipart file uploads and
+// URL-sourced downloads.  Files larger than this are rejected before any bytes
+// are forwarded to object storage.
+const maxUploadBytes = 50 * 1024 * 1024 // 50 MB
 
 func (api *Api) UploadMedia(ctx context.Context, input *struct {
 	RawBody huma.MultipartFormFiles[struct {
@@ -30,9 +37,17 @@ func (api *Api) UploadMedia(ctx context.Context, input *struct {
 
 	if formData.Files != nil {
 		for _, file := range formData.Files {
+			// Read at most maxUploadBytes+1 so we can detect an oversize file
+			// without buffering the entire body first.
+			lr := &io.LimitedReader{R: file.File, N: maxUploadBytes + 1}
 			var buf bytes.Buffer
-			if _, err := io.Copy(&buf, file.File); err != nil {
+			if _, err := io.Copy(&buf, lr); err != nil {
 				return nil, err
+			}
+			if int64(buf.Len()) > maxUploadBytes {
+				return nil, huma.NewError(http.StatusRequestEntityTooLarge,
+					fmt.Sprintf("file %q exceeds the %d MB upload limit",
+						file.Filename, maxUploadBytes/(1024*1024)))
 			}
 			dto, err := api.App().Fs().PutFileFromBytes(ctx, buf.Bytes(), file.Filename)
 			if err != nil {
