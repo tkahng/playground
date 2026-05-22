@@ -35,6 +35,7 @@ import { Route as AuthenticatedProtectedRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
+import { Route as LandingBlogIndexRouteImport } from './routes/_landing/blog.index'
 import { Route as AuthenticatedTeamsIndexRouteImport } from './routes/_authenticated/teams/index'
 import { Route as LandingBlogSlugRouteImport } from './routes/_landing/blog.$slug'
 import { Route as AuthenticatedProtectedProtectedLayoutRouteImport } from './routes/_authenticated/protected/_protectedLayout'
@@ -210,6 +211,11 @@ const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   id: '/account',
   path: '/account',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const LandingBlogIndexRoute = LandingBlogIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LandingBlogRoute,
 } as any)
 const AuthenticatedTeamsIndexRoute = AuthenticatedTeamsIndexRouteImport.update({
   id: '/',
@@ -507,6 +513,7 @@ export interface FileRoutesByFullPath {
   '/payment/success': typeof AuthenticatedPaymentSuccessRoute
   '/blog/$slug': typeof LandingBlogSlugRoute
   '/teams/': typeof AuthenticatedTeamsIndexRoute
+  '/blog/': typeof LandingBlogIndexRoute
   '/account/dashboard': typeof AuthenticatedAccountAccountLayoutDashboardRoute
   '/account/friends': typeof AuthenticatedAccountAccountLayoutFriendsRoute
   '/account/rock-paper-scissors': typeof AuthenticatedAccountAccountLayoutRockPaperScissorsRoute
@@ -554,7 +561,6 @@ export interface FileRoutesByTo {
   '/protected': typeof AuthenticatedProtectedProtectedLayoutIndexRoute
   '/verify-email': typeof AuthenticatedVerifyEmailRoute
   '/about': typeof LandingAboutRoute
-  '/blog': typeof LandingBlogRouteWithChildren
   '/contact': typeof LandingContactRoute
   '/features': typeof LandingFeaturesRoute
   '/home': typeof LandingHomeRoute
@@ -573,6 +579,7 @@ export interface FileRoutesByTo {
   '/payment/success': typeof AuthenticatedPaymentSuccessRoute
   '/blog/$slug': typeof LandingBlogSlugRoute
   '/teams': typeof AuthenticatedTeamsIndexRoute
+  '/blog': typeof LandingBlogIndexRoute
   '/account/dashboard': typeof AuthenticatedAccountAccountLayoutDashboardRoute
   '/account/friends': typeof AuthenticatedAccountAccountLayoutFriendsRoute
   '/account/rock-paper-scissors': typeof AuthenticatedAccountAccountLayoutRockPaperScissorsRoute
@@ -645,6 +652,7 @@ export interface FileRoutesById {
   '/_authenticated/protected/_protectedLayout': typeof AuthenticatedProtectedProtectedLayoutRouteWithChildren
   '/_landing/blog/$slug': typeof LandingBlogSlugRoute
   '/_authenticated/teams/': typeof AuthenticatedTeamsIndexRoute
+  '/_landing/blog/': typeof LandingBlogIndexRoute
   '/_authenticated/account/_accountLayout/dashboard': typeof AuthenticatedAccountAccountLayoutDashboardRoute
   '/_authenticated/account/_accountLayout/friends': typeof AuthenticatedAccountAccountLayoutFriendsRoute
   '/_authenticated/account/_accountLayout/rock-paper-scissors': typeof AuthenticatedAccountAccountLayoutRockPaperScissorsRoute
@@ -714,6 +722,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/blog/$slug'
     | '/teams/'
+    | '/blog/'
     | '/account/dashboard'
     | '/account/friends'
     | '/account/rock-paper-scissors'
@@ -761,7 +770,6 @@ export interface FileRouteTypes {
     | '/protected'
     | '/verify-email'
     | '/about'
-    | '/blog'
     | '/contact'
     | '/features'
     | '/home'
@@ -780,6 +788,7 @@ export interface FileRouteTypes {
     | '/payment/success'
     | '/blog/$slug'
     | '/teams'
+    | '/blog'
     | '/account/dashboard'
     | '/account/friends'
     | '/account/rock-paper-scissors'
@@ -851,6 +860,7 @@ export interface FileRouteTypes {
     | '/_authenticated/protected/_protectedLayout'
     | '/_landing/blog/$slug'
     | '/_authenticated/teams/'
+    | '/_landing/blog/'
     | '/_authenticated/account/_accountLayout/dashboard'
     | '/_authenticated/account/_accountLayout/friends'
     | '/_authenticated/account/_accountLayout/rock-paper-scissors'
@@ -1081,6 +1091,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/account'
       preLoaderRoute: typeof AuthenticatedAccountRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/_landing/blog/': {
+      id: '/_landing/blog/'
+      path: '/'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof LandingBlogIndexRouteImport
+      parentRoute: typeof LandingBlogRoute
     }
     '/_authenticated/teams/': {
       id: '/_authenticated/teams/'
@@ -1641,10 +1658,12 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 
 interface LandingBlogRouteChildren {
   LandingBlogSlugRoute: typeof LandingBlogSlugRoute
+  LandingBlogIndexRoute: typeof LandingBlogIndexRoute
 }
 
 const LandingBlogRouteChildren: LandingBlogRouteChildren = {
   LandingBlogSlugRoute: LandingBlogSlugRoute,
+  LandingBlogIndexRoute: LandingBlogIndexRoute,
 }
 
 const LandingBlogRouteWithChildren = LandingBlogRoute._addFileChildren(

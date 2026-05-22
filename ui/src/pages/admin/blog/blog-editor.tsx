@@ -27,10 +27,10 @@ import {
   unpublishBlogPost,
   updateBlogPost,
 } from "@/lib/blog-queries";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type MediaItem } from "@/lib/media-queries";
-import { X } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -201,6 +201,13 @@ export default function BlogEditor({ postId }: BlogEditorProps) {
 
   return (
     <div className="space-y-6 max-w-3xl">
+      <Link
+        to="/admin/blog"
+        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground w-fit"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to posts
+      </Link>
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">
           {isEdit ? "Edit Post" : "New Post"}
