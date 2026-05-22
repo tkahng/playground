@@ -16,6 +16,7 @@ import (
 )
 
 func TestTeamStore_UpdateTeamMember(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user, err := adapter.User().CreateUser(ctx, &models.User{
@@ -237,7 +238,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		time.Sleep(time.Millisecond * 10)
+		time.Sleep(time.Millisecond)
 		err = adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, teamMember1.TeamID, userID)
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
@@ -252,7 +253,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 		if latest.ID != teamMember1.ID {
 			t.Errorf("FindLatestTeamMemberByUserID() = %v, want teamMember1 ID %v", latest.ID, teamMember1.ID)
 		}
-		time.Sleep(time.Millisecond * 10)
+		time.Sleep(time.Millisecond)
 		err = adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, teamMember1.TeamID, userID)
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
@@ -298,9 +299,6 @@ func TestUpdateTeamMemberUpdatedAt(t *testing.T) {
 		}
 		// Capture the original updated_at
 		original := member.CreatedAt
-
-		// Sleep to ensure updated_at will be different
-		time.Sleep(time.Second * 1)
 
 		err = adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, team.ID, user.ID)
 		if err != nil {
@@ -385,6 +383,7 @@ func TestUpdateTeamMemberSelectedAt(t *testing.T) {
 }
 
 func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user1, err := adapter.User().CreateUser(ctx, &models.User{

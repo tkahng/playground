@@ -86,7 +86,6 @@ func TestTeamStore_InvitationCRUD(t *testing.T) {
 		if err != nil {
 			t.Errorf("UpdateInvitation() error = %v", err)
 		}
-		time.Sleep(1 * time.Second)
 		// FindInvitationByID should return ErrTokenExpired (not expired)
 		newinv, err := store.FindInvitationByToken(ctx, token)
 		if err != nil || newinv == nil {

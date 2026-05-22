@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
@@ -12,6 +11,7 @@ import (
 )
 
 func TestBetting_NoPendingTransfers_AfterCancel(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -83,6 +83,7 @@ func TestBetting_NoPendingTransfers_AfterCancel(t *testing.T) {
 }
 
 func TestBetting_NoPendingTransfers_AfterExpiry(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -104,7 +105,7 @@ func TestBetting_NoPendingTransfers_AfterExpiry(t *testing.T) {
 			RequestingPlayerID:   host.ID,
 			InvitedPlayerID:      guest.ID,
 			RequestingPlayerMove: models.RpsParticipantMoveRock,
-			DurationSeconds:      1,
+			DurationSeconds:      0,
 			BetAmount:            &betAmount,
 			HostUserID:           host.UserID,
 		})
@@ -114,8 +115,6 @@ func TestBetting_NoPendingTransfers_AfterExpiry(t *testing.T) {
 		if game.RpsGame.HostBetTransferID == nil {
 			t.Fatal("expected HostBetTransferID to be set after RequestGame with bet")
 		}
-
-		time.Sleep(2 * time.Second)
 
 		processed, err := rpsService.ExpireGamesAndRefundBets(ctx)
 		if err != nil {
@@ -155,6 +154,7 @@ func TestBetting_NoPendingTransfers_AfterExpiry(t *testing.T) {
 }
 
 func TestBetting_NoPendingTransfers_AfterComplete_HostWins(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -228,6 +228,7 @@ func TestBetting_NoPendingTransfers_AfterComplete_HostWins(t *testing.T) {
 }
 
 func TestBetting_NoPendingTransfers_AfterComplete_GuestWins(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -301,6 +302,7 @@ func TestBetting_NoPendingTransfers_AfterComplete_GuestWins(t *testing.T) {
 }
 
 func TestBetting_NoPendingTransfers_AfterComplete_Tie(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -374,6 +376,7 @@ func TestBetting_NoPendingTransfers_AfterComplete_Tie(t *testing.T) {
 }
 
 func TestBetting_GuestCanRetry_AfterInsufficientFunds(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)

@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tkahng/playground/internal/tools/ticket"
 )
 
@@ -31,9 +32,10 @@ func TestStore_UnknownTicketRejected(t *testing.T) {
 func TestStore_ExpiredTicketRejected(t *testing.T) {
 	s := ticket.New(5 * time.Millisecond)
 	tok := s.Issue(uuid.New(), uuid.New())
-	time.Sleep(20 * time.Millisecond)
-	_, _, ok := s.Validate(tok)
-	assert.False(t, ok)
+	require.Eventually(t, func() bool {
+		_, _, ok := s.Validate(tok)
+		return !ok
+	}, 200*time.Millisecond, 1*time.Millisecond)
 }
 
 func TestStore_RevokedTicketRejected(t *testing.T) {

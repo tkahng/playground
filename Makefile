@@ -29,3 +29,11 @@ gotestsum:
 .PHONY: gotest
 gotest:
 	go test -v ./... -race
+
+.PHONY: gotest-short
+gotest-short:
+	go test -short -count=1 -timeout 2m ./...
+
+.PHONY: gotest-race-concurrent
+gotest-race-concurrent:
+	go test -race -count=1 ./internal/tools/websocket/... ./internal/tools/sse/... ./internal/workers/... ./internal/jobs/...
