@@ -22,6 +22,19 @@ setupuser1:
 	go run . seed user tkahng+01@gmail.com Password123! true
 	go run . seed team tkahng+01@gmail.com team1
 
+.PHONY: gotest-unit
+gotest-unit:
+	go test -count=1 -timeout 2m ./...
+
+.PHONY: gotest-integration
+gotest-integration:
+	go test -v -count=1 -tags integration ./... -race
+
+.PHONY: gotest-all
+gotest-all:
+	go test -count=1 -timeout 2m ./...
+	go test -v -count=1 -tags integration ./... -race
+
 .PHONY: gotestsum
 gotestsum:
 	gotestsum -- -v -tags integration ./... -race
@@ -29,10 +42,6 @@ gotestsum:
 .PHONY: gotest
 gotest:
 	go test -v -tags integration ./... -race
-
-.PHONY: gotest-unit
-gotest-unit:
-	go test -count=1 -timeout 2m ./...
 
 .PHONY: gotest-race-concurrent
 gotest-race-concurrent:

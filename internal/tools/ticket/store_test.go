@@ -1,3 +1,5 @@
+//go:build !integration
+
 package ticket_test
 
 import (

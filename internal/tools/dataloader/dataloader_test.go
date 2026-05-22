@@ -1,3 +1,5 @@
+//go:build !integration
+
 package dataloader
 
 // func TestDataloader_Load(t *testing.T) {

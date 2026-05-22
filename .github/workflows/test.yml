@@ -24,6 +24,7 @@ jobs:
 
       - name: Run unit tests
         run: go test -count=1 -timeout 2m ./...
+        # //go:build !integration files only — zero containers
 
   test-backend:
     name: Full tests (with containers)
@@ -46,6 +47,7 @@ jobs:
 
       - name: Run integration tests
         run: go test -v -count=1 -timeout 15m -tags integration ./... -race -coverprofile=coverage.txt
+        # //go:build integration files only — Postgres + MinIO containers
 
   test-frontend:
     runs-on: ubuntu-latest

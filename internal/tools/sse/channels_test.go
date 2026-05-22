@@ -1,3 +1,5 @@
+//go:build !integration
+
 package sse_test
 
 import (

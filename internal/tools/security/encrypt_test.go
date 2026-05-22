@@ -1,3 +1,5 @@
+//go:build !integration
+
 package security_test
 
 import (
