@@ -31,7 +31,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type MediaItem } from "@/lib/media-queries";
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface BlogEditorProps {
@@ -53,11 +53,17 @@ export default function BlogEditor({ postId }: BlogEditorProps) {
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [newTagName, setNewTagName] = useState("");
   const [featuredImage, setFeaturedImage] = useState<MediaItem | null>(null);
+  // Track whether the form has been initialised from server data so a
+  // background refetch after saving does not reset in-progress edits.
+  const initializedRef = useRef(false);
 
-  const { data: existingPost, isLoading: loadingPost } = useQuery({
+  const { data: existingPost, isLoading: loadingPost, isError: loadError } = useQuery({
     queryKey: ["admin-blog-post", postId],
     queryFn: () => getBlogPost(postId!, token),
     enabled: isEdit && !!token,
+    // Prevent background refetches from resetting form state.
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
   });
 
   const { data: allTags = [] } = useQuery<BlogTag[]>({
@@ -66,7 +72,10 @@ export default function BlogEditor({ postId }: BlogEditorProps) {
   });
 
   useEffect(() => {
-    if (existingPost) {
+    // Only initialise once — subsequent background refetches must not reset
+    // in-progress edits the user has made since the last save.
+    if (existingPost && !initializedRef.current) {
+      initializedRef.current = true;
       setTitle(existingPost.title);
       setContent(existingPost.content);
       setContentFormat(existingPost.content_format);
@@ -77,10 +86,10 @@ export default function BlogEditor({ postId }: BlogEditorProps) {
         setFeaturedImage({
           id: existingPost.featured_image_id,
           url: existingPost.featured_image_url,
-          storage_key: "",
-          mime_type: "image/jpeg",
+          storage_key: existingPost.featured_image_id,
+          mime_type: "",
           size: 0,
-          original_filename: "Featured image",
+          original_filename: "",
           alt_text: null,
           width: null,
           height: null,
@@ -183,6 +192,7 @@ export default function BlogEditor({ postId }: BlogEditorProps) {
   };
 
   if (isEdit && loadingPost) return <CenteredSpinner />;
+  if (isEdit && loadError) return <p className="p-4 text-destructive">Failed to load post. It may have been deleted.</p>;
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
   const status = existingPost?.status;

@@ -38,7 +38,7 @@ type S3FileSystem struct {
 
 func (fs *S3FileSystem) PutFile(ctx context.Context, authority string, key string, file io.Reader) error {
 	_, err := fs.storageClient.PutObject(ctx, &awss3.PutObjectInput{
-		Bucket: aws.String(fs.cfg.BucketName),
+		Bucket: aws.String(authority),
 		Key:    aws.String(key),
 		Body:   file,
 	})

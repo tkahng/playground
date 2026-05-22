@@ -108,6 +108,31 @@ func TestFilesystem_MultipleUploads_UniqueKeys(t *testing.T) {
 	})
 }
 
+func TestFilesystem_DeleteObject(t *testing.T) {
+	skipIfShort(t)
+	filesystem.WithMinioContainer(t, func(ctx context.Context, fs filesystem.FileSystem, cfg conf.StorageConfig) {
+		content := []byte("delete me")
+		dto, err := fs.PutFileFromBytes(ctx, content, "delete.txt")
+		require.NoError(t, err)
+
+		// File should be reachable before deletion.
+		resp, err := http.Get(fs.PublicURL(dto.StorageKey)) //nolint:noctx
+		require.NoError(t, err)
+		resp.Body.Close()
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		// Delete the object.
+		require.NoError(t, fs.DeleteObject(ctx, dto.StorageKey))
+
+		// File should no longer be reachable (MinIO returns 403 for public buckets
+		// when the object is absent, rather than 404, so we just check != 200).
+		resp2, err := http.Get(fs.PublicURL(dto.StorageKey)) //nolint:noctx
+		require.NoError(t, err)
+		resp2.Body.Close()
+		assert.NotEqual(t, http.StatusOK, resp2.StatusCode, "deleted object should not be accessible")
+	})
+}
+
 // makePNGBytes returns a minimal valid PNG header followed by padding.
 func makePNGBytes() []byte {
 	header := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}

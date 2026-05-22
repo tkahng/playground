@@ -77,9 +77,10 @@ async function blogFetch<T>(
   token?: string,
   body?: unknown,
 ): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
+  const headers: Record<string, string> = {};
+  if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+  }
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
