@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   getBlogPost,
   createBlogPost,
@@ -46,9 +46,15 @@ describe("BlogPost type", () => {
   });
 
   it("featured_image_id can be null or string", () => {
-    const withImage: BlogPost = { ...mockPost, featured_image_id: "media-uuid", featured_image_url: "https://pub.example.com/media/image.jpg" };
+    const withImage: BlogPost = {
+      ...mockPost,
+      featured_image_id: "media-uuid",
+      featured_image_url: "https://pub.example.com/media/image.jpg",
+    };
     expect(withImage.featured_image_id).toBe("media-uuid");
-    expect(withImage.featured_image_url).toBe("https://pub.example.com/media/image.jpg");
+    expect(withImage.featured_image_url).toBe(
+      "https://pub.example.com/media/image.jpg",
+    );
   });
 });
 
@@ -58,7 +64,10 @@ describe("getBlogPost", () => {
   it("calls GET /api/blog/posts/:slug and returns data", async () => {
     const spy = mockFetch({ data: mockPost });
     const result = await getBlogPost("test-post");
-    expect(spy).toHaveBeenCalledWith("/api/blog/posts/test-post", expect.any(Object));
+    expect(spy).toHaveBeenCalledWith(
+      "/api/blog/posts/test-post",
+      expect.any(Object),
+    );
     expect(result.slug).toBe("test-post");
   });
 });
@@ -67,13 +76,36 @@ describe("listBlogPosts", () => {
   afterEach(() => vi.restoreAllMocks());
 
   it("calls GET /api/blog/posts without token for public list", async () => {
-    const spy = mockFetch({ data: [mockPost], meta: { page: 0, per_page: 10, total: 1, next_page: null, prev_page: null, has_more: false } });
+    const spy = mockFetch({
+      data: [mockPost],
+      meta: {
+        page: 0,
+        per_page: 10,
+        total: 1,
+        next_page: null,
+        prev_page: null,
+        has_more: false,
+      },
+    });
     await listBlogPosts();
-    expect(spy).toHaveBeenCalledWith("/api/blog/posts", expect.objectContaining({ method: "GET" }));
+    expect(spy).toHaveBeenCalledWith(
+      "/api/blog/posts",
+      expect.objectContaining({ method: "GET" }),
+    );
   });
 
   it("appends status query params when provided", async () => {
-    const spy = mockFetch({ data: [], meta: { page: 0, per_page: 10, total: 0, next_page: null, prev_page: null, has_more: false } });
+    const spy = mockFetch({
+      data: [],
+      meta: {
+        page: 0,
+        per_page: 10,
+        total: 0,
+        next_page: null,
+        prev_page: null,
+        has_more: false,
+      },
+    });
     await listBlogPosts({ status: ["draft", "published"] }, "token");
     const url = spy.mock.calls[0]![0] as string;
     expect(url).toContain("status=draft");
@@ -112,7 +144,10 @@ describe("updateBlogPost", () => {
   it("sends PATCH to /api/blog/posts/:id", async () => {
     const spy = mockFetch({ data: mockPost });
     await updateBlogPost("token", "post-1", { title: "New title" });
-    expect(spy).toHaveBeenCalledWith("/api/blog/posts/post-1", expect.objectContaining({ method: "PATCH" }));
+    expect(spy).toHaveBeenCalledWith(
+      "/api/blog/posts/post-1",
+      expect.objectContaining({ method: "PATCH" }),
+    );
   });
 });
 
