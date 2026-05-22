@@ -19,6 +19,7 @@ import (
 	"github.com/tkahng/playground/internal/core"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/tools/filesystem"
 )
 
@@ -188,6 +189,180 @@ func TestApi_GetMedia(t *testing.T) {
 					TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 					BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 						scenario.Headers = []string{header}
+					},
+				},
+			}
+			for _, tt := range tests {
+				tt.Test(t)
+			}
+		})
+	})
+}
+
+// ── UpdateMedia ───────────────────────────────────────────────────────────────
+
+func TestApi_UpdateMedia_Ownership(t *testing.T) {
+	skipContainer(t)
+
+	filesystem.WithMinioContainer(t, func(fsCtx context.Context, fs filesystem.FileSystem, cfg conf.StorageConfig) {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := apis.SetupApi(t, ctx, db)
+			testApi.App.SetFs(fs)
+
+			owner := core.CreateUserWithOptions(t, testApi.App,
+				core.UserWithEmail("media-owner@test.local"), core.UserWithVerifiedNow())
+			other := core.CreateUserWithOptions(t, testApi.App,
+				core.UserWithEmail("media-other@test.local"), core.UserWithVerifiedNow())
+			admin := core.CreateUserWithOptions(t, testApi.App,
+				core.UserWithEmail("media-admin@test.local"),
+				core.UserWithVerifiedNow(),
+				core.UserWithPermission(shared.PermissionNameAdmin),
+			)
+
+			ownerHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, owner.User.Email)
+			otherHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, other.User.Email)
+			adminHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, admin.User.Email)
+
+			dto, err := fs.PutFileFromBytes(fsCtx, []byte("ownership test"), "ownership.txt")
+			require.NoError(t, err)
+			medium, err := testApi.App.Adapter().Media().CreateMedia(ctx, buildMedium(owner.User.ID, dto))
+			require.NoError(t, err)
+
+			altText := "updated alt text"
+			body, _ := json.Marshal(map[string]any{"alt_text": altText})
+			url := fmt.Sprintf("/media/%s", medium.ID)
+
+			tests := []apis.ApiScenario{
+				{
+					Name:            "non-owner cannot update another user's media",
+					Method:          http.MethodPatch,
+					URL:             url,
+					Body:            bytes.NewReader(body),
+					ExpectedStatus:  http.StatusForbidden,
+					ExpectedContent: []string{`"status":403`},
+					TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
+					BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+						scenario.Headers = []string{otherHeader, "Content-Type: application/json"}
+					},
+				},
+				{
+					Name:           "owner can update their own media",
+					Method:         http.MethodPatch,
+					URL:            url,
+					Body:           bytes.NewReader(body),
+					ExpectedStatus: http.StatusOK,
+					TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+					BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+						scenario.Headers = []string{ownerHeader, "Content-Type: application/json"}
+					},
+					AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+						var result apis.Media
+						require.NoError(t, json.Unmarshal(res.Body.Bytes(), &result))
+						require.NotNil(t, result.AltText)
+						assert.Equal(t, altText, *result.AltText)
+					},
+				},
+				{
+					Name:           "admin can update any user's media",
+					Method:         http.MethodPatch,
+					URL:            url,
+					Body:           bytes.NewReader(body),
+					ExpectedStatus: http.StatusOK,
+					TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+					BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+						scenario.Headers = []string{adminHeader, "Content-Type: application/json"}
+					},
+					AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+						var result apis.Media
+						require.NoError(t, json.Unmarshal(res.Body.Bytes(), &result))
+						assert.Equal(t, medium.ID, result.ID)
+					},
+				},
+			}
+			for _, tt := range tests {
+				tt.Test(t)
+			}
+		})
+	})
+}
+
+// ── DeleteMedia ───────────────────────────────────────────────────────────────
+
+func TestApi_DeleteMedia_Ownership(t *testing.T) {
+	skipContainer(t)
+
+	filesystem.WithMinioContainer(t, func(fsCtx context.Context, fs filesystem.FileSystem, cfg conf.StorageConfig) {
+		database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+			testApi := apis.SetupApi(t, ctx, db)
+			testApi.App.SetFs(fs)
+
+			owner := core.CreateUserWithOptions(t, testApi.App,
+				core.UserWithEmail("del-owner@test.local"), core.UserWithVerifiedNow())
+			other := core.CreateUserWithOptions(t, testApi.App,
+				core.UserWithEmail("del-other@test.local"), core.UserWithVerifiedNow())
+			admin := core.CreateUserWithOptions(t, testApi.App,
+				core.UserWithEmail("del-admin@test.local"),
+				core.UserWithVerifiedNow(),
+				core.UserWithPermission(shared.PermissionNameAdmin),
+			)
+
+			ownerHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, owner.User.Email)
+			otherHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, other.User.Email)
+			adminHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, testApi.App, admin.User.Email)
+
+			// Helper to create a fresh media record for each sub-test.
+			newMedium := func() *models.Medium {
+				dto, err := fs.PutFileFromBytes(fsCtx, []byte("delete ownership test"), "delete-test.txt")
+				require.NoError(t, err)
+				m, err := testApi.App.Adapter().Media().CreateMedia(ctx, buildMedium(owner.User.ID, dto))
+				require.NoError(t, err)
+				return m
+			}
+
+			medium := newMedium()
+			adminTarget := newMedium()
+
+			tests := []apis.ApiScenario{
+				{
+					Name:            "non-owner cannot delete another user's media",
+					Method:          http.MethodDelete,
+					URL:             fmt.Sprintf("/media/%s", medium.ID),
+					ExpectedStatus:  http.StatusForbidden,
+					ExpectedContent: []string{`"status":403`},
+					TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
+					BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+						scenario.Headers = []string{otherHeader}
+					},
+					AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+						// Record must still exist.
+						got, err := app.Adapter().Media().FindMediaByID(ctx, medium.ID)
+						require.NoError(t, err)
+						assert.NotNil(t, got)
+					},
+				},
+				{
+					Name:           "owner can delete their own media",
+					Method:         http.MethodDelete,
+					URL:            fmt.Sprintf("/media/%s", medium.ID),
+					ExpectedStatus: http.StatusNoContent,
+					TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+					BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+						scenario.Headers = []string{ownerHeader}
+					},
+					AfterTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario, res *httptest.ResponseRecorder) {
+						got, err := app.Adapter().Media().FindMediaByID(ctx, medium.ID)
+						require.NoError(t, err)
+						assert.Nil(t, got)
+					},
+				},
+				{
+					Name:           "admin can delete any user's media",
+					Method:         http.MethodDelete,
+					URL:            fmt.Sprintf("/media/%s", adminTarget.ID),
+					ExpectedStatus: http.StatusNoContent,
+					TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+					BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
+						scenario.Headers = []string{adminHeader}
 					},
 				},
 			}

@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"slices"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -149,6 +150,10 @@ type UpdateMediaInput struct {
 }
 
 func (api *Api) UpdateMedia(ctx context.Context, input *UpdateMediaInput) (*GetMediaOutput, error) {
+	caller := contextstore.GetContextUserInfo(ctx)
+	if caller == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
 	id, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, err
@@ -159,6 +164,10 @@ func (api *Api) UpdateMedia(ctx context.Context, input *UpdateMediaInput) (*GetM
 	}
 	if media == nil {
 		return nil, huma.Error404NotFound("media not found")
+	}
+	isAdmin := slices.Contains(caller.Permissions, "superuser")
+	if !isAdmin && (media.UserID == nil || *media.UserID != caller.User.ID) {
+		return nil, huma.Error403Forbidden("forbidden")
 	}
 	media.AltText = input.Body.AltText
 	updated, err := api.App().Adapter().Media().UpdateMedia(ctx, media)
@@ -171,6 +180,10 @@ func (api *Api) UpdateMedia(ctx context.Context, input *UpdateMediaInput) (*GetM
 func (api *Api) DeleteMedia(ctx context.Context, input *struct {
 	ID string `path:"id" format:"uuid" required:"true"`
 }) (*struct{}, error) {
+	caller := contextstore.GetContextUserInfo(ctx)
+	if caller == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
 	id, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, err
@@ -181,6 +194,10 @@ func (api *Api) DeleteMedia(ctx context.Context, input *struct {
 	}
 	if media == nil {
 		return nil, huma.Error404NotFound("media not found")
+	}
+	isAdmin := slices.Contains(caller.Permissions, "superuser")
+	if !isAdmin && (media.UserID == nil || *media.UserID != caller.User.ID) {
+		return nil, huma.Error403Forbidden("forbidden")
 	}
 	if err := api.App().Adapter().Media().DeleteMedia(ctx, id); err != nil {
 		return nil, err
