@@ -204,6 +204,20 @@ func (api *Api) BlogPostGet(ctx context.Context, input *struct {
 	return &ApiSingleOutput[*BlogPost]{Body: ApiSingleResponse[*BlogPost]{Data: api.fromModelBlogPost(post, media)}}, nil
 }
 
+// requireAdmin returns the caller's UserInfo when they have the superuser
+// permission, or a 401/403 error otherwise.  Call at the top of every admin
+// handler as a defence-in-depth layer beneath the route middleware.
+func requireAdmin(ctx context.Context) (*models.UserInfo, error) {
+	userInfo := contextstore.GetContextUserInfo(ctx)
+	if userInfo == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
+	if !slices.Contains(userInfo.Permissions, "superuser") {
+		return nil, huma.Error403Forbidden("forbidden")
+	}
+	return userInfo, nil
+}
+
 // ── Create post (admin) ────────────────────────────────────────────────────
 
 type BlogPostCreateInput struct {
@@ -211,9 +225,9 @@ type BlogPostCreateInput struct {
 }
 
 func (api *Api) BlogPostCreate(ctx context.Context, input *BlogPostCreateInput) (*ApiSingleOutput[*BlogPost], error) {
-	userInfo := contextstore.GetContextUserInfo(ctx)
-	if userInfo == nil {
-		return nil, huma.Error401Unauthorized("unauthorized")
+	userInfo, err := requireAdmin(ctx)
+	if err != nil {
+		return nil, err
 	}
 	input.Body.AuthorID = userInfo.User.ID
 
@@ -233,6 +247,9 @@ type BlogPostUpdateInput struct {
 }
 
 func (api *Api) BlogPostUpdate(ctx context.Context, input *BlogPostUpdateInput) (*ApiSingleOutput[*BlogPost], error) {
+	if _, err := requireAdmin(ctx); err != nil {
+		return nil, err
+	}
 	postID, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("invalid post id")
@@ -250,6 +267,9 @@ func (api *Api) BlogPostUpdate(ctx context.Context, input *BlogPostUpdateInput) 
 func (api *Api) BlogPostPublish(ctx context.Context, input *struct {
 	ID string `path:"post-id" required:"true" format:"uuid"`
 }) (*ApiSingleOutput[*BlogPost], error) {
+	if _, err := requireAdmin(ctx); err != nil {
+		return nil, err
+	}
 	postID, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("invalid post id")
@@ -267,6 +287,9 @@ func (api *Api) BlogPostPublish(ctx context.Context, input *struct {
 func (api *Api) BlogPostUnpublish(ctx context.Context, input *struct {
 	ID string `path:"post-id" required:"true" format:"uuid"`
 }) (*ApiSingleOutput[*BlogPost], error) {
+	if _, err := requireAdmin(ctx); err != nil {
+		return nil, err
+	}
 	postID, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("invalid post id")
@@ -284,6 +307,9 @@ func (api *Api) BlogPostUnpublish(ctx context.Context, input *struct {
 func (api *Api) BlogPostArchive(ctx context.Context, input *struct {
 	ID string `path:"post-id" required:"true" format:"uuid"`
 }) (*ApiSingleOutput[*BlogPost], error) {
+	if _, err := requireAdmin(ctx); err != nil {
+		return nil, err
+	}
 	postID, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("invalid post id")
@@ -301,6 +327,9 @@ func (api *Api) BlogPostArchive(ctx context.Context, input *struct {
 func (api *Api) BlogPostDelete(ctx context.Context, input *struct {
 	ID string `path:"post-id" required:"true" format:"uuid"`
 }) (*struct{}, error) {
+	if _, err := requireAdmin(ctx); err != nil {
+		return nil, err
+	}
 	postID, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("invalid post id")
@@ -330,6 +359,9 @@ type BlogTagCreateInput struct {
 }
 
 func (api *Api) BlogTagCreate(ctx context.Context, input *BlogTagCreateInput) (*ApiSingleOutput[*BlogTag], error) {
+	if _, err := requireAdmin(ctx); err != nil {
+		return nil, err
+	}
 	tag, err := api.App().Adapter().Blog().CreateTag(ctx, &input.Body)
 	if err != nil {
 		return nil, err
