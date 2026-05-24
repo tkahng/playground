@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"slices"
 	"strconv"
+	"sync"
 	"testing"
 
 	"github.com/tkahng/playground/internal/tools/store"
@@ -305,6 +306,44 @@ func TestGetOrSet(t *testing.T) {
 				t.Fatalf("Expected %v, got %v", scenario.expected, result)
 			}
 		})
+	}
+}
+
+// TestGetOrSet_Concurrent verifies that setFunc is called exactly once and the
+// same value is returned to all concurrent callers when the key is absent.
+// This guards against the TOCTOU race that existed before the double-checked
+// locking fix.
+func TestGetOrSet_Concurrent(t *testing.T) {
+	const goroutines = 100
+	s := &store.Store[string, int]{}
+
+	calls := 0
+	var mu sync.Mutex
+
+	var wg sync.WaitGroup
+	results := make([]int, goroutines)
+	for i := range goroutines {
+		wg.Add(1)
+		i := i
+		go func() {
+			defer wg.Done()
+			results[i] = s.GetOrSet("key", func() int {
+				mu.Lock()
+				calls++
+				mu.Unlock()
+				return 42
+			})
+		}()
+	}
+	wg.Wait()
+
+	if calls != 1 {
+		t.Errorf("setFunc called %d times, want 1", calls)
+	}
+	for i, v := range results {
+		if v != 42 {
+			t.Errorf("goroutine %d got %d, want 42", i, v)
+		}
 	}
 }
 
