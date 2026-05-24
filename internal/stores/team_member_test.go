@@ -88,43 +88,6 @@ func TestTeamStore_UpdateTeamMember(t *testing.T) {
 	})
 }
 
-func TestTeamStore_CountTeamMembers(t *testing.T) {
-	t.Parallel()
-	test.SkipIfShort(t)
-	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		type fields struct {
-			db database.Dbx
-		}
-		type args struct {
-			ctx    context.Context
-			teamId uuid.UUID
-		}
-		tests := []struct {
-			name    string
-			fields  fields
-			args    args
-			want    int64
-			wantErr bool
-		}{
-			// TODO: Add test cases.
-		}
-		for _, tt := range tests {
-			t.Run(tt.name, func(t *testing.T) {
-				s := stores.NewStorageAdapter(tt.fields.db)
-				got, err := s.TeamMember().CountTeamMembers(tt.args.ctx, &stores.TeamMemberFilter{
-					TeamIds: []uuid.UUID{tt.args.teamId},
-				})
-				if (err != nil) != tt.wantErr {
-					t.Errorf("PostgresTeamStore.CountTeamMembers() error = %v, wantErr %v", err, tt.wantErr)
-					return
-				}
-				if got != tt.want {
-					t.Errorf("PostgresTeamStore.CountTeamMembers() = %v, want %v", got, tt.want)
-				}
-			})
-		}
-	})
-}
 
 func TestCreateTeamMember(t *testing.T) {
 	t.Parallel()
@@ -230,7 +193,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		teamMember2, err := adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
+		_, err = adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
 			TeamID:           team2.ID,
 			UserID:           &userID,
 			Role:             models.TeamMemberRoleMember,
@@ -240,7 +203,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CreateTeamMember() error = %v", err)
 		}
-		time.Sleep(time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 		err = adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, teamMember1.TeamID, userID)
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
@@ -255,7 +218,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 		if latest.ID != teamMember1.ID {
 			t.Errorf("FindLatestTeamMemberByUserID() = %v, want teamMember1 ID %v", latest.ID, teamMember1.ID)
 		}
-		time.Sleep(time.Millisecond)
+		time.Sleep(10 * time.Millisecond)
 		err = adapter.TeamMember().UpdateTeamMemberSelectedAt(ctx, teamMember1.TeamID, userID)
 		if err != nil {
 			t.Fatalf("UpdateTeamMemberUpdatedAt() error = %v", err)
@@ -268,7 +231,7 @@ func TestFindLatestTeamMemberByUserID(t *testing.T) {
 			t.Errorf("FindLatestTeamMemberByUserID() = %v, want userID %v", latest, userID)
 		}
 		if latest.ID != teamMember1.ID {
-			t.Errorf("FindLatestTeamMemberByUserID() = %v, want teamMember2 ID %v", latest.ID, teamMember2.ID)
+			t.Errorf("FindLatestTeamMemberByUserID() = %v, want teamMember1 ID %v", latest.ID, teamMember1.ID)
 		}
 	})
 }
@@ -421,9 +384,6 @@ func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
 				t.Fatalf("CreateTeamMember() error = %v", err)
 			}
 		}
-		type fields struct {
-			db database.Dbx
-		}
 		type args struct {
 			ctx     context.Context
 			userId  uuid.UUID
@@ -431,16 +391,12 @@ func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
 		}
 		tests := []struct {
 			name    string
-			fields  fields
 			args    args
 			want    map[uuid.UUID]*models.TeamMember
 			wantErr bool
 		}{
 			{
 				name: "load team members by team",
-				fields: fields{
-					db: db,
-				},
 				args: args{
 					userId:  user1.ID,
 					teamIds: teamIds,
@@ -452,8 +408,11 @@ func TestDbTeamMemberStore_LoadTeamMembersByUserAndTeamIds(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				store := stores.NewDbTeamMemberStore(tt.fields.db)
-				got, _ := store.LoadTeamMembersByUserAndTeamIds(tt.args.ctx, tt.args.userId, tt.args.teamIds...)
+				store := stores.NewDbTeamMemberStore(db)
+				got, err := store.LoadTeamMembersByUserAndTeamIds(tt.args.ctx, tt.args.userId, tt.args.teamIds...)
+				if err != nil {
+					t.Fatalf("LoadTeamMembersByUserAndTeamIds() error = %v", err)
+				}
 				for _, teamMember := range got {
 					if team, ok := teamsMap[teamMember.TeamID]; ok {
 						if teamMember.UserID == nil || *teamMember.UserID != user1.ID {
@@ -557,17 +516,6 @@ func TestDbTeamMemberStore_FindTeamMembers(t *testing.T) {
 			})
 			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
 				return b.LastSelectedAt.After(a.LastSelectedAt)
-			})
-		})
-		t.Run("sort by team member last selected at desc", func(t *testing.T) {
-			members := FindAndPopulateTeamMembers(t, ctx, adapter, &stores.TeamMemberFilter{
-				SortParams: stores.SortParams{
-					SortBy:    "last_selected_at",
-					SortOrder: "DESC",
-				},
-			})
-			test.TestSliceItemsOrderByFunc(t, members, func(a, b *models.TeamMember) bool {
-				return b.LastSelectedAt.Before(a.LastSelectedAt)
 			})
 		})
 		t.Run("sort by team member last selected at desc", func(t *testing.T) {

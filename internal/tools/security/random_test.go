@@ -32,9 +32,9 @@ func testRandomStringWithAlphabet(t *testing.T, randomFunc func(n int, alphabet 
 		alphabet      string
 		expectPattern string
 	}{
-		{"0123456789_", `[0-9_]+`},
-		{"abcdef123", `[abcdef123]+`},
-		{"!@#$%^&*()", `[\!\@\#\$\%\^\&\*\(\)]+`},
+		{"0123456789_", `^[0-9_]+$`},
+		{"abcdef123", `^[abcdef123]+$`},
+		{"!@#$%^&*()", `^[\!\@\#\$\%\^\&\*\(\)]+$`},
 	}
 
 	for i, s := range scenarios {
@@ -66,7 +66,7 @@ func testRandomStringWithAlphabet(t *testing.T, randomFunc func(n int, alphabet 
 
 func testRandomString(t *testing.T, randomFunc func(n int) string) {
 	generated := make([]string, 0, 1000)
-	reg := regexp.MustCompile(`[a-zA-Z0-9]+`)
+	reg := regexp.MustCompile(`^[a-zA-Z0-9]+$`)
 	length := 10
 
 	for i := 0; i < 1000; i++ {

@@ -12,14 +12,14 @@ import (
 	apphttp "github.com/tkahng/playground/internal/tools/http"
 )
 
-func panicHanlder(w http.ResponseWriter, r *http.Request) {
+func panicHandler(w http.ResponseWriter, r *http.Request) {
 	panic("test panic")
 }
 
 func TestRecovererMiddleware(t *testing.T) {
 	mw := RecovererMiddleware()
 
-	h1 := mw(http.HandlerFunc(panicHanlder))
+	h1 := mw(http.HandlerFunc(panicHandler))
 	req := httptest.NewRequest(http.MethodGet, "/upper?word=abc", nil)
 	w := httptest.NewRecorder()
 	h1.ServeHTTP(w, req)

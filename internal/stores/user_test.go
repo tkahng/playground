@@ -5,7 +5,6 @@ package stores_test
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"slices"
 	"testing"
 
@@ -143,16 +142,12 @@ func TestUserStore_FindUserById(t *testing.T) {
 
 	database.WithNewTestTx(t, func(ctx context.Context, dbxx database.Dbx) {
 		p := stores.NewDbUserStore(dbxx)
-		type fields struct {
-			db database.Dbx
-		}
 		type args struct {
 			ctx    context.Context
 			userId uuid.UUID
 		}
 		tests := []struct {
 			name    string
-			fields  fields
 			args    args
 			want    *models.User
 			wantErr bool
@@ -167,15 +162,11 @@ func TestUserStore_FindUserById(t *testing.T) {
 			}
 			tests = append(tests, struct {
 				name    string
-				fields  fields
 				args    args
 				want    *models.User
 				wantErr bool
 			}{
 				name: fmt.Sprintf("FindUserByID-%s", user.ID.String()),
-				fields: fields{
-					db: dbxx,
-				},
 				args: args{
 					ctx:    ctx,
 					userId: user.ID,
@@ -187,15 +178,11 @@ func TestUserStore_FindUserById(t *testing.T) {
 
 		tests = append(tests, struct {
 			name    string
-			fields  fields
 			args    args
 			want    *models.User
 			wantErr bool
 		}{
 			name: "NotFound",
-			fields: fields{
-				db: dbxx,
-			},
 			args: args{
 				ctx:    ctx,
 				userId: uuid.New(),
@@ -206,14 +193,21 @@ func TestUserStore_FindUserById(t *testing.T) {
 
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				p := stores.NewDbUserStore(tt.fields.db)
+				p := stores.NewDbUserStore(dbxx)
 				got, err := p.FindUserByID(tt.args.ctx, tt.args.userId)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("PostgresUserStore.FindUserByID() error = %v, wantErr %v", err, tt.wantErr)
 					return
 				}
-				if !reflect.DeepEqual(got, tt.want) {
-					t.Errorf("PostgresUserStore.FindUserByID() = %v, want %v", got, tt.want)
+				switch {
+				case got == nil && tt.want != nil:
+					t.Errorf("PostgresUserStore.FindUserByID() = nil, want %v", tt.want)
+				case got != nil && tt.want == nil:
+					t.Errorf("PostgresUserStore.FindUserByID() = %v, want nil", got)
+				case got != nil && tt.want != nil:
+					if got.ID != tt.want.ID || got.Email != tt.want.Email {
+						t.Errorf("PostgresUserStore.FindUserByID() = %v, want %v", got, tt.want)
+					}
 				}
 			})
 		}

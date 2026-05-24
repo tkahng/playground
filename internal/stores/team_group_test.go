@@ -90,37 +90,6 @@ func TestFindTeamByID(t *testing.T) {
 	})
 }
 
-func TestTeamStore_CheckTeamSlug(t *testing.T) {
-	type fields struct {
-		db database.Dbx
-	}
-	type args struct {
-		ctx  context.Context
-		slug string
-	}
-	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    bool
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			adapter := stores.NewStorageAdapter(tt.fields.db)
-			got, err := adapter.TeamGroup().CheckTeamSlug(tt.args.ctx, tt.args.slug)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("PostgresTeamStore.CheckTeamSlug() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("PostgresTeamStore.CheckTeamSlug() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
 
 func TestTeamStore_FindTeamByStripeCustomerId(t *testing.T) {
 	t.Parallel()

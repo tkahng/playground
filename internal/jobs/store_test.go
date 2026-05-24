@@ -20,24 +20,17 @@ func TestDbJobStore_SaveJob(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		type fields struct {
-			db database.Dbx
-		}
 		type args struct {
 			ctx context.Context
 			job *EnqueueParams
 		}
 		tests := []struct {
 			name    string
-			fields  fields
 			args    args
 			wantErr bool
 		}{
 			{
 				name: "create email job",
-				fields: fields{
-					db: db,
-				},
 				args: args{
 					ctx: context.Background(),
 					job: &EnqueueParams{
@@ -57,7 +50,7 @@ func TestDbJobStore_SaveJob(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				s := &DbJobStore{
-					db: tt.fields.db,
+					db: db,
 				}
 				if err := s.SaveJob(tt.args.ctx, tt.args.job); (err != nil) != tt.wantErr {
 					t.Errorf("DbJobStore.SaveJob() error = %v, wantErr %v", err, tt.wantErr)
@@ -95,24 +88,17 @@ func TestDbJobStore_SaveManyJobs(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		type fields struct {
-			db database.Dbx
-		}
 		type args struct {
 			ctx  context.Context
 			jobs []*EnqueueParams
 		}
 		tests := []struct {
 			name    string
-			fields  fields
 			args    args
 			wantErr bool
 		}{
 			{
 				name: "create email job",
-				fields: fields{
-					db: db,
-				},
 				args: args{
 					ctx: context.Background(),
 					jobs: []*EnqueueParams{
@@ -143,7 +129,7 @@ func TestDbJobStore_SaveManyJobs(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				e := &DbJobStore{
-					db: tt.fields.db,
+					db: db,
 				}
 				if err := e.SaveManyJobs(tt.args.ctx, tt.args.jobs...); (err != nil) != tt.wantErr {
 					t.Errorf("DbJobStore.SaveManyJobs() error = %v, wantErr %v", err, tt.wantErr)
@@ -164,9 +150,6 @@ func TestDbJobStore_ClaimPendingJobs(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		type fields struct {
-			db database.Dbx
-		}
 		type args struct {
 			jobs  []*EnqueueParams
 			ctx   context.Context
@@ -174,7 +157,6 @@ func TestDbJobStore_ClaimPendingJobs(t *testing.T) {
 		}
 		tests := []struct {
 			name      string
-			fields    fields
 			args      args
 			want      []*models.JobRow
 			wantCount int64
@@ -182,9 +164,6 @@ func TestDbJobStore_ClaimPendingJobs(t *testing.T) {
 		}{
 			{
 				name: "claim jobs",
-				fields: fields{
-					db: db,
-				},
 				args: args{
 					jobs: []*EnqueueParams{
 						{
@@ -218,7 +197,7 @@ func TestDbJobStore_ClaimPendingJobs(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				s := &DbJobStore{
-					db: tt.fields.db,
+					db: db,
 				}
 				if err := s.SaveManyJobs(tt.args.ctx, tt.args.jobs...); (err != nil) != tt.wantErr {
 					t.Errorf("DbJobStore.SaveManyJobs() error = %v, wantErr %v", err, tt.wantErr)
@@ -241,9 +220,6 @@ func TestDbJobStore_MarkDone(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		type fields struct {
-			db database.Dbx
-		}
 		type args struct {
 			jobs []*EnqueueParams
 			ctx  context.Context
@@ -251,15 +227,11 @@ func TestDbJobStore_MarkDone(t *testing.T) {
 		}
 		tests := []struct {
 			name    string
-			fields  fields
 			args    args
 			wantErr bool
 		}{
 			{
 				name: "mark done",
-				fields: fields{
-					db: db,
-				},
 				args: args{
 					jobs: []*EnqueueParams{
 						{
@@ -281,7 +253,7 @@ func TestDbJobStore_MarkDone(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				s := &DbJobStore{
-					db: tt.fields.db,
+					db: db,
 				}
 				if err := s.SaveManyJobs(tt.args.ctx, tt.args.jobs...); (err != nil) != tt.wantErr {
 					t.Errorf("DbJobStore.SaveManyJobs() error = %v, wantErr %v", err, tt.wantErr)
@@ -300,7 +272,7 @@ func TestDbJobStore_MarkDone(t *testing.T) {
 				}
 				got, err := repository.Job.GetOne(
 					tt.args.ctx,
-					tt.fields.db,
+					db,
 					&map[string]any{
 						"id": map[string]any{
 							"_eq": tt.args.id,
@@ -323,9 +295,6 @@ func TestDbJobStore_MarkFailed(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		type fields struct {
-			db database.Dbx
-		}
 		type args struct {
 			jobs []*EnqueueParams
 			ctx  context.Context
@@ -333,15 +302,11 @@ func TestDbJobStore_MarkFailed(t *testing.T) {
 		}
 		tests := []struct {
 			name    string
-			fields  fields
 			args    args
 			wantErr bool
 		}{
 			{
 				name: "mark failed",
-				fields: fields{
-					db: db,
-				},
 				args: args{
 					jobs: []*EnqueueParams{
 						{
@@ -363,7 +328,7 @@ func TestDbJobStore_MarkFailed(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				s := &DbJobStore{
-					db: tt.fields.db,
+					db: db,
 				}
 				if err := s.SaveManyJobs(tt.args.ctx, tt.args.jobs...); (err != nil) != tt.wantErr {
 					t.Errorf("DbJobStore.SaveManyJobs() error = %v, wantErr %v", err, tt.wantErr)
@@ -378,11 +343,11 @@ func TestDbJobStore_MarkFailed(t *testing.T) {
 				}
 				tt.args.id = pendingJobs[0].ID
 				if err := s.MarkFailed(tt.args.ctx, tt.args.id, "reason"); (err != nil) != tt.wantErr {
-					t.Errorf("DbJobStore.MarkDone() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("DbJobStore.MarkFailed() error = %v, wantErr %v", err, tt.wantErr)
 				}
 				got, err := repository.Job.GetOne(
 					tt.args.ctx,
-					tt.fields.db,
+					db,
 					&map[string]any{
 						"id": map[string]any{
 							"_eq": tt.args.id,
@@ -394,7 +359,7 @@ func TestDbJobStore_MarkFailed(t *testing.T) {
 					return
 				}
 				if got.Status != models.JobStatusFailed {
-					t.Errorf("DbJobStore.MarkDone() got = %v, want %v", string(got.Status), string(models.JobStatusFailed))
+					t.Errorf("DbJobStore.MarkFailed() got = %v, want %v", string(got.Status), string(models.JobStatusFailed))
 				}
 			})
 		}
@@ -405,9 +370,6 @@ func TestDbJobStore_RescheduleJob(t *testing.T) {
 	t.Parallel()
 	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
-		type fields struct {
-			db database.Dbx
-		}
 		type args struct {
 			jobs  []*EnqueueParams
 			delay time.Duration
@@ -416,15 +378,11 @@ func TestDbJobStore_RescheduleJob(t *testing.T) {
 		}
 		tests := []struct {
 			name    string
-			fields  fields
 			args    args
 			wantErr bool
 		}{
 			{
 				name: "mark RescheduleJob",
-				fields: fields{
-					db: db,
-				},
 				args: args{
 					jobs: []*EnqueueParams{
 						{
@@ -447,7 +405,7 @@ func TestDbJobStore_RescheduleJob(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				s := &DbJobStore{
-					db: tt.fields.db,
+					db: db,
 				}
 				if err := s.SaveManyJobs(tt.args.ctx, tt.args.jobs...); (err != nil) != tt.wantErr {
 					t.Errorf("DbJobStore.SaveManyJobs() error = %v, wantErr %v", err, tt.wantErr)
@@ -462,11 +420,11 @@ func TestDbJobStore_RescheduleJob(t *testing.T) {
 				}
 				tt.args.id = pendingJobs[0].ID
 				if err := s.RescheduleJob(tt.args.ctx, tt.args.id, tt.args.delay); (err != nil) != tt.wantErr {
-					t.Errorf("DbJobStore.MarkDone() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("DbJobStore.RescheduleJob() error = %v, wantErr %v", err, tt.wantErr)
 				}
 				got, err := repository.Job.GetOne(
 					tt.args.ctx,
-					tt.fields.db,
+					db,
 					&map[string]any{
 						"id": map[string]any{
 							"_eq": tt.args.id,
@@ -478,7 +436,7 @@ func TestDbJobStore_RescheduleJob(t *testing.T) {
 					return
 				}
 				if got.Status != models.JobStatusPending {
-					t.Errorf("DbJobStore.MarkDone() got = %v, want %v", string(got.Status), string(models.JobStatusFailed))
+					t.Errorf("DbJobStore.RescheduleJob() got = %v, want %v", string(got.Status), string(models.JobStatusPending))
 				}
 			})
 		}
@@ -531,6 +489,7 @@ type testJob struct {
 func (j testJob) Kind() string { return "test_job" }
 
 func TestEnqueuer(t *testing.T) {
+	t.Parallel()
 	t.Run("Enqueue single job", func(t *testing.T) {
 		database.WithNewTestTx(t, func(ctx context.Context, tx database.Dbx) {
 			enqueuer := NewDbJobManager(tx)

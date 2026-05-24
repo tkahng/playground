@@ -38,25 +38,18 @@ func TestStripeStore_CreateCustomer(t *testing.T) {
 			t.Fatalf("got err %s", err.Error())
 		}
 
-		type fields struct {
-			db database.Dbx
-		}
 		type args struct {
 			ctx      context.Context
 			customer *models.StripeCustomer
 		}
 		tests := []struct {
 			name    string
-			fields  fields
 			args    args
 			want    *models.StripeCustomer
 			wantErr bool
 		}{
 			{
 				name: "create user customer",
-				fields: fields{
-					db: dbxx,
-				},
 				args: args{
 					ctx: ctx,
 					customer: &models.StripeCustomer{
@@ -76,9 +69,6 @@ func TestStripeStore_CreateCustomer(t *testing.T) {
 			},
 			{
 				name: "create customer with invalid user",
-				fields: fields{
-					db: dbxx,
-				},
 				args: args{
 					ctx: ctx,
 					customer: &models.StripeCustomer{
@@ -93,9 +83,6 @@ func TestStripeStore_CreateCustomer(t *testing.T) {
 			},
 			{
 				name: "create team customer",
-				fields: fields{
-					db: dbxx,
-				},
 				args: args{
 					ctx: ctx,
 					customer: &models.StripeCustomer{
@@ -115,9 +102,6 @@ func TestStripeStore_CreateCustomer(t *testing.T) {
 			},
 			{
 				name: "create customer with user without type",
-				fields: fields{
-					db: dbxx,
-				},
 				args: args{
 					ctx: ctx,
 					customer: &models.StripeCustomer{
@@ -194,6 +178,8 @@ func TestStripeStore_FindCustomer(t *testing.T) {
 }
 
 func TestDbCustomerStore_UpdateCustomer(t *testing.T) {
+	t.Parallel()
+	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user := stores.CreateUserWithOptions(t, adapter)
@@ -217,6 +203,8 @@ func TestDbCustomerStore_UpdateCustomer(t *testing.T) {
 	})
 }
 func TestDbCustomerStore_UpsertCustomer_Existing(t *testing.T) {
+	t.Parallel()
+	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user := stores.CreateUserWithOptions(t, adapter)
@@ -245,6 +233,8 @@ func TestDbCustomerStore_UpsertCustomer_Existing(t *testing.T) {
 	})
 }
 func TestDbCustomerStore_UpsertCustomer_New(t *testing.T) {
+	t.Parallel()
+	test.SkipIfShort(t)
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewStorageAdapter(db)
 		user := stores.CreateUserWithOptions(t, adapter)

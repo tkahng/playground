@@ -371,14 +371,14 @@ func TestMarshalJSON(t *testing.T) {
 	s.Set("a", "test1")
 	s.Set("b", "test2")
 
-	expected := []byte(`{"a":"test1", "b":"test2"}`)
+	expected := []byte(`{"a":"test1","b":"test2"}`)
 
 	result, err := json.Marshal(s)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if bytes.Equal(result, expected) {
+	if !bytes.Equal(result, expected) {
 		t.Fatalf("Expected\n%s\ngot\n%s", expected, result)
 	}
 }
