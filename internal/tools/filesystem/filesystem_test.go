@@ -1,5 +1,3 @@
-//go:build integration
-
 package filesystem_test
 
 import (

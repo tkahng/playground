@@ -1,5 +1,3 @@
-//go:build integration
-
 package token_test
 
 import (

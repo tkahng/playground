@@ -1,5 +1,3 @@
-//go:build !integration
-
 //nolint:errcheck
 package websocket_test
 

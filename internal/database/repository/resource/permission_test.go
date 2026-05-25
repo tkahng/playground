@@ -1,5 +1,3 @@
-//go:build integration
-
 //nolint:exhaustruct
 package resource
 
