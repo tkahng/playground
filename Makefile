@@ -22,6 +22,10 @@ setupuser1:
 	go run . seed user tkahng+01@gmail.com Password123! true
 	go run . seed team tkahng+01@gmail.com team1
 
+.PHONY: gotest-all
+gotest-all:
+	go test -count=1 -timeout 15m -race ./...
+
 .PHONY: gotestsum
 gotestsum:
 	gotestsum -- -v ./... -race
@@ -29,3 +33,7 @@ gotestsum:
 .PHONY: gotest
 gotest:
 	go test -v ./... -race
+
+.PHONY: gotest-race-concurrent
+gotest-race-concurrent:
+	go test -race -count=1 ./internal/tools/websocket/... ./internal/tools/sse/... ./internal/workers/... ./internal/jobs/...

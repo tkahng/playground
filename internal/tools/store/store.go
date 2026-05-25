@@ -174,21 +174,26 @@ func (s *Store[K, T]) SetFunc(key K, fn func(old T) T) {
 // GetOrSet retrieves a single existing value for the provided key
 // or stores a new one if it doesn't exist.
 func (s *Store[K, T]) GetOrSet(key K, setFunc func() T) T {
-	// lock only reads to minimize locks contention
 	s.mu.RLock()
 	v, ok := s.data[key]
 	s.mu.RUnlock()
 
-	if !ok {
-		s.mu.Lock()
-		v = setFunc()
-		if s.data == nil {
-			s.data = make(map[K]T)
-		}
-		s.data[key] = v
-		s.mu.Unlock()
+	if ok {
+		return v
 	}
 
+	// Re-check under write lock: another goroutine may have set the key
+	// between RUnlock and Lock.
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if v, ok = s.data[key]; ok {
+		return v
+	}
+	v = setFunc()
+	if s.data == nil {
+		s.data = make(map[K]T)
+	}
+	s.data[key] = v
 	return v
 }
 

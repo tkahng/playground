@@ -34,7 +34,12 @@ func TestWSHandler(t *testing.T) {
 	var cf context.CancelFunc
 
 	manager := sse.NewManager(slog.Default())
-	go manager.Run(ctx)
+	var runWg sync.WaitGroup
+	runWg.Add(1)
+	go func() {
+		defer runWg.Done()
+		manager.Run(ctx)
+	}()
 
 	h := sse.ServeSSE(
 		func(ctx context.Context, f func(any) error, _ *struct{}) sse.Client {
@@ -106,14 +111,12 @@ func TestWSHandler(t *testing.T) {
 	}()
 	wg.Wait()
 	assert.NoError(t, err)
-	// _p := <-doneReg
 	assert.Equal(t, http.StatusOK, resp.Code)
 	assert.Equal(t, "text/event-stream", resp.Header().Get("Content-Type"))
 	assert.Equal(t, `data: {"message":"test"}
 
 `, resp.Body.String())
 
-	// _p := <-doneUnreg
-	// time.Sleep(1 * time.Second)
-	//FIXME: seems to be leaking goroutines
+	cancel()
+	runWg.Wait()
 }

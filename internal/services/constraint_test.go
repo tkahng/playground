@@ -16,6 +16,7 @@ import (
 )
 
 func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, tx database.Dbx) {
 		adapter := stores.NewStorageAdapter(tx)
 		userStore := adapter.User()
@@ -60,22 +61,16 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to upsert subscription: %v", err)
 		}
-		type fields struct {
-			db  database.Dbx
-			ctx context.Context
-		}
 		type args struct {
 			userId uuid.UUID
 		}
 		tests := []struct {
 			name    string
-			fields  fields
 			args    args
 			wantErr bool
 		}{
 			{
 				name:    "valid user",
-				fields:  fields{db: tx, ctx: ctx},
 				args:    args{userId: user.ID},
 				wantErr: true,
 			},
@@ -83,12 +78,12 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				c := services.NewConstraintCheckerService(adapter)
-				ok, err := c.CannotHaveValidUserSubscription(tt.fields.ctx, tt.args.userId)
+				ok, err := c.CannotHaveValidUserSubscription(ctx, tt.args.userId)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("ConstraintCheckerService.CannotHaveValidSubscription() error = %v, wantErr %v", err, tt.wantErr)
-					if err != nil && err.Error() != "Cannot perform this action on a user with a valid subscription" {
-						t.Errorf("unexpected error message: %v", err.Error())
-					}
+				}
+				if tt.wantErr && err != nil && err.Error() != "Cannot perform this action on a user with a valid subscription" {
+					t.Errorf("unexpected error message: %v", err.Error())
 				}
 				if tt.wantErr && ok {
 					t.Errorf("expected ok to be false when wantErr is true")
@@ -101,36 +96,29 @@ func TestConstraintCheckerService_CannotHaveValidSubscription(t *testing.T) {
 	})
 }
 func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, dbx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbx)
-		type fields struct {
-			db  database.Dbx
-			ctx context.Context
-		}
 		type args struct {
 			permissionName string
 		}
 		tests := []struct {
 			name    string
-			fields  fields
 			args    args
 			wantErr bool
 		}{
 			{
 				name:    "admin permission name",
-				fields:  fields{db: dbx, ctx: ctx},
 				args:    args{permissionName: shared.PermissionNameAdmin},
 				wantErr: true,
 			},
 			{
 				name:    "basic permission name",
-				fields:  fields{db: dbx, ctx: ctx},
 				args:    args{permissionName: shared.PermissionNameBasic},
 				wantErr: true,
 			},
 			{
 				name:    "other permission name",
-				fields:  fields{db: dbx, ctx: ctx},
 				args:    args{permissionName: "other"},
 				wantErr: false,
 			},
@@ -138,7 +126,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				c := services.NewConstraintCheckerService(adapter)
-				ok, err := c.CannotBeAdminOrBasicName(tt.fields.ctx, tt.args.permissionName)
+				ok, err := c.CannotBeAdminOrBasicName(ctx, tt.args.permissionName)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("ConstraintCheckerService.CannotBeAdminOrBasicName() error = %v, wantErr %v", err, tt.wantErr)
 				}
@@ -156,25 +144,20 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicName(t *testing.T) {
 	})
 }
 func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, dbx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbx)
-		type fields struct {
-			db  database.Dbx
-			ctx context.Context
-		}
 		type args struct {
 			roleName       string
 			permissionName string
 		}
 		tests := []struct {
 			name    string
-			fields  fields
 			args    args
 			wantErr bool
 		}{
 			{
-				name:   "admin role and permission",
-				fields: fields{db: dbx, ctx: ctx},
+				name: "admin role and permission",
 				args: args{
 					roleName:       shared.PermissionNameAdmin,
 					permissionName: shared.PermissionNameAdmin,
@@ -182,8 +165,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *t
 				wantErr: true,
 			},
 			{
-				name:   "basic role and permission",
-				fields: fields{db: dbx, ctx: ctx},
+				name: "basic role and permission",
 				args: args{
 					roleName:       shared.PermissionNameBasic,
 					permissionName: shared.PermissionNameBasic,
@@ -191,8 +173,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *t
 				wantErr: true,
 			},
 			{
-				name:   "admin role with different permission",
-				fields: fields{db: dbx, ctx: ctx},
+				name: "admin role with different permission",
 				args: args{
 					roleName:       shared.PermissionNameAdmin,
 					permissionName: "other",
@@ -200,8 +181,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *t
 				wantErr: false,
 			},
 			{
-				name:   "different role and permission",
-				fields: fields{db: dbx, ctx: ctx},
+				name: "different role and permission",
 				args: args{
 					roleName:       "other",
 					permissionName: "other",
@@ -212,7 +192,7 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *t
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				c := services.NewConstraintCheckerService(adapter)
-				ok, err := c.CannotBeAdminOrBasicRoleAndPermissionName(tt.fields.ctx, tt.args.roleName, tt.args.permissionName)
+				ok, err := c.CannotBeAdminOrBasicRoleAndPermissionName(ctx, tt.args.roleName, tt.args.permissionName)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("ConstraintCheckerService.CannotBeAdminOrBasicRoleAndPermissionName() error = %v, wantErr %v", err, tt.wantErr)
 				}
@@ -230,25 +210,20 @@ func TestConstraintCheckerService_CannotBeAdminOrBasicRoleAndPermissionName(t *t
 	})
 }
 func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, dbx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbx)
-		type fields struct {
-			db  database.Dbx
-			ctx context.Context
-		}
 		type args struct {
 			email    string
 			roleName string
 		}
 		tests := []struct {
 			name    string
-			fields  fields
 			args    args
 			wantErr bool
 		}{
 			{
-				name:   "super user email and admin role",
-				fields: fields{db: dbx, ctx: ctx},
+				name: "super user email and admin role",
 				args: args{
 					email:    shared.SuperUserEmail,
 					roleName: shared.PermissionNameAdmin,
@@ -256,8 +231,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T
 				wantErr: true,
 			},
 			{
-				name:   "super user email with different role",
-				fields: fields{db: dbx, ctx: ctx},
+				name: "super user email with different role",
 				args: args{
 					email:    shared.SuperUserEmail,
 					roleName: "other",
@@ -265,8 +239,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T
 				wantErr: false,
 			},
 			{
-				name:   "different email with admin role",
-				fields: fields{db: dbx, ctx: ctx},
+				name: "different email with admin role",
 				args: args{
 					email:    "other@example.com",
 					roleName: shared.PermissionNameAdmin,
@@ -274,8 +247,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T
 				wantErr: false,
 			},
 			{
-				name:   "different email and role",
-				fields: fields{db: dbx, ctx: ctx},
+				name: "different email and role",
 				args: args{
 					email:    "other@example.com",
 					roleName: "other",
@@ -286,7 +258,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				c := services.NewConstraintCheckerService(adapter)
-				ok, err := c.CannotBeSuperUserEmailAndRoleName(tt.fields.ctx, tt.args.email, tt.args.roleName)
+				ok, err := c.CannotBeSuperUserEmailAndRoleName(ctx, tt.args.email, tt.args.roleName)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("ConstraintCheckerService.CannotBeSuperUserEmailAndRoleName() error = %v, wantErr %v", err, tt.wantErr)
 				}
@@ -304,6 +276,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmailAndRoleName(t *testing.T
 	})
 }
 func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, tx database.Dbx) {
 		adapter := stores.NewStorageAdapter(tx)
 		rbacStore := adapter.Rbac()
@@ -354,34 +327,26 @@ func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create user roles: %v", err)
 		}
-		type fields struct {
-			db  database.Dbx
-			ctx context.Context
-		}
 		type args struct {
 			userId uuid.UUID
 		}
 		tests := []struct {
 			name    string
-			fields  fields
 			args    args
 			wantErr bool
 		}{
 			{
 				name:    "super user",
-				fields:  fields{db: tx, ctx: ctx},
 				args:    args{userId: superUser.ID},
 				wantErr: true,
 			},
 			{
 				name:    "regular user",
-				fields:  fields{db: tx, ctx: ctx},
 				args:    args{userId: regularUser.ID},
 				wantErr: false,
 			},
 			{
 				name:    "non-existent user",
-				fields:  fields{db: tx, ctx: ctx},
 				args:    args{userId: uuid.New()},
 				wantErr: false,
 			},
@@ -389,7 +354,7 @@ func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				c := services.NewConstraintCheckerService(adapter)
-				ok, err := c.CannotBeSuperUserID(tt.fields.ctx, tt.args.userId)
+				ok, err := c.CannotBeSuperUserID(ctx, tt.args.userId)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("ConstraintCheckerService.CannotBeSuperUserID() error = %v, wantErr %v", err, tt.wantErr)
 				}
@@ -407,33 +372,27 @@ func TestConstraintCheckerService_CannotBeSuperUserID(t *testing.T) {
 	})
 }
 func TestConstraintCheckerService_CannotBeSuperUserEmail(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, dbx database.Dbx) {
 		adapter := stores.NewStorageAdapter(dbx)
 
-		type fields struct {
-			db  database.Dbx
-			ctx context.Context
-		}
 		type args struct {
 			email string
 		}
 		tests := []struct {
 			name    string
-			fields  fields
 			args    args
 			wantErr bool
 		}{
 			{
-				name:   "super user email",
-				fields: fields{db: dbx, ctx: ctx},
+				name: "super user email",
 				args: args{
 					email: shared.SuperUserEmail,
 				},
 				wantErr: true,
 			},
 			{
-				name:   "regular email",
-				fields: fields{db: dbx, ctx: ctx},
+				name: "regular email",
 				args: args{
 					email: "regular@example.com",
 				},
@@ -443,7 +402,7 @@ func TestConstraintCheckerService_CannotBeSuperUserEmail(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				c := services.NewConstraintCheckerService(adapter)
-				ok, err := c.CannotBeSuperUserEmail(tt.fields.ctx, tt.args.email)
+				ok, err := c.CannotBeSuperUserEmail(ctx, tt.args.email)
 				if (err != nil) != tt.wantErr {
 					t.Errorf("ConstraintCheckerService.CannotBeSuperUserEmail() error = %v, wantErr %v", err, tt.wantErr)
 				}

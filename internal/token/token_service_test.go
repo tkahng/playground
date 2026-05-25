@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	"github.com/tkahng/playground/internal/conf"
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
@@ -58,14 +59,13 @@ func TestTokenServiceImpl_GenerateToken(t *testing.T) {
 			if token1 == "" {
 				t.Fatal("token is empty")
 			}
-			time.Sleep(time.Second * 1)
-			_, err = tokenService.ValidateToken(ctx, &token.ValidateTokenOptions{
-				Token: token1,
-				Type:  models.TokenTypesVerificationToken,
-			})
-			if err == nil {
-				t.Fatal(err)
-			}
+			require.Eventually(t, func() bool {
+				_, err := tokenService.ValidateToken(ctx, &token.ValidateTokenOptions{
+					Token: token1,
+					Type:  models.TokenTypesVerificationToken,
+				})
+				return err != nil
+			}, 3*time.Second, 50*time.Millisecond)
 		})
 	})
 }

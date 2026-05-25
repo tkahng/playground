@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/database"
@@ -13,6 +12,7 @@ import (
 )
 
 func TestDbRpsGameService_RequestGame_Success(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -50,6 +50,7 @@ func TestDbRpsGameService_RequestGame_Success(t *testing.T) {
 }
 
 func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Win(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -95,6 +96,7 @@ func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Win(t *test
 }
 
 func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Lose(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -139,6 +141,7 @@ func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Lose(t *tes
 }
 
 func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Tie(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -183,6 +186,7 @@ func TestDbRpsGameService_RespondToGameRequest_Success_InvitedPlayer_Tie(t *test
 }
 
 func TestDbRpsGameService_RespondToGameRequest_Fail_Expired(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -194,13 +198,12 @@ func TestDbRpsGameService_RespondToGameRequest_Fail_Expired(t *testing.T) {
 			RequestingPlayerID:   player1.ID,
 			InvitedPlayerID:      player2.ID,
 			RequestingPlayerMove: models.RpsParticipantMovePaper,
-			DurationSeconds:      1,
+			DurationSeconds:      0,
 		}
 		game, err := rpsService.RequestGame(ctx, requestInput)
 		if err != nil {
 			t.Fatalf("RequestGame() error = %v", err)
 		}
-		time.Sleep(time.Second * 1)
 		respondInput := &GameRequestResponse{
 			InvitedPlayerID: player2.ID,
 			GameID:          game.RpsGame.ID,
@@ -241,6 +244,7 @@ func mustFundPlayerWallet(t *testing.T, ctx context.Context, adapter stores.Stor
 }
 
 func TestDbRpsGameService_Betting_RequestGame_WithoutHostUserID_Fails(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -266,6 +270,7 @@ func TestDbRpsGameService_Betting_RequestGame_WithoutHostUserID_Fails(t *testing
 }
 
 func TestDbRpsGameService_Betting_RequestGame_WrongHostUserID_Fails(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -298,6 +303,7 @@ func TestDbRpsGameService_Betting_RequestGame_WrongHostUserID_Fails(t *testing.T
 }
 
 func TestDbRpsGameService_RequestGame_SelfPlay_Rejected(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -322,6 +328,7 @@ func TestDbRpsGameService_RequestGame_SelfPlay_Rejected(t *testing.T) {
 }
 
 func TestDbRpsGameService_Betting_GuestBetTransferID_SavedAfterSettle(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -370,6 +377,7 @@ func TestDbRpsGameService_Betting_GuestBetTransferID_SavedAfterSettle(t *testing
 }
 
 func TestDbRpsGameService_ExpireGamesAndRefundBets_IgnoresNoBetGames(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -384,13 +392,11 @@ func TestDbRpsGameService_ExpireGamesAndRefundBets_IgnoresNoBetGames(t *testing.
 			RequestingPlayerID:   player1.ID,
 			InvitedPlayerID:      player2.ID,
 			RequestingPlayerMove: models.RpsParticipantMoveRock,
-			DurationSeconds:      1,
+			DurationSeconds:      0,
 		})
 		if err != nil {
 			t.Fatalf("RequestGame() error = %v", err)
 		}
-
-		time.Sleep(2 * time.Second)
 
 		processed, err := rpsService.ExpireGamesAndRefundBets(ctx)
 		if err != nil {
@@ -404,6 +410,7 @@ func TestDbRpsGameService_ExpireGamesAndRefundBets_IgnoresNoBetGames(t *testing.
 }
 
 func TestDbRpsGameService_ExpireGamesAndRefundBets_RefundsBothEscrows(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -427,7 +434,7 @@ func TestDbRpsGameService_ExpireGamesAndRefundBets_RefundsBothEscrows(t *testing
 			RequestingPlayerID:   host.ID,
 			InvitedPlayerID:      guest.ID,
 			RequestingPlayerMove: models.RpsParticipantMoveRock,
-			DurationSeconds:      1,
+			DurationSeconds:      0,
 			BetAmount:            &betAmount,
 			HostUserID:           host.UserID,
 		})
@@ -475,8 +482,6 @@ func TestDbRpsGameService_ExpireGamesAndRefundBets_RefundsBothEscrows(t *testing
 			t.Fatalf("guest available before sweep = %d, want 400", guestAvail)
 		}
 
-		time.Sleep(2 * time.Second)
-
 		processed, err := rpsService.ExpireGamesAndRefundBets(ctx)
 		if err != nil {
 			t.Fatalf("ExpireGamesAndRefundBets() error = %v", err)
@@ -506,6 +511,7 @@ func TestDbRpsGameService_ExpireGamesAndRefundBets_RefundsBothEscrows(t *testing
 }
 
 func TestDbRpsGameService_ExpireGamesAndRefundBets_ContinuesOnPerGameError(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -537,7 +543,7 @@ func TestDbRpsGameService_ExpireGamesAndRefundBets_ContinuesOnPerGameError(t *te
 			RequestingPlayerID:   hostA.ID,
 			InvitedPlayerID:      guestA.ID,
 			RequestingPlayerMove: models.RpsParticipantMoveRock,
-			DurationSeconds:      1,
+			DurationSeconds:      0,
 			BetAmount:            &betAmount,
 			HostUserID:           hostA.UserID,
 		})
@@ -549,7 +555,7 @@ func TestDbRpsGameService_ExpireGamesAndRefundBets_ContinuesOnPerGameError(t *te
 			RequestingPlayerID:   hostB.ID,
 			InvitedPlayerID:      guestB.ID,
 			RequestingPlayerMove: models.RpsParticipantMoveRock,
-			DurationSeconds:      1,
+			DurationSeconds:      0,
 			BetAmount:            &betAmount,
 			HostUserID:           hostB.UserID,
 		})
@@ -561,8 +567,6 @@ func TestDbRpsGameService_ExpireGamesAndRefundBets_ContinuesOnPerGameError(t *te
 		if err := betting.RefundHostBet(ctx, *gameA.RpsGame.HostBetTransferID); err != nil {
 			t.Fatalf("RefundHostBet (pre-void) error = %v", err)
 		}
-
-		time.Sleep(2 * time.Second)
 
 		processed, sweepErr := rpsService.ExpireGamesAndRefundBets(ctx)
 		if sweepErr == nil {
@@ -595,6 +599,7 @@ func TestDbRpsGameService_ExpireGamesAndRefundBets_ContinuesOnPerGameError(t *te
 }
 
 func TestDbRpsGameService_Betting_HostWins_BalancesSettledCorrectly(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -663,6 +668,7 @@ func TestDbRpsGameService_Betting_HostWins_BalancesSettledCorrectly(t *testing.T
 }
 
 func TestDbRpsGameService_CreatePlayerByParams_Success(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -690,6 +696,7 @@ func TestDbRpsGameService_CreatePlayerByParams_Success(t *testing.T) {
 }
 
 func TestDbRpsGameService_FindPlayerByParams_Found(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -713,6 +720,7 @@ func TestDbRpsGameService_FindPlayerByParams_Found(t *testing.T) {
 }
 
 func TestDbRpsGameService_FindPlayerByParams_NotFound(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -730,6 +738,7 @@ func TestDbRpsGameService_FindPlayerByParams_NotFound(t *testing.T) {
 }
 
 func TestDbRpsGameService_PlayerCanPlayWithPlayer_DeclinedFriendship(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -753,6 +762,7 @@ func TestDbRpsGameService_PlayerCanPlayWithPlayer_DeclinedFriendship(t *testing.
 }
 
 func TestDbRpsGameService_PlayerCanPlayWithPlayer_BlockedByRequester(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		rpsService := NewDbRpsGameService(adapter, NewDbBettingService(adapter, NewDbLedgerService(adapter)))
@@ -774,6 +784,7 @@ func TestDbRpsGameService_PlayerCanPlayWithPlayer_BlockedByRequester(t *testing.
 }
 
 func TestDbRpsGameService_PlayerCanPlayWithPlayer_BlockedByInvited(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		rpsService := NewDbRpsGameService(adapter, NewDbBettingService(adapter, NewDbLedgerService(adapter)))
@@ -795,6 +806,7 @@ func TestDbRpsGameService_PlayerCanPlayWithPlayer_BlockedByInvited(t *testing.T)
 }
 
 func TestDbRpsGameService_PlayerCanPlayWithPlayer_Strangers(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		rpsService := NewDbRpsGameService(adapter, NewDbBettingService(adapter, NewDbLedgerService(adapter)))
@@ -813,6 +825,7 @@ func TestDbRpsGameService_PlayerCanPlayWithPlayer_Strangers(t *testing.T) {
 }
 
 func TestDbRpsGameService_PlayerCanPlayWithPlayer_AcceptedFriendship(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -835,6 +848,7 @@ func TestDbRpsGameService_PlayerCanPlayWithPlayer_AcceptedFriendship(t *testing.
 }
 
 func TestDbRpsGameService_RequestGame_BlockedWhenRequesterHasActiveGame(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		rpsService := NewDbRpsGameService(adapter, NewDbBettingService(adapter, NewDbLedgerService(adapter)))
@@ -869,6 +883,7 @@ func TestDbRpsGameService_RequestGame_BlockedWhenRequesterHasActiveGame(t *testi
 }
 
 func TestDbRpsGameService_RequestGame_BlockedWhenInvitedHasActiveGame(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		rpsService := NewDbRpsGameService(adapter, NewDbBettingService(adapter, NewDbLedgerService(adapter)))
@@ -903,6 +918,7 @@ func TestDbRpsGameService_RequestGame_BlockedWhenInvitedHasActiveGame(t *testing
 }
 
 func TestDbRpsGameService_RequestGame_AllowedAfterRequesterGameCompleted(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		rpsService := NewDbRpsGameService(adapter, NewDbBettingService(adapter, NewDbLedgerService(adapter)))
@@ -943,6 +959,7 @@ func TestDbRpsGameService_RequestGame_AllowedAfterRequesterGameCompleted(t *test
 }
 
 func TestDbRpsGameService_RequestGame_AllowedAfterRequesterGameCancelled(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		rpsService := NewDbRpsGameService(adapter, NewDbBettingService(adapter, NewDbLedgerService(adapter)))
@@ -982,6 +999,7 @@ func TestDbRpsGameService_RequestGame_AllowedAfterRequesterGameCancelled(t *test
 }
 
 func TestDbRpsGameService_RequestGame_AllowedAfterInvitedGameCompleted(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		rpsService := NewDbRpsGameService(adapter, NewDbBettingService(adapter, NewDbLedgerService(adapter)))
@@ -1023,6 +1041,7 @@ func TestDbRpsGameService_RequestGame_AllowedAfterInvitedGameCompleted(t *testin
 }
 
 func TestDbRpsGameService_RequestGame_AllowedAfterInvitedGameCancelled(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		rpsService := NewDbRpsGameService(adapter, NewDbBettingService(adapter, NewDbLedgerService(adapter)))
@@ -1066,6 +1085,7 @@ func TestDbRpsGameService_RequestGame_AllowedAfterInvitedGameCancelled(t *testin
 // step rolls back the entire RespondToGameRequest — the game must remain pending and the
 // participant status must be unchanged.
 func TestRespondToGameRequest_Atomic(t *testing.T) {
+	t.Parallel()
 	database.WithNewDatabase(t, func(ctx context.Context, db database.Dbx) {
 		gamingDec := stores.NewDbGamingStoreDecorator(db)
 		adapter := stores.NewDbAdapterDecorators(db)

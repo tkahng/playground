@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/models"
@@ -16,6 +15,7 @@ import (
 // asserts that the total of all user balances plus the escrow account equals the
 // total points ever issued. No money is created or destroyed.
 func TestBettingInvariant_MultiGame_TotalSystemConservation(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -185,14 +185,14 @@ func TestBettingInvariant_MultiGame_TotalSystemConservation(t *testing.T) {
 			}
 		}
 
-		// Game 5: expires (100 pt bet)
+		// Game 5: expires (100 pt bet) — DurationSeconds:0 means expires immediately
 		{
 			p := pairs[5]
 			_, err := rpsService.RequestGame(ctx, &RpsGameRequestInput{
 				RequestingPlayerID:   p.host.ID,
 				InvitedPlayerID:      p.guest.ID,
 				RequestingPlayerMove: models.RpsParticipantMoveRock,
-				DurationSeconds:      1,
+				DurationSeconds:      0,
 				BetAmount:            betPtr(100),
 				HostUserID:           p.host.UserID,
 			})
@@ -200,9 +200,6 @@ func TestBettingInvariant_MultiGame_TotalSystemConservation(t *testing.T) {
 				t.Fatalf("game5 RequestGame: %v", err)
 			}
 		}
-		// Game 5's expiry timer started at creation (before games 0–4 ran).
-		// Even if games 0–4 were slow, the game is already expired by now.
-		time.Sleep(2 * time.Second)
 		if _, err := rpsService.ExpireGamesAndRefundBets(ctx); err != nil {
 			t.Fatalf("ExpireGamesAndRefundBets: %v", err)
 		}
@@ -255,6 +252,7 @@ func TestBettingInvariant_MultiGame_TotalSystemConservation(t *testing.T) {
 // settles, not just in aggregate. This catches a leak in one game being masked
 // by another game's accounting.
 func TestBettingInvariant_EscrowNetsZeroAfterEachGame(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -355,14 +353,13 @@ func TestBettingInvariant_EscrowNetsZeroAfterEachGame(t *testing.T) {
 				RequestingPlayerID:   h.ID,
 				InvitedPlayerID:      g.ID,
 				RequestingPlayerMove: models.RpsParticipantMoveRock,
-				DurationSeconds:      1,
+				DurationSeconds:      0,
 				BetAmount:            betPtr(100),
 				HostUserID:           h.UserID,
 			})
 			if err != nil {
 				t.Fatalf("game3 RequestGame: %v", err)
 			}
-			time.Sleep(2 * time.Second)
 			if n, err := rpsService.ExpireGamesAndRefundBets(ctx); err != nil {
 				t.Fatalf("game3 ExpireGamesAndRefundBets: %v", err)
 			} else if n != 1 {
@@ -378,6 +375,7 @@ func TestBettingInvariant_EscrowNetsZeroAfterEachGame(t *testing.T) {
 // table contains zero pending bet_escrow rows. This is a direct audit of the
 // transfer table — stronger than checking balances alone.
 func TestBettingInvariant_NoOrphanPendingAfterAllPaths(t *testing.T) {
+	t.Parallel()
 	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
 		adapter := stores.NewDbAdapterDecorators(db)
 		ledger := NewDbLedgerService(adapter)
@@ -456,14 +454,13 @@ func TestBettingInvariant_NoOrphanPendingAfterAllPaths(t *testing.T) {
 				RequestingPlayerID:   h.ID,
 				InvitedPlayerID:      g.ID,
 				RequestingPlayerMove: models.RpsParticipantMoveRock,
-				DurationSeconds:      1,
+				DurationSeconds:      0,
 				BetAmount:            betPtr(100),
 				HostUserID:           h.UserID,
 			})
 			if err != nil {
 				t.Fatalf("path3 RequestGame: %v", err)
 			}
-			time.Sleep(2 * time.Second)
 			if n, err := rpsService.ExpireGamesAndRefundBets(ctx); err != nil {
 				t.Fatalf("path3 ExpireGamesAndRefundBets: %v", err)
 			} else if n != 1 {

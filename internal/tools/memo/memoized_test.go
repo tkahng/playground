@@ -18,13 +18,12 @@ func (tg *testGetterLoader) Get(ctx context.Context, key string) (string, error)
 	return "value for " + key, nil
 }
 func (tg *testGetterLoader) Load(ctx context.Context, keys ...string) ([]string, error) {
-	uniqueKeys := make([]string, len(keys))
+	result := make([]string, 0, len(keys))
 	for _, key := range keys {
-		// For Load, we'll increment a separate counter to distinguish from Get calls
-		uniqueKeys = append(uniqueKeys, "value for "+key)
+		result = append(result, "value for "+key)
 		tg.loads[key]++
 	}
-	return uniqueKeys, nil
+	return result, nil
 }
 
 func TestMemoizedStore_Get(t *testing.T) {
@@ -72,8 +71,8 @@ func TestMemoizedStore_Get_with_load(t *testing.T) {
 
 	for key, count := range getter.calls {
 		if count != 0 {
-			t.Errorf("expected 1 call for key %q, got %d", key, count)
+			t.Errorf("expected 0 Get calls for key %q (Load should have primed cache), got %d", key, count)
 		}
 	}
-	assert.Equal(t, len(getter.loads), 3)
+	assert.Equal(t, 3, len(getter.loads))
 }

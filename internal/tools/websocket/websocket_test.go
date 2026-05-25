@@ -78,7 +78,6 @@ func TestWSHandler(t *testing.T) {
 	_p := <-doneUnreg
 	assert.Equal(t, len(manager.Clients()), 0)
 	assert.Equal(t, _p, c)
-	time.Sleep(1 * time.Second)
 	//FIXME: seems to be leaking goroutines
 }
 
