@@ -142,16 +142,18 @@ func TestDbUserReactionStore_CountByCountry(t *testing.T) {
 			switch c.Country {
 			case "us":
 				if c.TotalReactions != 10 {
-					t.Fatalf("Expected 10 user reactions, got %d", c.TotalReactions)
+					t.Fatalf("Expected 10 user reactions for us, got %d", c.TotalReactions)
 				}
 			case "fr":
 				if c.TotalReactions != 5 {
-					t.Fatalf("Expected 5 user reactions, got %d", c.TotalReactions)
+					t.Fatalf("Expected 5 user reactions for fr, got %d", c.TotalReactions)
 				}
 			case "cn":
 				if c.TotalReactions != 3 {
-					t.Fatalf("Expected 3 user reactions, got %d", c.TotalReactions)
+					t.Fatalf("Expected 3 user reactions for cn, got %d", c.TotalReactions)
 				}
+			default:
+				t.Fatalf("Unexpected country %q with count %d", c.Country, c.TotalReactions)
 			}
 		}
 	})
