@@ -254,7 +254,7 @@ export default function SayHelloPage() {
                         {index + 1}
                       </div>
                       <span className="font-medium text-secondary-foreground">
-                        {country}
+                        {getCountryName(country) || country}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">

@@ -16,8 +16,8 @@ type UserReactionFilter struct {
 }
 
 type ReactionByCountry struct {
-	Country        string `json:"country"`
-	TotalReactions int64  `json:"total_reactions"`
+	Country        string `db:"country" json:"country"`
+	TotalReactions int64  `db:"total_reactions" json:"total_reactions"`
 }
 
 type UserReactionStore interface {
