@@ -2,6 +2,8 @@ import { client } from "@/lib/client";
 import { ApiError } from "@/lib/error";
 import { components, operations } from "@/schema";
 
+type SinglePlayer = components["schemas"]["ApiSingleResponsePlayer"];
+
 export type Friendship = components["schemas"]["Friendship"];
 export type Player = components["schemas"]["Player"];
 export type FriendshipStatus = Friendship["status"];
@@ -159,6 +161,24 @@ class FriendsQueries {
       {
         headers: { Authorization: `Bearer ${token}` },
         params: { path: { "player-id": playerId } },
+      },
+    );
+    if (error) throw ApiError.fromErrorModel(error);
+    return data;
+  }
+
+  async searchPlayerByEmail({
+    token,
+    email,
+  }: {
+    token: string;
+    email: string;
+  }): Promise<SinglePlayer> {
+    const { data, error } = await client.GET(
+      "/api/players/registered/email/{inviting-player-email}",
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { path: { "inviting-player-email": email } },
       },
     );
     if (error) throw ApiError.fromErrorModel(error);
