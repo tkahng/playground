@@ -3,6 +3,7 @@ import { friendsQueries, Friendship, Player } from "@/lib/friends-queries";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CenteredSpinner } from "@/components/centered-spinner";
 import { Badge } from "@/components/ui/badge";
@@ -215,6 +216,92 @@ function PendingRequestsList({ token, currentPlayerId }: { token: string; curren
   );
 }
 
+function AddFriendForm({ token }: { token: string }) {
+  const queryClient = useQueryClient();
+  const [email, setEmail] = useState("");
+  const [foundPlayer, setFoundPlayer] = useState<Player | null | undefined>(undefined);
+  const [notFound, setNotFound] = useState(false);
+
+  const searchMutation = useMutation({
+    mutationFn: () => friendsQueries.searchPlayerByEmail({ token, email }),
+    onSuccess: (res) => {
+      if (res.data) {
+        setFoundPlayer(res.data as Player);
+        setNotFound(false);
+      } else {
+        setFoundPlayer(null);
+        setNotFound(true);
+      }
+    },
+    onError: () => {
+      setFoundPlayer(null);
+      setNotFound(true);
+    },
+  });
+
+  const sendMutation = useMutation({
+    mutationFn: (playerId: string) =>
+      friendsQueries.sendFriendRequest({ token, invitedPlayerId: playerId }),
+    onSuccess: () => {
+      toast.success("Friend request sent");
+      queryClient.invalidateQueries({ queryKey: [{ key: "friend-requests" }] });
+      queryClient.invalidateQueries({ queryKey: [{ key: "friends" }] });
+      setEmail("");
+      setFoundPlayer(undefined);
+      setNotFound(false);
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  return (
+    <div className="mb-6">
+      <p className="text-sm font-medium mb-2">Add a friend by email</p>
+      <form
+        className="flex gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (email) searchMutation.mutate();
+        }}
+      >
+        <Input
+          type="email"
+          placeholder="player@example.com"
+          value={email}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setFoundPlayer(undefined);
+            setNotFound(false);
+          }}
+          className="max-w-xs"
+        />
+        <Button type="submit" variant="secondary" size="sm" disabled={!email || searchMutation.isPending}>
+          {searchMutation.isPending ? "Searching…" : "Search"}
+        </Button>
+      </form>
+      {notFound && (
+        <p className="text-sm text-muted-foreground mt-2">No player found with that email.</p>
+      )}
+      {foundPlayer && (
+        <div className="flex items-center gap-3 mt-3 p-3 rounded-md border">
+          <div className="flex-1">
+            <p className="text-sm font-medium">{foundPlayer.display_name || foundPlayer.email}</p>
+            {foundPlayer.display_name && (
+              <p className="text-xs text-muted-foreground">{foundPlayer.email}</p>
+            )}
+          </div>
+          <Button
+            size="sm"
+            onClick={() => sendMutation.mutate(foundPlayer.id)}
+            disabled={sendMutation.isPending}
+          >
+            Add Friend
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function FriendsPage({ currentPlayerId }: { currentPlayerId: string }) {
   const { user } = useAuthProvider();
   const token = user?.tokens.access_token;
@@ -232,6 +319,7 @@ export default function FriendsPage({ currentPlayerId }: { currentPlayerId: stri
 
   return (
     <div>
+      <AddFriendForm token={token} />
       <Tabs defaultValue="friends">
         <TabsList>
           <TabsTrigger value="friends">Friends</TabsTrigger>
