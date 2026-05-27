@@ -5,7 +5,7 @@ import {
   useEventSource,
   useEventSourceListener,
 } from "@react-nano/use-event-source";
-import { useCallback, useEffect, useReducer, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const SSE_EVENTS = [
@@ -16,34 +16,24 @@ const SSE_EVENTS = [
   "task_overdue",
   "task_status_changed",
   "project_status_changed",
+  "task_comment_created",
+  "task_comment_mention",
 ];
 
-const INITIAL_NOTIFICATION: TeamMemberNotification = {
-  notification: { title: "", body: "" },
-  data: { email: "", team_id: "", team_member_id: "" },
-};
-
-function messageReducer(
-  state: TeamMemberNotification,
-  action: TeamMemberNotification,
-): TeamMemberNotification {
-  toast.info(action.notification.title, {
-    description: action.notification.body,
-  });
-  return { ...state, ...action };
-}
+// Ticket TTL is 60 s; refresh every 55 s to ensure the URL stays valid on reconnect.
+const TICKET_REFRESH_MS = 55_000;
 
 // Inner component — only mounted when a valid ticket URL is ready.
 function SSEListener({ url }: { url: string }) {
-  const [, dispatch] = useReducer(messageReducer, INITIAL_NOTIFICATION);
   const [eventSource] = useEventSource(url, false);
   useEventSourceListener(
     eventSource,
     SSE_EVENTS,
     (evt) => {
-      dispatch(JSON.parse(evt.data) as TeamMemberNotification);
+      const n = JSON.parse(evt.data) as TeamMemberNotification;
+      toast.info(n.notification.title, { description: n.notification.body });
     },
-    [dispatch],
+    [],
   );
   return null;
 }
@@ -73,7 +63,12 @@ function TeamNotification() {
   }, [user?.tokens.access_token, teamMember?.id]);
 
   useEffect(() => {
-    return fetchTicket();
+    const cleanup = fetchTicket();
+    const interval = setInterval(fetchTicket, TICKET_REFRESH_MS);
+    return () => {
+      cleanup?.();
+      clearInterval(interval);
+    };
   }, [fetchTicket]);
 
   if (!ticket || !teamMember?.id) return null;

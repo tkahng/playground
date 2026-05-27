@@ -25,7 +25,7 @@ type Notifier interface {
 	NotifyTaskOverdue(ctx context.Context, taskID uuid.UUID) error
 	NotifyTaskStatusChanged(ctx context.Context, taskID uuid.UUID, oldStatus string, newStatus string, changedByMemberID uuid.UUID) error
 	NotifyProjectStatusChanged(ctx context.Context, projectID uuid.UUID, oldStatus string, newStatus string, changedByMemberID uuid.UUID) error
-	NotifyTaskCommentCreated(ctx context.Context, taskID uuid.UUID, commentID uuid.UUID, authorID uuid.UUID) error
+	NotifyTaskCommentCreated(ctx context.Context, taskID uuid.UUID, commentID uuid.UUID, authorID uuid.UUID, mentionedIDs []uuid.UUID) error
 	NotifyTaskCommentMention(ctx context.Context, taskID uuid.UUID, commentID uuid.UUID, authorID uuid.UUID, mentionedID uuid.UUID) error
 }
 
@@ -231,7 +231,13 @@ func (d *DbNotifier) NotifyTaskCompleted(ctx context.Context, taskID uuid.UUID, 
 	if err != nil {
 		return err
 	}
-	memberIDs := collectMemberIDs(task.AssigneeID, task.ReporterID, task.CreatedByMemberID)
+	raw := collectMemberIDs(task.AssigneeID, task.ReporterID, task.CreatedByMemberID)
+	memberIDs := make([]uuid.UUID, 0, len(raw))
+	for _, id := range raw {
+		if id != completedByMemberID {
+			memberIDs = append(memberIDs, id)
+		}
+	}
 	if len(memberIDs) == 0 {
 		slog.DebugContext(ctx, "no members to notify", slog.String("task_id", taskID.String()))
 		return nil
@@ -301,7 +307,13 @@ func (d *DbNotifier) NotifyTaskStatusChanged(ctx context.Context, taskID uuid.UU
 	if err != nil {
 		return err
 	}
-	memberIDs := collectMemberIDs(task.AssigneeID, task.ReporterID, task.CreatedByMemberID)
+	raw := collectMemberIDs(task.AssigneeID, task.ReporterID, task.CreatedByMemberID)
+	memberIDs := make([]uuid.UUID, 0, len(raw))
+	for _, id := range raw {
+		if id != changedByMemberID {
+			memberIDs = append(memberIDs, id)
+		}
+	}
 	if len(memberIDs) == 0 {
 		slog.DebugContext(ctx, "no members to notify for status change", slog.String("task_id", taskID.String()))
 		return nil
@@ -427,8 +439,9 @@ func NewProjectStatusChangedWorker(notifier Notifier) *ProjectStatusChangedWorke
 
 var _ jobs.Worker[workers.ProjectStatusChangedJobArgs] = (*ProjectStatusChangedWorker)(nil)
 
-// NotifyTaskCommentCreated notifies task assignee and reporter of a new comment (excluding the author).
-func (d *DbNotifier) NotifyTaskCommentCreated(ctx context.Context, taskID uuid.UUID, commentID uuid.UUID, authorID uuid.UUID) error {
+// NotifyTaskCommentCreated notifies task assignee and reporter of a new comment,
+// excluding the author and any members who will receive a separate mention notification.
+func (d *DbNotifier) NotifyTaskCommentCreated(ctx context.Context, taskID uuid.UUID, commentID uuid.UUID, authorID uuid.UUID, mentionedIDs []uuid.UUID) error {
 	task, err := d.adapter.Task().FindTaskByID(ctx, taskID)
 	if err != nil {
 		return err
@@ -464,10 +477,15 @@ func (d *DbNotifier) NotifyTaskCommentCreated(ctx context.Context, taskID uuid.U
 	if err != nil {
 		return err
 	}
+	excluded := make(map[uuid.UUID]struct{}, 1+len(mentionedIDs))
+	excluded[authorID] = struct{}{}
+	for _, id := range mentionedIDs {
+		excluded[id] = struct{}{}
+	}
 	raw := collectMemberIDs(task.AssigneeID, task.ReporterID, task.CreatedByMemberID)
 	recipients := make([]uuid.UUID, 0, len(raw))
 	for _, id := range raw {
-		if id != authorID {
+		if _, skip := excluded[id]; !skip {
 			recipients = append(recipients, id)
 		}
 	}
@@ -529,7 +547,7 @@ type TaskCommentCreatedWorker struct {
 }
 
 func (w *TaskCommentCreatedWorker) Work(ctx context.Context, job *jobs.Job[workers.TaskCommentCreatedJobArgs]) error {
-	return w.notifier.NotifyTaskCommentCreated(ctx, job.Args.TaskID, job.Args.CommentID, job.Args.AuthorID)
+	return w.notifier.NotifyTaskCommentCreated(ctx, job.Args.TaskID, job.Args.CommentID, job.Args.AuthorID, job.Args.MentionedIDs)
 }
 
 func NewTaskCommentCreatedWorker(notifier Notifier) *TaskCommentCreatedWorker {

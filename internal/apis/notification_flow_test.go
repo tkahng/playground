@@ -78,15 +78,20 @@ func TestApi_NotificationFlow_TaskCompleted(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, testApi.App.JobManager().PollOnce(ctx))
 
-		// Step 3: both creator and assignee should have a notification
-		for _, memberID := range []uuid.UUID{team.Member.ID, otherMember.ID} {
-			count, err := testApi.App.Adapter().Notification().CountNotification(ctx, &stores.NotificationFilter{
-				TeamMemberIds: []uuid.UUID{memberID},
-				Types:         []string{"task_completed"},
-			})
-			require.NoError(t, err)
-			assert.Equal(t, int64(1), count, "member %s should have 1 task_completed notification", memberID)
-		}
+		// Step 3: assignee gets notified; owner/completer does not self-notify
+		assigneeCount, err := testApi.App.Adapter().Notification().CountNotification(ctx, &stores.NotificationFilter{
+			TeamMemberIds: []uuid.UUID{otherMember.ID},
+			Types:         []string{"task_completed"},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, int64(1), assigneeCount, "assignee should have 1 task_completed notification")
+
+		ownerCount, err := testApi.App.Adapter().Notification().CountNotification(ctx, &stores.NotificationFilter{
+			TeamMemberIds: []uuid.UUID{team.Member.ID},
+			Types:         []string{"task_completed"},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), ownerCount, "owner who completed the task should not self-notify")
 
 		// Step 4: unread count for assignee should be 1
 		step4 := apis.ApiScenario{

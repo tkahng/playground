@@ -93,8 +93,10 @@ func (d *DbJobService) WithTx(db database.Dbx) JobService {
 }
 
 func (d *DbJobService) EnqueueTeamMemberAddedJob(ctx context.Context, job *workers.NewMemberNotificationJobArgs) error {
+	uniqueKey := "new_team_member:" + job.TeamMemberID.String()
 	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
 		Args:        job,
+		UniqueKey:   &uniqueKey,
 		RunAfter:    time.Now(),
 		MaxAttempts: 3,
 	})

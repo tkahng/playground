@@ -115,9 +115,10 @@ func (api *Api) TaskCommentCreate(ctx context.Context, input *TaskCommentCreateI
 	}
 
 	if err := api.App().JobService().EnqueueTaskCommentCreatedJob(ctx, &workers.TaskCommentCreatedJobArgs{
-		TaskID:    taskID,
-		CommentID: created.ID,
-		AuthorID:  teamInfo.Member.ID,
+		TaskID:       taskID,
+		CommentID:    created.ID,
+		AuthorID:     teamInfo.Member.ID,
+		MentionedIDs: mentionedIDs,
 	}); err != nil {
 		return nil, err
 	}

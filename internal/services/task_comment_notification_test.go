@@ -80,7 +80,7 @@ func TestNotifyTaskCommentCreated_SkipsAuthor(t *testing.T) {
 		adapter, author, assignee, task, comment := setupCommentNotifyFixture(t, ctx, db)
 
 		notifier := services.NewDbNotificationPublisher(noopSSE{}, services.NewTeamService(adapter), adapter)
-		require.NoError(t, notifier.NotifyTaskCommentCreated(ctx, task.ID, comment.ID, author.ID))
+		require.NoError(t, notifier.NotifyTaskCommentCreated(ctx, task.ID, comment.ID, author.ID, nil))
 
 		authorNotifs, err := adapter.Notification().FindNotifications(ctx, &stores.NotificationFilter{
 			TeamMemberIds: []uuid.UUID{author.ID},
@@ -105,7 +105,7 @@ func TestNotifyTaskCommentCreated_PayloadFields(t *testing.T) {
 		adapter, author, assignee, task, comment := setupCommentNotifyFixture(t, ctx, db)
 
 		notifier := services.NewDbNotificationPublisher(noopSSE{}, services.NewTeamService(adapter), adapter)
-		require.NoError(t, notifier.NotifyTaskCommentCreated(ctx, task.ID, comment.ID, author.ID))
+		require.NoError(t, notifier.NotifyTaskCommentCreated(ctx, task.ID, comment.ID, author.ID, nil))
 
 		notif, err := adapter.Notification().FindNotification(ctx, &stores.NotificationFilter{
 			TeamMemberIds: []uuid.UUID{assignee.ID},
