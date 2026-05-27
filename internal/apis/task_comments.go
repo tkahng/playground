@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/contextstore"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/workers"
 )
@@ -98,7 +99,20 @@ func (api *Api) TaskCommentCreate(ctx context.Context, input *TaskCommentCreateI
 		return nil, err
 	}
 
-	mentionedIDs := models.ParseMentionedMemberIDs(input.Body.Content)
+	allMentionedIDs := models.ParseMentionedMemberIDs(input.Body.Content)
+	mentionedIDs := allMentionedIDs[:0]
+	if len(allMentionedIDs) > 0 {
+		teamMembers, err := api.App().Adapter().TeamMember().FindTeamMembers(ctx, &stores.TeamMemberFilter{
+			Ids:     allMentionedIDs,
+			TeamIds: []uuid.UUID{teamInfo.Team.ID},
+		})
+		if err != nil {
+			return nil, err
+		}
+		for _, m := range teamMembers {
+			mentionedIDs = append(mentionedIDs, m.ID)
+		}
+	}
 
 	if err := api.App().JobService().EnqueueTaskCommentCreatedJob(ctx, &workers.TaskCommentCreatedJobArgs{
 		TaskID:    taskID,
@@ -141,6 +155,10 @@ func (api *Api) TaskCommentUpdate(ctx context.Context, input *TaskCommentUpdateI
 	if teamInfo == nil {
 		return nil, huma.Error401Unauthorized("team info not found")
 	}
+	taskID, err := uuid.Parse(input.TaskID)
+	if err != nil {
+		return nil, huma.Error400BadRequest("invalid task ID")
+	}
 	commentID, err := uuid.Parse(input.CommentID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("invalid comment ID")
@@ -150,7 +168,7 @@ func (api *Api) TaskCommentUpdate(ctx context.Context, input *TaskCommentUpdateI
 	if err != nil {
 		return nil, err
 	}
-	if comment == nil {
+	if comment == nil || comment.TaskID != taskID {
 		return nil, huma.Error404NotFound("comment not found")
 	}
 	if comment.CreatedByMemberID != teamInfo.Member.ID {
@@ -181,6 +199,10 @@ func (api *Api) TaskCommentDelete(ctx context.Context, input *TaskCommentDeleteI
 	if teamInfo == nil {
 		return nil, huma.Error401Unauthorized("team info not found")
 	}
+	taskID, err := uuid.Parse(input.TaskID)
+	if err != nil {
+		return nil, huma.Error400BadRequest("invalid task ID")
+	}
 	commentID, err := uuid.Parse(input.CommentID)
 	if err != nil {
 		return nil, huma.Error400BadRequest("invalid comment ID")
@@ -190,7 +212,7 @@ func (api *Api) TaskCommentDelete(ctx context.Context, input *TaskCommentDeleteI
 	if err != nil {
 		return nil, err
 	}
-	if comment == nil {
+	if comment == nil || comment.TaskID != taskID {
 		return nil, huma.Error404NotFound("comment not found")
 	}
 

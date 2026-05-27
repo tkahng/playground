@@ -34,5 +34,8 @@ func (d *TaskCommentStoreDecorator) DeleteTaskComment(ctx context.Context, id uu
 	return d.Delegate.DeleteTaskComment(ctx, id)
 }
 func (d *TaskCommentStoreDecorator) WithTx(db database.Dbx) *DbTaskCommentStore {
+	if d.Delegate == nil {
+		return NewDbTaskCommentStore(db)
+	}
 	return d.Delegate.(*DbTaskCommentStore).WithTx(db)
 }

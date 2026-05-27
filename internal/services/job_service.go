@@ -144,8 +144,10 @@ func (d *DbJobService) EnqueueProjectStatusChangedJob(ctx context.Context, job *
 
 // EnqueueTaskCommentCreatedJob implements JobService.
 func (d *DbJobService) EnqueueTaskCommentCreatedJob(ctx context.Context, job *workers.TaskCommentCreatedJobArgs) error {
+	uniqueKey := "task_comment_created:" + job.CommentID.String()
 	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
 		Args:        job,
+		UniqueKey:   &uniqueKey,
 		RunAfter:    time.Now(),
 		MaxAttempts: 3,
 	})

@@ -25,7 +25,7 @@ func bindTaskCommentApi(appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
-				middleware.RequireTeamInfo(),
+				middleware.TeamInfoFromTask(app),
 			),
 		},
 		appApi.TaskCommentList,
@@ -44,7 +44,7 @@ func bindTaskCommentApi(appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
-				middleware.RequireTeamInfo(),
+				middleware.TeamInfoFromTask(app),
 				middleware.RequireTeamPermission(app, shared.TeamPermissionTasksEdit),
 			),
 		},
@@ -64,7 +64,7 @@ func bindTaskCommentApi(appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
-				middleware.RequireTeamInfo(),
+				middleware.TeamInfoFromTask(app),
 				middleware.RequireTeamPermission(app, shared.TeamPermissionTasksEdit),
 			),
 		},
@@ -84,7 +84,7 @@ func bindTaskCommentApi(appApi *Api) {
 				shared.BearerAuthSecurityKey: {},
 			}},
 			Middlewares: humamiddleware.HumaChiMiddlewares(
-				middleware.RequireTeamInfo(),
+				middleware.TeamInfoFromTask(app),
 				middleware.RequireTeamPermission(app, shared.TeamPermissionTasksEdit),
 			),
 		},

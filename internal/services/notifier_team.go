@@ -443,9 +443,10 @@ func (d *DbNotifier) NotifyTaskCommentCreated(ctx context.Context, taskID uuid.U
 	if comment == nil {
 		return errors.New("comment not found")
 	}
+	runes := []rune(comment.Content)
 	excerpt := comment.Content
-	if len(excerpt) > 100 {
-		excerpt = excerpt[:100]
+	if len(runes) > 100 {
+		excerpt = string(runes[:100])
 	}
 	payload := notification.TaskCommentCreatedNotificationData{
 		TaskID:    taskID,
@@ -496,9 +497,10 @@ func (d *DbNotifier) NotifyTaskCommentMention(ctx context.Context, taskID uuid.U
 	if comment == nil {
 		return errors.New("comment not found")
 	}
+	runes := []rune(comment.Content)
 	excerpt := comment.Content
-	if len(excerpt) > 100 {
-		excerpt = excerpt[:100]
+	if len(runes) > 100 {
+		excerpt = string(runes[:100])
 	}
 	payload := notification.TaskCommentMentionNotificationData{
 		TaskID:      taskID,
