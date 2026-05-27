@@ -5,6 +5,7 @@ import {
   useEventSource,
   useEventSourceListener,
 } from "@react-nano/use-event-source";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -24,16 +25,24 @@ const SSE_EVENTS = [
 const TICKET_REFRESH_MS = 55_000;
 
 // Inner component — only mounted when a valid ticket URL is ready.
-function SSEListener({ url }: { url: string }) {
+function SSEListener({ url, teamMemberId }: { url: string; teamMemberId: string }) {
   const [eventSource] = useEventSource(url, false);
+  const queryClient = useQueryClient();
+
   useEventSourceListener(
     eventSource,
     SSE_EVENTS,
     (evt) => {
       const n = JSON.parse(evt.data) as TeamMemberNotification;
       toast.info(n.notification.title, { description: n.notification.body });
+      queryClient.invalidateQueries({
+        queryKey: ["team-member-notifications", teamMemberId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["team-member-notifications-unread-count", teamMemberId],
+      });
     },
-    [],
+    [queryClient, teamMemberId],
   );
   return null;
 }
@@ -55,7 +64,9 @@ function TeamNotification() {
       .then((d: { ticket?: string }) => {
         if (active && d?.ticket) setTicket(d.ticket);
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.warn("SSE ticket fetch failed, will retry at next interval", err);
+      });
 
     return () => {
       active = false;
@@ -76,6 +87,7 @@ function TeamNotification() {
   return (
     <SSEListener
       url={`/api/team-members/${teamMember.id}/sse?ticket=${ticket}`}
+      teamMemberId={teamMember.id}
     />
   );
 }
