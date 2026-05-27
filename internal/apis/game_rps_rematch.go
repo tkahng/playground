@@ -17,7 +17,6 @@ import (
 	"github.com/tkahng/playground/internal/services"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/tools/sse"
 )
 
 type RpsRematchStatus string
@@ -170,8 +169,8 @@ func bindRequestRematchApi(api huma.API, app core.App) {
 				},
 			)
 			if invitedPlayer != nil {
-				if err := app.SseManager().Send(sse.PlayerChannel(invitedPlayerID.String()), payload); err != nil {
-					slog.WarnContext(ctx, "rematch request SSE notify failed", "error", err)
+				if err := app.PlayerNotificationPublisher().Notify(ctx, invitedPlayerID, notification.RpsRematchRequestedData{}.Kind(), payload); err != nil {
+					slog.WarnContext(ctx, "rematch request notify failed", "error", err)
 				}
 			}
 
@@ -231,8 +230,8 @@ func bindAcceptRematchApi(api huma.API, app core.App) {
 					NewGameID:        *rematch.NewGameID,
 				},
 			)
-			if err := app.SseManager().Send(sse.PlayerChannel(rematch.RequestingPlayerID.String()), payload); err != nil {
-				slog.WarnContext(ctx, "rematch accept SSE notify failed", "error", err)
+			if err := app.PlayerNotificationPublisher().Notify(ctx, rematch.RequestingPlayerID, notification.RpsRematchAcceptedData{}.Kind(), payload); err != nil {
+				slog.WarnContext(ctx, "rematch accept notify failed", "error", err)
 			}
 
 			return &ApiSingleOutput[*RpsRematchRequest]{
@@ -282,8 +281,8 @@ func bindDeclineRematchApi(api huma.API, app core.App) {
 					OriginalGameID:   rematch.OriginalGameID,
 				},
 			)
-			if err := app.SseManager().Send(sse.PlayerChannel(rematch.RequestingPlayerID.String()), payload); err != nil {
-				slog.WarnContext(ctx, "rematch decline SSE notify failed", "error", err)
+			if err := app.PlayerNotificationPublisher().Notify(ctx, rematch.RequestingPlayerID, notification.RpsRematchDeclinedData{}.Kind(), payload); err != nil {
+				slog.WarnContext(ctx, "rematch decline notify failed", "error", err)
 			}
 
 			return &ApiSingleOutput[*RpsRematchRequest]{

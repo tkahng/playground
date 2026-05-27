@@ -22,7 +22,6 @@ import (
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
 	"github.com/tkahng/playground/internal/tools/security"
-	"github.com/tkahng/playground/internal/tools/sse"
 	"github.com/tkahng/playground/internal/tools/types"
 	"github.com/tkahng/playground/internal/tools/utils"
 	"github.com/tkahng/playground/internal/workers"
@@ -201,8 +200,8 @@ func emitRpsGameCompleted(ctx context.Context, app core.App, result *services.Rp
 				OpponentMove: s.oppMove,
 			},
 		)
-		if err := app.SseManager().Send(sse.PlayerChannel(s.playerID.String()), payload); err != nil {
-			slog.WarnContext(ctx, "rps completed SSE notify failed", "player_id", s.playerID, "error", err)
+		if err := app.PlayerNotificationPublisher().Notify(ctx, s.playerID, notification.RpsGameCompletedData{}.Kind(), payload); err != nil {
+			slog.WarnContext(ctx, "rps completed notify failed", "player_id", s.playerID, "error", err)
 		}
 	}
 }
@@ -606,8 +605,8 @@ func bindSendGameRequestToRegisteredPlayerApi(api huma.API, app core.App) {
 					RequestingEmail:    currentPlayer.Email,
 				},
 			)
-			if err := app.SseManager().Send(sse.PlayerChannel(player.ID.String()), challengedPayload); err != nil {
-				slog.WarnContext(ctx, "rps challenge SSE notify failed", "error", err)
+			if err := app.PlayerNotificationPublisher().Notify(ctx, player.ID, notification.RpsGameChallengedData{}.Kind(), challengedPayload); err != nil {
+				slog.WarnContext(ctx, "rps challenge notify failed", "error", err)
 			}
 			return &ApiSingleOutput[*RpsGameWithParticipants]{
 				Body: ApiSingleResponse[*RpsGameWithParticipants]{
@@ -665,8 +664,8 @@ func bindCancelRpsGameApi(api huma.API, app core.App) {
 						CancellingPlayerID: currentPlayer.ID,
 					},
 				)
-				if err := app.SseManager().Send(sse.PlayerChannel(result.InvitedParticipant.PlayerID.String()), payload); err != nil {
-					slog.WarnContext(ctx, "rps cancel SSE notify failed", "error", err)
+				if err := app.PlayerNotificationPublisher().Notify(ctx, result.InvitedParticipant.PlayerID, notification.RpsGameCancelledData{}.Kind(), payload); err != nil {
+					slog.WarnContext(ctx, "rps cancel notify failed", "error", err)
 				}
 			}
 			return &ApiSingleOutput[*RpsGameWithParticipants]{

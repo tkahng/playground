@@ -49,6 +49,7 @@ func (a *Assembler) validate(app *BaseApp) {
 		{"team", app.team},
 		{"teamInvitation", app.teamInvitation},
 		{"notifierPublisher", app.notifierPublisher},
+		{"playerNotifierPublisher", app.playerNotifierPublisher},
 		{"sseManager", app.sseManager},
 		{"sseTickets", app.sseTickets},
 		{"eventManager", app.eventManager},
@@ -107,7 +108,7 @@ func (a *Assembler) registerWorkers(app *BaseApp) {
 		app.NotificationPublisher(),
 		app.RpsGame(),
 		app.Adapter(),
-		app.SseManager(),
+		app.PlayerNotificationPublisher(),
 	)
 }
 
@@ -141,6 +142,7 @@ func (a *Assembler) setBasicServices(app *BaseApp) {
 		app.team,
 		adapter,
 	)
+	app.playerNotifierPublisher = services.NewDbPlayerNotifier(app.sseManager, adapter)
 	app.task = services.NewTaskService(adapter, app.jobService)
 	app.aiUsage = services.NewAiUsageService(adapter)
 	app.token = token.NewTokenService(cfg, adapter.Token())
