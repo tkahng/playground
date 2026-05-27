@@ -26,6 +26,8 @@ type JobService interface {
 	EnqueueTaskOverdueJob(ctx context.Context, job *workers.TaskOverdueJobArgs) error
 	EnqueueTaskStatusChangedJob(ctx context.Context, job *workers.TaskStatusChangedJobArgs) error
 	EnqueueProjectStatusChangedJob(ctx context.Context, job *workers.ProjectStatusChangedJobArgs) error
+	EnqueueTaskCommentCreatedJob(ctx context.Context, job *workers.TaskCommentCreatedJobArgs) error
+	EnqueueTaskCommentMentionJob(ctx context.Context, job *workers.TaskCommentMentionJobArgs) error
 	RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier, rpsGame workers.RpsGameExpiryServiceInterface, adapter stores.StorageAdapterInterface, sseSender workers.RpsExpiryWarningSender)
 }
 
@@ -140,6 +142,26 @@ func (d *DbJobService) EnqueueProjectStatusChangedJob(ctx context.Context, job *
 	})
 }
 
+// EnqueueTaskCommentCreatedJob implements JobService.
+func (d *DbJobService) EnqueueTaskCommentCreatedJob(ctx context.Context, job *workers.TaskCommentCreatedJobArgs) error {
+	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
+		Args:        job,
+		RunAfter:    time.Now(),
+		MaxAttempts: 3,
+	})
+}
+
+// EnqueueTaskCommentMentionJob implements JobService.
+func (d *DbJobService) EnqueueTaskCommentMentionJob(ctx context.Context, job *workers.TaskCommentMentionJobArgs) error {
+	uniqueKey := "task_comment_mention:" + job.CommentID.String() + ":" + job.MentionedID.String()
+	return d.manager.Enqueue(ctx, &jobs.EnqueueParams{
+		Args:        job,
+		UniqueKey:   &uniqueKey,
+		RunAfter:    time.Now(),
+		MaxAttempts: 3,
+	})
+}
+
 // RegisterWorkers implements JobService.
 func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService PaymentService, notification Notifier, rpsGame workers.RpsGameExpiryServiceInterface, adapter stores.StorageAdapterInterface, sseSender workers.RpsExpiryWarningSender) {
 	jobs.RegisterWorker(d.manager, workers.NewOtpEmailWorker(mail))
@@ -153,6 +175,8 @@ func (d *DbJobService) RegisterWorkers(mail OtpMailService, paymentService Payme
 	jobs.RegisterWorker(d.manager, NewTaskOverdueWorker(notification))
 	jobs.RegisterWorker(d.manager, NewTaskStatusChangedWorker(notification))
 	jobs.RegisterWorker(d.manager, NewProjectStatusChangedWorker(notification))
+	jobs.RegisterWorker(d.manager, NewTaskCommentCreatedWorker(notification))
+	jobs.RegisterWorker(d.manager, NewTaskCommentMentionWorker(notification))
 	jobs.RegisterWorker(d.manager, workers.NewRpsGameExpiryWorker(rpsGame, d.manager))
 	jobs.RegisterWorker(d.manager, workers.NewRpsRematchExpiryWorker(rpsGame, d.manager))
 	jobs.RegisterWorker(d.manager, workers.NewRpsExpiryWarningWorker(adapter, sseSender, d.manager))
@@ -316,6 +340,16 @@ func (j *JobServiceDecorator) EnqueueProjectStatusChangedJob(ctx context.Context
 		return errors.New("delegate for EnqueueProjectStatusChangedJob in JobService is nil")
 	}
 	return j.Delegate.EnqueueProjectStatusChangedJob(ctx, job)
+}
+
+// EnqueueTaskCommentCreatedJob implements JobService.
+func (j *JobServiceDecorator) EnqueueTaskCommentCreatedJob(ctx context.Context, job *workers.TaskCommentCreatedJobArgs) error {
+	return j.Delegate.EnqueueTaskCommentCreatedJob(ctx, job)
+}
+
+// EnqueueTaskCommentMentionJob implements JobService.
+func (j *JobServiceDecorator) EnqueueTaskCommentMentionJob(ctx context.Context, job *workers.TaskCommentMentionJobArgs) error {
+	return j.Delegate.EnqueueTaskCommentMentionJob(ctx, job)
 }
 
 func NewJobServiceDecorator(enqueuer jobs.JobManager) *JobServiceDecorator {

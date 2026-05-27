@@ -25,6 +25,8 @@ type Notifier interface {
 	NotifyTaskOverdue(ctx context.Context, taskID uuid.UUID) error
 	NotifyTaskStatusChanged(ctx context.Context, taskID uuid.UUID, oldStatus string, newStatus string, changedByMemberID uuid.UUID) error
 	NotifyProjectStatusChanged(ctx context.Context, projectID uuid.UUID, oldStatus string, newStatus string, changedByMemberID uuid.UUID) error
+	NotifyTaskCommentCreated(ctx context.Context, taskID uuid.UUID, commentID uuid.UUID, authorID uuid.UUID) error
+	NotifyTaskCommentMention(ctx context.Context, taskID uuid.UUID, commentID uuid.UUID, authorID uuid.UUID, mentionedID uuid.UUID) error
 }
 
 var _ Notifier = (*DbNotifier)(nil)
@@ -424,6 +426,129 @@ func NewProjectStatusChangedWorker(notifier Notifier) *ProjectStatusChangedWorke
 }
 
 var _ jobs.Worker[workers.ProjectStatusChangedJobArgs] = (*ProjectStatusChangedWorker)(nil)
+
+// NotifyTaskCommentCreated notifies task assignee and reporter of a new comment (excluding the author).
+func (d *DbNotifier) NotifyTaskCommentCreated(ctx context.Context, taskID uuid.UUID, commentID uuid.UUID, authorID uuid.UUID) error {
+	task, err := d.adapter.Task().FindTaskByID(ctx, taskID)
+	if err != nil {
+		return err
+	}
+	if task == nil {
+		return errors.New("task not found")
+	}
+	comment, err := d.adapter.TaskComment().FindTaskCommentByID(ctx, commentID)
+	if err != nil {
+		return err
+	}
+	if comment == nil {
+		return errors.New("comment not found")
+	}
+	excerpt := comment.Content
+	if len(excerpt) > 100 {
+		excerpt = excerpt[:100]
+	}
+	payload := notification.TaskCommentCreatedNotificationData{
+		TaskID:    taskID,
+		CommentID: commentID,
+		AuthorID:  authorID,
+		TaskName:  task.Name,
+		Excerpt:   excerpt,
+	}
+	notificationPayload := notification.NewNotificationPayload(
+		"New comment on task.",
+		task.Name+": "+excerpt,
+		payload,
+	)
+	payloadBytes, err := json.Marshal(notificationPayload)
+	if err != nil {
+		return err
+	}
+	raw := collectMemberIDs(task.AssigneeID, task.ReporterID, task.CreatedByMemberID)
+	recipients := make([]uuid.UUID, 0, len(raw))
+	for _, id := range raw {
+		if id != authorID {
+			recipients = append(recipients, id)
+		}
+	}
+	if len(recipients) == 0 {
+		slog.DebugContext(ctx, "no members to notify for task comment", slog.String("task_id", taskID.String()))
+		return nil
+	}
+	return d.sendToMembers(ctx, recipients, payload.Kind(), payloadBytes, notificationPayload)
+}
+
+// NotifyTaskCommentMention notifies a mentioned member that they were @-mentioned in a comment.
+func (d *DbNotifier) NotifyTaskCommentMention(ctx context.Context, taskID uuid.UUID, commentID uuid.UUID, authorID uuid.UUID, mentionedID uuid.UUID) error {
+	if mentionedID == authorID {
+		return nil
+	}
+	task, err := d.adapter.Task().FindTaskByID(ctx, taskID)
+	if err != nil {
+		return err
+	}
+	if task == nil {
+		return errors.New("task not found")
+	}
+	comment, err := d.adapter.TaskComment().FindTaskCommentByID(ctx, commentID)
+	if err != nil {
+		return err
+	}
+	if comment == nil {
+		return errors.New("comment not found")
+	}
+	excerpt := comment.Content
+	if len(excerpt) > 100 {
+		excerpt = excerpt[:100]
+	}
+	payload := notification.TaskCommentMentionNotificationData{
+		TaskID:      taskID,
+		CommentID:   commentID,
+		AuthorID:    authorID,
+		MentionedID: mentionedID,
+		TaskName:    task.Name,
+		Excerpt:     excerpt,
+	}
+	notificationPayload := notification.NewNotificationPayload(
+		"You were mentioned in a task comment.",
+		task.Name+": "+excerpt,
+		payload,
+	)
+	payloadBytes, err := json.Marshal(notificationPayload)
+	if err != nil {
+		return err
+	}
+	return d.sendToMembers(ctx, []uuid.UUID{mentionedID}, payload.Kind(), payloadBytes, notificationPayload)
+}
+
+// workers
+
+type TaskCommentCreatedWorker struct {
+	notifier Notifier
+}
+
+func (w *TaskCommentCreatedWorker) Work(ctx context.Context, job *jobs.Job[workers.TaskCommentCreatedJobArgs]) error {
+	return w.notifier.NotifyTaskCommentCreated(ctx, job.Args.TaskID, job.Args.CommentID, job.Args.AuthorID)
+}
+
+func NewTaskCommentCreatedWorker(notifier Notifier) *TaskCommentCreatedWorker {
+	return &TaskCommentCreatedWorker{notifier: notifier}
+}
+
+var _ jobs.Worker[workers.TaskCommentCreatedJobArgs] = (*TaskCommentCreatedWorker)(nil)
+
+type TaskCommentMentionWorker struct {
+	notifier Notifier
+}
+
+func (w *TaskCommentMentionWorker) Work(ctx context.Context, job *jobs.Job[workers.TaskCommentMentionJobArgs]) error {
+	return w.notifier.NotifyTaskCommentMention(ctx, job.Args.TaskID, job.Args.CommentID, job.Args.AuthorID, job.Args.MentionedID)
+}
+
+func NewTaskCommentMentionWorker(notifier Notifier) *TaskCommentMentionWorker {
+	return &TaskCommentMentionWorker{notifier: notifier}
+}
+
+var _ jobs.Worker[workers.TaskCommentMentionJobArgs] = (*TaskCommentMentionWorker)(nil)
 
 func isWithinPastHours(t *time.Time, dur time.Duration) bool {
 	if t == nil {

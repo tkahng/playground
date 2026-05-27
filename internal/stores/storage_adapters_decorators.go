@@ -31,6 +31,7 @@ func NewAdapterDecorators() *StorageAdapterDecorator {
 		AiUsageFunc:        &AiUsageStoreDecorator{},
 		PlanFeaturesFunc:   &PlanFeaturesStoreDecorator{},
 		BlogFunc:           &BlogStoreDecorator{},
+		TaskCommentFunc:    &TaskCommentStoreDecorator{},
 	}
 }
 
@@ -60,6 +61,7 @@ func NewDbAdapterDecorators(db database.Dbx) *StorageAdapterDecorator {
 		AiUsageFunc:      NewAiUsageStoreDecorator(db),
 		PlanFeaturesFunc: NewPlanFeaturesStoreDecorator(db),
 		BlogFunc:         NewBlogStoreDecorator(db),
+		TaskCommentFunc:  NewTaskCommentStoreDecorator(db),
 	}
 }
 
@@ -125,6 +127,7 @@ type StorageAdapterDecorator struct {
 	AiUsageFunc        *AiUsageStoreDecorator
 	PlanFeaturesFunc   *PlanFeaturesStoreDecorator
 	BlogFunc           *BlogStoreDecorator
+	TaskCommentFunc    *TaskCommentStoreDecorator
 }
 
 // Blog implements [StorageAdapterInterface].
@@ -365,6 +368,14 @@ func (s *StorageAdapterDecorator) PlanFeatures() PlanFeaturesStoreInterface {
 		return s.PlanFeaturesFunc
 	}
 	return s.Delegate.PlanFeatures()
+}
+
+// TaskComment implements [StorageAdapterInterface].
+func (s *StorageAdapterDecorator) TaskComment() DbTaskCommentStoreInterface {
+	if s.TaskCommentFunc != nil {
+		return s.TaskCommentFunc
+	}
+	return s.Delegate.TaskComment()
 }
 
 var _ StorageAdapterInterface = (*StorageAdapterDecorator)(nil)
