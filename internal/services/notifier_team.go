@@ -62,9 +62,29 @@ func collectMemberIDs(ids ...*uuid.UUID) []uuid.UUID {
 }
 
 // sendToMembers persists notifications for each member and broadcasts via SSE.
+// Members who have explicitly disabled the notification type are excluded.
 func (d *DbNotifier) sendToMembers(ctx context.Context, memberIDs []uuid.UUID, notifType string, payloadBytes []byte, ssePayload any) error {
 	if len(memberIDs) == 0 {
 		return nil
+	}
+	disabledIDs, err := d.adapter.Notification().FindDisabledMemberIDs(ctx, memberIDs, notifType)
+	if err != nil {
+		slog.WarnContext(ctx, "failed to load notification preferences, sending to all", slog.Any("error", err))
+	} else if len(disabledIDs) > 0 {
+		disabledSet := make(map[uuid.UUID]struct{}, len(disabledIDs))
+		for _, id := range disabledIDs {
+			disabledSet[id] = struct{}{}
+		}
+		filtered := make([]uuid.UUID, 0, len(memberIDs))
+		for _, id := range memberIDs {
+			if _, skip := disabledSet[id]; !skip {
+				filtered = append(filtered, id)
+			}
+		}
+		memberIDs = filtered
+		if len(memberIDs) == 0 {
+			return nil
+		}
 	}
 	members, err := d.adapter.TeamMember().FindTeamMembers(ctx, &stores.TeamMemberFilter{Ids: memberIDs})
 	if err != nil {

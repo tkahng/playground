@@ -23,6 +23,11 @@ type NotificationStore interface {
 	UpdateNotification(ctx context.Context, notification *models.Notification) error
 	DeleteNotifications(ctx context.Context, args *NotificationFilter) (int64, error)
 	MarkAllNotificationsRead(ctx context.Context, teamMemberID uuid.UUID) error
+	// FindDisabledMemberIDs returns the subset of memberIDs that have explicitly
+	// disabled the given notification type in their preferences.
+	FindDisabledMemberIDs(ctx context.Context, memberIDs []uuid.UUID, notifType string) ([]uuid.UUID, error)
+	// UpsertNotificationPreference creates or updates a preference row.
+	UpsertNotificationPreference(ctx context.Context, teamMemberID uuid.UUID, notifType string, enabled bool) error
 }
 
 type DbNotificationStore struct {
@@ -182,6 +187,41 @@ func (s *DbNotificationStore) MarkAllNotificationsRead(ctx context.Context, team
 	return err
 }
 
+func (s *DbNotificationStore) FindDisabledMemberIDs(ctx context.Context, memberIDs []uuid.UUID, notifType string) ([]uuid.UUID, error) {
+	if len(memberIDs) == 0 {
+		return nil, nil
+	}
+	db := database.GetContextOrDefaultDbx(ctx, s.db)
+	rows, err := db.Query(ctx, `
+		SELECT team_member_id
+		FROM messaging.team_notification_preferences
+		WHERE team_member_id = ANY($1) AND type = $2 AND enabled = false
+	`, memberIDs, notifType)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var disabled []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		disabled = append(disabled, id)
+	}
+	return disabled, rows.Err()
+}
+
+func (s *DbNotificationStore) UpsertNotificationPreference(ctx context.Context, teamMemberID uuid.UUID, notifType string, enabled bool) error {
+	db := database.GetContextOrDefaultDbx(ctx, s.db)
+	_, err := db.Exec(ctx, `
+		INSERT INTO messaging.team_notification_preferences (team_member_id, type, enabled)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (team_member_id, type) DO UPDATE SET enabled = EXCLUDED.enabled, updated_at = clock_timestamp()
+	`, teamMemberID, notifType, enabled)
+	return err
+}
+
 func (d *DbNotificationStore) sort(filter *NotificationFilter) *map[string]string {
 	sortBy, sortOrder := filter.Sort()
 	if slices.Contains(repository.NotificationBuilder.FieldNames(), sortBy) {
@@ -296,6 +336,22 @@ func (n *NotificationStoreDecorator) MarkAllNotificationsRead(ctx context.Contex
 		return errors.New("delegate is nil in MarkAllNotificationsRead")
 	}
 	return n.Delegate.MarkAllNotificationsRead(ctx, teamMemberID)
+}
+
+// FindDisabledMemberIDs implements NotificationStore.
+func (n *NotificationStoreDecorator) FindDisabledMemberIDs(ctx context.Context, memberIDs []uuid.UUID, notifType string) ([]uuid.UUID, error) {
+	if n.Delegate == nil {
+		return nil, errors.New("delegate is nil in FindDisabledMemberIDs")
+	}
+	return n.Delegate.FindDisabledMemberIDs(ctx, memberIDs, notifType)
+}
+
+// UpsertNotificationPreference implements NotificationStore.
+func (n *NotificationStoreDecorator) UpsertNotificationPreference(ctx context.Context, teamMemberID uuid.UUID, notifType string, enabled bool) error {
+	if n.Delegate == nil {
+		return errors.New("delegate is nil in UpsertNotificationPreference")
+	}
+	return n.Delegate.UpsertNotificationPreference(ctx, teamMemberID, notifType, enabled)
 }
 
 var _ NotificationStore = (*NotificationStoreDecorator)(nil)
