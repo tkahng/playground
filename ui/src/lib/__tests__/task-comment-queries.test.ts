@@ -53,7 +53,7 @@ describe("listTaskComments", () => {
       }),
     );
     expect(result).toHaveLength(1);
-    expect(result[0].content).toBe("hello world");
+    expect(result[0]!.content).toBe("hello world");
   });
 
   it("returns empty array when data is null", async () => {
