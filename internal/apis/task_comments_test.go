@@ -58,11 +58,12 @@ func TestApi_TaskCommentList(t *testing.T) {
 
 		scenarios := []apis.ApiScenario{
 			{
-				Name:           "unauthenticated → 401",
-				Method:         http.MethodGet,
-				URL:            fmt.Sprintf("/tasks/%s/comments", task.ID),
-				ExpectedStatus: http.StatusUnauthorized,
-				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				Name:            "unauthenticated → 401",
+				Method:          http.MethodGet,
+				URL:             fmt.Sprintf("/tasks/%s/comments", task.ID),
+				ExpectedStatus:  http.StatusUnauthorized,
+				ExpectedContent: []string{"you are not authenticated"},
+				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 			},
 			{
 				Name:           "success: returns all comments ordered by created_at",
@@ -93,20 +94,22 @@ func TestApi_TaskCommentCreate(t *testing.T) {
 
 		scenarios := []apis.ApiScenario{
 			{
-				Name:           "unauthenticated → 401",
-				Method:         http.MethodPost,
-				URL:            fmt.Sprintf("/tasks/%s/comments", task.ID),
-				Body:           strings.NewReader(`{"content":"hello"}`),
-				ExpectedStatus: http.StatusUnauthorized,
-				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				Name:            "unauthenticated → 401",
+				Method:          http.MethodPost,
+				URL:             fmt.Sprintf("/tasks/%s/comments", task.ID),
+				Body:            strings.NewReader(`{"content":"hello"}`),
+				ExpectedStatus:  http.StatusUnauthorized,
+				ExpectedContent: []string{"you are not authenticated"},
+				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 			},
 			{
-				Name:           "empty content → 422",
-				Method:         http.MethodPost,
-				URL:            fmt.Sprintf("/tasks/%s/comments", task.ID),
-				Body:           strings.NewReader(`{"content":""}`),
-				ExpectedStatus: http.StatusUnprocessableEntity,
-				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				Name:            "empty content → 422",
+				Method:          http.MethodPost,
+				URL:             fmt.Sprintf("/tasks/%s/comments", task.ID),
+				Body:            strings.NewReader(`{"content":""}`),
+				ExpectedStatus:  http.StatusUnprocessableEntity,
+				ExpectedContent: []string{"expected length >= 1"},
+				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, team.User.Email)
 					scenario.Headers = []string{tokenHeader}
@@ -163,12 +166,13 @@ func TestApi_TaskCommentUpdate(t *testing.T) {
 
 		scenarios := []apis.ApiScenario{
 			{
-				Name:           "non-author → 403",
-				Method:         http.MethodPut,
-				URL:            url,
-				Body:           strings.NewReader(`{"content":"sneaky edit"}`),
-				ExpectedStatus: http.StatusForbidden,
-				TestAppFactory: func(t testing.TB) *apis.TestApi { return testApi },
+				Name:            "non-author → 403",
+				Method:          http.MethodPut,
+				URL:             url,
+				Body:            strings.NewReader(`{"content":"sneaky edit"}`),
+				ExpectedStatus:  http.StatusForbidden,
+				ExpectedContent: []string{"only the author can edit this comment"},
+				TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 				BeforeTestFunc: func(t testing.TB, app *core.BaseApp, scenario *apis.ApiScenario) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, otherUser.Email)
 					scenario.Headers = []string{tokenHeader}
@@ -232,7 +236,8 @@ func TestApi_TaskCommentDelete(t *testing.T) {
 					tokenHeader, _ := core.CreateAccessHeaderAndRefreshToken(t, app, otherUser.Email)
 					scenario.Headers = []string{tokenHeader}
 				},
-				ExpectedStatus: http.StatusForbidden,
+				ExpectedStatus:  http.StatusForbidden,
+				ExpectedContent: []string{"not authorized to delete this comment"},
 			},
 			{
 				Name:   "owner can delete any comment",
