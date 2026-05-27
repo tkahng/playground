@@ -32,6 +32,7 @@ type StorageAdapterInterface interface {
 	AiUsage() AiUsageStoreInterface
 	PlanFeatures() PlanFeaturesStoreInterface
 	Blog() BlogStoreInterface
+	TaskComment() DbTaskCommentStoreInterface
 	// WithTx(tx database.Dbx) *StorageAdapter
 	RunInTxCtx(ctx context.Context, fn func(txCtx context.Context) error) error
 	RunInTx(ctx context.Context, fn func(tx StorageAdapterInterface) error) error
@@ -61,11 +62,17 @@ type StorageAdapter struct {
 	aiUsage        *DbAiUsageStore
 	planFeatures   *DbPlanFeaturesStore
 	blog           *DbBlogStore
+	taskComment    *DbTaskCommentStore
 }
 
 // Blog implements [StorageAdapterInterface].
 func (s *StorageAdapter) Blog() BlogStoreInterface {
 	return s.blog
+}
+
+// TaskComment implements [StorageAdapterInterface].
+func (s *StorageAdapter) TaskComment() DbTaskCommentStoreInterface {
+	return s.taskComment
 }
 
 // AiUsage implements [StorageAdapterInterface].
@@ -159,6 +166,7 @@ func (s *StorageAdapter) RunInTx(ctx context.Context, fn func(tx StorageAdapterI
 			aiUsage:        s.aiUsage.WithTx(db),
 			planFeatures:   s.planFeatures.WithTx(db),
 			blog:           s.blog.WithTx(db),
+			taskComment:    s.taskComment.WithTx(db),
 		}
 		return fn(tx)
 	})
@@ -233,5 +241,6 @@ func NewStorageAdapter(db database.Dbx) *StorageAdapter {
 		aiUsage:        NewDbAiUsageStore(db),
 		planFeatures:   NewDbPlanFeaturesStore(db),
 		blog:           NewDbBlogStore(db),
+		taskComment:    NewDbTaskCommentStore(db),
 	}
 }

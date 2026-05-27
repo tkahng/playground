@@ -1,4 +1,5 @@
 import { CenteredSpinner } from "@/components/centered-spinner";
+import { TaskComments } from "./task-comments";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -399,6 +400,13 @@ export default function TaskEdit() {
             </div>
           </form>
         </Form>
+        {task && teamMember && (
+          <TaskComments
+            taskId={task.id}
+            currentMemberId={teamMember.id}
+            isOwner={teamMember.role === "owner"}
+          />
+        )}
       </div>
     </TaskContext.Provider>
   );

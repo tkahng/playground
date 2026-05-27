@@ -108,8 +108,9 @@ var (
 	LedgerAccountBuilder  = NewSQLBuilder[models.LedgerAccount](UuidV7Generator)
 	LedgerTransferBuilder = NewSQLBuilder[models.LedgerTransfer](UuidV7Generator)
 
-	BlogPostBuilder = NewSQLBuilder[models.BlogPost](UuidV7Generator)
-	BlogTagBuilder  = NewSQLBuilder[models.BlogTag](UuidV7Generator)
+	BlogPostBuilder     = NewSQLBuilder[models.BlogPost](UuidV7Generator)
+	BlogTagBuilder      = NewSQLBuilder[models.BlogTag](UuidV7Generator)
+	TaskCommentBuilder  = NewSQLBuilder[models.TaskComment](UuidV7Generator)
 )
 
 var (
@@ -152,6 +153,7 @@ var (
 	LedgerAccount  Repository[models.LedgerAccount]  = NewPostgresRepository(LedgerAccountBuilder)
 	LedgerTransfer Repository[models.LedgerTransfer] = NewPostgresRepository(LedgerTransferBuilder)
 
-	BlogPost Repository[models.BlogPost] = NewPostgresRepository(BlogPostBuilder)
-	BlogTag  Repository[models.BlogTag]  = NewPostgresRepository(BlogTagBuilder)
+	BlogPost    Repository[models.BlogPost]    = NewPostgresRepository(BlogPostBuilder)
+	BlogTag     Repository[models.BlogTag]     = NewPostgresRepository(BlogTagBuilder)
+	TaskComment Repository[models.TaskComment] = NewPostgresRepository(TaskCommentBuilder)
 )
