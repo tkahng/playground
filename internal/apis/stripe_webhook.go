@@ -47,39 +47,42 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 
 	cfg := api.App().Config()
 	if cfg == nil {
-		return nil, huma.Error400BadRequest("Missing config")
+		return nil, huma.Error500InternalServerError("server configuration unavailable")
 	}
 	event, err := webhook.ConstructEvent(payload, input.Signature, cfg.Webhook)
 	if err != nil {
-		slog.ErrorContext(ctx, "⚠️  Webhook error while parsing basic request", slog.Any("error", err), slog.Int("payload_bytes", len(payload)))
-		return nil, huma.Error400BadRequest(err.Error())
+		// Signature failure → 400 so Stripe does not retry (it would fail again).
+		slog.ErrorContext(ctx, "stripe webhook signature verification failed", slog.Any("error", err), slog.Int("payload_bytes", len(payload)))
+		return nil, huma.Error400BadRequest("webhook signature verification failed")
 	}
 	payment := api.App().Payment()
 	switch event.Type {
 	case stripe.EventTypeProductCreated, stripe.EventTypeProductUpdated:
 		product, err := utils.UnmarshalJSON[stripe.Product](event.Data.Raw)
 		if err != nil {
-			return nil, huma.Error400BadRequest("failed to unmarshal product", err)
+			return nil, huma.Error400BadRequest("failed to unmarshal product event")
 		}
-		err = payment.UpsertProductFromStripe(ctx, &product)
-		if err != nil {
-			return nil, huma.Error400BadRequest("failed to upsert product", err)
+		if err = payment.UpsertProductFromStripe(ctx, &product); err != nil {
+			slog.ErrorContext(ctx, "stripe webhook: upsert product failed", slog.Any("error", err))
+			return nil, huma.Error500InternalServerError("internal error processing product event")
 		}
 		return nil, nil
+
 	case stripe.EventTypePriceCreated, stripe.EventTypePriceUpdated:
 		price, err := utils.UnmarshalJSON[stripe.Price](event.Data.Raw)
 		if err != nil {
-			return nil, huma.Error400BadRequest("failed to unmarshal price", err)
+			return nil, huma.Error400BadRequest("failed to unmarshal price event")
 		}
-		err = payment.UpsertPriceFromStripe(ctx, &price)
-		if err != nil {
-			return nil, huma.Error400BadRequest("failed to upsert price", err)
+		if err = payment.UpsertPriceFromStripe(ctx, &price); err != nil {
+			slog.ErrorContext(ctx, "stripe webhook: upsert price failed", slog.Any("error", err))
+			return nil, huma.Error500InternalServerError("internal error processing price event")
 		}
 		return nil, nil
+
 	case stripe.EventTypeCheckoutSessionCompleted:
 		cs, err := utils.UnmarshalJSON[stripe.CheckoutSession](event.Data.Raw)
 		if err != nil {
-			return nil, huma.Error400BadRequest("failed to unmarshal session", err)
+			return nil, huma.Error400BadRequest("failed to unmarshal checkout session event")
 		}
 		switch cs.Mode {
 		case stripe.CheckoutSessionModePayment:
@@ -88,7 +91,6 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 				slog.WarnContext(ctx, "unhandled payment-mode checkout session", slog.String("session_id", cs.ID), slog.String("purchase_type", purchaseType))
 				return nil, nil
 			}
-			// Points one-time purchase fulfillment.
 			userIDStr, ok := cs.Metadata["user_id"]
 			if !ok {
 				return nil, huma.Error400BadRequest("points purchase session missing user_id metadata")
@@ -113,32 +115,37 @@ func (api *Api) StripeWebhook(ctx context.Context, input *StripeWebhookInput) (*
 				})
 			})
 			if txErr != nil {
-				return nil, huma.Error400BadRequest("failed to fulfill points purchase", txErr)
+				slog.ErrorContext(ctx, "stripe webhook: fulfill points purchase failed", slog.Any("error", txErr), slog.String("session_id", cs.ID))
+				return nil, huma.Error500InternalServerError("internal error fulfilling points purchase")
 			}
 			return nil, nil
+
 		case stripe.CheckoutSessionModeSubscription:
 			if cs.Subscription == nil {
-				return nil, huma.Error400BadRequest("subscription checkout session missing subscription")
+				return nil, huma.Error400BadRequest("subscription checkout session missing subscription field")
 			}
-			err = payment.UpsertSubscriptionByIds(ctx, cs.Customer.ID, cs.Subscription.ID)
-			if err != nil {
-				return nil, huma.Error400BadRequest("failed to upsert checkout session complete", err)
+			if err = payment.UpsertSubscriptionByIds(ctx, cs.Customer.ID, cs.Subscription.ID); err != nil {
+				slog.ErrorContext(ctx, "stripe webhook: upsert subscription failed", slog.Any("error", err))
+				return nil, huma.Error500InternalServerError("internal error processing subscription checkout")
 			}
 			return nil, nil
+
 		default:
 			slog.WarnContext(ctx, "unhandled checkout session mode", slog.String("session_id", cs.ID), slog.String("mode", string(cs.Mode)))
 			return nil, nil
 		}
+
 	case stripe.EventTypeCustomerSubscriptionCreated, stripe.EventTypeCustomerSubscriptionUpdated, stripe.EventTypeCustomerSubscriptionDeleted:
-		subscription, err := utils.UnmarshalJSON[stripe.Subscription](event.Data.Raw)
+		sub, err := utils.UnmarshalJSON[stripe.Subscription](event.Data.Raw)
 		if err != nil {
-			return nil, huma.Error400BadRequest("failed to unmarshal subscription", err)
+			return nil, huma.Error400BadRequest("failed to unmarshal subscription event")
 		}
-		err = payment.UpsertSubscriptionByIds(ctx, subscription.Customer.ID, subscription.ID)
-		if err != nil {
-			return nil, huma.Error400BadRequest("failed to upsert subscription", err)
+		if err = payment.UpsertSubscriptionByIds(ctx, sub.Customer.ID, sub.ID); err != nil {
+			slog.ErrorContext(ctx, "stripe webhook: upsert subscription failed", slog.Any("error", err))
+			return nil, huma.Error500InternalServerError("internal error processing subscription event")
 		}
 		return nil, nil
+
 	default:
 		slog.InfoContext(ctx, "stripe webhook: ignoring unhandled event type", slog.String("type", string(event.Type)))
 		return nil, nil

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/stripe/stripe-go/v82"
 	"github.com/stripe/stripe-go/v82/billingportal/configuration"
 	bs "github.com/stripe/stripe-go/v82/billingportal/session"
@@ -158,6 +159,7 @@ func (c *StripeClient) CreateCheckoutSession(customerId, priceId string, quantit
 		LineItems:          lineParams,
 		SubscriptionData:   subscriptionParams,
 	}
+	sessionParams.SetIdempotencyKey(uuid.New().String())
 	return session.New(sessionParams)
 }
 
@@ -181,6 +183,7 @@ func (c *StripeClient) CreatePointsCheckoutSession(customerID, userID string, po
 		SuccessURL: stripe.String(c.config.StripeAppUrl + "/payment/points-success?sessionId={CHECKOUT_SESSION_ID}"),
 		CancelURL:  stripe.String(c.config.StripeAppUrl + "/payment/cancel"),
 	}
+	sessionParams.SetIdempotencyKey(uuid.New().String())
 	return session.New(sessionParams)
 }
 
@@ -239,5 +242,6 @@ func (c *StripeClient) CreateBillingPortalSession(customerId string, configurati
 		Customer:      stripe.String(customerId),
 		ReturnURL:     stripe.String(retunrUrl),
 	}
+	params.SetIdempotencyKey(uuid.New().String())
 	return bs.New(params)
 }
