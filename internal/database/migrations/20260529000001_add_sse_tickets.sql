@@ -1,7 +1,7 @@
 -- migrate:up
 CREATE TABLE app.sse_tickets (
     id          text        NOT NULL PRIMARY KEY,
-    user_id     uuid        NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE ON UPDATE CASCADE,
+    user_id     uuid        NOT NULL,
     resource_id uuid        NOT NULL,
     expires_at  timestamptz NOT NULL
 );
