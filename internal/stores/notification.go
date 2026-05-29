@@ -3,6 +3,7 @@ package stores
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/notification"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
@@ -213,6 +215,9 @@ func (s *DbNotificationStore) FindDisabledMemberIDs(ctx context.Context, memberI
 }
 
 func (s *DbNotificationStore) UpsertNotificationPreference(ctx context.Context, teamMemberID uuid.UUID, notifType string, enabled bool) error {
+	if !notification.IsValidTeamNotificationType(notifType) {
+		return fmt.Errorf("unknown notification type: %q", notifType)
+	}
 	db := database.GetContextOrDefaultDbx(ctx, s.db)
 	_, err := db.Exec(ctx, `
 		INSERT INTO messaging.team_notification_preferences (team_member_id, type, enabled)

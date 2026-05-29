@@ -173,6 +173,18 @@ func TestPreferences_ExplicitlyEnabled(t *testing.T) {
 	})
 }
 
+// TestPreferences_RejectsUnknownType verifies that upserting a preference for a
+// type string that is not in the canonical list returns an error immediately.
+func TestPreferences_RejectsUnknownType(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter, optedOut, _, _, _ := setupPreferenceFixture(t, ctx, db)
+
+		err := adapter.Notification().UpsertNotificationPreference(ctx, optedOut.ID, "totally_fake_type", false)
+		require.Error(t, err, "unknown notification type should be rejected")
+		assert.Contains(t, err.Error(), "totally_fake_type")
+	})
+}
+
 // TestPreferences_FailClosedOnDbError verifies that a database error while loading
 // preferences causes sendToMembers to return an error instead of notifying everyone.
 func TestPreferences_FailClosedOnDbError(t *testing.T) {
