@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
+	"math/rand"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,6 +14,8 @@ import (
 	"github.com/tkahng/playground/internal/models"
 	"golang.org/x/sync/errgroup"
 )
+
+const maxBackoff = 10 * time.Minute
 
 func ServeWithPoller(ctx context.Context, poller *DbPoller) {
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
@@ -148,8 +151,14 @@ func (p *DbPoller) PollOnce(ctx context.Context) error {
 					if job.Attempts >= job.MaxAttempts {
 						return js.MarkFailed(jobTimeoutCtx, job.ID, dispatchErr.Error())
 					}
-					// Reschedule with exponential backoff
-					delay := time.Duration(math.Pow(2, float64(job.Attempts))) * time.Second
+					// Reschedule with capped exponential backoff + ±25% jitter to
+					// prevent thundering herds when many jobs fail simultaneously.
+					base := time.Duration(math.Pow(2, float64(job.Attempts))) * time.Second
+					if base > maxBackoff {
+						base = maxBackoff
+					}
+					jitter := time.Duration(rand.Int63n(int64(base) / 2))
+					delay := base + jitter - base/4
 					return js.RescheduleJob(jobTimeoutCtx, job.ID, delay)
 				}
 
