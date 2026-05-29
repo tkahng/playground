@@ -15,14 +15,14 @@ func TestDBConfig_GetUrl(t *testing.T) {
 	}{
 		{
 			name: "get default url succeeded",
-			want: "postgres://postgres:postgres@localhost:5432/playground?sslmode=disable",
+			want: "postgres://postgres:postgres@localhost:5432/playground?sslmode=prefer",
 			setEnv: func() {
 
 			},
 		},
 		{
 			name: "get url from env succeeded",
-			want: "postgres://user:password@somehost:5432/somedatabase?sslmode=disable",
+			want: "postgres://user:password@somehost:5432/somedatabase?sslmode=prefer",
 			setEnv: func() {
 				t.Setenv("DATABASE_USER", "user")
 				t.Setenv("DATABASE_PASSWORD", "password")
@@ -32,7 +32,7 @@ func TestDBConfig_GetUrl(t *testing.T) {
 		},
 		{
 			name: "get test db url from default",
-			want: "postgres://postgres:postgres@localhost:5432/playground_test?sslmode=disable",
+			want: "postgres://postgres:postgres@localhost:5432/playground_test?sslmode=prefer",
 			setEnv: func() {
 				t.Setenv("DATABASE_DB", "playground_test")
 			},
@@ -61,14 +61,14 @@ func TestDBConfig_DatabaseURL(t *testing.T) {
 	}{
 		{
 			name: "get default url succeeded",
-			want: "postgres://postgres:postgres@localhost:5432/playground?sslmode=disable",
+			want: "postgres://postgres:postgres@localhost:5432/playground?sslmode=prefer",
 			setEnv: func() {
 
 			},
 		},
 		{
 			name: "get url from env succeeded",
-			want: "postgres://user:password@somehost:5432/somedatabase?sslmode=disable",
+			want: "postgres://user:password@somehost:5432/somedatabase?sslmode=prefer",
 			setEnv: func() {
 				t.Setenv("DATABASE_USER", "user")
 				t.Setenv("DATABASE_PASSWORD", "password")
@@ -78,7 +78,7 @@ func TestDBConfig_DatabaseURL(t *testing.T) {
 		},
 		{
 			name: "get test db url from default",
-			want: "postgres://postgres:postgres@localhost:5432/playground_test?sslmode=disable",
+			want: "postgres://postgres:postgres@localhost:5432/playground_test?sslmode=prefer",
 			setEnv: func() {
 				t.Setenv("DATABASE_DB", "playground_test")
 			},

@@ -21,17 +21,23 @@ type StorageConfig struct {
 	Region        string `env:"STORAGE_REGION" required:"true" json:"region"`
 	PublicBaseURL string `env:"STORAGE_PUBLIC_BASE_URL" envDefault:"" json:"public_base_url"`
 }
+const (
+	// exactly 32 chars for AES-256; used only in test/dev environments
+	defaultEncryptionKey = "test-encryption-key-insecure!!!!"
+	defaultJWTSecret     = "test-jwt-secret-insecure-dev-only"
+)
+
 type AppConfig struct {
-	AppUrl        string `env:"APP_URL" envDefault:"http://localhost:8080"`
-	AppName       string `env:"APP_NAME" envDefault:"Playground"`
-	SenderName    string `env:"SENDER_NAME" envDefault:"info"`
-	SenderAddress string `env:"SENDER_ADDRESS" envDefault:"Hb4k@notifications.k2dv.io"`
-	EncryptionKey string `env:"ENCRYPTION_KEY" required:"true"`
-	JWTSecret     string `env:"JWT_SECRET" required:"true"`
+	AppUrl         string   `env:"APP_URL" envDefault:"http://localhost:8080"`
+	AppName        string   `env:"APP_NAME" envDefault:"Playground"`
+	SenderName     string   `env:"SENDER_NAME" envDefault:"info"`
+	SenderAddress  string   `env:"SENDER_ADDRESS" envDefault:"Hb4k@notifications.k2dv.io"`
+	EncryptionKey  string   `env:"ENCRYPTION_KEY" envDefault:"test-encryption-key-insecure!!!!"`
+	JWTSecret      string   `env:"JWT_SECRET" envDefault:"test-jwt-secret-insecure-dev-only"`
 	AllowedOrigins []string `env:"ALLOWED_ORIGINS" envSeparator:"," envDefault:"http://localhost:5173,http://localhost:8080"`
-	AppEnv        string `env:"APP_ENV" envDefault:"development"` // can be development, staging, production
-	Debug         bool   `env:"DEBUG" envDefault:"false"`
-	OtelEnabled   bool   `env:"OTEL_ENABLED" envDefault:"false"`
+	AppEnv         string   `env:"APP_ENV" envDefault:"development"` // can be development, staging, production
+	Debug          bool     `env:"DEBUG" envDefault:"false"`
+	OtelEnabled    bool     `env:"OTEL_ENABLED" envDefault:"false"`
 }
 
 type DBConfig struct {
@@ -130,6 +136,14 @@ func AppConfigGetter() *EnvConfig {
 		RequiredIfNoDef: true,
 	}); err != nil {
 		panic(err)
+	}
+	if config.AppEnv == "production" {
+		if config.EncryptionKey == defaultEncryptionKey {
+			panic("ENCRYPTION_KEY must be set to a secure value in production")
+		}
+		if config.JWTSecret == defaultJWTSecret {
+			panic("JWT_SECRET must be set to a secure value in production")
+		}
 	}
 	config.AuthOptions = NewTokenOptions(config.JWTSecret)
 	return &config

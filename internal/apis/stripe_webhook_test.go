@@ -94,7 +94,7 @@ func TestStripeWebhook_InvalidSignature_Returns400(t *testing.T) {
 			Method:          http.MethodPost,
 			URL:             "/stripe/webhook",
 			ExpectedStatus:  http.StatusBadRequest,
-			ExpectedContent: []string{"no valid signature"},
+			ExpectedContent: []string{"webhook signature verification failed"},
 			TestAppFactory:  func(t testing.TB) *apis.TestApi { return testApi },
 			BeforeTestFunc: func(t testing.TB, _ *core.BaseApp, sc *apis.ApiScenario) {
 				sc.Headers = []string{"Stripe-Signature: t=1,v1=invalidsig"}
