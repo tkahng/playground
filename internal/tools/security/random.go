@@ -3,7 +3,6 @@ package security
 import (
 	cryptoRand "crypto/rand"
 	"math/big"
-	mathRand "math/rand" // @todo replace with rand/v2?
 
 	"github.com/google/uuid"
 )
@@ -36,28 +35,17 @@ func RandomStringWithAlphabet(length int, alphabet string) string {
 	return string(b)
 }
 
-// PseudorandomString generates a pseudorandom string with the specified length.
-//
-// The generated string matches [A-Za-z0-9]+ and it's transparent to URL-encoding.
-//
-// For a cryptographically random string (but a little bit slower) use RandomString instead.
+// PseudorandomString generates a cryptographically random string.
+// The name is kept for backwards compatibility; the implementation now uses
+// crypto/rand throughout the security package to avoid mixing RNG quality.
 func PseudorandomString(length int) string {
-	return PseudorandomStringWithAlphabet(length, DefaultRandomAlphabet)
+	return RandomString(length)
 }
 
-// PseudorandomStringWithAlphabet generates a pseudorandom string
-// with the specified length and characters set.
-//
-// For a cryptographically random (but a little bit slower) use RandomStringWithAlphabet instead.
+// PseudorandomStringWithAlphabet generates a cryptographically random string
+// with the specified length and alphabet.
 func PseudorandomStringWithAlphabet(length int, alphabet string) string {
-	b := make([]byte, length)
-	max := len(alphabet)
-
-	for i := range b {
-		b[i] = alphabet[mathRand.Intn(max)]
-	}
-
-	return string(b)
+	return RandomStringWithAlphabet(length, alphabet)
 }
 
 func GenerateTokenKey() string {

@@ -9,23 +9,6 @@ import (
 	"github.com/tkahng/playground/internal/tools/utils"
 )
 
-// ParseUnverifiedJWT parses JWT and returns its claims
-// but DOES NOT verify the signature.
-//
-// It verifies only the exp, iat and nbf claims.
-func ParseUnverifiedJWT(token string) (jwt.MapClaims, error) {
-	claims := jwt.MapClaims{}
-
-	parser := &jwt.Parser{}
-	_, _, err := parser.ParseUnverified(token, claims)
-
-	if err == nil {
-		err = jwt.NewValidator(jwt.WithIssuedAt()).Validate(claims)
-	}
-
-	return claims, err
-}
-
 // ParseJWTMapClaims verifies and parses JWT and returns its claims.
 func ParseJWTMapClaims(token string, verificationKey string) (jwt.MapClaims, error) {
 	parser := jwt.NewParser(jwt.WithValidMethods([]string{"HS256"}))
