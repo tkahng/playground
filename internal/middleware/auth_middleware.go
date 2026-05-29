@@ -24,13 +24,13 @@ func TokenFromHeader(r *http.Request, w http.ResponseWriter) string {
 	}
 	return ""
 }
-func TokenFromQuery(r *http.Request, w http.ResponseWriter) string {
-	return appHttp.GetQuery(r, "access_token")
-}
 
+// httpTokenFuncs lists the strategies used to extract a bearer token from a
+// request. Query-string tokens (?access_token=...) are intentionally excluded
+// because they appear in server access logs, browser history, and Referer
+// headers, making them unsuitable for production use.
 var httpTokenFuncs = []func(r *http.Request, w http.ResponseWriter) string{
 	TokenFromHeader,
-	TokenFromQuery,
 }
 
 type HTTPMiddlewareFunc func(next http.Handler) http.Handler

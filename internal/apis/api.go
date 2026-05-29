@@ -90,8 +90,20 @@ func NewAppApi(app core.App, router chi.Router, api huma.API) *Api {
 	}
 }
 
+func securityHeadersMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := w.Header()
+		h.Set("X-Content-Type-Options", "nosniff")
+		h.Set("X-Frame-Options", "DENY")
+		h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		h.Set("Permissions-Policy", "geolocation=(), camera=(), microphone=()")
+		next.ServeHTTP(w, r)
+	})
+}
+
 func AddBaseMiddlewares(app core.App, r chi.Router, mw ...func(http.Handler) http.Handler) {
 	r.Use(otelhttp.NewMiddleware("http.server"))
+	r.Use(securityHeadersMiddleware)
 	r.Use(middleware.InitContextAttrsMiddleware)
 	r.Use(chimiddleware.RequestID)
 	r.Use(middleware.SetRequestIDAttrsMiddleware)
