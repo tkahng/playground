@@ -9,6 +9,7 @@ package services_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -169,6 +170,48 @@ func TestPreferences_ExplicitlyEnabled(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.Equal(t, int64(1), count, "member with enabled preference should receive notification")
+	})
+}
+
+// TestPreferences_FailClosedOnDbError verifies that a database error while loading
+// preferences causes sendToMembers to return an error instead of notifying everyone.
+func TestPreferences_FailClosedOnDbError(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter := stores.NewDbAdapterDecorators(db)
+		// Inject a failing FindDisabledMemberIDs — simulates a DB outage.
+		adapter.NotificationFunc.FindDisabledMemberIDsFunc = func(_ context.Context, _ []uuid.UUID, _ string) ([]uuid.UUID, error) {
+			return nil, errors.New("db connection lost")
+		}
+
+		_, optedOut, _, noPreference, _ := setupPreferenceFixture(t, ctx, db)
+
+		assignerUser, err := adapter.User().CreateUser(ctx, &models.User{Email: "failclosed-assigner@example.com"})
+		require.NoError(t, err)
+		assigner, err := adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
+			TeamID: optedOut.TeamID, UserID: &assignerUser.ID, Role: models.TeamMemberRoleMember, Active: true,
+		})
+		require.NoError(t, err)
+
+		project, err := adapter.Task().CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
+			Name: "failclosed-project", Status: models.TaskProjectStatusTodo,
+			TeamID: optedOut.TeamID, MemberID: assigner.ID,
+		})
+		require.NoError(t, err)
+		task, err := adapter.Task().CreateTask(ctx, &models.Task{
+			Name: "failclosed-task", Status: models.TaskStatusTodo,
+			TeamID: optedOut.TeamID, ProjectID: project.ID, AssigneeID: &noPreference.ID,
+		})
+		require.NoError(t, err)
+
+		notifier := services.NewDbNotificationPublisher(noopSSE{}, services.NewTeamService(adapter), adapter)
+		err = notifier.NotifyAssignedToTask(ctx, task.ID, assigner.ID, noPreference.ID)
+		require.Error(t, err, "preference query failure must propagate — not silently notify everyone")
+
+		count, err := adapter.Notification().CountNotification(ctx, &stores.NotificationFilter{
+			TeamMemberIds: []uuid.UUID{noPreference.ID},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), count, "no notifications should be persisted when preference query fails")
 	})
 }
 

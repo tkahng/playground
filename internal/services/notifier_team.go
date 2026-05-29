@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -69,8 +70,9 @@ func (d *DbNotifier) sendToMembers(ctx context.Context, memberIDs []uuid.UUID, n
 	}
 	disabledIDs, err := d.adapter.Notification().FindDisabledMemberIDs(ctx, memberIDs, notifType)
 	if err != nil {
-		slog.WarnContext(ctx, "failed to load notification preferences, sending to all", slog.Any("error", err))
-	} else if len(disabledIDs) > 0 {
+		return fmt.Errorf("loading notification preferences: %w", err)
+	}
+	if len(disabledIDs) > 0 {
 		disabledSet := make(map[uuid.UUID]struct{}, len(disabledIDs))
 		for _, id := range disabledIDs {
 			disabledSet[id] = struct{}{}
