@@ -62,8 +62,17 @@ func collectMemberIDs(ids ...*uuid.UUID) []uuid.UUID {
 	return result
 }
 
+// notificationRateWindow is the sliding window for per-member per-type rate limiting.
+const notificationRateWindow = time.Minute
+
+// notificationRateLimit is the maximum number of notifications of the same type
+// a member may receive within notificationRateWindow before further sends are skipped.
+const notificationRateLimit = 5
+
 // sendToMembers persists notifications for each member and broadcasts via SSE.
 // Members who have explicitly disabled the notification type are excluded.
+// Members who have already received notificationRateLimit notifications of the
+// same type within notificationRateWindow are also excluded.
 func (d *DbNotifier) sendToMembers(ctx context.Context, memberIDs []uuid.UUID, notifType string, payloadBytes []byte, ssePayload any) error {
 	if len(memberIDs) == 0 {
 		return nil
@@ -80,6 +89,28 @@ func (d *DbNotifier) sendToMembers(ctx context.Context, memberIDs []uuid.UUID, n
 		filtered := make([]uuid.UUID, 0, len(memberIDs))
 		for _, id := range memberIDs {
 			if _, skip := disabledSet[id]; !skip {
+				filtered = append(filtered, id)
+			}
+		}
+		memberIDs = filtered
+		if len(memberIDs) == 0 {
+			return nil
+		}
+	}
+	overLimit, err := d.adapter.Notification().FindMembersOverRateLimit(
+		ctx, memberIDs, notifType, time.Now().Add(-notificationRateWindow), notificationRateLimit,
+	)
+	if err != nil {
+		return fmt.Errorf("checking notification rate limit: %w", err)
+	}
+	if len(overLimit) > 0 {
+		overSet := make(map[uuid.UUID]struct{}, len(overLimit))
+		for _, id := range overLimit {
+			overSet[id] = struct{}{}
+		}
+		filtered := make([]uuid.UUID, 0, len(memberIDs))
+		for _, id := range memberIDs {
+			if _, skip := overSet[id]; !skip {
 				filtered = append(filtered, id)
 			}
 		}
