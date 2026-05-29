@@ -143,6 +143,10 @@ type GetMediaOutput struct {
 func (api *Api) GetMedia(ctx context.Context, input *struct {
 	ID string `path:"id" format:"uuid" required:"true" description:"Id of the media"`
 }) (*GetMediaOutput, error) {
+	caller := contextstore.GetContextUserInfo(ctx)
+	if caller == nil {
+		return nil, huma.Error401Unauthorized("unauthorized")
+	}
 	id, err := uuid.Parse(input.ID)
 	if err != nil {
 		return nil, err
@@ -153,6 +157,10 @@ func (api *Api) GetMedia(ctx context.Context, input *struct {
 	}
 	if media == nil {
 		return nil, huma.Error404NotFound("media not found")
+	}
+	isAdmin := slices.Contains(caller.Permissions, "superuser")
+	if !isAdmin && (media.UserID == nil || *media.UserID != caller.User.ID) {
+		return nil, huma.Error403Forbidden("forbidden")
 	}
 	return &GetMediaOutput{Body: api.mediaFromModel(media)}, nil
 }

@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
 	"path"
 	"regexp"
 	"strings"
@@ -34,6 +36,89 @@ type S3FileSystem struct {
 	httpClient    HttpRequestDoer
 	storageClient StorageClient
 	cfg           conf.StorageConfig
+}
+
+// AllowedMIMETypes is the set of MIME types accepted for upload.
+// SVG is intentionally excluded: it supports embedded scripts and is unsafe
+// when served from the same origin as the app.
+var AllowedMIMETypes = map[string]bool{
+	"image/jpeg":      true,
+	"image/png":       true,
+	"image/gif":       true,
+	"image/webp":      true,
+	"image/avif":      true,
+	"image/heic":      true,
+	"image/heif":      true,
+	"video/mp4":       true,
+	"video/webm":      true,
+	"video/ogg":       true,
+	"audio/mpeg":      true,
+	"audio/ogg":       true,
+	"audio/wav":       true,
+	"audio/webm":      true,
+	"application/pdf": true,
+	"text/plain":      true,
+	"text/csv":        true,
+}
+
+// privateIPBlocks holds all IP ranges that are non-routable / internal.
+var privateIPBlocks []*net.IPNet
+
+func init() {
+	for _, cidr := range []string{
+		"127.0.0.0/8",    // loopback
+		"::1/128",        // IPv6 loopback
+		"10.0.0.0/8",     // RFC1918
+		"172.16.0.0/12",  // RFC1918
+		"192.168.0.0/16", // RFC1918
+		"169.254.0.0/16", // link-local (AWS metadata, etc.)
+		"fe80::/10",      // IPv6 link-local
+		"fc00::/7",       // IPv6 unique local
+		"100.64.0.0/10",  // CGNAT
+		"::ffff:0:0/96",  // IPv4-mapped IPv6
+	} {
+		_, block, _ := net.ParseCIDR(cidr)
+		privateIPBlocks = append(privateIPBlocks, block)
+	}
+}
+
+func isPrivateIP(ip net.IP) bool {
+	if ip.IsLoopback() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+		return true
+	}
+	for _, block := range privateIPBlocks {
+		if block.Contains(ip) {
+			return true
+		}
+	}
+	return false
+}
+
+// validateRemoteURL rejects non-http/https schemes and URLs that resolve to
+// private or loopback addresses (SSRF protection).
+func validateRemoteURL(rawURL string) error {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
+	}
+	if u.Scheme != "http" && u.Scheme != "https" {
+		return fmt.Errorf("URL scheme %q not allowed; only http and https are accepted", u.Scheme)
+	}
+	host := u.Hostname()
+	ips, err := net.LookupHost(host)
+	if err != nil {
+		return fmt.Errorf("cannot resolve host %q: %w", host, err)
+	}
+	for _, ipStr := range ips {
+		ip := net.ParseIP(ipStr)
+		if ip == nil {
+			continue
+		}
+		if isPrivateIP(ip) {
+			return fmt.Errorf("URL resolves to a private or reserved address: %s", ipStr)
+		}
+	}
+	return nil
 }
 
 func (fs *S3FileSystem) PutFile(ctx context.Context, authority string, key string, file io.Reader) error {
@@ -116,8 +201,12 @@ func Snakecase(str string) string {
 	return strings.ToLower(result.String())
 }
 
-func (fs *S3FileSystem) PutNewFileFromURL(ctx context.Context, url string) (*FileDto, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+func (fs *S3FileSystem) PutNewFileFromURL(ctx context.Context, rawURL string) (*FileDto, error) {
+	if err := validateRemoteURL(rawURL); err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "GET", rawURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +218,7 @@ func (fs *S3FileSystem) PutNewFileFromURL(ctx context.Context, url string) (*Fil
 	defer res.Body.Close()
 
 	if res.StatusCode < 200 || res.StatusCode > 399 {
-		return nil, fmt.Errorf("failed to download url %s (%d)", url, res.StatusCode)
+		return nil, fmt.Errorf("failed to download url %s (%d)", rawURL, res.StatusCode)
 	}
 
 	const maxDownloadBytes = 50 * 1024 * 1024 // 50 MB
@@ -141,10 +230,10 @@ func (fs *S3FileSystem) PutNewFileFromURL(ctx context.Context, url string) (*Fil
 	}
 	if int64(buf.Len()) > maxDownloadBytes {
 		return nil, fmt.Errorf("remote file at %s exceeds the %d MB size limit",
-			url, maxDownloadBytes/(1024*1024))
+			rawURL, maxDownloadBytes/(1024*1024))
 	}
 
-	return fs.PutFileFromBytes(ctx, buf.Bytes(), path.Base(url))
+	return fs.PutFileFromBytes(ctx, buf.Bytes(), path.Base(rawURL))
 }
 
 func (fs *S3FileSystem) PutFileFromBytes(ctx context.Context, b []byte, name string) (*FileDto, error) {
@@ -153,12 +242,22 @@ func (fs *S3FileSystem) PutFileFromBytes(ctx context.Context, b []byte, name str
 	if size == 0 {
 		return nil, errors.New("cannot create an empty file")
 	}
-	mime := http.DetectContentType(b)
+
+	// Use mimetype (magic-byte detection) for accurate MIME type identification.
+	mt := mimetype.Detect(b)
+	mime := mt.String()
+	// Strip parameters (e.g. "text/plain; charset=utf-8" → "text/plain")
+	if idx := strings.Index(mime, ";"); idx != -1 {
+		mime = strings.TrimSpace(mime[:idx])
+	}
+
+	if !AllowedMIMETypes[mime] {
+		return nil, fmt.Errorf("file type %q is not allowed", mime)
+	}
+
 	ext := path.Ext(name)
 	if ext == "" {
-		mt := mimetype.Detect(b)
 		ext = mt.Extension()
-		mime = mt.String()
 	}
 	key := "media/" + id.String() + ext
 
