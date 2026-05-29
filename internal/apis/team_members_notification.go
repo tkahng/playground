@@ -407,3 +407,111 @@ func (api *Api) DeleteTeamMembersNotificationsBind(aapi huma.API) {
 		},
 	)
 }
+
+// NotificationPreferenceOutput is the API view of a single notification preference.
+// For types with no saved row the default enabled state is true.
+type NotificationPreferenceOutput struct {
+	Type    string `json:"type"`
+	Enabled bool   `json:"enabled"`
+}
+
+type GetNotificationPreferencesResponse struct {
+	Body struct {
+		Preferences []*NotificationPreferenceOutput `json:"preferences"`
+	}
+}
+
+func (api *Api) GetNotificationPreferencesBind(aapi huma.API) {
+	huma.Register(
+		aapi,
+		huma.Operation{
+			OperationID: "get-notification-preferences",
+			Method:      http.MethodGet,
+			Path:        "/team-members/{team-member-id}/notification-preferences",
+			Summary:     "get-notification-preferences",
+			Description: "list notification opt-in/out preferences for a team member",
+			Tags:        []string{"Team Members"},
+			Errors:      []int{http.StatusInternalServerError, http.StatusUnauthorized},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.MemberIDBelongsToUser(),
+			),
+		},
+		func(ctx context.Context, input *struct {
+			TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
+		}) (*GetNotificationPreferencesResponse, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			saved, err := api.App().Adapter().Notification().FindNotificationPreferences(ctx, teamInfo.Member.ID)
+			if err != nil {
+				return nil, err
+			}
+			byType := make(map[string]bool, len(saved))
+			for _, p := range saved {
+				byType[p.Type] = p.Enabled
+			}
+			allTypes := notification.TeamNotificationTypeList()
+			out := make([]*NotificationPreferenceOutput, 0, len(allTypes))
+			for _, t := range allTypes {
+				enabled := true
+				if v, ok := byType[t]; ok {
+					enabled = v
+				}
+				out = append(out, &NotificationPreferenceOutput{Type: t, Enabled: enabled})
+			}
+			resp := &GetNotificationPreferencesResponse{}
+			resp.Body.Preferences = out
+			return resp, nil
+		},
+	)
+}
+
+type UpsertNotificationPreferenceInput struct {
+	TeamMemberID string `path:"team-member-id" required:"true" format:"uuid"`
+	Type         string `path:"type" required:"true"`
+	Body         struct {
+		Enabled bool `json:"enabled"`
+	}
+}
+
+func (api *Api) UpsertNotificationPreferenceBind(aapi huma.API) {
+	huma.Register(
+		aapi,
+		huma.Operation{
+			OperationID: "upsert-notification-preference",
+			Method:      http.MethodPut,
+			Path:        "/team-members/{team-member-id}/notification-preferences/{type}",
+			Summary:     "upsert-notification-preference",
+			Description: "enable or disable a notification type for a team member",
+			Tags:        []string{"Team Members"},
+			Errors:      []int{http.StatusBadRequest, http.StatusUnauthorized},
+			Security: []map[string][]string{{
+				shared.BearerAuthSecurityKey: {},
+			}},
+			Middlewares: humamiddleware.HumaChiMiddlewares(
+				middleware.RequireTeamInfo(),
+				middleware.MemberIDBelongsToUser(),
+			),
+		},
+		func(ctx context.Context, input *UpsertNotificationPreferenceInput) (*struct{}, error) {
+			teamInfo := contextstore.GetContextTeamInfo(ctx)
+			if teamInfo == nil {
+				return nil, huma.Error401Unauthorized("unauthorized")
+			}
+			if !notification.IsValidTeamNotificationType(input.Type) {
+				return nil, huma.Error400BadRequest("unknown notification type: " + input.Type)
+			}
+			if err := api.App().Adapter().Notification().UpsertNotificationPreference(
+				ctx, teamInfo.Member.ID, input.Type, input.Body.Enabled,
+			); err != nil {
+				return nil, err
+			}
+			return nil, nil
+		},
+	)
+}

@@ -204,6 +204,10 @@ func bindTeamsApi(appApi *Api) {
 
 	appApi.MarkAllNotificationsReadBind(teamsGroup)
 
+	appApi.GetNotificationPreferencesBind(teamsGroup)
+
+	appApi.UpsertNotificationPreferenceBind(teamsGroup)
+
 	appApi.FindTeamMemberByIDBind(teamsGroup)
 
 	appApi.GetUserTeamMembersBind(teamsGroup)
