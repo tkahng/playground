@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.1.0](https://github.com/tkahng/playground/compare/v1.0.2...v1.1.0) (2026-05-29)
+
+
+### Features
+
+* **admin:** add Stripe products/prices sync endpoint and UI ([#163](https://github.com/tkahng/playground/issues/163)) ([3e27503](https://github.com/tkahng/playground/commit/3e275034db748c4fef1ad6e7fe77a34e6fe0a7b5))
+* **friends:** add search-by-email form to friends page ([#180](https://github.com/tkahng/playground/issues/180)) ([34ed282](https://github.com/tkahng/playground/commit/34ed28227c431488bf7387a7919af7acbfd05130))
+* **media:** single public R2 bucket with stable URLs for blog assets ([#175](https://github.com/tkahng/playground/issues/175)) ([6558443](https://github.com/tkahng/playground/commit/6558443851dd951e51d65143fd6e6c6e03e5ecb5))
+* **rps:** enforce one active game per player ([#167](https://github.com/tkahng/playground/issues/167)) ([9701ab6](https://github.com/tkahng/playground/commit/9701ab675eab6af429ed9a93b22e82abf04e47be))
+* **rps:** reduce house cooldown from 5m to 30s ([#185](https://github.com/tkahng/playground/issues/185)) ([8309501](https://github.com/tkahng/playground/commit/83095015798a5d3be00c5d2f0a7ff6e6eba8a84e))
+* **tasks:** add task comments with [@mention](https://github.com/mention) support ([#181](https://github.com/tkahng/playground/issues/181)) ([c00690a](https://github.com/tkahng/playground/commit/c00690a2c082a507da3661b8ecc6f40e2680b510))
+
+
+### Bug Fixes
+
+* **say-hello:** leaderboard shows empty country name and zero counts ([#179](https://github.com/tkahng/playground/issues/179)) ([128a101](https://github.com/tkahng/playground/commit/128a1018462231769feaec99e8009185d9e7b214))
+* **test:** non-null assert result[0] in task-comment test ([#182](https://github.com/tkahng/playground/issues/182)) ([42ff574](https://github.com/tkahng/playground/commit/42ff5741504024fbe3cb486e8163babcd397a7df))
+* **ui:** resolve TanStack Router type errors breaking build ([#159](https://github.com/tkahng/playground/issues/159)) ([55121c2](https://github.com/tkahng/playground/commit/55121c27cbaca23a56be34266f979bca6792e02e))
+
 ## [1.0.2](https://github.com/tkahng/playground/compare/v1.0.1...v1.0.2) (2026-05-08)
 
 
