@@ -27,6 +27,7 @@ type AuthService interface {
 
 	VerifyAccessToken(ctx context.Context, token string) (*models.UserInfo, error)
 	RefreshToken(ctx context.Context, refreshToken string) (*models.UserInfoTokens, error)
+	Signout(ctx context.Context, refreshToken string) error
 
 	SendEmailVerification(ctx context.Context, email string) error
 	ValidateEmailVerification(ctx context.Context, code string) error
@@ -221,7 +222,10 @@ func (a *AuthServiceImpl) RefreshToken(ctx context.Context, refreshToken string)
 		Type:  models.TokenTypesRefreshToken,
 	})
 	if err != nil {
-		return nil, huma.Error400BadRequest("Invalid refresh token")
+		return nil, huma.Error401Unauthorized("Invalid or expired refresh token")
+	}
+	if email == "" {
+		return nil, huma.Error401Unauthorized("Invalid refresh token")
 	}
 	claims, err := a.GenerateAuthTokens(ctx, email)
 	if err != nil {
@@ -229,3 +233,4 @@ func (a *AuthServiceImpl) RefreshToken(ctx context.Context, refreshToken string)
 	}
 	return claims, nil
 }
+

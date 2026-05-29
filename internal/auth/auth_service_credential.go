@@ -2,14 +2,12 @@ package auth
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/token"
 )
 
 type (
@@ -148,14 +146,14 @@ func (a *AuthServiceImpl) Signin(ctx context.Context, params *SigninInput) (*mod
 	return tokens, nil
 }
 
-// Signout implements AuthService.
+// Signout revokes the refresh token, invalidating the session.
+// The short-lived access token is not revoked — it expires naturally within its TTL.
+// Errors are intentionally ignored if the token is already expired or missing,
+// so that double-signout from the client is a no-op.
 func (a *AuthServiceImpl) Signout(ctx context.Context, refreshToken string) error {
-	_, err := a.token.ValidateToken(ctx, &token.ValidateTokenOptions{
-		Token: refreshToken,
-		Type:  models.TokenTypesRefreshToken,
-	})
-	if err != nil {
-		return fmt.Errorf("error verifying refresh token: %w", err)
+	if refreshToken == "" {
+		return nil
 	}
+	_ = a.token.RevokeToken(ctx, refreshToken)
 	return nil
 }

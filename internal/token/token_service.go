@@ -13,11 +13,12 @@ import (
 
 type TokenService interface {
 	GenerateToken(ctx context.Context, options *GenerateTokenOptions) (string, error)
-	// ValidateToken uses the token, tokenType and the current time to validate the token.
-	// If the token is valid, it delete the token, and return the email asscoiated with the token.
-	// If the token is not valid, it will return an error.
+	// ValidateToken validates the token, deletes it, and returns the associated email.
+	// Returns an error if the token is missing, expired, or of the wrong type.
 	ValidateToken(ctx context.Context, options *ValidateTokenOptions) (string, error)
 	CheckToken(ctx context.Context, token string, tokenType models.TokenTypes) error
+	// RevokeToken deletes a token by its value, used for signout.
+	RevokeToken(ctx context.Context, tokenValue string) error
 }
 
 type TokenServiceImpl struct {
@@ -62,7 +63,7 @@ func (t *TokenServiceImpl) ValidateToken(ctx context.Context, options *ValidateT
 		return "", err
 	}
 	if dbtoken == nil {
-		return "", nil
+		return "", fmt.Errorf("token not found or expired")
 	}
 	err = t.store.DeleteToken(ctx, tokenToValidate)
 	if err != nil {
@@ -107,6 +108,11 @@ func (t *TokenServiceImpl) GenerateToken(ctx context.Context, options *GenerateT
 		return "", err
 	}
 	return token, nil
+}
+
+// RevokeToken deletes a token by its raw value, used during signout.
+func (t *TokenServiceImpl) RevokeToken(ctx context.Context, tokenValue string) error {
+	return t.store.DeleteToken(ctx, tokenValue)
 }
 
 func NewTokenService(opts *conf.EnvConfig, store stores.DbTokenStoreInterface) TokenService {
