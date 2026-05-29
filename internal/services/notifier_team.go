@@ -94,8 +94,11 @@ func (d *DbNotifier) sendToMembers(ctx context.Context, memberIDs []uuid.UUID, n
 	}
 	notifications := make([]models.Notification, 0, len(members))
 	for _, member := range members {
+		teamID := member.TeamID // copy to avoid aliasing the loop variable
 		notifications = append(notifications, models.Notification{
 			TeamMemberID: &member.ID,
+			TeamID:       &teamID,
+			UserID:       member.UserID,
 			Channel:      "team_member_id:" + member.ID.String(),
 			Type:         notifType,
 			Payload:      payloadBytes,

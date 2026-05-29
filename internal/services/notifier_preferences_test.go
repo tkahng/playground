@@ -231,3 +231,45 @@ func TestPreferences_UpsertIsIdempotent(t *testing.T) {
 		assert.Empty(t, disabled, "member should be re-enabled after upsert with enabled=true")
 	})
 }
+
+// TestNotifications_TeamIDAndUserIDPopulated verifies that every persisted notification
+// carries the recipient's team_id and user_id so they can be queried without joins.
+func TestNotifications_TeamIDAndUserIDPopulated(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter, _, _, noPreference, _ := setupPreferenceFixture(t, ctx, db)
+
+		assignerUser, err := adapter.User().CreateUser(ctx, &models.User{Email: "fields-assigner@example.com"})
+		require.NoError(t, err)
+		assigner, err := adapter.TeamMember().CreateTeamMember(ctx, &models.TeamMember{
+			TeamID: noPreference.TeamID, UserID: &assignerUser.ID, Role: models.TeamMemberRoleMember, Active: true,
+		})
+		require.NoError(t, err)
+
+		project, err := adapter.Task().CreateTaskProject(ctx, &stores.CreateTaskProjectDTO{
+			Name: "fields-project", Status: models.TaskProjectStatusTodo,
+			TeamID: noPreference.TeamID, MemberID: assigner.ID,
+		})
+		require.NoError(t, err)
+		task, err := adapter.Task().CreateTask(ctx, &models.Task{
+			Name: "fields-task", Status: models.TaskStatusTodo,
+			TeamID: noPreference.TeamID, ProjectID: project.ID, AssigneeID: &noPreference.ID,
+		})
+		require.NoError(t, err)
+
+		notifier := services.NewDbNotificationPublisher(noopSSE{}, services.NewTeamService(adapter), adapter)
+		require.NoError(t, notifier.NotifyAssignedToTask(ctx, task.ID, assigner.ID, noPreference.ID))
+
+		notifs, err := adapter.Notification().FindNotifications(ctx, &stores.NotificationFilter{
+			TeamMemberIds: []uuid.UUID{noPreference.ID},
+			Types:         []string{"assigned_to_task"},
+		})
+		require.NoError(t, err)
+		require.Len(t, notifs, 1)
+
+		n := notifs[0]
+		assert.NotNil(t, n.TeamID, "TeamID must be populated on persisted notifications")
+		assert.Equal(t, noPreference.TeamID, *n.TeamID)
+		assert.NotNil(t, n.UserID, "UserID must be populated on persisted notifications")
+		assert.Equal(t, noPreference.UserID, n.UserID)
+	})
+}
