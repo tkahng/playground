@@ -77,8 +77,12 @@ func Run2() error {
 	}
 
 	httpServer := &http.Server{
-		Addr:    fmt.Sprintf("0.0.0.0:%d", port),
-		Handler: appApi.Router(),
+		Addr:              fmt.Sprintf("0.0.0.0:%d", port),
+		Handler:           appApi.Router(),
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       60 * time.Second,
+		WriteTimeout:      120 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 	serverShutdownErr := make(chan error, 1)
 

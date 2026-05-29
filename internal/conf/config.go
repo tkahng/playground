@@ -26,7 +26,9 @@ type AppConfig struct {
 	AppName       string `env:"APP_NAME" envDefault:"Playground"`
 	SenderName    string `env:"SENDER_NAME" envDefault:"info"`
 	SenderAddress string `env:"SENDER_ADDRESS" envDefault:"Hb4k@notifications.k2dv.io"`
-	EncryptionKey string `env:"ENCRYPTION_KEY" envDefault:"12345678901234567890123456789012"`
+	EncryptionKey string `env:"ENCRYPTION_KEY" required:"true"`
+	JWTSecret     string `env:"JWT_SECRET" required:"true"`
+	AllowedOrigins []string `env:"ALLOWED_ORIGINS" envSeparator:"," envDefault:"http://localhost:5173,http://localhost:8080"`
 	AppEnv        string `env:"APP_ENV" envDefault:"development"` // can be development, staging, production
 	Debug         bool   `env:"DEBUG" envDefault:"false"`
 	OtelEnabled   bool   `env:"OTEL_ENABLED" envDefault:"false"`
@@ -38,7 +40,7 @@ type DBConfig struct {
 	Host     string `env:"DATABASE_HOST,expand" envDefault:"localhost"`
 	Port     string `env:"DATABASE_PORT,expand" envDefault:"5432"`
 	Db       string `env:"DATABASE_DB,expand" envDefault:"playground"`
-	SSL      string `env:"DATABASE_SSL,expand" envDefault:"disable"` // sslmode: disable, prefer, require, verify-ca, verify-full, allow
+	SSL      string `env:"DATABASE_SSL,expand" envDefault:"prefer"` // sslmode: disable, prefer, require, verify-ca, verify-full, allow
 	// DatabaseUrl string `env:"DATABASE_URL,expand" envDefault:"postgres://${DATABASE_USER}:${DATABASE_PASSWORD}@${DATABASE_HOST}:${DATABASE_PORT}/${DATABASE_DB}?sslmode=${DATABASE_SSL}"`
 }
 
@@ -104,7 +106,7 @@ func ZeroEnvConfig() *EnvConfig {
 	return &EnvConfig{
 		Db:          dbEnv,
 		AppConfig:   appEnv,
-		AuthOptions: NewTokenOptions(),
+		AuthOptions: NewTokenOptions(appEnv.JWTSecret),
 	}
 }
 
@@ -129,7 +131,7 @@ func AppConfigGetter() *EnvConfig {
 	}); err != nil {
 		panic(err)
 	}
-	config.AuthOptions = NewTokenOptions()
+	config.AuthOptions = NewTokenOptions(config.JWTSecret)
 	return &config
 }
 
@@ -145,6 +147,6 @@ func GetConfig[T any]() T {
 
 func NewEnvConfig() *EnvConfig {
 	config := new(EnvConfig)
-	config.AuthOptions = NewTokenOptions()
+	config.AuthOptions = NewTokenOptions(config.JWTSecret)
 	return config
 }

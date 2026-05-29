@@ -34,37 +34,44 @@ type AuthOptions struct {
 	InviteToken        TokenOption `form:"invite_token" json:"invite_token"`
 }
 
-func NewTokenOptions() AuthOptions {
+// tokenSecret derives a per-token-type HMAC secret from the master JWT secret.
+// Using distinct per-type secrets prevents a token of one type being validated as another type
+// even if the "type" claim check were ever bypassed.
+func tokenSecret(base string, tokenType models.TokenTypes) string {
+	return base + ":" + string(tokenType)
+}
+
+func NewTokenOptions(jwtSecret string) AuthOptions {
 	return AuthOptions{
 		VerificationToken: TokenOption{
 			Type:     models.TokenTypesVerificationToken,
-			Secret:   string(models.TokenTypesVerificationToken),
-			Duration: 259200, // 3days
+			Secret:   tokenSecret(jwtSecret, models.TokenTypesVerificationToken),
+			Duration: 259200, // 3 days
 		},
 		AccessToken: TokenOption{
 			Type:     models.TokenTypesAccessToken,
-			Secret:   string(models.TokenTypesAccessToken),
-			Duration: 3600, // 1hr
+			Secret:   tokenSecret(jwtSecret, models.TokenTypesAccessToken),
+			Duration: 3600, // 1 hr
 		},
 		PasswordResetToken: TokenOption{
 			Type:     models.TokenTypesPasswordResetToken,
-			Secret:   string(models.TokenTypesPasswordResetToken),
-			Duration: 1800, // 30min
+			Secret:   tokenSecret(jwtSecret, models.TokenTypesPasswordResetToken),
+			Duration: 1800, // 30 min
 		},
 		RefreshToken: TokenOption{
 			Type:     models.TokenTypesRefreshToken,
-			Secret:   string(models.TokenTypesRefreshToken),
-			Duration: 604800, // 7days
+			Secret:   tokenSecret(jwtSecret, models.TokenTypesRefreshToken),
+			Duration: 604800, // 7 days
 		},
 		StateToken: TokenOption{
 			Type:     models.TokenTypesStateToken,
-			Secret:   string(models.TokenTypesStateToken),
-			Duration: 1800, // 30min
+			Secret:   tokenSecret(jwtSecret, models.TokenTypesStateToken),
+			Duration: 1800, // 30 min
 		},
 		InviteToken: TokenOption{
 			Type:     models.TokenTypesInviteToken,
-			Secret:   string(models.TokenTypesInviteToken),
-			Duration: 604800, // 7days
+			Secret:   tokenSecret(jwtSecret, models.TokenTypesInviteToken),
+			Duration: 604800, // 7 days
 		},
 	}
 }

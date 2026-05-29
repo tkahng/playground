@@ -103,8 +103,9 @@ func AddBaseMiddlewares(app core.App, r chi.Router, mw ...func(http.Handler) htt
 		},
 		RecoverPanics: true,
 	}))
+	allowedOrigins := app.Config().AllowedOrigins
 	r.Use(cors.Handler(cors.Options{
-		AllowOriginFunc: func(r *http.Request, origin string) bool { return true },
+		AllowedOrigins: allowedOrigins,
 		AllowedMethods: []string{"GET", "PUT", "POST", "DELETE", "HEAD", "OPTION"},
 		AllowedHeaders: []string{
 			"User-Agent",
@@ -119,6 +120,7 @@ func AddBaseMiddlewares(app core.App, r chi.Router, mw ...func(http.Handler) htt
 			"Origin",
 			"Pragma",
 			"Referer",
+			"Authorization",
 			"X-Client-IP",
 			"X-Forwarded-For",
 			"X-Forwarded",
