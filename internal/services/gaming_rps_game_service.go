@@ -18,7 +18,7 @@ import (
 
 const (
 	HouseMaxBet         int64         = 500
-	HouseCooldown       time.Duration = 30 * time.Second
+	HouseCooldown       time.Duration = 3 * time.Second
 	HouseWinsMessage                  = "House always wins."
 	GameDurationSeconds int64         = 3 * 24 * 60 * 60 // 3 days
 )
