@@ -64,7 +64,7 @@ type BaseApp struct {
 	fs filesystem.FileSystem
 
 	sseManager sse.Manager
-	sseTickets *ticket.Store
+	sseTickets ticket.Storer
 
 	eventManager events.EventManager
 
@@ -185,7 +185,7 @@ func (app *BaseApp) SseManager() sse.Manager {
 }
 
 // SseTickets implements App.
-func (app *BaseApp) SseTickets() *ticket.Store {
+func (app *BaseApp) SseTickets() ticket.Storer {
 	if app.sseTickets == nil {
 		panic("sse tickets not initialized")
 	}

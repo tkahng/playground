@@ -74,7 +74,7 @@ type App interface {
 
 	SseManager() sse.Manager
 
-	SseTickets() *ticket.Store
+	SseTickets() ticket.Storer
 
 	EventManager() events.EventManager
 

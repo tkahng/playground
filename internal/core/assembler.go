@@ -133,7 +133,7 @@ func (a *Assembler) setBasicServices(app *BaseApp) {
 
 	app.eventManager = events.NewEventManager(logger)
 	app.sseManager = sse.NewManager(logger)
-	app.sseTickets = ticket.New(60 * time.Second)
+	app.sseTickets = ticket.NewDbStore(dbx, 60*time.Second)
 
 	app.jobManager = jobs.NewDbJobManager(dbx)
 	app.jobService = services.NewJobService(app.jobManager)
