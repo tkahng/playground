@@ -70,9 +70,11 @@ type App interface {
 
 	NotificationPublisher() services.Notifier
 
+	PlayerNotificationPublisher() services.PlayerNotifier
+
 	SseManager() sse.Manager
 
-	SseTickets() *ticket.Store
+	SseTickets() ticket.Storer
 
 	EventManager() events.EventManager
 

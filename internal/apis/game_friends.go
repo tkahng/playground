@@ -18,7 +18,6 @@ import (
 	"github.com/tkahng/playground/internal/shared"
 	"github.com/tkahng/playground/internal/stores"
 	"github.com/tkahng/playground/internal/tools/mapper"
-	"github.com/tkahng/playground/internal/tools/sse"
 )
 
 func bindFriendApi(humaApi huma.API, app core.App) {
@@ -252,7 +251,7 @@ func bindSendFriendRequestApi(api huma.API, app core.App) {
 			}
 			friendship.RequestingPlayer = currentPlayer
 			friendship.InvitedPlayer = target
-			// Notify the invited player via SSE (best-effort — failure is non-fatal).
+			// Notify the invited player — persist + SSE (best-effort; failure is non-fatal).
 			payload := notification.NewNotificationPayload(
 				"New friend request",
 				currentPlayer.Email+" wants to be your friend",
@@ -262,8 +261,8 @@ func bindSendFriendRequestApi(api huma.API, app core.App) {
 					FriendshipID:       friendship.ID,
 				},
 			)
-			if err := app.SseManager().Send(sse.PlayerChannel(target.ID.String()), payload); err != nil {
-				slog.WarnContext(ctx, "friend request SSE notify failed", "error", err)
+			if err := app.PlayerNotificationPublisher().Notify(ctx, target.ID, notification.FriendRequestNotificationData{}.Kind(), payload); err != nil {
+				slog.WarnContext(ctx, "friend request notify failed", "error", err)
 			}
 			return &ApiSingleOutput[*Friendship]{
 				Body: ApiSingleResponse[*Friendship]{

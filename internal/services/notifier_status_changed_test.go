@@ -67,7 +67,8 @@ func TestNotifyTaskStatusChanged_NotifiesRelevantMembers(t *testing.T) {
 		err = notifier.NotifyTaskStatusChanged(ctx, task.ID, string(models.TaskStatusTodo), string(models.TaskStatusInProgress), creator.ID)
 		require.NoError(t, err)
 
-		for _, memberID := range []uuid.UUID{creator.ID, assignee.ID, reporter.ID} {
+		// creator is changedByMemberID so they are excluded from notifications.
+		for _, memberID := range []uuid.UUID{assignee.ID, reporter.ID} {
 			count, err := adapter.Notification().CountNotification(ctx, &stores.NotificationFilter{
 				TeamMemberIds: []uuid.UUID{memberID},
 				Types:         []string{"task_status_changed"},
@@ -75,6 +76,12 @@ func TestNotifyTaskStatusChanged_NotifiesRelevantMembers(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, int64(1), count, "member %s should have 1 status_changed notification", memberID)
 		}
+		creatorCount, err := adapter.Notification().CountNotification(ctx, &stores.NotificationFilter{
+			TeamMemberIds: []uuid.UUID{creator.ID},
+			Types:         []string{"task_status_changed"},
+		})
+		require.NoError(t, err)
+		assert.Equal(t, int64(0), creatorCount, "creator (changedBy) should not receive a notification")
 	})
 }
 

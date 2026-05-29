@@ -3,6 +3,7 @@ package stores
 import (
 	"context"
 	"errors"
+	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/tkahng/playground/internal/database"
 	"github.com/tkahng/playground/internal/database/repository"
 	"github.com/tkahng/playground/internal/models"
+	"github.com/tkahng/playground/internal/notification"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
@@ -23,6 +25,16 @@ type NotificationStore interface {
 	UpdateNotification(ctx context.Context, notification *models.Notification) error
 	DeleteNotifications(ctx context.Context, args *NotificationFilter) (int64, error)
 	MarkAllNotificationsRead(ctx context.Context, teamMemberID uuid.UUID) error
+	// FindDisabledMemberIDs returns the subset of memberIDs that have explicitly
+	// disabled the given notification type in their preferences.
+	FindDisabledMemberIDs(ctx context.Context, memberIDs []uuid.UUID, notifType string) ([]uuid.UUID, error)
+	// UpsertNotificationPreference creates or updates a preference row.
+	UpsertNotificationPreference(ctx context.Context, teamMemberID uuid.UUID, notifType string, enabled bool) error
+	// FindNotificationPreferences returns all saved preference rows for a team member.
+	FindNotificationPreferences(ctx context.Context, teamMemberID uuid.UUID) ([]*models.NotificationPreference, error)
+	// FindMembersOverRateLimit returns the subset of memberIDs that have already
+	// received more than limit notifications of notifType since the given time.
+	FindMembersOverRateLimit(ctx context.Context, memberIDs []uuid.UUID, notifType string, since time.Time, limit int) ([]uuid.UUID, error)
 }
 
 type DbNotificationStore struct {
@@ -182,6 +194,94 @@ func (s *DbNotificationStore) MarkAllNotificationsRead(ctx context.Context, team
 	return err
 }
 
+func (s *DbNotificationStore) FindDisabledMemberIDs(ctx context.Context, memberIDs []uuid.UUID, notifType string) ([]uuid.UUID, error) {
+	if len(memberIDs) == 0 {
+		return nil, nil
+	}
+	db := database.GetContextOrDefaultDbx(ctx, s.db)
+	rows, err := db.Query(ctx, `
+		SELECT team_member_id
+		FROM messaging.team_notification_preferences
+		WHERE team_member_id = ANY($1) AND type = $2 AND enabled = false
+	`, memberIDs, notifType)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var disabled []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		disabled = append(disabled, id)
+	}
+	return disabled, rows.Err()
+}
+
+func (s *DbNotificationStore) UpsertNotificationPreference(ctx context.Context, teamMemberID uuid.UUID, notifType string, enabled bool) error {
+	if !notification.IsValidTeamNotificationType(notifType) {
+		return fmt.Errorf("unknown notification type: %q", notifType)
+	}
+	db := database.GetContextOrDefaultDbx(ctx, s.db)
+	_, err := db.Exec(ctx, `
+		INSERT INTO messaging.team_notification_preferences (team_member_id, type, enabled)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (team_member_id, type) DO UPDATE SET enabled = EXCLUDED.enabled, updated_at = clock_timestamp()
+	`, teamMemberID, notifType, enabled)
+	return err
+}
+
+func (s *DbNotificationStore) FindNotificationPreferences(ctx context.Context, teamMemberID uuid.UUID) ([]*models.NotificationPreference, error) {
+	db := database.GetContextOrDefaultDbx(ctx, s.db)
+	rows, err := db.Query(ctx, `
+		SELECT id, created_at, updated_at, team_member_id, type, enabled
+		FROM messaging.team_notification_preferences
+		WHERE team_member_id = $1
+		ORDER BY type
+	`, teamMemberID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var prefs []*models.NotificationPreference
+	for rows.Next() {
+		p := &models.NotificationPreference{}
+		if err := rows.Scan(&p.ID, &p.CreatedAt, &p.UpdatedAt, &p.TeamMemberID, &p.Type, &p.Enabled); err != nil {
+			return nil, err
+		}
+		prefs = append(prefs, p)
+	}
+	return prefs, rows.Err()
+}
+
+func (s *DbNotificationStore) FindMembersOverRateLimit(ctx context.Context, memberIDs []uuid.UUID, notifType string, since time.Time, limit int) ([]uuid.UUID, error) {
+	if len(memberIDs) == 0 {
+		return nil, nil
+	}
+	db := database.GetContextOrDefaultDbx(ctx, s.db)
+	rows, err := db.Query(ctx, `
+		SELECT team_member_id
+		FROM messaging.notifications
+		WHERE team_member_id = ANY($1) AND type = $2 AND created_at > $3
+		GROUP BY team_member_id
+		HAVING COUNT(*) >= $4
+	`, memberIDs, notifType, since, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var over []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		over = append(over, id)
+	}
+	return over, rows.Err()
+}
+
 func (d *DbNotificationStore) sort(filter *NotificationFilter) *map[string]string {
 	sortBy, sortOrder := filter.Sort()
 	if slices.Contains(repository.NotificationBuilder.FieldNames(), sortBy) {
@@ -193,15 +293,19 @@ func (d *DbNotificationStore) sort(filter *NotificationFilter) *map[string]strin
 }
 
 type NotificationStoreDecorator struct {
-	Delegate                  *DbNotificationStore
-	CountFunc                 func(ctx context.Context, filter *NotificationFilter) (int64, error)
-	CreateFunc                func(ctx context.Context, notification *models.Notification) (*models.Notification, error)
-	CreateManyFunc            func(ctx context.Context, notifications []models.Notification) (int64, error)
-	FindNotificationFunc      func(ctx context.Context, args *NotificationFilter) (*models.Notification, error)
-	FindNotificationsFunc     func(ctx context.Context, args *NotificationFilter) ([]*models.Notification, error)
-	UpdateFunc                func(ctx context.Context, notification *models.Notification) error
-	DeleteFunc                func(ctx context.Context, args *NotificationFilter) (int64, error)
-	MarkAllReadFunc           func(ctx context.Context, teamMemberID uuid.UUID) error
+	Delegate                       *DbNotificationStore
+	CountFunc                      func(ctx context.Context, filter *NotificationFilter) (int64, error)
+	CreateFunc                     func(ctx context.Context, notification *models.Notification) (*models.Notification, error)
+	CreateManyFunc                 func(ctx context.Context, notifications []models.Notification) (int64, error)
+	FindNotificationFunc           func(ctx context.Context, args *NotificationFilter) (*models.Notification, error)
+	FindNotificationsFunc          func(ctx context.Context, args *NotificationFilter) ([]*models.Notification, error)
+	UpdateFunc                     func(ctx context.Context, notification *models.Notification) error
+	DeleteFunc                     func(ctx context.Context, args *NotificationFilter) (int64, error)
+	MarkAllReadFunc                func(ctx context.Context, teamMemberID uuid.UUID) error
+	FindDisabledMemberIDsFunc      func(ctx context.Context, memberIDs []uuid.UUID, notifType string) ([]uuid.UUID, error)
+	UpsertNotificationPreferenceFunc func(ctx context.Context, teamMemberID uuid.UUID, notifType string, enabled bool) error
+	FindNotificationPreferencesFunc  func(ctx context.Context, teamMemberID uuid.UUID) ([]*models.NotificationPreference, error)
+	FindMembersOverRateLimitFunc     func(ctx context.Context, memberIDs []uuid.UUID, notifType string, since time.Time, limit int) ([]uuid.UUID, error)
 }
 
 // DeleteNotifications implements NotificationStore.
@@ -296,6 +400,50 @@ func (n *NotificationStoreDecorator) MarkAllNotificationsRead(ctx context.Contex
 		return errors.New("delegate is nil in MarkAllNotificationsRead")
 	}
 	return n.Delegate.MarkAllNotificationsRead(ctx, teamMemberID)
+}
+
+// FindDisabledMemberIDs implements NotificationStore.
+func (n *NotificationStoreDecorator) FindDisabledMemberIDs(ctx context.Context, memberIDs []uuid.UUID, notifType string) ([]uuid.UUID, error) {
+	if n.FindDisabledMemberIDsFunc != nil {
+		return n.FindDisabledMemberIDsFunc(ctx, memberIDs, notifType)
+	}
+	if n.Delegate == nil {
+		return nil, errors.New("delegate is nil in FindDisabledMemberIDs")
+	}
+	return n.Delegate.FindDisabledMemberIDs(ctx, memberIDs, notifType)
+}
+
+// UpsertNotificationPreference implements NotificationStore.
+func (n *NotificationStoreDecorator) UpsertNotificationPreference(ctx context.Context, teamMemberID uuid.UUID, notifType string, enabled bool) error {
+	if n.UpsertNotificationPreferenceFunc != nil {
+		return n.UpsertNotificationPreferenceFunc(ctx, teamMemberID, notifType, enabled)
+	}
+	if n.Delegate == nil {
+		return errors.New("delegate is nil in UpsertNotificationPreference")
+	}
+	return n.Delegate.UpsertNotificationPreference(ctx, teamMemberID, notifType, enabled)
+}
+
+// FindNotificationPreferences implements NotificationStore.
+func (n *NotificationStoreDecorator) FindNotificationPreferences(ctx context.Context, teamMemberID uuid.UUID) ([]*models.NotificationPreference, error) {
+	if n.FindNotificationPreferencesFunc != nil {
+		return n.FindNotificationPreferencesFunc(ctx, teamMemberID)
+	}
+	if n.Delegate == nil {
+		return nil, errors.New("delegate is nil in FindNotificationPreferences")
+	}
+	return n.Delegate.FindNotificationPreferences(ctx, teamMemberID)
+}
+
+// FindMembersOverRateLimit implements NotificationStore.
+func (n *NotificationStoreDecorator) FindMembersOverRateLimit(ctx context.Context, memberIDs []uuid.UUID, notifType string, since time.Time, limit int) ([]uuid.UUID, error) {
+	if n.FindMembersOverRateLimitFunc != nil {
+		return n.FindMembersOverRateLimitFunc(ctx, memberIDs, notifType, since, limit)
+	}
+	if n.Delegate == nil {
+		return nil, errors.New("delegate is nil in FindMembersOverRateLimit")
+	}
+	return n.Delegate.FindMembersOverRateLimit(ctx, memberIDs, notifType, since, limit)
 }
 
 var _ NotificationStore = (*NotificationStoreDecorator)(nil)

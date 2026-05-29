@@ -80,7 +80,7 @@ func TestNotifyTaskCommentCreated_SkipsAuthor(t *testing.T) {
 		adapter, author, assignee, task, comment := setupCommentNotifyFixture(t, ctx, db)
 
 		notifier := services.NewDbNotificationPublisher(noopSSE{}, services.NewTeamService(adapter), adapter)
-		require.NoError(t, notifier.NotifyTaskCommentCreated(ctx, task.ID, comment.ID, author.ID))
+		require.NoError(t, notifier.NotifyTaskCommentCreated(ctx, task.ID, comment.ID, author.ID, nil))
 
 		authorNotifs, err := adapter.Notification().FindNotifications(ctx, &stores.NotificationFilter{
 			TeamMemberIds: []uuid.UUID{author.ID},
@@ -105,7 +105,7 @@ func TestNotifyTaskCommentCreated_PayloadFields(t *testing.T) {
 		adapter, author, assignee, task, comment := setupCommentNotifyFixture(t, ctx, db)
 
 		notifier := services.NewDbNotificationPublisher(noopSSE{}, services.NewTeamService(adapter), adapter)
-		require.NoError(t, notifier.NotifyTaskCommentCreated(ctx, task.ID, comment.ID, author.ID))
+		require.NoError(t, notifier.NotifyTaskCommentCreated(ctx, task.ID, comment.ID, author.ID, nil))
 
 		notif, err := adapter.Notification().FindNotification(ctx, &stores.NotificationFilter{
 			TeamMemberIds: []uuid.UUID{assignee.ID},
@@ -197,6 +197,75 @@ func TestTaskCommentCreatedWorker_RoutesArgs(t *testing.T) {
 		require.NoError(t, json.Unmarshal(notif.Payload, &payload))
 		assert.Equal(t, author.ID, payload.Data.AuthorID)
 		assert.Equal(t, comment.ID, payload.Data.CommentID)
+	})
+}
+
+// TestNotifyTaskCommentCreated_TruncatesLongExcerpt verifies that comments longer
+// than 100 runes are truncated to 100 runes with a trailing "..." in the excerpt.
+func TestNotifyTaskCommentCreated_TruncatesLongExcerpt(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter, author, assignee, task, _ := setupCommentNotifyFixture(t, ctx, db)
+
+		longContent := "a"
+		for range 200 {
+			longContent += "b"
+		}
+		longComment, err := adapter.TaskComment().CreateTaskComment(ctx, &models.TaskComment{
+			TaskID:            task.ID,
+			CreatedByMemberID: author.ID,
+			Content:           longContent,
+		})
+		require.NoError(t, err)
+
+		notifier := services.NewDbNotificationPublisher(noopSSE{}, services.NewTeamService(adapter), adapter)
+		require.NoError(t, notifier.NotifyTaskCommentCreated(ctx, task.ID, longComment.ID, author.ID, nil))
+
+		notif, err := adapter.Notification().FindNotification(ctx, &stores.NotificationFilter{
+			TeamMemberIds: []uuid.UUID{assignee.ID},
+			Types:         []string{"task_comment_created"},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, notif)
+
+		var payload notification.NotificationPayload[notification.TaskCommentCreatedNotificationData]
+		require.NoError(t, json.Unmarshal(notif.Payload, &payload))
+
+		assert.Equal(t, string([]rune(longContent)[:100])+"...", payload.Data.Excerpt)
+		assert.True(t, len([]rune(payload.Data.Excerpt)) == 103, "excerpt should be 100 runes + 3 dots")
+	})
+}
+
+// TestNotifyTaskCommentMention_TruncatesLongExcerpt verifies the same truncation
+// behaviour for mention notifications.
+func TestNotifyTaskCommentMention_TruncatesLongExcerpt(t *testing.T) {
+	database.WithNewTestTx(t, func(ctx context.Context, db database.Dbx) {
+		adapter, author, mentioned, task, _ := setupCommentNotifyFixture(t, ctx, db)
+
+		longContent := "x"
+		for range 150 {
+			longContent += "y"
+		}
+		longComment, err := adapter.TaskComment().CreateTaskComment(ctx, &models.TaskComment{
+			TaskID:            task.ID,
+			CreatedByMemberID: author.ID,
+			Content:           longContent,
+		})
+		require.NoError(t, err)
+
+		notifier := services.NewDbNotificationPublisher(noopSSE{}, services.NewTeamService(adapter), adapter)
+		require.NoError(t, notifier.NotifyTaskCommentMention(ctx, task.ID, longComment.ID, author.ID, mentioned.ID))
+
+		notif, err := adapter.Notification().FindNotification(ctx, &stores.NotificationFilter{
+			TeamMemberIds: []uuid.UUID{mentioned.ID},
+			Types:         []string{"task_comment_mention"},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, notif)
+
+		var payload notification.NotificationPayload[notification.TaskCommentMentionNotificationData]
+		require.NoError(t, json.Unmarshal(notif.Payload, &payload))
+
+		assert.Equal(t, string([]rune(longContent)[:100])+"...", payload.Data.Excerpt)
 	})
 }
 

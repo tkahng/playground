@@ -58,12 +58,13 @@ type BaseApp struct {
 	team           services.TeamService
 	teamInvitation services.TeamInvitationService
 
-	notifierPublisher services.Notifier
+	notifierPublisher       services.Notifier
+	playerNotifierPublisher services.PlayerNotifier
 
 	fs filesystem.FileSystem
 
 	sseManager sse.Manager
-	sseTickets *ticket.Store
+	sseTickets ticket.Storer
 
 	eventManager events.EventManager
 
@@ -167,6 +168,14 @@ func (app *BaseApp) NotificationPublisher() services.Notifier {
 	return app.notifierPublisher
 }
 
+// PlayerNotificationPublisher implements App.
+func (app *BaseApp) PlayerNotificationPublisher() services.PlayerNotifier {
+	if app.playerNotifierPublisher == nil {
+		panic("player notifier not initialized")
+	}
+	return app.playerNotifierPublisher
+}
+
 // SseManager implements App.
 func (app *BaseApp) SseManager() sse.Manager {
 	if app.sseManager == nil {
@@ -176,7 +185,7 @@ func (app *BaseApp) SseManager() sse.Manager {
 }
 
 // SseTickets implements App.
-func (app *BaseApp) SseTickets() *ticket.Store {
+func (app *BaseApp) SseTickets() ticket.Storer {
 	if app.sseTickets == nil {
 		panic("sse tickets not initialized")
 	}

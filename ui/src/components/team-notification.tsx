@@ -5,7 +5,8 @@ import {
   useEventSource,
   useEventSourceListener,
 } from "@react-nano/use-event-source";
-import { useCallback, useEffect, useReducer, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 const SSE_EVENTS = [
@@ -16,34 +17,32 @@ const SSE_EVENTS = [
   "task_overdue",
   "task_status_changed",
   "project_status_changed",
+  "task_comment_created",
+  "task_comment_mention",
 ];
 
-const INITIAL_NOTIFICATION: TeamMemberNotification = {
-  notification: { title: "", body: "" },
-  data: { email: "", team_id: "", team_member_id: "" },
-};
-
-function messageReducer(
-  state: TeamMemberNotification,
-  action: TeamMemberNotification,
-): TeamMemberNotification {
-  toast.info(action.notification.title, {
-    description: action.notification.body,
-  });
-  return { ...state, ...action };
-}
+// Ticket TTL is 60 s; refresh every 55 s to ensure the URL stays valid on reconnect.
+const TICKET_REFRESH_MS = 55_000;
 
 // Inner component — only mounted when a valid ticket URL is ready.
-function SSEListener({ url }: { url: string }) {
-  const [, dispatch] = useReducer(messageReducer, INITIAL_NOTIFICATION);
+function SSEListener({ url, teamMemberId }: { url: string; teamMemberId: string }) {
   const [eventSource] = useEventSource(url, false);
+  const queryClient = useQueryClient();
+
   useEventSourceListener(
     eventSource,
     SSE_EVENTS,
     (evt) => {
-      dispatch(JSON.parse(evt.data) as TeamMemberNotification);
+      const n = JSON.parse(evt.data) as TeamMemberNotification;
+      toast.info(n.notification.title, { description: n.notification.body });
+      queryClient.invalidateQueries({
+        queryKey: ["team-member-notifications", teamMemberId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["team-member-notifications-unread-count", teamMemberId],
+      });
     },
-    [dispatch],
+    [queryClient, teamMemberId],
   );
   return null;
 }
@@ -65,7 +64,9 @@ function TeamNotification() {
       .then((d: { ticket?: string }) => {
         if (active && d?.ticket) setTicket(d.ticket);
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.warn("SSE ticket fetch failed, will retry at next interval", err);
+      });
 
     return () => {
       active = false;
@@ -73,7 +74,12 @@ function TeamNotification() {
   }, [user?.tokens.access_token, teamMember?.id]);
 
   useEffect(() => {
-    return fetchTicket();
+    const cleanup = fetchTicket();
+    const interval = setInterval(fetchTicket, TICKET_REFRESH_MS);
+    return () => {
+      cleanup?.();
+      clearInterval(interval);
+    };
   }, [fetchTicket]);
 
   if (!ticket || !teamMember?.id) return null;
@@ -81,6 +87,7 @@ function TeamNotification() {
   return (
     <SSEListener
       url={`/api/team-members/${teamMember.id}/sse?ticket=${ticket}`}
+      teamMemberId={teamMember.id}
     />
   );
 }

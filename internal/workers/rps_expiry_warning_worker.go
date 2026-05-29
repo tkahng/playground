@@ -9,7 +9,6 @@ import (
 	"github.com/tkahng/playground/internal/jobs"
 	"github.com/tkahng/playground/internal/models"
 	"github.com/tkahng/playground/internal/stores"
-	"github.com/tkahng/playground/internal/tools/sse"
 	"github.com/tkahng/playground/internal/tools/types"
 )
 
@@ -24,23 +23,24 @@ type RpsExpiryWarningJobArgs struct{}
 
 func (j RpsExpiryWarningJobArgs) Kind() string { return RpsExpiryWarningSweepKind }
 
-// RpsExpiryWarningSender is the minimal SSE interface the worker needs.
+// RpsExpiryWarningSender is the player notification interface the worker needs.
+// services.DbPlayerNotifier satisfies this interface without importing the services package.
 type RpsExpiryWarningSender interface {
-	Send(channel string, payload interface{}) error
+	Notify(ctx context.Context, playerID uuid.UUID, notifType string, ssePayload any) error
 }
 
 type RpsExpiryWarningWorker struct {
 	adapter  stores.StorageAdapterInterface
-	sse      RpsExpiryWarningSender
+	notifier RpsExpiryWarningSender
 	enqueuer jobs.Enqueuer
 }
 
 func NewRpsExpiryWarningWorker(
 	adapter stores.StorageAdapterInterface,
-	sse RpsExpiryWarningSender,
+	notifier RpsExpiryWarningSender,
 	enqueuer jobs.Enqueuer,
 ) jobs.Worker[RpsExpiryWarningJobArgs] {
-	return &RpsExpiryWarningWorker{adapter: adapter, sse: sse, enqueuer: enqueuer}
+	return &RpsExpiryWarningWorker{adapter: adapter, notifier: notifier, enqueuer: enqueuer}
 }
 
 func SeedRpsExpiryWarningJob(ctx context.Context, enqueuer jobs.Enqueuer) error {
@@ -102,8 +102,8 @@ func (w *RpsExpiryWarningWorker) sendWarningForGame(ctx context.Context, game *m
 		ExpiresAt: game.ExpiresAt.Format(time.RFC3339),
 	}
 	for _, p := range participants {
-		if err := w.sse.Send(sse.PlayerChannel(p.PlayerID.String()), payload); err != nil {
-			slog.WarnContext(ctx, "rps expiry warning: SSE send failed",
+		if err := w.notifier.Notify(ctx, p.PlayerID, "rps_game_expiring_soon", payload); err != nil {
+			slog.WarnContext(ctx, "rps expiry warning: notify failed",
 				slog.String("player_id", p.PlayerID.String()), slog.Any("error", err))
 		}
 	}

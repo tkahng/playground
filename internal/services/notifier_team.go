@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -25,7 +26,7 @@ type Notifier interface {
 	NotifyTaskOverdue(ctx context.Context, taskID uuid.UUID) error
 	NotifyTaskStatusChanged(ctx context.Context, taskID uuid.UUID, oldStatus string, newStatus string, changedByMemberID uuid.UUID) error
 	NotifyProjectStatusChanged(ctx context.Context, projectID uuid.UUID, oldStatus string, newStatus string, changedByMemberID uuid.UUID) error
-	NotifyTaskCommentCreated(ctx context.Context, taskID uuid.UUID, commentID uuid.UUID, authorID uuid.UUID) error
+	NotifyTaskCommentCreated(ctx context.Context, taskID uuid.UUID, commentID uuid.UUID, authorID uuid.UUID, mentionedIDs []uuid.UUID) error
 	NotifyTaskCommentMention(ctx context.Context, taskID uuid.UUID, commentID uuid.UUID, authorID uuid.UUID, mentionedID uuid.UUID) error
 }
 
@@ -61,10 +62,62 @@ func collectMemberIDs(ids ...*uuid.UUID) []uuid.UUID {
 	return result
 }
 
+// notificationRateWindow is the sliding window for per-member per-type rate limiting.
+const notificationRateWindow = time.Minute
+
+// notificationRateLimit is the maximum number of notifications of the same type
+// a member may receive within notificationRateWindow before further sends are skipped.
+const notificationRateLimit = 5
+
 // sendToMembers persists notifications for each member and broadcasts via SSE.
+// Members who have explicitly disabled the notification type are excluded.
+// Members who have already received notificationRateLimit notifications of the
+// same type within notificationRateWindow are also excluded.
 func (d *DbNotifier) sendToMembers(ctx context.Context, memberIDs []uuid.UUID, notifType string, payloadBytes []byte, ssePayload any) error {
 	if len(memberIDs) == 0 {
 		return nil
+	}
+	disabledIDs, err := d.adapter.Notification().FindDisabledMemberIDs(ctx, memberIDs, notifType)
+	if err != nil {
+		return fmt.Errorf("loading notification preferences: %w", err)
+	}
+	if len(disabledIDs) > 0 {
+		disabledSet := make(map[uuid.UUID]struct{}, len(disabledIDs))
+		for _, id := range disabledIDs {
+			disabledSet[id] = struct{}{}
+		}
+		filtered := make([]uuid.UUID, 0, len(memberIDs))
+		for _, id := range memberIDs {
+			if _, skip := disabledSet[id]; !skip {
+				filtered = append(filtered, id)
+			}
+		}
+		memberIDs = filtered
+		if len(memberIDs) == 0 {
+			return nil
+		}
+	}
+	overLimit, err := d.adapter.Notification().FindMembersOverRateLimit(
+		ctx, memberIDs, notifType, time.Now().Add(-notificationRateWindow), notificationRateLimit,
+	)
+	if err != nil {
+		return fmt.Errorf("checking notification rate limit: %w", err)
+	}
+	if len(overLimit) > 0 {
+		overSet := make(map[uuid.UUID]struct{}, len(overLimit))
+		for _, id := range overLimit {
+			overSet[id] = struct{}{}
+		}
+		filtered := make([]uuid.UUID, 0, len(memberIDs))
+		for _, id := range memberIDs {
+			if _, skip := overSet[id]; !skip {
+				filtered = append(filtered, id)
+			}
+		}
+		memberIDs = filtered
+		if len(memberIDs) == 0 {
+			return nil
+		}
 	}
 	members, err := d.adapter.TeamMember().FindTeamMembers(ctx, &stores.TeamMemberFilter{Ids: memberIDs})
 	if err != nil {
@@ -72,8 +125,11 @@ func (d *DbNotifier) sendToMembers(ctx context.Context, memberIDs []uuid.UUID, n
 	}
 	notifications := make([]models.Notification, 0, len(members))
 	for _, member := range members {
+		teamID := member.TeamID // copy to avoid aliasing the loop variable
 		notifications = append(notifications, models.Notification{
 			TeamMemberID: &member.ID,
+			TeamID:       &teamID,
+			UserID:       member.UserID,
 			Channel:      "team_member_id:" + member.ID.String(),
 			Type:         notifType,
 			Payload:      payloadBytes,
@@ -231,7 +287,13 @@ func (d *DbNotifier) NotifyTaskCompleted(ctx context.Context, taskID uuid.UUID, 
 	if err != nil {
 		return err
 	}
-	memberIDs := collectMemberIDs(task.AssigneeID, task.ReporterID, task.CreatedByMemberID)
+	raw := collectMemberIDs(task.AssigneeID, task.ReporterID, task.CreatedByMemberID)
+	memberIDs := make([]uuid.UUID, 0, len(raw))
+	for _, id := range raw {
+		if id != completedByMemberID {
+			memberIDs = append(memberIDs, id)
+		}
+	}
 	if len(memberIDs) == 0 {
 		slog.DebugContext(ctx, "no members to notify", slog.String("task_id", taskID.String()))
 		return nil
@@ -301,7 +363,13 @@ func (d *DbNotifier) NotifyTaskStatusChanged(ctx context.Context, taskID uuid.UU
 	if err != nil {
 		return err
 	}
-	memberIDs := collectMemberIDs(task.AssigneeID, task.ReporterID, task.CreatedByMemberID)
+	raw := collectMemberIDs(task.AssigneeID, task.ReporterID, task.CreatedByMemberID)
+	memberIDs := make([]uuid.UUID, 0, len(raw))
+	for _, id := range raw {
+		if id != changedByMemberID {
+			memberIDs = append(memberIDs, id)
+		}
+	}
 	if len(memberIDs) == 0 {
 		slog.DebugContext(ctx, "no members to notify for status change", slog.String("task_id", taskID.String()))
 		return nil
@@ -427,8 +495,9 @@ func NewProjectStatusChangedWorker(notifier Notifier) *ProjectStatusChangedWorke
 
 var _ jobs.Worker[workers.ProjectStatusChangedJobArgs] = (*ProjectStatusChangedWorker)(nil)
 
-// NotifyTaskCommentCreated notifies task assignee and reporter of a new comment (excluding the author).
-func (d *DbNotifier) NotifyTaskCommentCreated(ctx context.Context, taskID uuid.UUID, commentID uuid.UUID, authorID uuid.UUID) error {
+// NotifyTaskCommentCreated notifies task assignee and reporter of a new comment,
+// excluding the author and any members who will receive a separate mention notification.
+func (d *DbNotifier) NotifyTaskCommentCreated(ctx context.Context, taskID uuid.UUID, commentID uuid.UUID, authorID uuid.UUID, mentionedIDs []uuid.UUID) error {
 	task, err := d.adapter.Task().FindTaskByID(ctx, taskID)
 	if err != nil {
 		return err
@@ -446,7 +515,7 @@ func (d *DbNotifier) NotifyTaskCommentCreated(ctx context.Context, taskID uuid.U
 	runes := []rune(comment.Content)
 	excerpt := comment.Content
 	if len(runes) > 100 {
-		excerpt = string(runes[:100])
+		excerpt = string(runes[:100]) + "..."
 	}
 	payload := notification.TaskCommentCreatedNotificationData{
 		TaskID:    taskID,
@@ -464,10 +533,15 @@ func (d *DbNotifier) NotifyTaskCommentCreated(ctx context.Context, taskID uuid.U
 	if err != nil {
 		return err
 	}
+	excluded := make(map[uuid.UUID]struct{}, 1+len(mentionedIDs))
+	excluded[authorID] = struct{}{}
+	for _, id := range mentionedIDs {
+		excluded[id] = struct{}{}
+	}
 	raw := collectMemberIDs(task.AssigneeID, task.ReporterID, task.CreatedByMemberID)
 	recipients := make([]uuid.UUID, 0, len(raw))
 	for _, id := range raw {
-		if id != authorID {
+		if _, skip := excluded[id]; !skip {
 			recipients = append(recipients, id)
 		}
 	}
@@ -500,7 +574,7 @@ func (d *DbNotifier) NotifyTaskCommentMention(ctx context.Context, taskID uuid.U
 	runes := []rune(comment.Content)
 	excerpt := comment.Content
 	if len(runes) > 100 {
-		excerpt = string(runes[:100])
+		excerpt = string(runes[:100]) + "..."
 	}
 	payload := notification.TaskCommentMentionNotificationData{
 		TaskID:      taskID,
@@ -529,7 +603,7 @@ type TaskCommentCreatedWorker struct {
 }
 
 func (w *TaskCommentCreatedWorker) Work(ctx context.Context, job *jobs.Job[workers.TaskCommentCreatedJobArgs]) error {
-	return w.notifier.NotifyTaskCommentCreated(ctx, job.Args.TaskID, job.Args.CommentID, job.Args.AuthorID)
+	return w.notifier.NotifyTaskCommentCreated(ctx, job.Args.TaskID, job.Args.CommentID, job.Args.AuthorID, job.Args.MentionedIDs)
 }
 
 func NewTaskCommentCreatedWorker(notifier Notifier) *TaskCommentCreatedWorker {
