@@ -31,15 +31,20 @@ type PaginatedInput struct {
 	PerPage int64 `query:"per_page,omitempty" default:"10" minimum:"1" maximum:"100" required:"false"`
 }
 
+const maxPerPage = 100
+
 func (p *PaginatedInput) LimitOffset() (limit, offset int) {
 	if p == nil {
 		return 10, 0 // default values
 	}
 	if p.PerPage <= 0 {
-		p.PerPage = 10 // default value
+		p.PerPage = 10
+	}
+	if p.PerPage > maxPerPage {
+		p.PerPage = maxPerPage
 	}
 	if p.Page < 0 {
-		p.Page = 0 // default value
+		p.Page = 0
 	}
 	return int(p.PerPage), int(p.Page) * int(p.PerPage)
 }

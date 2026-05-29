@@ -105,7 +105,6 @@ func AuthMiddleware(app core.App) HTTPMiddlewareFunc {
 			logger.SetAttrs(
 				ctx,
 				slog.String("user_id", userInfo.User.ID.String()),
-				slog.String("email", userInfo.User.Email),
 				slog.Bool("email_verified", userInfo.User.EmailVerifiedAt != nil),
 			)
 			newCtx := contextstore.SetContextUserInfo(ctx, userInfo)
